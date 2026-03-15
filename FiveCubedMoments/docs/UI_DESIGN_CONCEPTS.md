@@ -88,3 +88,9 @@ Maximum simplicity. Mostly white or very light gray, one accent color used spari
 2. **Reference apps** — Install or browse App Store screenshots for the apps listed above.
 
 3. **Next step** — Choose a concept (or mix), and we can implement it in SwiftUI.
+
+---
+
+## Non-List Input for the "5s"
+
+To avoid the rigid list feel for Gratitudes / Needs / People To Pray For, see **[Alternative Input Patterns](ALTERNATIVE_INPUT_PATTERNS.md)** — Chip Flow, Journal Prose, Sequential Reveal, and Card Grid. Mockups: `docs/mockups/concept-1-warm-paper-chips.html`, `-prose.html`, `-sequential.html`.

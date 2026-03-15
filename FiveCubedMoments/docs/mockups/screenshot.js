@@ -6,6 +6,9 @@ const mockups = [
   'concept-1-warm-paper.html',
   'concept-2-quiet-night.html',
   'concept-3-breath.html',
+  'concept-1-warm-paper-chips.html',
+  'concept-1-warm-paper-prose.html',
+  'concept-1-warm-paper-sequential.html',
 ];
 
 async function main() {

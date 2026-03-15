@@ -1,0 +1,85 @@
+import SwiftUI
+import SwiftData
+
+struct HistoryScreen: View {
+    @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
+
+    private let calendar = Calendar.current
+
+    var body: some View {
+        Group {
+            if entries.isEmpty {
+                emptyState
+            } else {
+                historyList
+            }
+        }
+        .navigationTitle("History")
+    }
+
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No entries yet", systemImage: "doc.text")
+        } description: {
+            Text("Start with today.")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var historyList: some View {
+        List {
+            ForEach(groupedByMonth, id: \.key) { group in
+                Section {
+                    ForEach(group.entries, id: \.id) { entry in
+                        NavigationLink {
+                            JournalScreen(entryDate: entry.entryDate)
+                        } label: {
+                            HistoryRow(entry: entry)
+                        }
+                    }
+                } header: {
+                    Text(monthYearString(from: group.key))
+                        .font(.headline)
+                }
+            }
+        }
+    }
+
+    private var groupedByMonth: [(key: Date, entries: [JournalEntry])] {
+        let grouped = Dictionary(grouping: entries) { entry -> Date in
+            let components = calendar.dateComponents([.year, .month], from: entry.entryDate)
+            return calendar.date(from: components) ?? entry.entryDate
+        }
+        return grouped.keys.sorted(by: >).map { ($0, grouped[$0]!) }
+    }
+
+    private func monthYearString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: date)
+    }
+}
+
+private struct HistoryRow: View {
+    let entry: JournalEntry
+
+    private var isComplete: Bool {
+        !entry.gratitudes.isEmpty &&
+        !entry.needs.isEmpty &&
+        !entry.people.isEmpty &&
+        !entry.bibleNotes.isEmpty &&
+        !entry.reflections.isEmpty
+    }
+
+    var body: some View {
+        HStack {
+            Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
+            Spacer()
+            if isComplete {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            }
+        }
+    }
+}

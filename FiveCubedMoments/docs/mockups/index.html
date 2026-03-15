@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Five Cubed Moments — UI Concepts</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #666; margin-bottom: 32px; }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    a {
+      display: block;
+      padding: 20px 24px;
+      background: white;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #1a1a1a;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    a:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    a span { display: block; font-size: 13px; color: #666; font-weight: 400; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Five Cubed Moments — UI Concepts</h1>
+    <p>Modern, cozy, minimalist. Click to preview each concept.</p>
+    <div class="grid">
+      <a href="concept-1-warm-paper.html">
+        Concept 1: Warm Paper
+        <span>Cream & earth tones — morning coffee, notebook feel</span>
+      </a>
+      <a href="concept-2-quiet-night.html">
+        Concept 2: Quiet Night
+        <span>Soft dark mode — evening journaling, low light</span>
+      </a>
+      <a href="concept-3-breath.html">
+        Concept 3: Breath
+        <span>Ultra minimal light — clean, meditative</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

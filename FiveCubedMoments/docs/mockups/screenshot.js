@@ -2,14 +2,7 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-const mockups = [
-  'concept-1-warm-paper.html',
-  'concept-2-quiet-night.html',
-  'concept-3-breath.html',
-  'concept-1-warm-paper-chips.html',
-  'concept-1-warm-paper-prose.html',
-  'concept-1-warm-paper-sequential.html',
-];
+const mockups = ['design-mockup.html'];
 
 async function main() {
   const outDir = path.join(__dirname, 'screenshots');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Warm Paper + Chip Flow — Five Cubed Moments</title>
+  <title>Five Cubed Moments — Design Mockup</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
@@ -16,8 +16,6 @@
       --accent: #C77B5B;
       --border: #E5DDD4;
       --complete: #8B9A7D;
-      --chip-bg: rgba(255,255,255,0.8);
-      --chip-border: #E5DDD4;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -43,7 +41,7 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .date-row {
       display: flex; align-items: center; gap: 10px;
@@ -55,49 +53,51 @@
     }
     .badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--complete); color: white; margin-left: auto; }
 
-    /* Chip flow */
-    .chip-area {
+    .sequential-prompt {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+    .sequential-input {
+      width: 100%;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.6);
+      font-family: inherit;
+      font-size: 18px;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .sequential-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(199,123,91,0.2); }
+    .sequential-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+    .sequential-progress {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      text-align: center;
+    }
+    .sequential-done {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      padding: 12px 16px;
-      min-height: 52px;
-      background: rgba(255,255,255,0.5);
-      border-radius: 14px;
-      border: 1px solid var(--border);
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
       gap: 6px;
-      padding: 8px 14px;
-      background: var(--chip-bg);
-      border: 1px solid var(--chip-border);
-      border-radius: 20px;
-      font-size: 15px;
-      color: var(--text);
+      margin-top: 8px;
     }
-    .chip-remove { cursor: pointer; font-size: 14px; color: var(--text-muted); opacity: 0.7; }
-    .chip-add {
-      padding: 8px 14px;
-      border: 1px dashed var(--border);
-      border-radius: 20px;
-      color: var(--text-muted);
+    .sequential-done-chip {
+      padding: 6px 12px;
+      background: rgba(139, 154, 125, 0.2);
+      border-radius: 16px;
       font-size: 14px;
-      cursor: pointer;
-      background: transparent;
-    }
-    .chip-input {
-      flex: 1;
-      min-width: 80px;
-      border: none;
-      background: transparent;
-      font-family: inherit;
-      font-size: 15px;
       color: var(--text);
     }
-    .chip-input:focus { outline: none; }
-    .chip-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+    /* First-N-words fallback: chip with gradual fade at right edge */
+    .sequential-done-chip.fade {
+      max-width: 120px;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, black 70%, transparent);
+      mask-image: linear-gradient(to right, black 70%, transparent);
+    }
 
     .textarea {
       width: 100%;
@@ -119,7 +119,7 @@
   </style>
 </head>
 <body>
-  <p class="concept-label">Warm Paper + Chip Flow — No list, items as tags</p>
+  <p class="concept-label">Warm Paper + Sequential (NL summarization, first-N fallback with fade)</p>
   <div class="device">
     <button class="share-btn" aria-label="Share">↑</button>
     <h1 class="header">Today's 5³</h1>
@@ -131,30 +131,28 @@
 
     <div class="section">
       <div class="section-label">Gratitudes</div>
-      <div class="chip-area">
-        <span class="chip">Family <span class="chip-remove">×</span></span>
-        <span class="chip">Morning coffee <span class="chip-remove">×</span></span>
-        <span class="chip">Health <span class="chip-remove">×</span></span>
-        <span class="chip-add">+ Add</span>
+      <div class="sequential-done">
+        <span class="sequential-done-chip">Family</span>
+        <span class="sequential-done-chip">Coffee</span>
+        <span class="sequential-done-chip fade">I'm so grateful for my</span>
       </div>
+      <div class="sequential-prompt">What's one thing you're grateful for?</div>
+      <input class="sequential-input" type="text" placeholder="Gratitude 4">
+      <div class="sequential-progress">4 of 5</div>
     </div>
 
     <div class="section">
       <div class="section-label">Needs</div>
-      <div class="chip-area">
-        <span class="chip">Patience <span class="chip-remove">×</span></span>
-        <span class="chip">Rest <span class="chip-remove">×</span></span>
-        <input class="chip-input" type="text" placeholder="Type & add…">
-      </div>
+      <div class="sequential-prompt">What do you need today?</div>
+      <input class="sequential-input" type="text" placeholder="Need 1">
+      <div class="sequential-progress">1 of 5</div>
     </div>
 
     <div class="section">
       <div class="section-label">People To Pray For</div>
-      <div class="chip-area">
-        <span class="chip">Sarah <span class="chip-remove">×</span></span>
-        <span class="chip">Mom <span class="chip-remove">×</span></span>
-        <span class="chip-add">+ Add</span>
-      </div>
+      <div class="sequential-prompt">Who's on your heart?</div>
+      <input class="sequential-input" type="text" placeholder="Person 1">
+      <div class="sequential-progress">1 of 5</div>
     </div>
 
     <div class="section">

@@ -107,7 +107,7 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertTrue(result.isTruncated)
     }
 
-    func test_summarize_httpError_fallsBackToNLSummarizer() async throws {
+    func test_summarize_httpError_fallsBackToInjectedFallback() async throws {
         MockURLProtocol.mockResponse = { _ in
             let response = HTTPURLResponse(
                 url: URL(string: "https://example.com")!,
@@ -130,7 +130,7 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertFalse(result.isTruncated)
     }
 
-    func test_summarize_invalidJSON_fallsBackToNLSummarizer() async throws {
+    func test_summarize_invalidJSON_fallsBackToInjectedFallback() async throws {
         MockURLProtocol.mockResponse = { _ in
             let data = Data("not valid json".utf8)
             let response = HTTPURLResponse(
@@ -154,7 +154,7 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertFalse(result.isTruncated)
     }
 
-    func test_summarize_emptyContent_fallsBackToNLSummarizer() async throws {
+    func test_summarize_emptyContent_fallsBackToInjectedFallback() async throws {
         MockURLProtocol.mockResponse = { _ in
             let json: [String: Any] = [
                 "choices": [
@@ -185,7 +185,7 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertFalse(result.isTruncated)
     }
 
-    func test_summarize_networkError_fallsBackToNLSummarizer() async throws {
+    func test_summarize_networkError_fallsBackToInjectedFallback() async throws {
         MockURLProtocol.mockResponse = { _ in
             (nil, nil, URLError(.notConnectedToInternet))
         }

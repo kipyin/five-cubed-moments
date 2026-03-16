@@ -2,10 +2,8 @@ import XCTest
 @testable import FiveCubedMoments
 
 final class SummarizerProviderTests: XCTestCase {
-    private let userDefaultsKey = "useCloudSummarization"
-
     override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: SummarizerProvider.useCloudUserDefaultsKey)
         super.tearDown()
     }
 
@@ -19,7 +17,7 @@ final class SummarizerProviderTests: XCTestCase {
     }
 
     func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsKeyAbsent_returnsNaturalLanguageSummarizer() {
-        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
@@ -28,7 +26,7 @@ final class SummarizerProviderTests: XCTestCase {
     }
 
     func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsFalse_returnsNaturalLanguageSummarizer() {
-        UserDefaults.standard.set(false, forKey: userDefaultsKey)
+        UserDefaults.standard.set(false, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
@@ -37,7 +35,7 @@ final class SummarizerProviderTests: XCTestCase {
     }
 
     func test_currentSummarizer_UserDefaultsTrue_placeholderKey_returnsNL() {
-        UserDefaults.standard.set(true, forKey: userDefaultsKey)
+        UserDefaults.standard.set(true, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()

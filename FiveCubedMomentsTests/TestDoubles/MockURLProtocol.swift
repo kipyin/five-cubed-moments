@@ -26,9 +26,15 @@ final class MockURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: error)
             return
         }
-        if let response = response {
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        guard let response = response else {
+            let err = URLError(
+                .unknown,
+                userInfo: [NSLocalizedDescriptionKey: "Mock returned nil response and nil error"]
+            )
+            client?.urlProtocol(self, didFailWithError: err)
+            return
         }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         if let data = data {
             client?.urlProtocol(self, didLoad: data)
         }

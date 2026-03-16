@@ -335,7 +335,7 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        for index in 1...5 {
+        for index in 1...JournalViewModel.slotCount {
             _ = await viewModel.addGratitude("Gratitude \(index)")
             _ = await viewModel.addNeed("Need \(index)")
             _ = await viewModel.addPerson("Person \(index)")
@@ -375,13 +375,13 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        for index in 1...5 {
+        for index in 1...JournalViewModel.slotCount {
             _ = await viewModel.addGratitude("Gratitude \(index)")
         }
         let sixth = await viewModel.addGratitude("Sixth gratitude")
 
         XCTAssertFalse(sixth)
-        XCTAssertEqual(viewModel.gratitudes.count, 5)
+        XCTAssertEqual(viewModel.gratitudes.count, JournalViewModel.slotCount)
     }
 
     func test_addNeed_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
@@ -394,13 +394,13 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        for index in 1...5 {
+        for index in 1...JournalViewModel.slotCount {
             _ = await viewModel.addNeed("Need \(index)")
         }
         let sixth = await viewModel.addNeed("Sixth need")
 
         XCTAssertFalse(sixth)
-        XCTAssertEqual(viewModel.needs.count, 5)
+        XCTAssertEqual(viewModel.needs.count, JournalViewModel.slotCount)
     }
 
     func test_addPerson_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
@@ -413,13 +413,13 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        for index in 1...5 {
+        for index in 1...JournalViewModel.slotCount {
             _ = await viewModel.addPerson("Person \(index)")
         }
         let sixth = await viewModel.addPerson("Sixth person")
 
         XCTAssertFalse(sixth)
-        XCTAssertEqual(viewModel.people.count, 5)
+        XCTAssertEqual(viewModel.people.count, JournalViewModel.slotCount)
     }
 
     private func makeInMemoryContext() throws -> ModelContext {

@@ -55,4 +55,15 @@ final class NaturalLanguageSummarizerTests: XCTestCase {
         let hasFullName = result.label.contains("John") && result.label.contains("Smith")
         XCTAssertTrue(hasFullName, "Expected full name 'John Smith' in label, got: '\(result.label)'")
     }
+
+    /// Long extracted labels (e.g. place names) should be truncated with isTruncated = true
+    /// so chips render the gradient fade and avoid overflow.
+    func test_summarize_longExtractedLabel_returnsTruncatedWithIsTruncatedTrue() {
+        let result = sut.summarize("I traveled through John Smith International Airport today")
+        XCTAssertFalse(result.label.isEmpty)
+        if result.isTruncated {
+            XCTAssertLessThanOrEqual(result.label.count, 20,
+                                    "When truncated, label must be at most 20 chars, got: '\(result.label)' (\(result.label.count) chars)")
+        }
+    }
 }

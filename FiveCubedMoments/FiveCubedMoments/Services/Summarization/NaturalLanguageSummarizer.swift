@@ -6,13 +6,18 @@ import NaturalLanguage
 struct NaturalLanguageSummarizer: Summarizer {
     private let maxFallbackWords = 5
     private let minNounLength = 2
+    private let maxKeywordLabelChars = 20
 
     func summarize(_ sentence: String) -> SummarizationResult {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return SummarizationResult(label: "", isTruncated: false) }
 
         if let label = extractKeywords(from: trimmed), !label.isEmpty {
-            return SummarizationResult(label: label, isTruncated: false)
+            if label.count <= maxKeywordLabelChars {
+                return SummarizationResult(label: label, isTruncated: false)
+            }
+            let truncated = firstTokensUpToMaxChars(label, maxChars: maxKeywordLabelChars)
+            return SummarizationResult(label: truncated, isTruncated: true)
         }
         return firstNWords(from: trimmed)
     }

@@ -43,7 +43,7 @@ final class JournalRepositoryTests: XCTestCase {
         let startOfDay = calendar.startOfDay(for: now)
         let entry = JournalEntry(
             entryDate: startOfDay,
-            gratitudes: ["Test"],
+            gratitudes: [JournalItem(fullText: "Test", chipLabel: nil)],
             needs: [],
             people: [],
             bibleNotes: "",
@@ -57,7 +57,7 @@ final class JournalRepositoryTests: XCTestCase {
         let result = try repo.fetchEntry(for: now, context: context)
 
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.gratitudes, ["Test"])
+        XCTAssertEqual(result?.gratitudes.map(\.fullText), ["Test"])
     }
 
     func test_fetchEntry_forMissingDate_returnsNil() throws {

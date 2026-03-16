@@ -13,6 +13,13 @@ final class PersistenceController {
         do {
             container = try ModelContainer(for: schema, configurations: configuration)
         } catch {
+            if !inMemory {
+                let inMemoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                if let fallback = try? ModelContainer(for: schema, configurations: inMemoryConfig) {
+                    container = fallback
+                    return
+                }
+            }
             fatalError("Failed to create SwiftData container: \(error)")
         }
     }

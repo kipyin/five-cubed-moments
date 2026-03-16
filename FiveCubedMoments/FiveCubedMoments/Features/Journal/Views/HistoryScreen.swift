@@ -69,21 +69,13 @@ struct HistoryScreen: View {
 private struct HistoryRow: View {
     let entry: JournalEntry
 
-    private var isComplete: Bool {
-        !entry.gratitudes.isEmpty &&
-        !entry.needs.isEmpty &&
-        !entry.people.isEmpty &&
-        !entry.bibleNotes.isEmpty &&
-        !entry.reflections.isEmpty
-    }
-
     var body: some View {
         HStack {
             Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.textPrimary)
             Spacer()
-            if isComplete {
+            if entry.isComplete {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(AppTheme.complete)
                     .font(.caption)

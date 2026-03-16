@@ -30,6 +30,7 @@ struct FiveCubedMomentsApp: App {
             }
             .preferredColorScheme(.light)
             .background(AppTheme.background)
+            .toolbarBackground(AppTheme.background, for: .tabBar)
             .tint(AppTheme.accent)
         }
         .modelContainer(persistenceController.container)

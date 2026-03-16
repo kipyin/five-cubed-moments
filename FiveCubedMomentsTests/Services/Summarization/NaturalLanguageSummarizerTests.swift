@@ -45,4 +45,14 @@ final class NaturalLanguageSummarizerTests: XCTestCase {
         let result = sut.summarize("I need help")
         XCTAssertFalse(result.label.isEmpty)
     }
+
+    /// Named-entity preference: multi-word personal names (e.g. "John Smith") should be
+    /// kept together via joinNames, not reduced to unrelated lexical tokens.
+    func test_summarize_personalName_keepsFullNameTogether() {
+        let result = sut.summarize("I had coffee with John Smith today")
+        XCTAssertFalse(result.label.isEmpty)
+        // NL with nameTypeOrLexicalClass + joinNames should produce "John Smith" or both names
+        let hasFullName = result.label.contains("John") && result.label.contains("Smith")
+        XCTAssertTrue(hasFullName, "Expected full name 'John Smith' in label, got: '\(result.label)'")
+    }
 }

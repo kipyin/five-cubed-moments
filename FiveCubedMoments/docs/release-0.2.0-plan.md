@@ -2,12 +2,12 @@
 
 ## Fixes
 - [ ] faded chips when it's too long.
-- [ ] de-christianify to avoid chinese sensoring.
+- [ ] de-christianify to avoid chinese censoring.
 
 
 ## features / improvements
 - [ ] explore the idea of turning the history page to a monthly calendar view, what are the pros and cons.
-- [ ] [next steps](/Users/kip/Code/FiveCubedMoments/.cursor/plans/next_step_for_app_86920bfa.plan.md)
+- [ ] next steps (see .cursor/plans if available locally)
 - [ ] long press a chip to show an "x" at the corner, hit the "x" to delete a chip. ensure the bottom count matches.
 
 

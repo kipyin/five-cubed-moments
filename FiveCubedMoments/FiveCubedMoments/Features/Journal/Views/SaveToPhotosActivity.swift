@@ -23,7 +23,7 @@ final class SaveToPhotosActivity: UIActivity {
     }
 
     override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
-        true
+        activityItems.contains { $0 is UIImage }
     }
 
     override func perform() {

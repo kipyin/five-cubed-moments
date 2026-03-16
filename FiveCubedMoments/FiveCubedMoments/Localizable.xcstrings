@@ -59,6 +59,12 @@
         }
       }
     },
+    "Cancel" : {
+
+    },
+    "Chips" : {
+
+    },
     "Completed for today" : {
       "localizations" : {
         "en" : {
@@ -74,6 +80,9 @@
           }
         }
       }
+    },
+    "Confirm chip deletion" : {
+
     },
     "Date" : {
       "localizations" : {
@@ -106,6 +115,9 @@
           }
         }
       }
+    },
+    "Delete %@?" : {
+
     },
     "Gratitudes" : {
       "localizations" : {
@@ -490,6 +502,9 @@
           }
         }
       }
+    },
+    "When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately." : {
+
     },
     "Who are you thinking of today?" : {
       "localizations" : {

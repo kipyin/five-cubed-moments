@@ -2,9 +2,24 @@ import SwiftUI
 
 struct SettingsScreen: View {
     @AppStorage("useCloudSummarization") private var useCloudSummarization = true
+    @AppStorage("confirmChipDeletion") private var confirmChipDeletion = true
 
     var body: some View {
         List {
+            Section {
+                Toggle("Confirm chip deletion", isOn: $confirmChipDeletion)
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.textPrimary)
+            } header: {
+                Text("Chips")
+                    .font(AppTheme.warmPaperHeader)
+                    .foregroundStyle(AppTheme.textPrimary)
+            } footer: {
+                Text("When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately.")
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.textMuted)
+            }
+
             Section {
                 Toggle("Use cloud summarization", isOn: $useCloudSummarization)
                     .font(AppTheme.warmPaperBody)

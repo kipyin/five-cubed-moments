@@ -42,7 +42,7 @@ struct JournalScreen: View {
                     inputAccessibilityIdentifier: "Gratitude 1",
                     inputText: $gratitudeInput,
                     editingIndex: editingGratitudeIndex,
-                    onSubmit: { submitGratitude() },
+                    onSubmit: { Task { await submitGratitude() } },
                     onChipTap: { index in chipTapped(section: .gratitude, index: index) },
                     onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
                     onAddNew: { addNewTapped(section: .gratitude) }
@@ -56,7 +56,7 @@ struct JournalScreen: View {
                     inputAccessibilityIdentifier: "Need 1",
                     inputText: $needInput,
                     editingIndex: editingNeedIndex,
-                    onSubmit: { submitNeed() },
+                    onSubmit: { Task { await submitNeed() } },
                     onChipTap: { index in chipTapped(section: .need, index: index) },
                     onDeleteChip: { index in deleteChip(section: .need, index: index) },
                     onAddNew: { addNewTapped(section: .need) }
@@ -70,7 +70,7 @@ struct JournalScreen: View {
                     inputAccessibilityIdentifier: "Person 1",
                     inputText: $personInput,
                     editingIndex: editingPersonIndex,
-                    onSubmit: { submitPerson() },
+                    onSubmit: { Task { await submitPerson() } },
                     onChipTap: { index in chipTapped(section: .person, index: index) },
                     onDeleteChip: { index in deleteChip(section: .person, index: index) },
                     onAddNew: { addNewTapped(section: .person) }
@@ -181,35 +181,35 @@ struct JournalScreen: View {
         }
     }
 
-    private func submitGratitude() {
+    private func submitGratitude() async {
         let succeeded: Bool
         if let index = editingGratitudeIndex {
-            succeeded = viewModel.updateGratitude(at: index, fullText: gratitudeInput)
+            succeeded = await viewModel.updateGratitude(at: index, fullText: gratitudeInput)
             if succeeded { editingGratitudeIndex = nil }
         } else {
-            succeeded = viewModel.addGratitude(gratitudeInput)
+            succeeded = await viewModel.addGratitude(gratitudeInput)
         }
         if succeeded { gratitudeInput = "" }
     }
 
-    private func submitNeed() {
+    private func submitNeed() async {
         let succeeded: Bool
         if let index = editingNeedIndex {
-            succeeded = viewModel.updateNeed(at: index, fullText: needInput)
+            succeeded = await viewModel.updateNeed(at: index, fullText: needInput)
             if succeeded { editingNeedIndex = nil }
         } else {
-            succeeded = viewModel.addNeed(needInput)
+            succeeded = await viewModel.addNeed(needInput)
         }
         if succeeded { needInput = "" }
     }
 
-    private func submitPerson() {
+    private func submitPerson() async {
         let succeeded: Bool
         if let index = editingPersonIndex {
-            succeeded = viewModel.updatePerson(at: index, fullText: personInput)
+            succeeded = await viewModel.updatePerson(at: index, fullText: personInput)
             if succeeded { editingPersonIndex = nil }
         } else {
-            succeeded = viewModel.addPerson(personInput)
+            succeeded = await viewModel.addPerson(personInput)
         }
         if succeeded { personInput = "" }
     }
@@ -265,10 +265,10 @@ struct JournalScreen: View {
         switch section {
         case .gratitude:
             if let currentIndex = editingGratitudeIndex, !gratitudeInput.isEmpty {
-                viewModel.updateGratitude(at: currentIndex, fullText: gratitudeInput)
+                Task { await viewModel.updateGratitude(at: currentIndex, fullText: gratitudeInput) }
                 gratitudeInput = ""
             } else if !gratitudeInput.isEmpty, viewModel.gratitudes.count < JournalViewModel.slotCount {
-                viewModel.addGratitude(gratitudeInput)
+                Task { await viewModel.addGratitude(gratitudeInput) }
                 gratitudeInput = ""
             }
             if let fullText = viewModel.fullTextForGratitude(at: index) {
@@ -278,10 +278,10 @@ struct JournalScreen: View {
 
         case .need:
             if let currentIndex = editingNeedIndex, !needInput.isEmpty {
-                viewModel.updateNeed(at: currentIndex, fullText: needInput)
+                Task { await viewModel.updateNeed(at: currentIndex, fullText: needInput) }
                 needInput = ""
             } else if !needInput.isEmpty, viewModel.needs.count < JournalViewModel.slotCount {
-                viewModel.addNeed(needInput)
+                Task { await viewModel.addNeed(needInput) }
                 needInput = ""
             }
             if let fullText = viewModel.fullTextForNeed(at: index) {
@@ -291,10 +291,10 @@ struct JournalScreen: View {
 
         case .person:
             if let currentIndex = editingPersonIndex, !personInput.isEmpty {
-                viewModel.updatePerson(at: currentIndex, fullText: personInput)
+                Task { await viewModel.updatePerson(at: currentIndex, fullText: personInput) }
                 personInput = ""
             } else if !personInput.isEmpty, viewModel.people.count < JournalViewModel.slotCount {
-                viewModel.addPerson(personInput)
+                Task { await viewModel.addPerson(personInput) }
                 personInput = ""
             }
             if let fullText = viewModel.fullTextForPerson(at: index) {

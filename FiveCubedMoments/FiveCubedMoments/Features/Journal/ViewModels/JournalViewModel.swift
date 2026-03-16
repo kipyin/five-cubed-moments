@@ -26,7 +26,7 @@ final class JournalViewModel: ObservableObject {
     private let calendar: Calendar
     private let nowProvider: () -> Date
     private let repository: JournalRepository
-    private let summarizer: Summarizer
+    private let summarizerProvider: SummarizerProvider
     private let autosaveTrigger = PassthroughSubject<Void, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
@@ -39,12 +39,12 @@ final class JournalViewModel: ObservableObject {
         calendar: Calendar = .current,
         nowProvider: @escaping () -> Date = Date.init,
         repository: JournalRepository? = nil,
-        summarizer: Summarizer = NaturalLanguageSummarizer()
+        summarizerProvider: SummarizerProvider = .shared
     ) {
         self.calendar = calendar
         self.nowProvider = nowProvider
         self.repository = repository ?? JournalRepository(calendar: calendar)
-        self.summarizer = summarizer
+        self.summarizerProvider = summarizerProvider
 
         autosaveTrigger
             .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
@@ -134,66 +134,108 @@ final class JournalViewModel: ObservableObject {
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addGratitude(_ sentence: String) -> Bool {
+    func addGratitude(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, gratitudes.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         gratitudes.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addNeed(_ sentence: String) -> Bool {
+    func addNeed(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, needs.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         needs.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addPerson(_ sentence: String) -> Bool {
+    func addPerson(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, people.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         people.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updateGratitude(at index: Int, fullText: String) -> Bool {
+    func updateGratitude(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         gratitudes[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updateNeed(at index: Int, fullText: String) -> Bool {
+    func updateNeed(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         needs[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updatePerson(at index: Int, fullText: String) -> Bool {
+    func updatePerson(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         people[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true

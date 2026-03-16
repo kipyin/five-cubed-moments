@@ -4,7 +4,8 @@ import os
 private let log = Logger(subsystem: "com.fivecubedmoments.FiveCubedMoments", category: "CloudSummarizer")
 
 /// Calls OpenAI-compatible chat completions API at chat.cloudapi.vip.
-/// On any failure (network, timeout, invalid key, empty response), falls back to NaturalLanguageSummarizer.
+/// On any failure (network, timeout, invalid key, empty response), falls back to NaturalLanguageSummarizer
+/// by default; a different summarizer may be injected (e.g., for tests).
 /// See doc.newapi.pro for API details.
 struct CloudSummarizer: Summarizer {
     private let baseURL: String
@@ -38,7 +39,7 @@ struct CloudSummarizer: Summarizer {
             log.debug("Cloud summarization succeeded: \"\(trimmed)\" -> \"\(capped)\"")
             return SummarizationResult(label: capped, isTruncated: label.count > maxLabelChars)
         } catch {
-            log.info("Cloud API failed, using NL fallback: \(String(describing: error))")
+            log.info("Cloud API failed, using fallback summarizer: \(String(describing: error))")
             if let result = try? await fallback.summarize(sentence, section: section) {
                 return result
             }

@@ -265,10 +265,13 @@ struct JournalScreen: View {
         switch section {
         case .gratitude:
             if let currentIndex = editingGratitudeIndex, !gratitudeInput.isEmpty {
-                Task { await viewModel.updateGratitude(at: currentIndex, fullText: gratitudeInput) }
+                let textToSave = gratitudeInput
+                let indexToUpdate = currentIndex
+                Task { await viewModel.updateGratitude(at: indexToUpdate, fullText: textToSave) }
                 gratitudeInput = ""
             } else if !gratitudeInput.isEmpty, viewModel.gratitudes.count < JournalViewModel.slotCount {
-                Task { await viewModel.addGratitude(gratitudeInput) }
+                let textToAdd = gratitudeInput
+                Task { await viewModel.addGratitude(textToAdd) }
                 gratitudeInput = ""
             }
             if let fullText = viewModel.fullTextForGratitude(at: index) {
@@ -278,10 +281,13 @@ struct JournalScreen: View {
 
         case .need:
             if let currentIndex = editingNeedIndex, !needInput.isEmpty {
-                Task { await viewModel.updateNeed(at: currentIndex, fullText: needInput) }
+                let textToSave = needInput
+                let indexToUpdate = currentIndex
+                Task { await viewModel.updateNeed(at: indexToUpdate, fullText: textToSave) }
                 needInput = ""
             } else if !needInput.isEmpty, viewModel.needs.count < JournalViewModel.slotCount {
-                Task { await viewModel.addNeed(needInput) }
+                let textToAdd = needInput
+                Task { await viewModel.addNeed(textToAdd) }
                 needInput = ""
             }
             if let fullText = viewModel.fullTextForNeed(at: index) {
@@ -291,10 +297,13 @@ struct JournalScreen: View {
 
         case .person:
             if let currentIndex = editingPersonIndex, !personInput.isEmpty {
-                Task { await viewModel.updatePerson(at: currentIndex, fullText: personInput) }
+                let textToSave = personInput
+                let indexToUpdate = currentIndex
+                Task { await viewModel.updatePerson(at: indexToUpdate, fullText: textToSave) }
                 personInput = ""
             } else if !personInput.isEmpty, viewModel.people.count < JournalViewModel.slotCount {
-                Task { await viewModel.addPerson(personInput) }
+                let textToAdd = personInput
+                Task { await viewModel.addPerson(textToAdd) }
                 personInput = ""
             }
             if let fullText = viewModel.fullTextForPerson(at: index) {

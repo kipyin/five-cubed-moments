@@ -20,7 +20,13 @@ struct ChipView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Button(action: onTap) {
+            Button {
+                if showDeleteButton {
+                    showDeleteButton = false
+                } else {
+                    onTap()
+                }
+            } label: {
                 Text(label)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)

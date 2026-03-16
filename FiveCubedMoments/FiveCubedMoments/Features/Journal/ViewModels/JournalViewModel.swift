@@ -133,19 +133,22 @@ final class JournalViewModel: ObservableObject {
         )
     }
 
+    private func summarize(_ text: String) async -> SummarizationResult {
+        let summarizer = summarizerProvider.currentSummarizer()
+        do {
+            return try await summarizer.summarize(text)
+        } catch {
+            return (try? await NaturalLanguageSummarizer().summarize(text))
+                ?? SummarizationResult(label: String(text.prefix(20)), isTruncated: text.count > 20)
+        }
+    }
+
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
     func addGratitude(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, gratitudes.count < Self.slotCount else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         gratitudes.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
@@ -156,14 +159,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, needs.count < Self.slotCount else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         needs.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
@@ -174,14 +170,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, people.count < Self.slotCount else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         people.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
@@ -192,14 +181,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         gratitudes[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true
@@ -210,14 +192,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         needs[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true
@@ -228,14 +203,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return false }
 
-        let summarizer = summarizerProvider.currentSummarizer()
-        let result: SummarizationResult
-        do {
-            result = try await summarizer.summarize(trimmed)
-        } catch {
-            result = (try? await NaturalLanguageSummarizer().summarize(trimmed))
-                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
-        }
+        let result = await summarize(trimmed)
         people[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
         scheduleAutosave()
         return true

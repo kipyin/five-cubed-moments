@@ -42,7 +42,6 @@ struct CloudSummarizer: Summarizer {
             if let result = try? await fallback.summarize(sentence) {
                 return result
             }
-            let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
             return SummarizationResult(label: String(trimmed.prefix(maxLabelChars)), isTruncated: trimmed.count > maxLabelChars)
         }
     }

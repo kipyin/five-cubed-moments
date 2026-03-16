@@ -26,7 +26,7 @@ final class JournalViewModel: ObservableObject {
     private let calendar: Calendar
     private let nowProvider: () -> Date
     private let repository: JournalRepository
-    private let summarizer: Summarizer
+    private let summarizerProvider: SummarizerProvider
     private let autosaveTrigger = PassthroughSubject<Void, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
@@ -39,12 +39,12 @@ final class JournalViewModel: ObservableObject {
         calendar: Calendar = .current,
         nowProvider: @escaping () -> Date = Date.init,
         repository: JournalRepository? = nil,
-        summarizer: Summarizer = NaturalLanguageSummarizer()
+        summarizerProvider: SummarizerProvider = .shared
     ) {
         self.calendar = calendar
         self.nowProvider = nowProvider
         self.repository = repository ?? JournalRepository(calendar: calendar)
-        self.summarizer = summarizer
+        self.summarizerProvider = summarizerProvider
 
         autosaveTrigger
             .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
@@ -70,7 +70,7 @@ final class JournalViewModel: ObservableObject {
                 return
             }
         } catch {
-            saveErrorMessage = "Unable to load today's entry."
+            saveErrorMessage = String(localized: "Unable to load today's entry.")
             return
         }
 
@@ -113,7 +113,7 @@ final class JournalViewModel: ObservableObject {
             try context.save()
             saveErrorMessage = nil
         } catch {
-            saveErrorMessage = "Unable to save your journal entry."
+            saveErrorMessage = String(localized: "Unable to save your journal entry.")
         }
     }
 
@@ -133,68 +133,159 @@ final class JournalViewModel: ObservableObject {
         )
     }
 
+    private func summarize(_ text: String) async -> SummarizationResult {
+        let summarizer = summarizerProvider.currentSummarizer()
+        do {
+            return try await summarizer.summarize(text)
+        } catch {
+            return (try? await NaturalLanguageSummarizer().summarize(text))
+                ?? SummarizationResult(label: String(text.prefix(20)), isTruncated: text.count > 20)
+        }
+    }
+
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addGratitude(_ sentence: String) -> Bool {
+    func addGratitude(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, gratitudes.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .gratitude)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .gratitude))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         gratitudes.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addNeed(_ sentence: String) -> Bool {
+    func addNeed(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, needs.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .need)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .need))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         needs.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
-    func addPerson(_ sentence: String) -> Bool {
+    func addPerson(_ sentence: String) async -> Bool {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, people.count < Self.slotCount else { return false }
 
-        let result = summarizer.summarize(trimmed)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .person)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .person))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
         people.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updateGratitude(at index: Int, fullText: String) -> Bool {
+    func updateGratitude(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
-        gratitudes[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .gratitude)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .gratitude))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
+        gratitudes[index] = JournalItem(
+            fullText: trimmed,
+            chipLabel: result.label,
+            isTruncated: result.isTruncated,
+            id: gratitudes[index].id
+        )
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updateNeed(at index: Int, fullText: String) -> Bool {
+    func updateNeed(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
-        needs[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .need)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .need))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
+        needs[index] = JournalItem(
+            fullText: trimmed,
+            chipLabel: result.label,
+            isTruncated: result.isTruncated,
+            id: needs[index].id
+        )
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
-    func updatePerson(at index: Int, fullText: String) -> Bool {
+    func updatePerson(at index: Int, fullText: String) async -> Bool {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return false }
 
-        let result = summarizer.summarize(trimmed)
-        people[index] = JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated)
+        let summarizer = summarizerProvider.currentSummarizer()
+        let result: SummarizationResult
+        do {
+            result = try await summarizer.summarize(trimmed, section: .person)
+        } catch {
+            result = (try? await NaturalLanguageSummarizer().summarize(trimmed, section: .person))
+                ?? SummarizationResult(label: String(trimmed.prefix(20)), isTruncated: trimmed.count > 20)
+        }
+        people[index] = JournalItem(
+            fullText: trimmed,
+            chipLabel: result.label,
+            isTruncated: result.isTruncated,
+            id: people[index].id
+        )
+        scheduleAutosave()
+        return true
+    }
+
+    /// Returns true if the item was removed (valid index).
+    func removeGratitude(at index: Int) -> Bool {
+        guard index >= 0, index < gratitudes.count else { return false }
+        gratitudes.remove(at: index)
+        scheduleAutosave()
+        return true
+    }
+
+    /// Returns true if the item was removed (valid index).
+    func removeNeed(at index: Int) -> Bool {
+        guard index >= 0, index < needs.count else { return false }
+        needs.remove(at: index)
+        scheduleAutosave()
+        return true
+    }
+
+    /// Returns true if the item was removed (valid index).
+    func removePerson(at index: Int) -> Bool {
+        guard index >= 0, index < people.count else { return false }
+        people.remove(at: index)
         scheduleAutosave()
         return true
     }
@@ -226,6 +317,7 @@ final class JournalViewModel: ObservableObject {
 
     func exportSnapshot() -> JournalExportPayload {
         let formatter = DateFormatter()
+        formatter.locale = Locale.current
         formatter.dateStyle = .long
         let dateStr = formatter.string(from: entryDate)
         return JournalExportPayload(

@@ -39,6 +39,7 @@ struct SequentialSectionView: View {
     let editingIndex: Int?
     let onSubmit: () -> Void
     let onChipTap: (Int) -> Void
+    let onDeleteChip: ((Int) -> Void)?
     let onAddNew: (() -> Void)?
 
     init(
@@ -51,6 +52,7 @@ struct SequentialSectionView: View {
         editingIndex: Int?,
         onSubmit: @escaping () -> Void,
         onChipTap: @escaping (Int) -> Void,
+        onDeleteChip: ((Int) -> Void)? = nil,
         onAddNew: (() -> Void)? = nil
     ) {
         self.title = title
@@ -62,6 +64,7 @@ struct SequentialSectionView: View {
         self.editingIndex = editingIndex
         self.onSubmit = onSubmit
         self.onChipTap = onChipTap
+        self.onDeleteChip = onDeleteChip
         self.onAddNew = onAddNew
     }
 
@@ -70,11 +73,16 @@ struct SequentialSectionView: View {
     }
 
     private var progressText: String {
-        let countText = "\(items.count) of \(slotCount)"
+        let formatKey = String(localized: "%d of %d")
+        let editingFormatKey = String(localized: "%d of %d — editing")
+        let currentSlot: Int
         if let idx = editingIndex {
-            return "\(countText) — editing \(idx + 1)"
+            currentSlot = idx + 1
+            return String(format: editingFormatKey, currentSlot, slotCount)
+        } else {
+            currentSlot = min(items.count + 1, slotCount)
+            return String(format: formatKey, currentSlot, slotCount)
         }
-        return countText
     }
 
     private var showAddChip: Bool {
@@ -82,24 +90,43 @@ struct SequentialSectionView: View {
         return editingIndex != nil || items.count < slotCount
     }
 
+    @State private var isDeletionMode = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.textPrimary)
+            HStack {
+                Text(title)
+                    .font(AppTheme.warmPaperHeader)
+                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer(minLength: 8)
+                if isDeletionMode {
+                    Button(String(localized: "Done")) {
+                        isDeletionMode = false
+                    }
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.textPrimary)
+                }
+            }
 
             if !items.isEmpty || showAddChip {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                             ChipView(
                                 label: item.displayLabel,
                                 isTruncated: item.isTruncated,
-                                onTap: { onChipTap(index) }
+                                isDeletionMode: isDeletionMode,
+                                onTap: { onChipTap(index) },
+                                onDelete: onDeleteChip.map { handler in { handler(index) } },
+                                onEnterDeletionMode: { isDeletionMode = true },
+                                onExitDeletionMode: { isDeletionMode = false }
                             )
                         }
                         if showAddChip, let addNew = onAddNew {
-                            AddChipView(onTap: addNew)
+                            AddChipView(onTap: {
+                                isDeletionMode = false
+                                addNew()
+                            })
                         }
                     }
                 }
@@ -118,6 +145,9 @@ struct SequentialSectionView: View {
             Text(progressText)
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.textMuted)
+        }
+        .onChange(of: items.count) { _, count in
+            if count == 0 { isDeletionMode = false }
         }
     }
 }

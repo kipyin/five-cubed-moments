@@ -5,7 +5,12 @@ final class JournalUITests: XCTestCase {
     private func launchApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += ["-ui-testing"]
+        app.launchEnvironment["FIVECUBED_UI_TESTING"] = "1"
         app.launch()
+        XCTAssertTrue(
+            app.staticTexts["Gratitudes"].waitForExistence(timeout: 5),
+            "Expected UI test launch to bypass onboarding and open Today screen."
+        )
         return app
     }
 

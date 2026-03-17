@@ -85,20 +85,35 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
         recurringPeople: [ReviewInsightTheme]
     ) -> String {
         if let topNeed = recurringNeeds.first, topNeed.count > 1 {
-            return "You mentioned \(topNeed.label) \(topNeed.count) times this week."
+            return String(
+                format: String(localized: "You mentioned %1$@ %2$lld times this week."),
+                topNeed.label,
+                topNeed.count
+            )
         }
         if let topPerson = recurringPeople.first, topPerson.count > 1 {
-            return "You kept \(topPerson.label) in mind \(topPerson.count) times this week."
+            return String(
+                format: String(localized: "You kept %1$@ in mind %2$lld times this week."),
+                topPerson.label,
+                topPerson.count
+            )
         }
         if let topGratitude = recurringGratitudes.first, topGratitude.count > 1 {
-            return "You returned to \(topGratitude.label) \(topGratitude.count) times this week."
+            return String(
+                format: String(localized: "You returned to %1$@ %2$lld times this week."),
+                topGratitude.label,
+                topGratitude.count
+            )
         }
 
         if entries.isEmpty {
-            return "Start with one reflection today to build your weekly review."
+            return String(localized: "Start with one reflection today to build your weekly review.")
         }
 
-        return "You showed up for reflection on \(entries.count) day\(entries.count == 1 ? "" : "s") this week."
+        return String(
+            format: String(localized: "You showed up for reflection on %lld day(s) this week."),
+            entries.count
+        )
     }
 
     private func continuityPrompt(
@@ -107,15 +122,24 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
         recurringPeople: [ReviewInsightTheme]
     ) -> String {
         if let topNeed = recurringNeeds.first {
-            return "What is one small step you can take to support \(topNeed.label) tomorrow?"
+            return String(
+                format: String(localized: "What is one small step you can take to support %@ tomorrow?"),
+                topNeed.label
+            )
         }
         if let topPerson = recurringPeople.first {
-            return "How could you connect with \(topPerson.label) in a meaningful way this week?"
+            return String(
+                format: String(localized: "How could you connect with %@ in a meaningful way this week?"),
+                topPerson.label
+            )
         }
         if let topGratitude = recurringGratitudes.first {
-            return "How can you carry \(topGratitude.label) into tomorrow?"
+            return String(
+                format: String(localized: "How can you carry %@ into tomorrow?"),
+                topGratitude.label
+            )
         }
-        return "What feels most important to carry into next week?"
+        return String(localized: "What feels most important to carry into next week?")
     }
 
     private func narrativeSummary(
@@ -128,21 +152,30 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
 
         var parts: [String] = []
         if let gratitude = recurringGratitudes.first {
-            parts.append("gratitude around \(gratitude.label)")
+            parts.append(
+                String(format: String(localized: "gratitude around %@"), gratitude.label)
+            )
         }
         if let need = recurringNeeds.first {
-            parts.append("a recurring need for \(need.label)")
+            parts.append(
+                String(format: String(localized: "a recurring need for %@"), need.label)
+            )
         }
         if let person = recurringPeople.first {
-            parts.append("care for \(person.label)")
+            parts.append(
+                String(format: String(localized: "care for %@"), person.label)
+            )
         }
 
         if parts.isEmpty {
-            return "You kept a steady reflection rhythm this week."
+            return String(localized: "You kept a steady reflection rhythm this week.")
         }
 
         let joined = ListFormatter.localizedString(byJoining: parts)
-        return "This week you reflected on \(joined)."
+        return String(
+            format: String(localized: "This week you reflected on %@."),
+            joined
+        )
     }
 
     private func normalizeThemeLabel(_ value: String) -> String {

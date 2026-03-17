@@ -4,15 +4,21 @@ import Foundation
 struct DeterministicChipLabelSummarizer: Summarizer {
     private let maxWordCount = 5
     private let maxChineseCharacterCount = 5
+    private let maxLabelChars = 20
 
     func summarize(_ sentence: String, section: SummarizationSection) async throws -> SummarizationResult {
-        summarizeSync(sentence)
+        summarizeSync(sentence, section: section)
     }
 
-    func summarizeSync(_ sentence: String) -> SummarizationResult {
+    func summarizeSync(_ sentence: String, section: SummarizationSection) -> SummarizationResult {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             return SummarizationResult(label: "", isTruncated: false)
+        }
+
+        // Keep person names visible in mixed-language entries like "为 Amy 祷告平安".
+        if section == .person, containsLatinLetters(trimmed) {
+            return summarizeNonChineseText(trimmed)
         }
 
         if isPrimarilyChinese(trimmed) {
@@ -34,9 +40,9 @@ struct DeterministicChipLabelSummarizer: Summarizer {
         }
 
         if !labelCharacters.isEmpty {
-            return SummarizationResult(
-                label: String(labelCharacters),
-                isTruncated: chineseCharacterCount > maxChineseCharacterCount
+            return capLabel(
+                String(labelCharacters),
+                alreadyTruncated: chineseCharacterCount > maxChineseCharacterCount
             )
         }
 
@@ -57,23 +63,38 @@ struct DeterministicChipLabelSummarizer: Summarizer {
         }
 
         let label = words.prefix(maxWordCount).joined(separator: " ")
-        return SummarizationResult(label: label, isTruncated: words.count > maxWordCount)
+        return capLabel(label, alreadyTruncated: words.count > maxWordCount)
+    }
+
+    private func capLabel(_ label: String, alreadyTruncated: Bool) -> SummarizationResult {
+        guard label.count > maxLabelChars else {
+            return SummarizationResult(label: label, isTruncated: alreadyTruncated)
+        }
+        return SummarizationResult(label: String(label.prefix(maxLabelChars)), isTruncated: true)
     }
 
     private func isPrimarilyChinese(_ text: String) -> Bool {
         var hanScalarCount = 0
-        var latinLetterCount = 0
+        var nonHanLetterCount = 0
 
         for scalar in text.unicodeScalars {
             if Self.isHanScalar(scalar) {
                 hanScalarCount += 1
             } else if CharacterSet.letters.contains(scalar) {
-                latinLetterCount += 1
+                nonHanLetterCount += 1
             }
         }
 
         guard hanScalarCount > 0 else { return false }
-        return hanScalarCount >= latinLetterCount
+        return hanScalarCount >= nonHanLetterCount
+    }
+
+    private func containsLatinLetters(_ text: String) -> Bool {
+        text.unicodeScalars.contains { scalar in
+            (0x0041...0x005A).contains(scalar.value)
+                || (0x0061...0x007A).contains(scalar.value)
+                || (0x00C0...0x024F).contains(scalar.value)
+        }
     }
 
     fileprivate static func isHanScalar(_ scalar: UnicodeScalar) -> Bool {
@@ -84,7 +105,8 @@ struct DeterministicChipLabelSummarizer: Summarizer {
              0x20000...0x2A6DF, // CJK Unified Ideographs Extension B
              0x2A700...0x2B73F, // CJK Unified Ideographs Extension C
              0x2B740...0x2B81F, // CJK Unified Ideographs Extension D
-             0x2B820...0x2CEAF, // CJK Unified Ideographs Extension E/F
+             0x2B820...0x2CEAF, // CJK Unified Ideographs Extension E
+             0x2CEB0...0x2EBEF, // CJK Unified Ideographs Extension F
              0x2F800...0x2FA1F: // CJK Compatibility Ideographs Supplement
             return true
         default:

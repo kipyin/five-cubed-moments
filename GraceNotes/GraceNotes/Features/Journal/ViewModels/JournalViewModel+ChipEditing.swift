@@ -11,17 +11,21 @@ extension JournalViewModel {
             do {
                 return try await summarizer.summarize(text, section: section)
             } catch {
-                return DeterministicChipLabelSummarizer().summarizeSync(text)
+                return DeterministicChipLabelSummarizer().summarizeSync(text, section: section)
             }
         }.value
     }
 
-    private func makeInterimResult(for text: String) -> SummarizationResult {
-        deterministicChipLabelSummarizer.summarizeSync(text)
+    private func makeInterimResult(for text: String, section: SummarizationSection) -> SummarizationResult {
+        deterministicChipLabelSummarizer.summarizeSync(text, section: section)
     }
 
-    private func makeInterimItem(fullText: String, id: UUID = UUID()) -> JournalItem {
-        let interim = makeInterimResult(for: fullText)
+    private func makeInterimItem(
+        fullText: String,
+        section: SummarizationSection,
+        id: UUID = UUID()
+    ) -> JournalItem {
+        let interim = makeInterimResult(for: fullText, section: section)
         JournalItem(
             fullText: fullText,
             chipLabel: interim.label,
@@ -121,7 +125,7 @@ extension JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return nil }
 
-        gratitudes[index] = makeInterimItem(fullText: trimmed, id: gratitudes[index].id)
+        gratitudes[index] = makeInterimItem(fullText: trimmed, section: .gratitude, id: gratitudes[index].id)
         scheduleAutosave()
         return index
     }
@@ -131,7 +135,7 @@ extension JournalViewModel {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, gratitudes.count < Self.slotCount else { return nil }
 
-        gratitudes.append(makeInterimItem(fullText: trimmed))
+        gratitudes.append(makeInterimItem(fullText: trimmed, section: .gratitude))
         scheduleAutosave()
         return gratitudes.count - 1
     }
@@ -141,7 +145,7 @@ extension JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return nil }
 
-        needs[index] = makeInterimItem(fullText: trimmed, id: needs[index].id)
+        needs[index] = makeInterimItem(fullText: trimmed, section: .need, id: needs[index].id)
         scheduleAutosave()
         return index
     }
@@ -151,7 +155,7 @@ extension JournalViewModel {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, needs.count < Self.slotCount else { return nil }
 
-        needs.append(makeInterimItem(fullText: trimmed))
+        needs.append(makeInterimItem(fullText: trimmed, section: .need))
         scheduleAutosave()
         return needs.count - 1
     }
@@ -161,7 +165,7 @@ extension JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return nil }
 
-        people[index] = makeInterimItem(fullText: trimmed, id: people[index].id)
+        people[index] = makeInterimItem(fullText: trimmed, section: .person, id: people[index].id)
         scheduleAutosave()
         return index
     }
@@ -171,7 +175,7 @@ extension JournalViewModel {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, people.count < Self.slotCount else { return nil }
 
-        people.append(makeInterimItem(fullText: trimmed))
+        people.append(makeInterimItem(fullText: trimmed, section: .person))
         scheduleAutosave()
         return people.count - 1
     }

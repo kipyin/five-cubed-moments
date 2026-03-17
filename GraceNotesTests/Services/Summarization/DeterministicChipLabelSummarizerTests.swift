@@ -41,4 +41,21 @@ final class DeterministicChipLabelSummarizerTests: XCTestCase {
         XCTAssertEqual(result.label, "我今天感恩")
         XCTAssertFalse(result.isTruncated)
     }
+
+    func test_summarize_personMixedLanguage_preservesLatinName() async throws {
+        let input = "为 Amy 祷告平安"
+        let result = try await sut.summarize(input, section: .person)
+
+        XCTAssertEqual(result.label, input)
+        XCTAssertTrue(result.label.contains("Amy"))
+        XCTAssertFalse(result.isTruncated)
+    }
+
+    func test_summarize_fiveOrFewerWords_overTwentyChars_capsToChipBudget() async throws {
+        let input = "Extraordinary opportunities for collaboration"
+        let result = try await sut.summarize(input, section: .need)
+
+        XCTAssertEqual(result.label, String(input.prefix(20)))
+        XCTAssertTrue(result.isTruncated)
+    }
 }

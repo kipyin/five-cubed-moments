@@ -92,8 +92,25 @@ final class JournalViewModelMutationTests: XCTestCase {
 
         XCTAssertEqual(result, 0)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, longText)
-        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "A very long gratitude that")
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, String(longText.prefix(20)))
         XCTAssertTrue(viewModel.gratitudes[0].isTruncated)
+    }
+
+    func test_updatePersonImmediate_mixedLanguage_preservesLatinNameInChipLabel() throws {
+        try skipIfKnownHostedSwiftDataCrash()
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
+
+        viewModel.loadEntry(for: now, using: context)
+        viewModel.people = [JournalItem(fullText: "Old person", chipLabel: "Old person", isTruncated: false)]
+
+        let input = "为 Amy 祷告平安"
+        let result = viewModel.updatePersonImmediate(at: 0, fullText: input)
+
+        XCTAssertEqual(result, 0)
+        XCTAssertEqual(viewModel.people[0].chipLabel, input)
+        XCTAssertFalse(viewModel.people[0].isTruncated)
     }
 
     func test_addGratitudeImmediate_appendsWithInterimLabel() throws {

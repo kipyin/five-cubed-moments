@@ -96,6 +96,23 @@ final class JournalViewModelMutationTests: XCTestCase {
         XCTAssertTrue(viewModel.gratitudes[0].isTruncated)
     }
 
+    func test_updatePersonImmediate_mixedLanguage_preservesLatinNameInChipLabel() throws {
+        try skipIfKnownHostedSwiftDataCrash()
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
+
+        viewModel.loadEntry(for: now, using: context)
+        viewModel.people = [JournalItem(fullText: "Old person", chipLabel: "Old person", isTruncated: false)]
+
+        let input = "为 Amy 祷告平安"
+        let result = viewModel.updatePersonImmediate(at: 0, fullText: input)
+
+        XCTAssertEqual(result, 0)
+        XCTAssertEqual(viewModel.people[0].chipLabel, input)
+        XCTAssertFalse(viewModel.people[0].isTruncated)
+    }
+
     func test_addGratitudeImmediate_appendsWithInterimLabel() throws {
         try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
@@ -110,6 +127,51 @@ final class JournalViewModelMutationTests: XCTestCase {
         XCTAssertEqual(viewModel.gratitudes.count, 1)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, "New gratitude")
         XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "New gratitude")
+    }
+
+    func test_renameGratitudeLabel_updatesLabelWithoutChangingFullText() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addGratitude("I am grateful for my family.")
+
+        let didRename = viewModel.renameGratitudeLabel(at: 0, to: "Family support always")
+
+        XCTAssertTrue(didRename)
+        XCTAssertEqual(viewModel.gratitudes[0].fullText, "I am grateful for my family.")
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "Family support always")
+    }
+
+    func test_renameNeedLabel_rejectsWhitespaceLabel() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addNeed("I need quiet time.")
+        let originalLabel = viewModel.needs[0].chipLabel
+
+        let didRename = viewModel.renameNeedLabel(at: 0, to: " \n ")
+
+        XCTAssertFalse(didRename)
+        XCTAssertEqual(viewModel.needs[0].chipLabel, originalLabel)
+    }
+
+    func test_renamePersonLabel_whenUnchanged_returnsFalse() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addPerson("Pray for Alice this week")
+        let existingLabel = viewModel.people[0].chipLabel ?? ""
+
+        let didRename = viewModel.renamePersonLabel(at: 0, to: existingLabel)
+
+        XCTAssertFalse(didRename)
+        XCTAssertEqual(viewModel.people[0].chipLabel, existingLabel)
     }
 
     func test_removeGratitude_validIndex_removesAndPersists() async throws {
@@ -172,6 +234,37 @@ final class JournalViewModelMutationTests: XCTestCase {
         XCTAssertTrue(removed)
         XCTAssertEqual(viewModel.people.count, 1)
         XCTAssertEqual(viewModel.people[0].fullText, "Alice")
+    }
+
+    func test_moveGratitude_validMove_reordersItems() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addGratitude("First")
+        await viewModel.addGratitude("Second")
+        await viewModel.addGratitude("Third")
+
+        let moved = viewModel.moveGratitude(from: 0, to: 3)
+
+        XCTAssertTrue(moved)
+        XCTAssertEqual(viewModel.gratitudes.map(\.fullText), ["Second", "Third", "First"])
+    }
+
+    func test_moveNeed_invalidDestination_returnsFalse() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addNeed("Need one")
+        await viewModel.addNeed("Need two")
+
+        let moved = viewModel.moveNeed(from: 1, to: 99)
+
+        XCTAssertFalse(moved)
+        XCTAssertEqual(viewModel.needs.map(\.fullText), ["Need one", "Need two"])
     }
 
     private func makeViewModel(now: Date) -> JournalViewModel {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import XCTest
 @testable import GraceNotes
 
@@ -100,5 +101,85 @@ final class JournalScreenChipHandlingTests: XCTestCase {
 
         XCTAssertNil(editingIndex)
         XCTAssertEqual(input, "")
+    }
+
+    func test_performMove_whenEditingMovedItem_updatesEditingIndexToDestination() {
+        var editingIndex: Int? = 0
+
+        JournalScreenChipHandling.performMove(
+            from: 0,
+            to: 3,
+            move: { _, _ in true },
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 })
+        )
+
+        XCTAssertEqual(editingIndex, 2)
+    }
+
+    func test_performMove_whenEditingItemBetweenRange_shiftsEditingIndex() {
+        var editingIndex: Int? = 2
+
+        JournalScreenChipHandling.performMove(
+            from: 0,
+            to: 3,
+            move: { _, _ in true },
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 })
+        )
+
+        XCTAssertEqual(editingIndex, 1)
+    }
+}
+
+@MainActor
+final class ChipReorderDropDelegateTests: XCTestCase {
+    private struct MockDropInfo: DropInfo {
+        var location: CGPoint = .zero
+
+        func hasItemsConforming(to contentTypes: [UTType]) -> Bool {
+            true
+        }
+
+        func itemProviders(for contentTypes: [UTType]) -> [NSItemProvider] {
+            []
+        }
+    }
+
+    func test_dropEntered_doesNotApplyMoveUntilDropCompletes() {
+        let first = JournalItem(fullText: "First")
+        let second = JournalItem(fullText: "Second")
+        let items = [first, second]
+        var draggingItemID: UUID? = first.id
+        var didMove = false
+
+        let delegate = ChipReorderDropDelegate(
+            targetIndex: 1,
+            items: items,
+            draggingItemID: Binding(get: { draggingItemID }, set: { draggingItemID = $0 }),
+            onMoveChip: { _, _ in didMove = true }
+        )
+
+        delegate.dropEntered(info: MockDropInfo())
+        XCTAssertFalse(didMove)
+
+        let didHandleDrop = delegate.performDrop(info: MockDropInfo())
+        XCTAssertTrue(didHandleDrop)
+        XCTAssertTrue(didMove)
+    }
+
+    func test_performDrop_withoutInternalDrag_returnsFalse() {
+        let item = JournalItem(fullText: "Only")
+        var draggingItemID: UUID?
+        var didMove = false
+        let delegate = ChipReorderDropDelegate(
+            targetIndex: 0,
+            items: [item],
+            draggingItemID: Binding(get: { draggingItemID }, set: { draggingItemID = $0 }),
+            onMoveChip: { _, _ in didMove = true }
+        )
+
+        let didHandleDrop = delegate.performDrop(info: MockDropInfo())
+
+        XCTAssertFalse(didHandleDrop)
+        XCTAssertFalse(didMove)
     }
 }

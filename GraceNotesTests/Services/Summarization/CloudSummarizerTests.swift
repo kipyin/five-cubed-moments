@@ -201,4 +201,21 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertEqual(result.label, "Alice")
         XCTAssertFalse(result.isTruncated)
     }
+
+    func test_summarize_networkError_withDefaultFallback_usesDeterministicFallback() async throws {
+        MockURLProtocol.mockResponse = { _ in
+            (nil, nil, URLError(.notConnectedToInternet))
+        }
+
+        let summarizer = CloudSummarizer(
+            apiKey: "test-key",
+            urlSession: urlSession
+        )
+
+        let input = "Extraordinary opportunities for collaboration"
+        let result = try await summarizer.summarize(input, section: .need)
+
+        XCTAssertEqual(result.label, String(input.prefix(20)))
+        XCTAssertTrue(result.isTruncated)
+    }
 }

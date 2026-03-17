@@ -55,6 +55,8 @@ struct JournalScreen: View {
                     editingIndex: editingGratitudeIndex,
                     onSubmit: { Task { await submitGratitude() } },
                     onChipTap: { index in chipTapped(section: .gratitude, index: index) },
+                    onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
+                    onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
                     onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
                     onAddNew: { addNewTapped(section: .gratitude) }
                 )
@@ -69,6 +71,8 @@ struct JournalScreen: View {
                     editingIndex: editingNeedIndex,
                     onSubmit: { Task { await submitNeed() } },
                     onChipTap: { index in chipTapped(section: .need, index: index) },
+                    onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
+                    onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
                     onDeleteChip: { index in deleteChip(section: .need, index: index) },
                     onAddNew: { addNewTapped(section: .need) }
                 )
@@ -83,6 +87,8 @@ struct JournalScreen: View {
                     editingIndex: editingPersonIndex,
                     onSubmit: { Task { await submitPerson() } },
                     onChipTap: { index in chipTapped(section: .person, index: index) },
+                    onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
+                    onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
                     onDeleteChip: { index in deleteChip(section: .person, index: index) },
                     onAddNew: { addNewTapped(section: .person) }
                 )
@@ -225,6 +231,8 @@ private extension JournalScreen {
     private struct ChipSectionAdapter {
         let input: Binding<String>
         let editingIndex: Binding<Int?>
+        let renameLabel: (Int, String) -> Bool
+        let move: (Int, Int) -> Bool
         let remove: (Int) -> Bool
         let operations: ChipSectionOperations
     }
@@ -244,6 +252,8 @@ private extension JournalScreen {
         ChipSectionAdapter(
             input: $gratitudeInput,
             editingIndex: $editingGratitudeIndex,
+            renameLabel: { index, label in viewModel.renameGratitudeLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.moveGratitude(from: from, to: toOffset) },
             remove: { index in viewModel.removeGratitude(at: index) },
             operations: ChipSectionOperations(
                 updateImmediate: { index, text in
@@ -263,6 +273,8 @@ private extension JournalScreen {
         ChipSectionAdapter(
             input: $needInput,
             editingIndex: $editingNeedIndex,
+            renameLabel: { index, label in viewModel.renameNeedLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.moveNeed(from: from, to: toOffset) },
             remove: { index in viewModel.removeNeed(at: index) },
             operations: ChipSectionOperations(
                 updateImmediate: { index, text in
@@ -282,6 +294,8 @@ private extension JournalScreen {
         ChipSectionAdapter(
             input: $personInput,
             editingIndex: $editingPersonIndex,
+            renameLabel: { index, label in viewModel.renamePersonLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.movePerson(from: from, to: toOffset) },
             remove: { index in viewModel.removePerson(at: index) },
             operations: ChipSectionOperations(
                 updateImmediate: { index, text in
@@ -308,6 +322,21 @@ private extension JournalScreen {
             index: index,
             remove: adapter.remove,
             input: adapter.input,
+            editingIndex: adapter.editingIndex
+        )
+    }
+
+    private func renameChip(section: ChipSection, index: Int, label: String) {
+        let adapter = chipSectionAdapter(for: section)
+        _ = adapter.renameLabel(index, label)
+    }
+
+    private func moveChip(section: ChipSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
+        let adapter = chipSectionAdapter(for: section)
+        JournalScreenChipHandling.performMove(
+            from: sourceIndex,
+            to: destinationOffset,
+            move: adapter.move,
             editingIndex: adapter.editingIndex
         )
     }

@@ -28,7 +28,6 @@ final class JournalViewModel {
     private(set) var streakSummary: StreakSummary = .empty
 
     static let slotCount = JournalEntry.slotCount
-
     @ObservationIgnored private let calendar: Calendar
     @ObservationIgnored private let nowProvider: () -> Date
     @ObservationIgnored private let repository: JournalRepository
@@ -258,7 +257,6 @@ final class JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return false }
 
-        // Fix 3: Skip summarization when fullText unchanged.
         guard trimmed != gratitudes[index].fullText else { return true }
 
         let result = await summarizeForChip(trimmed, section: .gratitude)
@@ -277,7 +275,6 @@ final class JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return false }
 
-        // Fix 3: Skip summarization when fullText unchanged.
         guard trimmed != needs[index].fullText else { return true }
 
         let result = await summarizeForChip(trimmed, section: .need)
@@ -296,7 +293,6 @@ final class JournalViewModel {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return false }
 
-        // Fix 3: Skip summarization when fullText unchanged.
         guard trimmed != people[index].fullText else { return true }
 
         let result = await summarizeForChip(trimmed, section: .person)
@@ -488,11 +484,18 @@ final class JournalViewModel {
         return people[index].fullText
     }
 
-    func exportSnapshot() -> JournalExportPayload {
+}
+
+extension JournalViewModel {
+    private static let exportDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale.current
         formatter.dateStyle = .long
-        let dateStr = formatter.string(from: entryDate)
+        return formatter
+    }()
+
+    func exportSnapshot() -> JournalExportPayload {
+        let dateStr = Self.exportDateFormatter.string(from: entryDate)
         return JournalExportPayload(
             dateFormatted: dateStr,
             gratitudes: gratitudes.map(\.fullText),

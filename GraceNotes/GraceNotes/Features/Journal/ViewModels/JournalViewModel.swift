@@ -25,7 +25,6 @@ final class JournalViewModel {
     private(set) var streakSummary: StreakSummary = .empty
 
     static let slotCount = JournalEntry.slotCount
-    static let interimLabelMaxChars = 20
     @ObservationIgnored private let calendar: Calendar
     @ObservationIgnored private let nowProvider: () -> Date
     @ObservationIgnored private let repository: JournalRepository

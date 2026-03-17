@@ -1,33 +1,31 @@
 import Foundation
 
 extension JournalViewModel {
+    private var deterministicChipLabelSummarizer: DeterministicChipLabelSummarizer {
+        DeterministicChipLabelSummarizer()
+    }
+
     private func summarizeForChip(_ text: String, section: SummarizationSection) async -> SummarizationResult {
         await Task.detached(priority: .utility) { [summarizerProvider] in
             let summarizer = summarizerProvider.currentSummarizer()
             do {
                 return try await summarizer.summarize(text, section: section)
             } catch {
-                return (try? await NaturalLanguageSummarizer().summarize(text, section: section))
-                    ?? SummarizationResult(
-                        label: String(text.prefix(Self.interimLabelMaxChars)),
-                        isTruncated: text.count > Self.interimLabelMaxChars
-                    )
+                return DeterministicChipLabelSummarizer().summarizeSync(text)
             }
         }.value
     }
 
     private func makeInterimResult(for text: String) -> SummarizationResult {
-        SummarizationResult(
-            label: String(text.prefix(Self.interimLabelMaxChars)),
-            isTruncated: text.count > Self.interimLabelMaxChars
-        )
+        deterministicChipLabelSummarizer.summarizeSync(text)
     }
 
     private func makeInterimItem(fullText: String, id: UUID = UUID()) -> JournalItem {
+        let interim = makeInterimResult(for: fullText)
         JournalItem(
             fullText: fullText,
-            chipLabel: String(fullText.prefix(Self.interimLabelMaxChars)),
-            isTruncated: fullText.count > Self.interimLabelMaxChars,
+            chipLabel: interim.label,
+            isTruncated: interim.isTruncated,
             id: id
         )
     }

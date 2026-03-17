@@ -92,7 +92,7 @@ final class JournalViewModelMutationTests: XCTestCase {
 
         XCTAssertEqual(result, 0)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, longText)
-        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, String(longText.prefix(20)))
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "A very long gratitude that")
         XCTAssertTrue(viewModel.gratitudes[0].isTruncated)
     }
 

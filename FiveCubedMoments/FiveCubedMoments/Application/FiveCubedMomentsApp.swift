@@ -20,6 +20,7 @@ struct FiveCubedMomentsApp: App {
     private let isRunningTests: Bool
     @State private var hasRunDeferredStartupTasks = false
     @State private var selectedTab: AppTab = .today
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     init() {
         let startupTrace = PerformanceTrace.begin("App.init")
@@ -33,6 +34,10 @@ struct FiveCubedMomentsApp: App {
             Group {
                 if isRunningTests {
                     Color.clear
+                } else if !hasCompletedOnboarding {
+                    OnboardingScreen {
+                        hasCompletedOnboarding = true
+                    }
                 } else {
                     TabView(selection: $selectedTab) {
                         NavigationStack {

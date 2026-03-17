@@ -79,6 +79,7 @@
       }
     },
     "Completed for today" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -110,7 +111,16 @@
         }
       }
     },
+    "Continue" : {
+
+    },
+    "Continue with" : {
+
+    },
     "Daily reminder" : {
+
+    },
+    "Data & Privacy" : {
 
     },
     "Date" : {
@@ -164,10 +174,22 @@
     "Done" : {
 
     },
+    "Export journal data (JSON)" : {
+
+    },
+    "Exporting…" : {
+
+    },
     "Five Cubed Moments" : {
 
     },
+    "Full 5³ complete" : {
+
+    },
     "Get one daily local reminder to complete today's 5³." : {
+
+    },
+    "Get Started" : {
 
     },
     "Gratitudes" : {
@@ -187,6 +209,7 @@
       }
     },
     "History" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -285,6 +308,9 @@
     "Perfect %lld" : {
 
     },
+    "Quick check-in" : {
+
+    },
     "Reading Notes" : {
       "localizations" : {
         "en" : {
@@ -321,6 +347,15 @@
 
     },
     "Reminders" : {
+
+    },
+    "Review" : {
+
+    },
+    "Review Insights" : {
+
+    },
+    "Review mode" : {
 
     },
     "Save to Photos" : {
@@ -374,6 +409,12 @@
         }
       }
     },
+    "Source" : {
+
+    },
+    "Standard reflection" : {
+
+    },
     "Start with today." : {
       "localizations" : {
         "en" : {
@@ -389,6 +430,9 @@
           }
         }
       }
+    },
+    "Start writing this week to unlock review insights." : {
+
     },
     "Summarization" : {
       "localizations" : {
@@ -406,7 +450,13 @@
         }
       }
     },
+    "Sync with iCloud" : {
+
+    },
     "Take a moment to complete today's 5³." : {
+
+    },
+    "This Week" : {
 
     },
     "Today" : {
@@ -456,6 +506,9 @@
           }
         }
       }
+    },
+    "Unable to export data" : {
+
     },
     "Unable to load today's entry." : {
       "localizations" : {
@@ -508,6 +561,9 @@
     "Unable to update reminder" : {
 
     },
+    "Use AI review insights" : {
+
+    },
     "Use cloud summarization" : {
       "localizations" : {
         "en" : {
@@ -523,6 +579,9 @@
           }
         }
       }
+    },
+    "Welcome to Five Cubed Moments" : {
+
     },
     "What do you need today?" : {
       "localizations" : {

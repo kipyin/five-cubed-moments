@@ -1,0 +1,74 @@
+import Foundation
+
+struct ReviewInsightsProvider: Sendable {
+    static let useAIReviewInsightsKey = "useAIReviewInsights"
+    private static let placeholderApiKey = "YOUR_KEY_HERE"
+
+    private let deterministicGenerator: any ReviewInsightsGenerating
+    private let cloudGenerator: (any ReviewInsightsGenerating)?
+
+    init(
+        deterministicGenerator: any ReviewInsightsGenerating = DeterministicReviewInsightsGenerator(),
+        cloudGenerator: (any ReviewInsightsGenerating)? = nil,
+        apiKey: String = ApiSecrets.cloudApiKey
+    ) {
+        self.deterministicGenerator = deterministicGenerator
+
+        if let cloudGenerator {
+            self.cloudGenerator = cloudGenerator
+        } else if apiKey != Self.placeholderApiKey {
+            self.cloudGenerator = CloudReviewInsightsGenerator(apiKey: apiKey)
+        } else {
+            self.cloudGenerator = nil
+        }
+    }
+
+    func generateInsights(
+        from entries: [JournalEntry],
+        referenceDate: Date,
+        calendar: Calendar = .current
+    ) async -> ReviewInsights {
+        let useAI = UserDefaults.standard.bool(forKey: Self.useAIReviewInsightsKey)
+
+        if useAI, let cloudGenerator {
+            if let cloudInsights = try? await cloudGenerator.generateInsights(
+                from: entries,
+                referenceDate: referenceDate,
+                calendar: calendar
+            ) {
+                return cloudInsights
+            }
+        }
+
+        if let deterministicInsights = try? await deterministicGenerator.generateInsights(
+            from: entries,
+            referenceDate: referenceDate,
+            calendar: calendar
+        ) {
+            return deterministicInsights
+        }
+
+        let weekRange = weekDateRange(containing: referenceDate, calendar: calendar)
+        return ReviewInsights(
+            source: .deterministic,
+            generatedAt: referenceDate,
+            weekStart: weekRange.lowerBound,
+            weekEnd: weekRange.upperBound,
+            recurringGratitudes: [],
+            recurringNeeds: [],
+            recurringPeople: [],
+            resurfacingMessage: "Start with one reflection today to build your weekly review.",
+            continuityPrompt: "What feels most important to carry into next week?",
+            narrativeSummary: nil
+        )
+    }
+
+    private func weekDateRange(containing date: Date, calendar: Calendar) -> Range<Date> {
+        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        let start = calendar.date(from: components) ?? calendar.startOfDay(for: date)
+        let end = calendar.date(byAdding: .day, value: 7, to: start) ?? start
+        return start..<end
+    }
+
+    nonisolated(unsafe) static let shared = ReviewInsightsProvider()
+}

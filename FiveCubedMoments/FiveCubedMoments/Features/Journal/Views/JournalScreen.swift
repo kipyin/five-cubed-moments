@@ -41,7 +41,7 @@ struct JournalScreen: View {
             VStack(alignment: .leading, spacing: 24) {
                 DateSectionView(
                     entryDate: viewModel.entryDate,
-                    completedToday: viewModel.completedToday,
+                    completionLevel: viewModel.completionLevel,
                     streakSummary: viewModel.streakSummary
                 )
 

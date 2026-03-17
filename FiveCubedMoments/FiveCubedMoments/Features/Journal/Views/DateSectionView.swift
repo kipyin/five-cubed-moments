@@ -3,7 +3,7 @@ import SwiftUI
 /// Displays the journal entry date and completion status.
 struct DateSectionView: View {
     let entryDate: Date
-    let completedToday: Bool
+    let completionLevel: JournalCompletionLevel
     let streakSummary: StreakSummary
 
     var body: some View {
@@ -15,15 +15,7 @@ struct DateSectionView: View {
                 Text(entryDate.formatted(date: .abbreviated, time: .omitted))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
-                if completedToday {
-                    Label("Completed for today", systemImage: "checkmark.circle.fill")
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.complete)
-                } else {
-                    Label("In progress", systemImage: "pencil.circle")
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textMuted)
-                }
+                completionStatusLabel
             }
 
             HStack(spacing: 12) {
@@ -48,6 +40,28 @@ struct DateSectionView: View {
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(streakSummary.perfectDoneToday ? AppTheme.complete : AppTheme.textMuted)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var completionStatusLabel: some View {
+        switch completionLevel {
+        case .fullFiveCubed:
+            Label("Full 5³ complete", systemImage: "checkmark.circle.fill")
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.complete)
+        case .standardReflection:
+            Label("Standard reflection", systemImage: "checkmark.seal.fill")
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.accent)
+        case .quickCheckIn:
+            Label("Quick check-in", systemImage: "sparkles")
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.textMuted)
+        case .none:
+            Label("In progress", systemImage: "pencil.circle")
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.textMuted)
         }
     }
 }

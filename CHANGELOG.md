@@ -3,6 +3,20 @@
 ## [0.3.0] - Unreleased
 
 ### Added
+- (none)
+
+### Changed
+- (none)
+
+### Fixed
+- Chinese localization now fully covers Review, Settings, and Onboarding screens (including deterministic review insight copy)
+
+### Developer
+- (none)
+
+## [0.2.3] - 2026-03-17
+
+### Added
 - Daily local reminder support in Settings with a reminder toggle, time picker, and persisted reminder preferences
 - Reminder scheduling service (`ReminderScheduler`) with focused reminder settings constants (`ReminderSettings`)
 - Streak tracking with derived `basic` and `perfect` streaks computed from existing `JournalEntry` data
@@ -37,7 +51,6 @@
 - Review screen naming now matches product terminology in code (`ReviewScreen`)
 - Cloud review payloads are now sanitized/clamped (message length, theme counts, non-empty positive themes)
 - Shared iCloud sync defaults key now references a single source (`PersistenceController.iCloudSyncEnabledKey`)
-- Chinese localization now fully covers Review, Settings, and Onboarding screens (including deterministic review insight copy)
 
 ### Developer
 - Demo build configuration and scheme (`FiveCubedMoments (Demo)`) with `USE_DEMO_DATABASE` for running with pre-seeded sample data; `DemoDataSeeder` and `PerformanceTrace` utilities
@@ -50,7 +63,7 @@
 - Strengthened cloud review tests with meaningful thrown-error assertions and payload clamping checks
 - Updated iCloud entitlement container identifiers to the Grace Notes bundle naming
 
-## [0.2.2] - Unreleased
+## [0.2.2] - 2026-03-17
 
 ### Added
 - (none)

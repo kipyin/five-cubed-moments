@@ -45,7 +45,9 @@ struct DeterministicChipLabelSummarizer: Summarizer {
 
     private func summarizeNonChineseText(_ text: String) -> SummarizationResult {
         let words = text
-            .split(whereSeparator: { $0.unicodeScalars.allSatisfy { CharacterSet.whitespacesAndNewlines.contains($0) } })
+            .split(whereSeparator: {
+                $0.unicodeScalars.allSatisfy { CharacterSet.whitespacesAndNewlines.contains($0) }
+            })
             .map(String.init)
             .map { $0.trimmingCharacters(in: .punctuationCharacters) }
             .filter { !$0.isEmpty }

@@ -8,7 +8,11 @@ enum DemoDataSeeder {
     private static let seedVersionKey = "demoDataSeedVersion"
 
     static func seedIfNeeded(context: ModelContext, calendar: Calendar = .current) {
-        guard shouldSeed(context: context, calendar: calendar) else { return }
+        let seedTrace = PerformanceTrace.begin("DemoDataSeeder.seedIfNeeded")
+        guard shouldSeed(context: context, calendar: calendar) else {
+            PerformanceTrace.end("DemoDataSeeder.seedIfNeeded.skipped", startedAt: seedTrace)
+            return
+        }
 
         let now = Date.now
         let today = calendar.startOfDay(for: now)
@@ -21,7 +25,9 @@ enum DemoDataSeeder {
         do {
             try context.save()
             UserDefaults.standard.set(seedVersion, forKey: seedVersionKey)
+            PerformanceTrace.end("DemoDataSeeder.seedIfNeeded", startedAt: seedTrace)
         } catch {
+            PerformanceTrace.end("DemoDataSeeder.seedIfNeeded.failed", startedAt: seedTrace)
             assertionFailure("Failed to seed demo database: \(error)")
         }
     }

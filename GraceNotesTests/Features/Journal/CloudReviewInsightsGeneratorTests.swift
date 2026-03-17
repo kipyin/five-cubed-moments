@@ -1,5 +1,5 @@
 import XCTest
-@testable import FiveCubedMoments
+@testable import GraceNotes
 
 final class CloudReviewInsightsGeneratorTests: XCTestCase {
     private var urlSession: URLSession!

@@ -1,19 +1,38 @@
 # Changelog
 
-## [0.3.0] - 2026-03-17
+## [0.3.1] - 2026-03-17
 
 ### Added
 - (none)
 
 ### Changed
-- Onboarding copy now uses Grace Notes naming and non-`5³` progress wording (`Welcome to Grace Notes`, `fuller reflection sessions`)
+- Updated release and automation docs to align with current Grace Notes naming, release cadence, and test workflow.
+- Refined test and project configuration references to use current targets/schemes and simulator defaults.
 
 ### Fixed
-- Chinese localization now fully covers Review, Settings, and Onboarding screens (including deterministic review insight copy)
+- Removed remaining legacy entitlement and test-path references so project assets consistently use `GraceNotes*` naming.
 
 ### Developer
-- Rebranded project/app/test paths from `FiveCubedMoments*` to `GraceNotes*` and aligned Xcode schemes/module naming
-- Updated iCloud entitlement container identifiers to the Grace Notes bundle naming
+- Consolidated test-suite updates across Journal and repository coverage after the naming migration cleanup.
+- Continued maintenance pass on project metadata (`project.pbxproj`), `README.md`, and `Makefile` for release readiness.
+
+## [0.3.0] - 2026-03-17
+
+0.3.0 is a major rebranding release that moves the app and project identity from legacy Five Cubed Moments naming to **Grace Notes**.
+
+### Added
+- No net-new product features in this release; the focus is full naming and identity alignment across app experience and project configuration.
+
+### Changed
+- Onboarding now consistently uses Grace Notes product language, including the welcome headline (`Welcome to Grace Notes`).
+- Progress framing now uses less pressure-driven wording (`fuller reflection sessions`) instead of legacy `5³`-centric phrasing.
+
+### Fixed
+- Chinese localization now fully covers the renamed Review, Settings, and Onboarding surfaces, including deterministic review insight copy.
+
+### Developer
+- Renamed project, app, and test paths from legacy identifiers to `GraceNotes*`, with aligned module and Xcode scheme naming.
+- Updated iCloud entitlement container identifiers to match the Grace Notes bundle naming.
 
 ## [0.2.3] - 2026-03-17
 
@@ -28,7 +47,7 @@
 - Cloud AI weekly review insights generator with provider fallback to deterministic insights
 - Review tab summary card showing weekly narrative, recurring themes, resurfacing, and continuity prompt
 - Data export service for full journal JSON archive from Settings
-- iCloud/CloudKit capability wiring (`FiveCubedMoments.entitlements`) and cloud-capable SwiftData configuration path
+- iCloud/CloudKit capability wiring (`GraceNotes.entitlements`) and cloud-capable SwiftData configuration path
 - First-run onboarding screen introducing structure, review value, and low-pressure progress
 - Sprint-ready planning doc for review + onboarding execution (`review-onboarding-sprint-plan-2026-03-17.md`)
 
@@ -53,7 +72,7 @@
 - Shared iCloud sync defaults key now references a single source (`PersistenceController.iCloudSyncEnabledKey`)
 
 ### Developer
-- Demo build configuration and scheme (`FiveCubedMoments (Demo)`) with `USE_DEMO_DATABASE` for running with pre-seeded sample data; `DemoDataSeeder` and `PerformanceTrace` utilities
+- Demo build configuration and scheme (`GraceNotes (Demo)`) with `USE_DEMO_DATABASE` for running with pre-seeded sample data; `DemoDataSeeder` and `PerformanceTrace` utilities
 - Added `StreakCalculator` service and `StreakSummary` value type for derived, read-time streak metrics
 - Added reminder and streak test coverage for permission flows, time scheduling, skipped-day breaks, and day-boundary normalization
 - Removed unused localization key `"%d of %d — editing"`

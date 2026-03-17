@@ -1,10 +1,10 @@
-PROJECT := FiveCubedMoments/FiveCubedMoments.xcodeproj
-SCHEME := FiveCubedMoments
-DEMO_SCHEME := FiveCubedMoments (Demo)
+PROJECT := GraceNotes/GraceNotes.xcodeproj
+SCHEME := GraceNotes
+DEMO_SCHEME := GraceNotes (Demo)
 DESTINATION := platform=iOS Simulator,name=iPhone 17,OS=latest
-ISOLATED_DERIVED_DATA := /tmp/FiveCubedMoments-TestDerivedData
-UNIT_TEST_BUNDLE := FiveCubedMomentsTests
-UI_TEST_BUNDLE := FiveCubedMomentsUITests
+ISOLATED_DERIVED_DATA := /tmp/GraceNotes-TestDerivedData
+UNIT_TEST_BUNDLE := GraceNotesTests
+UI_TEST_BUNDLE := GraceNotesUITests
 
 .PHONY: help lint build test test-unit test-ui test-isolated test-demo test-all ci
 

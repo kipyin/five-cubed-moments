@@ -185,7 +185,7 @@ final class JournalViewModelMutationTests: XCTestCase {
     private func makeInMemoryContext() throws -> ModelContext {
         let schema = Schema([JournalEntry.self])
         let storeURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FiveCubedMomentsTests-\(UUID().uuidString).store")
+            .appendingPathComponent("GraceNotesTests-\(UUID().uuidString).store")
         let configuration = ModelConfiguration(schema: schema, url: storeURL)
         let container = try ModelContainer(for: schema, configurations: configuration)
         return ModelContext(container)

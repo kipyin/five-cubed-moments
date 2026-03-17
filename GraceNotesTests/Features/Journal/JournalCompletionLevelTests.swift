@@ -1,5 +1,5 @@
 import XCTest
-@testable import FiveCubedMoments
+@testable import GraceNotes
 
 final class JournalCompletionLevelTests: XCTestCase {
     func test_completionLevel_none_whenEntryIsBlank() {

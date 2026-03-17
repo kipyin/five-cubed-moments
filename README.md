@@ -37,7 +37,7 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 1. Clone the repository.
 2. Open `GraceNotes/GraceNotes.xcodeproj` in Xcode.
 3. For code signing, select your development team in the project's Signing & Capabilities (if needed).
-4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *FiveCubedMoments (Demo)* scheme.
+4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *GraceNotes (Demo)* scheme.
 
 ## Automation
 

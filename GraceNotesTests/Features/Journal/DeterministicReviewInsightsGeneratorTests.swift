@@ -1,5 +1,5 @@
 import XCTest
-@testable import FiveCubedMoments
+@testable import GraceNotes
 
 final class DeterministicReviewInsightsTests: XCTestCase {
     private var calendar: Calendar!

@@ -11,6 +11,9 @@ struct JournalExportPayload {
     let reflections: String
 }
 
+/// Interim chip label length before summarization completes. Matches fallback in summarizers.
+private let interimLabelMaxChars = 20
+
 @MainActor
 final class JournalViewModel: ObservableObject {
     @Published var entryDate: Date = .now
@@ -139,8 +142,24 @@ final class JournalViewModel: ObservableObject {
             return try await summarizer.summarize(text, section: section)
         } catch {
             return (try? await NaturalLanguageSummarizer().summarize(text, section: section))
-                ?? SummarizationResult(label: String(text.prefix(20)), isTruncated: text.count > 20)
+                ?? makeInterimResult(for: text)
         }
+    }
+
+    private func makeInterimResult(for text: String) -> SummarizationResult {
+        SummarizationResult(
+            label: String(text.prefix(interimLabelMaxChars)),
+            isTruncated: text.count > interimLabelMaxChars
+        )
+    }
+
+    private func makeInterimItem(fullText: String, id: UUID = UUID()) -> JournalItem {
+        JournalItem(
+            fullText: fullText,
+            chipLabel: String(fullText.prefix(interimLabelMaxChars)),
+            isTruncated: fullText.count > interimLabelMaxChars,
+            id: id
+        )
     }
 
     /// Returns true if the item was added (trimmed text non-empty and under slot limit).
@@ -235,18 +254,12 @@ final class JournalViewModel: ObservableObject {
 
     // MARK: - Immediate update/add (no await) for instant chip switching
 
-    /// Updates the item immediately with interim label (first 20 chars). Returns index or nil.
+    /// Updates the item immediately with interim label. Returns index or nil.
     func updateGratitudeImmediate(at index: Int, fullText: String) -> Int? {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        gratitudes[index] = JournalItem(
-            fullText: trimmed,
-            chipLabel: interimLabel,
-            isTruncated: trimmed.count > 20,
-            id: gratitudes[index].id
-        )
+        gratitudes[index] = makeInterimItem(fullText: trimmed, id: gratitudes[index].id)
         scheduleAutosave()
         return index
     }
@@ -256,8 +269,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, gratitudes.count < Self.slotCount else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        gratitudes.append(JournalItem(fullText: trimmed, chipLabel: interimLabel, isTruncated: trimmed.count > 20))
+        gratitudes.append(makeInterimItem(fullText: trimmed))
         scheduleAutosave()
         return gratitudes.count - 1
     }
@@ -267,13 +279,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < needs.count, !trimmed.isEmpty else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        needs[index] = JournalItem(
-            fullText: trimmed,
-            chipLabel: interimLabel,
-            isTruncated: trimmed.count > 20,
-            id: needs[index].id
-        )
+        needs[index] = makeInterimItem(fullText: trimmed, id: needs[index].id)
         scheduleAutosave()
         return index
     }
@@ -283,8 +289,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, needs.count < Self.slotCount else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        needs.append(JournalItem(fullText: trimmed, chipLabel: interimLabel, isTruncated: trimmed.count > 20))
+        needs.append(makeInterimItem(fullText: trimmed))
         scheduleAutosave()
         return needs.count - 1
     }
@@ -294,13 +299,7 @@ final class JournalViewModel: ObservableObject {
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard index >= 0, index < people.count, !trimmed.isEmpty else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        people[index] = JournalItem(
-            fullText: trimmed,
-            chipLabel: interimLabel,
-            isTruncated: trimmed.count > 20,
-            id: people[index].id
-        )
+        people[index] = makeInterimItem(fullText: trimmed, id: people[index].id)
         scheduleAutosave()
         return index
     }
@@ -310,53 +309,75 @@ final class JournalViewModel: ObservableObject {
         let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, people.count < Self.slotCount else { return nil }
 
-        let interimLabel = String(trimmed.prefix(20))
-        people.append(JournalItem(fullText: trimmed, chipLabel: interimLabel, isTruncated: trimmed.count > 20))
+        people.append(makeInterimItem(fullText: trimmed))
         scheduleAutosave()
         return people.count - 1
     }
 
-    /// Runs summarization (offloaded from main actor when possible), then applies result and schedules autosave.
+    /// Runs summarization, then applies result only if the item still exists with same fullText.
+    /// Captures item id + fullText at start so rapid edits/deletes/reorders don't apply stale labels.
     func summarizeAndUpdateChip(section: SummarizationSection, index: Int) async {
-        guard let fullText = fullTextForSection(section, at: index) else { return }
-        let result = await summarizeForChip(fullText, section: section)
-        applySummaryResult(result, to: section, at: index)
+        guard let snapshot = snapshotForSection(section, at: index) else { return }
+        let result = await summarizeForChip(snapshot.fullText, section: section)
+        applySummaryResultIfValid(result, section: section, itemId: snapshot.id, expectedFullText: snapshot.fullText)
         scheduleAutosave()
     }
 
-    private func fullTextForSection(_ section: SummarizationSection, at index: Int) -> String? {
+    private struct SectionSnapshot {
+        let id: UUID
+        let fullText: String
+    }
+
+    private func snapshotForSection(_ section: SummarizationSection, at index: Int) -> SectionSnapshot? {
         switch section {
-        case .gratitude: return index >= 0 && index < gratitudes.count ? gratitudes[index].fullText : nil
-        case .need: return index >= 0 && index < needs.count ? needs[index].fullText : nil
-        case .person: return index >= 0 && index < people.count ? people[index].fullText : nil
+        case .gratitude where index >= 0 && index < gratitudes.count:
+            return SectionSnapshot(id: gratitudes[index].id, fullText: gratitudes[index].fullText)
+        case .need where index >= 0 && index < needs.count:
+            return SectionSnapshot(id: needs[index].id, fullText: needs[index].fullText)
+        case .person where index >= 0 && index < people.count:
+            return SectionSnapshot(id: people[index].id, fullText: people[index].fullText)
+        default:
+            return nil
         }
     }
 
-    private func applySummaryResult(_ result: SummarizationResult, to section: SummarizationSection, at index: Int) {
+    private func applySummaryResultIfValid(
+        _ result: SummarizationResult,
+        section: SummarizationSection,
+        itemId: UUID,
+        expectedFullText: String
+    ) {
         switch section {
-        case .gratitude where index >= 0 && index < gratitudes.count:
-            gratitudes[index] = JournalItem(
-                fullText: gratitudes[index].fullText,
-                chipLabel: result.label,
-                isTruncated: result.isTruncated,
-                id: gratitudes[index].id
-            )
-        case .need where index >= 0 && index < needs.count:
-            needs[index] = JournalItem(
-                fullText: needs[index].fullText,
-                chipLabel: result.label,
-                isTruncated: result.isTruncated,
-                id: needs[index].id
-            )
-        case .person where index >= 0 && index < people.count:
-            people[index] = JournalItem(
-                fullText: people[index].fullText,
-                chipLabel: result.label,
-                isTruncated: result.isTruncated,
-                id: people[index].id
-            )
-        default:
-            break
+        case .gratitude:
+            if let idx = gratitudes.firstIndex(where: { $0.id == itemId }),
+               gratitudes[idx].fullText == expectedFullText {
+                gratitudes[idx] = JournalItem(
+                    fullText: gratitudes[idx].fullText,
+                    chipLabel: result.label,
+                    isTruncated: result.isTruncated,
+                    id: gratitudes[idx].id
+                )
+            }
+        case .need:
+            if let idx = needs.firstIndex(where: { $0.id == itemId }),
+               needs[idx].fullText == expectedFullText {
+                needs[idx] = JournalItem(
+                    fullText: needs[idx].fullText,
+                    chipLabel: result.label,
+                    isTruncated: result.isTruncated,
+                    id: needs[idx].id
+                )
+            }
+        case .person:
+            if let idx = people.firstIndex(where: { $0.id == itemId }),
+               people[idx].fullText == expectedFullText {
+                people[idx] = JournalItem(
+                    fullText: people[idx].fullText,
+                    chipLabel: result.label,
+                    isTruncated: result.isTruncated,
+                    id: people[idx].id
+                )
+            }
         }
     }
 

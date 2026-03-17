@@ -227,21 +227,26 @@ final class JournalViewModelTests: XCTestCase {
     func test_updateGratitude_unchangedText_returnsTrueWithoutReSummarizing() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let spy = SpySummarizer()
         let viewModel = JournalViewModel(
             calendar: calendar,
             nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            summarizerProvider: SummarizerProvider(fixedSummarizer: spy)
         )
 
         viewModel.loadEntry(for: now, using: context)
         await viewModel.addGratitude("Family")
-        let originalLabel = viewModel.gratitudes[0].chipLabel
+        let callCountAfterAdd = spy.summarizeCallCount
 
         let result = await viewModel.updateGratitude(at: 0, fullText: "Family")
 
         XCTAssertTrue(result)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, "Family")
-        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, originalLabel)
+        XCTAssertEqual(
+            spy.summarizeCallCount,
+            callCountAfterAdd,
+            "Summarizer should not be called when text is unchanged"
+        )
     }
 
     func test_updateGratitudeImmediate_updatesWithInterimLabel() throws {

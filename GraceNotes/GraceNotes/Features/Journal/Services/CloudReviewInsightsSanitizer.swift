@@ -9,13 +9,21 @@ struct CloudReviewInsightsSanitizer {
         "you are doing great",
         "keep going",
         "stay positive",
-        "small steps"
+        "small steps",
+        "一步一步来",
+        "善待自己",
+        "你做得很好",
+        "继续加油",
+        "保持积极",
+        "小步骤"
     ]
 
     func sanitizePayload(_ payload: CloudReviewInsightsPayload) -> CloudReviewInsightsPayload {
-        let fallbackNarrative = "You kept a steady reflection rhythm this week."
-        let fallbackResurfacing = "You are building momentum by returning to reflection this week."
-        let fallbackContinuity = "What is one gentle next step you can take tomorrow?"
+        let fallbackNarrative = String(localized: "You kept a steady reflection rhythm this week.")
+        let fallbackResurfacing = String(
+            localized: "You are building momentum by returning to reflection this week."
+        )
+        let fallbackContinuity = String(localized: "What is one gentle next step you can take tomorrow?")
         let recurringGratitudes = sanitizeThemes(payload.recurringGratitudes)
         let recurringNeeds = sanitizeThemes(payload.recurringNeeds)
         let recurringPeople = sanitizeThemes(payload.recurringPeople)

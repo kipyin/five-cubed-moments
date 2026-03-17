@@ -12,6 +12,7 @@
 
 ### Fixed
 - Removed remaining legacy entitlement and test-path references so project assets consistently use `GraceNotes*` naming.
+- Chip label fallback now uses deterministic snippets (first 5 words, or first 5 Chinese characters) with reliable end-fade truncation behavior when AI summarization is unavailable (#39).
 
 ### Developer
 - Consolidated test-suite updates across Journal and repository coverage after the naming migration cleanup.

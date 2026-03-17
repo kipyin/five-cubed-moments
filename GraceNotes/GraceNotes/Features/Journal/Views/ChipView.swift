@@ -82,7 +82,11 @@ struct ChipView: View {
                     Group {
                         if isTruncated {
                             LinearGradient(
-                                colors: [.white, .clear],
+                                stops: [
+                                    .init(color: .white, location: 0),
+                                    .init(color: .white, location: 0.82),
+                                    .init(color: .clear, location: 1)
+                                ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )

@@ -112,6 +112,36 @@ final class JournalViewModelMutationTests: XCTestCase {
         XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "New gratitude")
     }
 
+    func test_renameGratitudeLabel_updatesLabelWithoutChangingFullText() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addGratitude("I am grateful for my family.")
+
+        let didRename = viewModel.renameGratitudeLabel(at: 0, to: "Family support always")
+
+        XCTAssertTrue(didRename)
+        XCTAssertEqual(viewModel.gratitudes[0].fullText, "I am grateful for my family.")
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "Family support always")
+    }
+
+    func test_renameNeedLabel_rejectsWhitespaceLabel() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addNeed("I need quiet time.")
+        let originalLabel = viewModel.needs[0].chipLabel
+
+        let didRename = viewModel.renameNeedLabel(at: 0, to: " \n ")
+
+        XCTAssertFalse(didRename)
+        XCTAssertEqual(viewModel.needs[0].chipLabel, originalLabel)
+    }
+
     func test_removeGratitude_validIndex_removesAndPersists() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)

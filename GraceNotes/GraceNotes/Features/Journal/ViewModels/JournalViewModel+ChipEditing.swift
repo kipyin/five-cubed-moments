@@ -250,6 +250,34 @@ extension JournalViewModel {
         }
     }
 
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renameGratitudeLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < gratitudes.count else { return false }
+        return applyRenamedLabel(label, to: &gratitudes[index])
+    }
+
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renameNeedLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < needs.count else { return false }
+        return applyRenamedLabel(label, to: &needs[index])
+    }
+
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renamePersonLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < people.count else { return false }
+        return applyRenamedLabel(label, to: &people[index])
+    }
+
+    private func applyRenamedLabel(_ rawLabel: String, to item: inout JournalItem) -> Bool {
+        let trimmed = rawLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        item.chipLabel = trimmed
+        item.isTruncated = trimmed.count > Self.interimLabelMaxChars
+        scheduleAutosave()
+        return true
+    }
+
     /// Returns true if the item was removed (valid index).
     func removeGratitude(at index: Int) -> Bool {
         guard index >= 0, index < gratitudes.count else { return false }

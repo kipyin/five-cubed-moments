@@ -6,7 +6,6 @@ struct SettingsScreen: View {
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var iCloudSyncEnabled = true
-    @AppStorage("confirmChipDeletion") private var confirmChipDeletion = true
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminderEnabled = false
     @AppStorage(ReminderSettings.timeIntervalKey)
     private var dailyReminderTimeInterval = ReminderSettings.defaultTimeInterval
@@ -28,20 +27,6 @@ struct SettingsScreen: View {
 
     var body: some View {
         List {
-            Section {
-                Toggle(String(localized: "Confirm chip deletion"), isOn: $confirmChipDeletion)
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textPrimary)
-            } header: {
-                Text(String(localized: "Chips"))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
-            } footer: {
-                Text(String(localized: "When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately."))
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
-            }
-
             Section {
                 Toggle(String(localized: "Use cloud summarization"), isOn: $useCloudSummarization)
                     .font(AppTheme.warmPaperBody)

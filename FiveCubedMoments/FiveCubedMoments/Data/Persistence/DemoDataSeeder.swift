@@ -118,7 +118,8 @@ enum DemoDataSeeder {
                 item("Send encouragement to team", "Encourage team")
             ],
             bibleNotes: "John 15 reminded me to remain connected and let daily habits flow from that place.",
-            reflections: "Today I feel grounded and hopeful. I want to move slowly, stay kind, and finish what matters most.",
+            reflections: "Today I feel grounded and hopeful. "
+                + "I want to move slowly, stay kind, and finish what matters most.",
             completedAt: completedAt
         )
     }

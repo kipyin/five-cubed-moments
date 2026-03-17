@@ -382,14 +382,28 @@ final class JournalViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.people[0].fullText, "Alice")
     }
 
+    private func makeInMemoryContext() throws -> ModelContext {
+        let schema = Schema([JournalEntry.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        return ModelContext(container)
+    }
+}
+
+@MainActor
+final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
+    private var calendar: Calendar!
+
+    override func setUp() {
+        super.setUp()
+        calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    }
+
     func test_completedToday_withFullEntry_returnsTrue() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
-        let viewModel = JournalViewModel(
-            calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
-        )
+        let viewModel = makeViewModel(now: now)
 
         viewModel.loadEntry(for: now, using: context)
         for index in 1...JournalViewModel.slotCount {
@@ -406,11 +420,7 @@ final class JournalViewModelTests: XCTestCase {
     func test_completedToday_withPartialEntry_returnsFalse() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
-        let viewModel = JournalViewModel(
-            calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
-        )
+        let viewModel = makeViewModel(now: now)
 
         viewModel.loadEntry(for: now, using: context)
         _ = await viewModel.addGratitude("One")
@@ -425,11 +435,7 @@ final class JournalViewModelTests: XCTestCase {
     func test_addGratitude_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
-        let viewModel = JournalViewModel(
-            calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
-        )
+        let viewModel = makeViewModel(now: now)
 
         viewModel.loadEntry(for: now, using: context)
         for index in 1...JournalViewModel.slotCount {
@@ -444,11 +450,7 @@ final class JournalViewModelTests: XCTestCase {
     func test_addNeed_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
-        let viewModel = JournalViewModel(
-            calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
-        )
+        let viewModel = makeViewModel(now: now)
 
         viewModel.loadEntry(for: now, using: context)
         for index in 1...JournalViewModel.slotCount {
@@ -463,11 +465,7 @@ final class JournalViewModelTests: XCTestCase {
     func test_addPerson_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
-        let viewModel = JournalViewModel(
-            calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
-        )
+        let viewModel = makeViewModel(now: now)
 
         viewModel.loadEntry(for: now, using: context)
         for index in 1...JournalViewModel.slotCount {
@@ -477,6 +475,14 @@ final class JournalViewModelTests: XCTestCase {
 
         XCTAssertFalse(sixth)
         XCTAssertEqual(viewModel.people.count, JournalViewModel.slotCount)
+    }
+
+    private func makeViewModel(now: Date) -> JournalViewModel {
+        JournalViewModel(
+            calendar: calendar,
+            nowProvider: { now },
+            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+        )
     }
 
     private func makeInMemoryContext() throws -> ModelContext {

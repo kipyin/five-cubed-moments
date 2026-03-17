@@ -161,6 +161,12 @@
         }
       }
     },
+    "Done" : {
+
+    },
+    "Five Cubed Moments" : {
+
+    },
     "Get one daily local reminder to complete today's 5³." : {
 
     },
@@ -317,6 +323,9 @@
     "Reminders" : {
 
     },
+    "Save to Photos" : {
+
+    },
     "Saved to Photos" : {
       "localizations" : {
         "en" : {
@@ -396,6 +405,9 @@
           }
         }
       }
+    },
+    "Take a moment to complete today's 5³." : {
+
     },
     "Today" : {
       "localizations" : {
@@ -492,6 +504,9 @@
           }
         }
       }
+    },
+    "Unable to update reminder" : {
+
     },
     "Use cloud summarization" : {
       "localizations" : {

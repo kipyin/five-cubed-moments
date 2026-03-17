@@ -12,6 +12,8 @@
 ### Changed
 - JournalViewModel now computes and exposes a `streakSummary` whenever entries are loaded/saved
 - Basic streak logic now counts only meaningful journal activity (not auto-created blank entries)
+- Sequential section add chip `(+)` now stays hidden when all five entries are filled, including while editing an existing chip
+- Progress footer now always uses plain count text (for example, `2 of 5`) without the `- editing` suffix
 
 ### Fixed
 - (none)
@@ -19,6 +21,7 @@
 ### Developer
 - Added `StreakCalculator` service and `StreakSummary` value type for derived, read-time streak metrics
 - Added reminder and streak test coverage for permission flows, time scheduling, skipped-day breaks, and day-boundary normalization
+- Removed unused localization key `"%d of %d — editing"`
 
 ## [0.2.2] - Unreleased
 

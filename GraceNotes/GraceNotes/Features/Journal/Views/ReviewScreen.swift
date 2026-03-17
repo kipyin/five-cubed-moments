@@ -241,6 +241,10 @@ private struct ReviewSummaryCard: View {
                     Spacer()
                 }
 
+                Text(weekRangeText(insights))
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.textMuted)
+
                 if let narrativeSummary = insights.narrativeSummary, !narrativeSummary.isEmpty {
                     Text(narrativeSummary)
                         .font(AppTheme.warmPaperBody)
@@ -281,6 +285,18 @@ private struct ReviewSummaryCard: View {
         case .deterministic:
             return String(localized: "On-device")
         }
+    }
+
+    private func weekRangeText(_ insights: ReviewInsights) -> String {
+        let calendar = Calendar.current
+        let inclusiveEnd = calendar.date(byAdding: .day, value: -1, to: insights.weekEnd) ?? insights.weekEnd
+        let startText = insights.weekStart.formatted(.dateTime.month(.abbreviated).day())
+        let endText = inclusiveEnd.formatted(.dateTime.month(.abbreviated).day())
+        return String(
+            format: String(localized: "%1$@ to %2$@"),
+            startText,
+            endText
+        )
     }
 }
 

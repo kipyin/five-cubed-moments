@@ -2,14 +2,20 @@ PROJECT := FiveCubedMoments/FiveCubedMoments.xcodeproj
 SCHEME := FiveCubedMoments
 DEMO_SCHEME := FiveCubedMoments (Demo)
 DESTINATION := platform=iOS Simulator,name=iPhone 17,OS=latest
+ISOLATED_DERIVED_DATA := /tmp/FiveCubedMoments-TestDerivedData
+UNIT_TEST_BUNDLE := FiveCubedMomentsTests
+UI_TEST_BUNDLE := FiveCubedMomentsUITests
 
-.PHONY: help lint build test test-demo test-all ci
+.PHONY: help lint build test test-unit test-ui test-isolated test-demo test-all ci
 
 help:
 	@echo "Available targets:"
 	@echo "  make lint   - Run SwiftLint checks"
 	@echo "  make build  - Build app (macOS + Xcode required)"
 	@echo "  make test   - Run tests for default scheme (macOS + Xcode + iOS Simulator required)"
+	@echo "  make test-unit - Run unit tests only for default scheme"
+	@echo "  make test-ui   - Run UI tests only for default scheme"
+	@echo "  make test-isolated - Run tests with isolated DerivedData to avoid Xcode contention"
 	@echo "  make test-demo - Run tests for demo scheme (macOS + Xcode + iOS Simulator required)"
 	@echo "  make test-all  - Run tests for both schemes"
 	@echo "  make ci     - Run lint and test-all"
@@ -22,6 +28,15 @@ build:
 
 test:
 	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' test
+
+test-unit:
+	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' -only-testing:"$(UNIT_TEST_BUNDLE)" test
+
+test-ui:
+	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' -only-testing:"$(UI_TEST_BUNDLE)" test
+
+test-isolated:
+	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' -derivedDataPath "$(ISOLATED_DERIVED_DATA)" test
 
 test-demo:
 	xcodebuild -project "$(PROJECT)" -scheme "$(DEMO_SCHEME)" -destination '$(DESTINATION)' test

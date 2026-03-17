@@ -25,5 +25,8 @@ DerivedData/
 .build/
 .swiftpm/
 
+# API secrets (copy from ApiSecrets.example.swift and add your key)
+**/ApiSecrets.swift
+
 # Cursor
 .cursor/

@@ -12,7 +12,7 @@
 - (none)
 
 ### Developer
-- (none)
+- ApiSecrets workflow: ApiSecrets.example.swift template; ApiSecrets.swift gitignored; README setup step
 
 ## [0.2.1] - 2026-03-16
 

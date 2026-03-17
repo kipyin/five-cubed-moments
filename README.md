@@ -23,9 +23,10 @@ Five Cubed Moments guides you through a simple daily rhythm: 5 gratitudes, 5 nee
 ## Getting Started
 
 1. Clone the repository.
-2. Open `FiveCubedMoments/FiveCubedMoments.xcodeproj` in Xcode.
-3. For code signing, select your development team in the project's Signing & Capabilities (if needed).
-4. Select a simulator or device and run (⌘R).
+2. (Optional) For cloud summarization: copy `ApiSecrets.example.swift` to `FiveCubedMoments/FiveCubedMoments/Services/Summarization/ApiSecrets.swift` and add your API key. Without this, the app uses on-device Natural Language summarization.
+3. Open `FiveCubedMoments/FiveCubedMoments.xcodeproj` in Xcode.
+4. For code signing, select your development team in the project's Signing & Capabilities (if needed).
+5. Select a simulator or device and run (⌘R).
 
 ## Tech Stack
 

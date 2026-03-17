@@ -33,31 +33,7 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
             "recurringPeople": [["label": "Alex", "count": 2]]
         ]
 
-        MockURLProtocol.mockResponse = { _ in
-            let contentData: Data
-            do {
-                contentData = try JSONSerialization.data(withJSONObject: innerPayload)
-            } catch {
-                return (nil, nil, error)
-            }
-            let content = String(data: contentData, encoding: .utf8) ?? "{}"
-            let response: [String: Any] = [
-                "choices": [["message": ["content": content]]]
-            ]
-            let data: Data
-            do {
-                data = try JSONSerialization.data(withJSONObject: response)
-            } catch {
-                return (nil, nil, error)
-            }
-            let http = HTTPURLResponse(
-                url: URL(string: "https://example.com")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: nil
-            )!
-            return (data, http, nil)
-        }
+        setMockResponse(withInnerPayload: innerPayload)
 
         let insights = try await generator.generateInsights(
             from: [makeEntry(on: date(year: 2026, month: 3, day: 17))],
@@ -103,8 +79,8 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
                 calendar: calendar
             )
             XCTFail("Expected invalid payload error")
-        } catch {
-            XCTAssertTrue(true)
+        } catch let error as NSError {
+            XCTAssertFalse(error.localizedDescription.isEmpty)
         }
     }
 
@@ -131,9 +107,46 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
                 calendar: calendar
             )
             XCTFail("Expected HTTP error")
-        } catch {
-            XCTAssertTrue(true)
+        } catch let error as NSError {
+            XCTAssertFalse(error.localizedDescription.isEmpty)
         }
+    }
+
+    func test_generateInsights_clampsMessagesAndThemeLists() async throws {
+        let generator = CloudReviewInsightsGenerator(
+            apiKey: "test-key",
+            urlSession: urlSession
+        )
+        let longMessage = String(repeating: "a", count: 220)
+        let manyThemes: [[String: Any]] = [
+            ["label": "Rest", "count": 3],
+            ["label": "Family", "count": 2],
+            ["label": "Alex", "count": 2],
+            ["label": "ShouldDrop", "count": 1]
+        ]
+        let innerPayload: [String: Any] = [
+            "narrativeSummary": longMessage,
+            "resurfacingMessage": longMessage,
+            "continuityPrompt": longMessage,
+            "recurringGratitudes": manyThemes,
+            "recurringNeeds": manyThemes,
+            "recurringPeople": manyThemes
+        ]
+
+        setMockResponse(withInnerPayload: innerPayload)
+
+        let insights = try await generator.generateInsights(
+            from: [makeEntry(on: date(year: 2026, month: 3, day: 17))],
+            referenceDate: date(year: 2026, month: 3, day: 18),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(insights.recurringGratitudes.count, 3)
+        XCTAssertEqual(insights.recurringNeeds.count, 3)
+        XCTAssertEqual(insights.recurringPeople.count, 3)
+        XCTAssertLessThanOrEqual(insights.narrativeSummary?.count ?? 0, 160)
+        XCTAssertLessThanOrEqual(insights.resurfacingMessage.count, 160)
+        XCTAssertLessThanOrEqual(insights.continuityPrompt.count, 160)
     }
 
     private func makeEntry(on date: Date) -> JournalEntry {
@@ -143,6 +156,34 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
             needs: [JournalItem(fullText: "Rest", chipLabel: "Rest")],
             people: [JournalItem(fullText: "Alex", chipLabel: "Alex")]
         )
+    }
+
+    private func setMockResponse(withInnerPayload innerPayload: [String: Any]) {
+        MockURLProtocol.mockResponse = { _ in
+            let contentData: Data
+            do {
+                contentData = try JSONSerialization.data(withJSONObject: innerPayload)
+            } catch {
+                return (nil, nil, error)
+            }
+            let content = String(data: contentData, encoding: .utf8) ?? "{}"
+            let response: [String: Any] = [
+                "choices": [["message": ["content": content]]]
+            ]
+            let data: Data
+            do {
+                data = try JSONSerialization.data(withJSONObject: response)
+            } catch {
+                return (nil, nil, error)
+            }
+            let http = HTTPURLResponse(
+                url: URL(string: "https://example.com")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (data, http, nil)
+        }
     }
 
     private func date(year: Int, month: Int, day: Int) -> Date {

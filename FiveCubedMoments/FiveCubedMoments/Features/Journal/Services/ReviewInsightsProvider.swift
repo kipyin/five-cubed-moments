@@ -48,12 +48,12 @@ struct ReviewInsightsProvider: Sendable {
             return deterministicInsights
         }
 
+        let weekRange = weekDateRange(containing: referenceDate, calendar: calendar)
         return ReviewInsights(
             source: .deterministic,
             generatedAt: referenceDate,
-            weekStart: calendar.startOfDay(for: referenceDate),
-            weekEnd: calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: referenceDate))
-                ?? referenceDate,
+            weekStart: weekRange.lowerBound,
+            weekEnd: weekRange.upperBound,
             recurringGratitudes: [],
             recurringNeeds: [],
             recurringPeople: [],
@@ -61,6 +61,13 @@ struct ReviewInsightsProvider: Sendable {
             continuityPrompt: "What feels most important to carry into next week?",
             narrativeSummary: nil
         )
+    }
+
+    private func weekDateRange(containing date: Date, calendar: Calendar) -> Range<Date> {
+        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        let start = calendar.date(from: components) ?? calendar.startOfDay(for: date)
+        let end = calendar.date(byAdding: .day, value: 7, to: start) ?? start
+        return start..<end
     }
 
     nonisolated(unsafe) static let shared = ReviewInsightsProvider()

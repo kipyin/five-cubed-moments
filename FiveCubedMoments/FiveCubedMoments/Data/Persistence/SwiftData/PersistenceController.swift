@@ -3,7 +3,7 @@ import SwiftData
 
 @MainActor
 final class PersistenceController {
-    static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
+    nonisolated(unsafe) static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
     static let shared = PersistenceController(cloudSyncEnabled: isCloudSyncEnabled)
     static let isDemoDatabaseEnabled: Bool = {
 #if USE_DEMO_DATABASE

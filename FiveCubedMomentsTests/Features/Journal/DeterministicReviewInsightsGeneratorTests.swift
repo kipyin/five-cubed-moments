@@ -1,7 +1,7 @@
 import XCTest
 @testable import FiveCubedMoments
 
-final class ReviewInsightsGeneratorTests: XCTestCase {
+final class DeterministicReviewInsightsTests: XCTestCase {
     private var calendar: Calendar!
     private var generator: DeterministicReviewInsightsGenerator!
 

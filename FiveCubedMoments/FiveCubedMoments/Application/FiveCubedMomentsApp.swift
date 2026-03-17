@@ -49,11 +49,11 @@ struct FiveCubedMomentsApp: App {
                         .tag(AppTab.today)
                         NavigationStack {
                             if selectedTab == .history {
-                                HistoryScreen()
+                                ReviewScreen()
                             } else {
                                 Color.clear
                                     .onAppear {
-                                        PerformanceTrace.instant("HistoryScreen.deferredUntilSelected")
+                                        PerformanceTrace.instant("ReviewScreen.deferredUntilSelected")
                                     }
                             }
                         }

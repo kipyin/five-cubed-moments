@@ -5,7 +5,7 @@ struct SettingsScreen: View {
     /// Default false to align with SummarizerProvider; first launch uses on-device NL summarization.
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
-    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled = true
+    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var iCloudSyncEnabled = true
     @AppStorage("confirmChipDeletion") private var confirmChipDeletion = true
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminderEnabled = false
     @AppStorage(ReminderSettings.timeIntervalKey)
@@ -20,6 +20,7 @@ struct SettingsScreen: View {
     @State private var exportErrorMessage: String?
     @State private var showExportError = false
     @State private var exportFile: ShareableFile?
+    @State private var isExportingData = false
 
     private let reminderScheduler = ReminderScheduler()
     private let dataExportService = JournalDataExportService()
@@ -141,6 +142,7 @@ struct SettingsScreen: View {
                 }
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.accent)
+                .disabled(isExportingData)
             } header: {
                 Text("Data & Privacy")
                     .font(AppTheme.warmPaperHeader)
@@ -177,6 +179,15 @@ struct SettingsScreen: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(exportErrorMessage ?? "Please try again.")
+        }
+        .overlay {
+            if isExportingData {
+                ProgressView("Exporting…")
+                    .font(AppTheme.warmPaperBody)
+                    .padding(16)
+                    .background(AppTheme.paper)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
         }
     }
 
@@ -235,12 +246,28 @@ struct SettingsScreen: View {
     }
 
     private func exportJournalData() {
-        do {
-            let fileURL = try dataExportService.exportArchiveFile(context: modelContext)
-            exportFile = ShareableFile(url: fileURL)
-        } catch {
-            exportErrorMessage = "Unable to export your journal data right now."
-            showExportError = true
+        guard !isExportingData else { return }
+        isExportingData = true
+        let container = modelContext.container
+        let exportService = dataExportService
+
+        Task {
+            do {
+                let fileURL = try await Task.detached(priority: .userInitiated) {
+                    let backgroundContext = ModelContext(container)
+                    return try exportService.exportArchiveFile(context: backgroundContext)
+                }.value
+                await MainActor.run {
+                    exportFile = ShareableFile(url: fileURL)
+                    isExportingData = false
+                }
+            } catch {
+                await MainActor.run {
+                    exportErrorMessage = "Unable to export your journal data right now."
+                    showExportError = true
+                    isExportingData = false
+                }
+            }
         }
     }
 }

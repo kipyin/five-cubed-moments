@@ -70,6 +70,29 @@ final class ReviewInsightsProviderTests: XCTestCase {
         XCTAssertEqual(insights.source, .deterministic)
     }
 
+    func test_generateInsights_whenBothGeneratorsFail_usesWeekRangeFallback() async {
+        UserDefaults.standard.set(true, forKey: ReviewInsightsProvider.useAIReviewInsightsKey)
+        let cloud = StubReviewInsightsGenerator(result: .failure(StubError.failed))
+        let deterministic = StubReviewInsightsGenerator(result: .failure(StubError.failed))
+        let provider = ReviewInsightsProvider(
+            deterministicGenerator: deterministic,
+            cloudGenerator: cloud
+        )
+        let referenceDate = date(year: 2026, month: 3, day: 18)
+        let expectedWeekStart = date(year: 2026, month: 3, day: 16)
+        let expectedWeekEnd = date(year: 2026, month: 3, day: 23)
+
+        let insights = await provider.generateInsights(
+            from: [],
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(insights.source, .deterministic)
+        XCTAssertEqual(insights.weekStart, expectedWeekStart)
+        XCTAssertEqual(insights.weekEnd, expectedWeekEnd)
+    }
+
     private func makeInsights(source: ReviewInsightSource) -> ReviewInsights {
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         return ReviewInsights(
@@ -84,6 +107,15 @@ final class ReviewInsightsProviderTests: XCTestCase {
             continuityPrompt: "prompt",
             narrativeSummary: nil
         )
+    }
+
+    private func date(year: Int, month: Int, day: Int) -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.timeZone = calendar.timeZone
+        return calendar.date(from: components)!
     }
 }
 

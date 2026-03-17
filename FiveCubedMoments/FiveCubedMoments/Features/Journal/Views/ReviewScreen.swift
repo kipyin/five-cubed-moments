@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct HistoryScreen: View {
+struct ReviewScreen: View {
     private enum ReviewMode: String, CaseIterable, Identifiable {
         case insights = "Insights"
         case timeline = "Timeline"
@@ -32,10 +32,17 @@ struct HistoryScreen: View {
         .navigationTitle("Review")
         .background(AppTheme.background)
         .onAppear {
-            PerformanceTrace.instant("HistoryScreen.onAppear")
+            PerformanceTrace.instant("ReviewScreen.onAppear")
         }
-        .task(id: entries.map(\.id)) {
+        .task(id: entries.map(\.updatedAt)) {
+            guard selectedMode == .insights else { return }
             await refreshReviewInsights()
+        }
+        .onChange(of: selectedMode) { _, newMode in
+            guard newMode == .insights else { return }
+            Task {
+                await refreshReviewInsights()
+            }
         }
     }
 

@@ -3,7 +3,8 @@ import SwiftData
 
 @MainActor
 final class PersistenceController {
-    static let shared = PersistenceController()
+    static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
+    static let shared = PersistenceController(cloudSyncEnabled: isCloudSyncEnabled)
     static let isDemoDatabaseEnabled: Bool = {
 #if USE_DEMO_DATABASE
         true
@@ -11,16 +12,23 @@ final class PersistenceController {
         false
 #endif
     }()
+    static var isCloudSyncEnabled: Bool {
+        UserDefaults.standard.object(forKey: iCloudSyncEnabledKey) as? Bool ?? true
+    }
 
     let container: ModelContainer
 
     /// Creates the SwiftData container. On failure, calls `fatalError` because the app cannot
     /// function without persistence. Future improvement: surface the error to the user
     /// (e.g., show an error screen) instead of crashing for production resilience.
-    private init(inMemory: Bool = false) {
+    private init(inMemory: Bool = false, cloudSyncEnabled: Bool = true) {
         let startupTrace = PerformanceTrace.begin("PersistenceController.init")
         let schema = Schema([JournalEntry.self])
-        let configuration = Self.makeConfiguration(schema: schema, inMemory: inMemory)
+        let configuration = Self.makeConfiguration(
+            schema: schema,
+            inMemory: inMemory,
+            cloudSyncEnabled: cloudSyncEnabled
+        )
         do {
             container = try ModelContainer(for: schema, configurations: configuration)
             PerformanceTrace.end("PersistenceController.init", startedAt: startupTrace)
@@ -30,14 +38,19 @@ final class PersistenceController {
         }
     }
 
-    private static func makeConfiguration(schema: Schema, inMemory: Bool) -> ModelConfiguration {
+    private static func makeConfiguration(
+        schema: Schema,
+        inMemory: Bool,
+        cloudSyncEnabled: Bool
+    ) -> ModelConfiguration {
         if inMemory {
             return ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         }
 #if USE_DEMO_DATABASE
         return ModelConfiguration(schema: schema, url: demoStoreURL)
 #else
-        return ModelConfiguration(schema: schema)
+        let cloudDatabase: ModelConfiguration.CloudKitDatabase = cloudSyncEnabled ? .automatic : .none
+        return ModelConfiguration(schema: schema, cloudKitDatabase: cloudDatabase)
 #endif
     }
 

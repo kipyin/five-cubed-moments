@@ -24,7 +24,8 @@ jobs:
               continue
             for dev in devices:
               if dev.get('isAvailable') and 'iPhone' in dev.get('name', ''):
-                print(f\"platform=iOS Simulator,name={dev['name']},id={dev['udid']}\")
+                # Use id only; name+id can cause xcodebuild to infer OS:latest and fail to match
+                print(f\"platform=iOS Simulator,id={dev['udid']}\")
                 sys.exit(0)
           sys.exit(1)
           ")

@@ -6,7 +6,6 @@ struct SettingsScreen: View {
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var iCloudSyncEnabled = true
-    @AppStorage("confirmChipDeletion") private var confirmChipDeletion = true
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminderEnabled = false
     @AppStorage(ReminderSettings.timeIntervalKey)
     private var dailyReminderTimeInterval = ReminderSettings.defaultTimeInterval
@@ -29,20 +28,6 @@ struct SettingsScreen: View {
     var body: some View {
         List {
             Section {
-                Toggle(String(localized: "Confirm chip deletion"), isOn: $confirmChipDeletion)
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textPrimary)
-            } header: {
-                Text(String(localized: "Chips"))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
-            } footer: {
-                Text(String(localized: "When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately."))
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
-            }
-
-            Section {
                 Toggle(String(localized: "Use cloud summarization"), isOn: $useCloudSummarization)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
@@ -51,7 +36,12 @@ struct SettingsScreen: View {
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text(String(localized: "When on, chip labels use an online service for better summaries. When off, labels use on-device processing only."))
+                Text(
+                    String(
+                        localized: "When on, chip labels use an online service for better summaries. \
+                        When off, labels use on-device processing only."
+                    )
+                )
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
@@ -65,7 +55,12 @@ struct SettingsScreen: View {
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text(String(localized: "When on, weekly review insights may send your recent journal text to the configured cloud AI service. When off, review insights stay on-device."))
+                Text(
+                    String(
+                        localized: "When on, weekly review insights may send your recent journal text to \
+                        the configured cloud AI service. When off, review insights stay on-device."
+                    )
+                )
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
@@ -195,12 +190,15 @@ struct SettingsScreen: View {
     private var dataPrivacyFooterText: String {
         if !isCloudSyncAvailable {
             return String(
-                localized: "This demo build keeps journal entries on this device only. Export creates a full JSON backup you can keep."
+                localized: "This demo build keeps journal entries on this device only. \
+                Export creates a full JSON backup you can keep."
             )
         }
 
         return String(
-            localized: "Journal entries are stored locally and can sync through your iCloud private database when enabled. Sync changes apply on next app launch. Export creates a full JSON backup you can keep."
+            localized: "Journal entries are stored locally and can sync through your iCloud private \
+            database when enabled. Sync changes apply on next app launch. Export creates a full JSON \
+            backup you can keep."
         )
     }
 

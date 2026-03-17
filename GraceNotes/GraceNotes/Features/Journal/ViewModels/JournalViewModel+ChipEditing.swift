@@ -250,6 +250,36 @@ extension JournalViewModel {
         }
     }
 
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renameGratitudeLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < gratitudes.count else { return false }
+        return applyRenamedLabel(label, to: &gratitudes[index])
+    }
+
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renameNeedLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < needs.count else { return false }
+        return applyRenamedLabel(label, to: &needs[index])
+    }
+
+    /// Returns true if the label was renamed (valid index and non-empty trimmed label).
+    func renamePersonLabel(at index: Int, to label: String) -> Bool {
+        guard index >= 0, index < people.count else { return false }
+        return applyRenamedLabel(label, to: &people[index])
+    }
+
+    private func applyRenamedLabel(_ rawLabel: String, to item: inout JournalItem) -> Bool {
+        let trimmed = rawLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let isTruncated = trimmed.count > Self.interimLabelMaxChars
+        guard item.chipLabel != trimmed || item.isTruncated != isTruncated else { return false }
+
+        item.chipLabel = trimmed
+        item.isTruncated = isTruncated
+        scheduleAutosave()
+        return true
+    }
+
     /// Returns true if the item was removed (valid index).
     func removeGratitude(at index: Int) -> Bool {
         guard index >= 0, index < gratitudes.count else { return false }
@@ -270,6 +300,35 @@ extension JournalViewModel {
     func removePerson(at index: Int) -> Bool {
         guard index >= 0, index < people.count else { return false }
         people.remove(at: index)
+        scheduleAutosave()
+        return true
+    }
+
+    /// Returns true if an item moved to a new position.
+    func moveGratitude(from sourceIndex: Int, to destinationOffset: Int) -> Bool {
+        moveItem(in: &gratitudes, from: sourceIndex, to: destinationOffset)
+    }
+
+    /// Returns true if an item moved to a new position.
+    func moveNeed(from sourceIndex: Int, to destinationOffset: Int) -> Bool {
+        moveItem(in: &needs, from: sourceIndex, to: destinationOffset)
+    }
+
+    /// Returns true if an item moved to a new position.
+    func movePerson(from sourceIndex: Int, to destinationOffset: Int) -> Bool {
+        moveItem(in: &people, from: sourceIndex, to: destinationOffset)
+    }
+
+    private func moveItem(in items: inout [JournalItem], from sourceIndex: Int, to destinationOffset: Int) -> Bool {
+        guard sourceIndex >= 0, sourceIndex < items.count else { return false }
+        guard destinationOffset >= 0, destinationOffset <= items.count else { return false }
+
+        let noOpOffset = sourceIndex + 1
+        guard destinationOffset != sourceIndex, destinationOffset != noOpOffset else { return false }
+
+        let movedItem = items.remove(at: sourceIndex)
+        let insertIndex = destinationOffset > sourceIndex ? destinationOffset - 1 : destinationOffset
+        items.insert(movedItem, at: insertIndex)
         scheduleAutosave()
         return true
     }

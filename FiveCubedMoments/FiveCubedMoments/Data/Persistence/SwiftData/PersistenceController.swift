@@ -18,11 +18,14 @@ final class PersistenceController {
     /// function without persistence. Future improvement: surface the error to the user
     /// (e.g., show an error screen) instead of crashing for production resilience.
     private init(inMemory: Bool = false) {
+        let startupTrace = PerformanceTrace.begin("PersistenceController.init")
         let schema = Schema([JournalEntry.self])
         let configuration = Self.makeConfiguration(schema: schema, inMemory: inMemory)
         do {
             container = try ModelContainer(for: schema, configurations: configuration)
+            PerformanceTrace.end("PersistenceController.init", startedAt: startupTrace)
         } catch {
+            PerformanceTrace.end("PersistenceController.init.failed", startedAt: startupTrace)
             fatalError("Failed to create SwiftData container: \(error)")
         }
     }

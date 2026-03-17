@@ -11,16 +11,12 @@ import SwiftData
 @main
 struct FiveCubedMomentsApp: App {
     private let persistenceController: PersistenceController
+    @State private var hasRunDeferredStartupTasks = false
 
     init() {
-        let controller = PersistenceController.shared
-        if PersistenceController.isDemoDatabaseEnabled {
-#if USE_DEMO_DATABASE
-            let context = ModelContext(controller.container)
-            DemoDataSeeder.seedIfNeeded(context: context)
-#endif
-        }
-        persistenceController = controller
+        let startupTrace = PerformanceTrace.begin("App.init")
+        persistenceController = PersistenceController.shared
+        PerformanceTrace.end("App.init", startedAt: startupTrace)
     }
 
     var body: some Scene {
@@ -49,7 +45,24 @@ struct FiveCubedMomentsApp: App {
             .background(AppTheme.background)
             .toolbarBackground(AppTheme.background, for: .tabBar)
             .tint(AppTheme.accent)
+            .task {
+                await runDeferredStartupTasksIfNeeded()
+            }
         }
         .modelContainer(persistenceController.container)
+    }
+
+    @MainActor
+    private func runDeferredStartupTasksIfNeeded() async {
+        guard !hasRunDeferredStartupTasks else { return }
+        hasRunDeferredStartupTasks = true
+
+#if USE_DEMO_DATABASE
+        guard PersistenceController.isDemoDatabaseEnabled else { return }
+        PerformanceTrace.instant("Starting deferred demo seeding")
+        await Task.yield()
+        let context = ModelContext(persistenceController.container)
+        DemoDataSeeder.seedIfNeeded(context: context)
+#endif
     }
 }

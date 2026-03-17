@@ -72,7 +72,7 @@ struct GraceNotesApp: App {
                 JournalScreen()
             }
             .tabItem {
-                Label("Today", systemImage: "doc.text")
+                Label(String(localized: "Today"), systemImage: "doc.text")
             }
             .tag(AppTab.today)
             NavigationStack {
@@ -86,14 +86,14 @@ struct GraceNotesApp: App {
                 }
             }
             .tabItem {
-                Label("Review", systemImage: "clock.arrow.circlepath")
+                Label(String(localized: "Review"), systemImage: "clock.arrow.circlepath")
             }
             .tag(AppTab.history)
             NavigationStack {
                 SettingsScreen()
             }
             .tabItem {
-                Label("Settings", systemImage: "gearshape")
+                Label(String(localized: "Settings"), systemImage: "gearshape")
             }
             .tag(AppTab.settings)
         }

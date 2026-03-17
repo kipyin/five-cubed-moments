@@ -2,11 +2,20 @@ import SwiftUI
 import SwiftData
 
 struct ReviewScreen: View {
-    private enum ReviewMode: String, CaseIterable, Identifiable {
-        case insights = "Insights"
-        case timeline = "Timeline"
+    private enum ReviewMode: CaseIterable, Identifiable {
+        case insights
+        case timeline
 
-        var id: String { rawValue }
+        var id: Self { self }
+
+        var localizedTitle: String {
+            switch self {
+            case .insights:
+                return String(localized: "Insights")
+            case .timeline:
+                return String(localized: "Timeline")
+            }
+        }
     }
 
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
@@ -29,7 +38,7 @@ struct ReviewScreen: View {
                 historyList
             }
         }
-        .navigationTitle("Review")
+        .navigationTitle(String(localized: "Review"))
         .background(AppTheme.background)
         .onAppear {
             PerformanceTrace.instant("ReviewScreen.onAppear")
@@ -48,9 +57,9 @@ struct ReviewScreen: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label("No entries yet", systemImage: "doc.text")
+            Label(String(localized: "No entries yet"), systemImage: "doc.text")
         } description: {
-            Text("Start with today.")
+            Text(String(localized: "Start with today."))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -58,9 +67,9 @@ struct ReviewScreen: View {
     private var historyList: some View {
         List {
             Section {
-                Picker("Review mode", selection: $selectedMode) {
+                Picker(String(localized: "Review mode"), selection: $selectedMode) {
                     ForEach(ReviewMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(mode.localizedTitle).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -148,11 +157,11 @@ private struct HistoryRow: View {
     private var completionBadge: some View {
         switch entry.completionLevel {
         case .fullFiveCubed:
-            statusChip(text: "Full", color: AppTheme.complete)
+            statusChip(text: String(localized: "Full"), color: AppTheme.complete)
         case .standardReflection:
-            statusChip(text: "Standard", color: AppTheme.accent)
+            statusChip(text: String(localized: "Standard"), color: AppTheme.accent)
         case .quickCheckIn:
-            statusChip(text: "Quick", color: AppTheme.textMuted)
+            statusChip(text: String(localized: "Quick"), color: AppTheme.textMuted)
         case .none:
             EmptyView()
         }
@@ -175,7 +184,7 @@ private struct ReviewSummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("This Week")
+            Text(String(localized: "This Week"))
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(AppTheme.textPrimary)
 
@@ -184,7 +193,7 @@ private struct ReviewSummaryCard: View {
                     .tint(AppTheme.accent)
             } else if let insights {
                 HStack {
-                    Text("Source")
+                    Text(String(localized: "Source"))
                         .font(AppTheme.warmPaperBody.weight(.semibold))
                         .foregroundStyle(AppTheme.textPrimary)
                     Text(insightSourceText(insights.source))
@@ -203,16 +212,16 @@ private struct ReviewSummaryCard: View {
                         .foregroundStyle(AppTheme.textPrimary)
                 }
 
-                ReviewThemeRow(title: "Recurring Gratitudes", items: insights.recurringGratitudes)
-                ReviewThemeRow(title: "Recurring Needs", items: insights.recurringNeeds)
-                ReviewThemeRow(title: "People in Mind", items: insights.recurringPeople)
+                ReviewThemeRow(title: String(localized: "Recurring Gratitudes"), items: insights.recurringGratitudes)
+                ReviewThemeRow(title: String(localized: "Recurring Needs"), items: insights.recurringNeeds)
+                ReviewThemeRow(title: String(localized: "People in Mind"), items: insights.recurringPeople)
 
                 Text(insights.resurfacingMessage)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Continue with")
+                    Text(String(localized: "Continue with"))
                         .font(AppTheme.warmPaperBody.weight(.semibold))
                         .foregroundStyle(AppTheme.textPrimary)
                     Text(insights.continuityPrompt)
@@ -220,7 +229,7 @@ private struct ReviewSummaryCard: View {
                         .foregroundStyle(AppTheme.textPrimary)
                 }
             } else {
-                Text("Start writing this week to unlock review insights.")
+                Text(String(localized: "Start writing this week to unlock review insights."))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
@@ -233,9 +242,9 @@ private struct ReviewSummaryCard: View {
     private func insightSourceText(_ source: ReviewInsightSource) -> String {
         switch source {
         case .cloudAI:
-            return "AI"
+            return String(localized: "AI")
         case .deterministic:
-            return "On-device"
+            return String(localized: "On-device")
         }
     }
 }
@@ -246,9 +255,15 @@ private struct ReviewThemeRow: View {
 
     private var itemText: String {
         guard !items.isEmpty else {
-            return "No recurring patterns yet"
+            return String(localized: "No recurring patterns yet")
         }
-        return items.map { "\($0.label) (\($0.count))" }.joined(separator: ", ")
+        return items.map {
+            String(
+                format: String(localized: "%1$@ (%2$lld)"),
+                $0.label,
+                $0.count
+            )
+        }.joined(separator: ", ")
     }
 
     var body: some View {

@@ -57,8 +57,12 @@ struct ReviewInsightsProvider: Sendable {
             recurringGratitudes: [],
             recurringNeeds: [],
             recurringPeople: [],
-            resurfacingMessage: "Start with one reflection today to build your weekly review.",
-            continuityPrompt: "What feels most important to carry into next week?",
+            resurfacingMessage: String(
+                localized: "Start with one reflection today to build your weekly review."
+            ),
+            continuityPrompt: String(
+                localized: "What feels most important to carry into next week?"
+            ),
             narrativeSummary: nil
         )
     }

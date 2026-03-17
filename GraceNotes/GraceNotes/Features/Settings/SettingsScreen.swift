@@ -29,52 +29,52 @@ struct SettingsScreen: View {
     var body: some View {
         List {
             Section {
-                Toggle("Confirm chip deletion", isOn: $confirmChipDeletion)
+                Toggle(String(localized: "Confirm chip deletion"), isOn: $confirmChipDeletion)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
             } header: {
-                Text("Chips")
+                Text(String(localized: "Chips"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text("When on, long-pressing a chip shows a confirmation before deleting. "
-                    + "When off, long-press deletes immediately.")
+                Text(String(localized: "When on, long-pressing a chip shows a confirmation before deleting. "
+                    + "When off, long-press deletes immediately."))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
 
             Section {
-                Toggle("Use cloud summarization", isOn: $useCloudSummarization)
+                Toggle(String(localized: "Use cloud summarization"), isOn: $useCloudSummarization)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
             } header: {
-                Text("Summarization")
+                Text(String(localized: "Summarization"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text("When on, chip labels use an online service for better summaries. "
-                    + "When off, labels use on-device processing only.")
+                Text(String(localized: "When on, chip labels use an online service for better summaries. "
+                    + "When off, labels use on-device processing only."))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
 
             Section {
-                Toggle("Use AI review insights", isOn: $useAIReviewInsights)
+                Toggle(String(localized: "Use AI review insights"), isOn: $useAIReviewInsights)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
             } header: {
-                Text("Review Insights")
+                Text(String(localized: "Review Insights"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text("When on, weekly review insights may send your recent journal text "
-                    + "to the configured cloud AI service. When off, review insights stay on-device.")
+                Text(String(localized: "When on, weekly review insights may send your recent journal text "
+                    + "to the configured cloud AI service. When off, review insights stay on-device."))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
 
             Section {
-                Toggle("Daily reminder", isOn: $dailyReminderEnabled)
+                Toggle(String(localized: "Daily reminder"), isOn: $dailyReminderEnabled)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
                 if dailyReminderEnabled {
@@ -85,7 +85,7 @@ struct SettingsScreen: View {
                         isReminderTimePickerExpanded.toggle()
                     } label: {
                         HStack {
-                            Text("Reminder time")
+                                Text(String(localized: "Reminder time"))
                             Spacer()
                             Text(savedReminderTime, style: .time)
                                 .foregroundStyle(AppTheme.textMuted)
@@ -98,7 +98,7 @@ struct SettingsScreen: View {
 
                     if isReminderTimePickerExpanded {
                         DatePicker(
-                            "Reminder time",
+                            String(localized: "Reminder time"),
                             selection: $reminderDraftTime,
                             displayedComponents: .hourAndMinute
                         )
@@ -115,7 +115,7 @@ struct SettingsScreen: View {
                                 ProgressView()
                                     .frame(maxWidth: .infinity)
                             } else {
-                                Text("Done")
+                                Text(String(localized: "Done"))
                                     .frame(maxWidth: .infinity)
                             }
                         }
@@ -124,29 +124,29 @@ struct SettingsScreen: View {
                     }
                 }
             } header: {
-                Text("Reminders")
+                Text(String(localized: "Reminders"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
-                Text("Get one daily local reminder to complete today's entry.")
+                Text(String(localized: "Get one daily local reminder to complete today's entry."))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textMuted)
             }
 
             Section {
-                Toggle("Sync with iCloud", isOn: $iCloudSyncEnabled)
+                Toggle(String(localized: "Sync with iCloud"), isOn: $iCloudSyncEnabled)
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.textPrimary)
                     .disabled(!isCloudSyncAvailable)
 
-                Button("Export journal data (JSON)") {
+                Button(String(localized: "Export journal data (JSON)")) {
                     exportJournalData()
                 }
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.accent)
                 .disabled(isExportingData)
             } header: {
-                Text("Data & Privacy")
+                Text(String(localized: "Data & Privacy"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.textPrimary)
             } footer: {
@@ -157,7 +157,7 @@ struct SettingsScreen: View {
         }
         .scrollContentBackground(.hidden)
         .background(AppTheme.background)
-        .navigationTitle("Settings")
+        .navigationTitle(String(localized: "Settings"))
         .sheet(item: $exportFile) { file in
             ShareSheet(activityItems: [file.url])
         }
@@ -170,19 +170,19 @@ struct SettingsScreen: View {
                 await updateReminderEnabledState(isEnabled: newValue)
             }
         }
-        .alert("Unable to update reminder", isPresented: $showReminderError) {
-            Button("OK", role: .cancel) {}
+        .alert(String(localized: "Unable to update reminder"), isPresented: $showReminderError) {
+            Button(String(localized: "OK"), role: .cancel) {}
         } message: {
-            Text(reminderErrorMessage ?? "Please try again.")
+            Text(reminderErrorMessage ?? String(localized: "Please try again."))
         }
-        .alert("Unable to export data", isPresented: $showExportError) {
-            Button("OK", role: .cancel) {}
+        .alert(String(localized: "Unable to export data"), isPresented: $showExportError) {
+            Button(String(localized: "OK"), role: .cancel) {}
         } message: {
-            Text(exportErrorMessage ?? "Please try again.")
+            Text(exportErrorMessage ?? String(localized: "Please try again."))
         }
         .overlay {
             if isExportingData {
-                ProgressView("Exporting…")
+                ProgressView(String(localized: "Exporting…"))
                     .font(AppTheme.warmPaperBody)
                     .padding(16)
                     .background(AppTheme.paper)
@@ -197,12 +197,14 @@ struct SettingsScreen: View {
 
     private var dataPrivacyFooterText: String {
         if !isCloudSyncAvailable {
-            return "This demo build keeps journal entries on this device only. Export creates a full JSON backup you can keep."
+            return String(
+                localized: "This demo build keeps journal entries on this device only. Export creates a full JSON backup you can keep."
+            )
         }
 
-        return "Journal entries are stored locally and can sync through your iCloud private "
-            + "database when enabled. Sync changes apply on next app launch. "
-            + "Export creates a full JSON backup you can keep."
+        return String(
+            localized: "Journal entries are stored locally and can sync through your iCloud private database when enabled. Sync changes apply on next app launch. Export creates a full JSON backup you can keep."
+        )
     }
 
     private func syncReminderSchedule() async {
@@ -222,11 +224,11 @@ struct SettingsScreen: View {
         reminderDraftTime = savedReminderTime
         let result = await reminderScheduler.syncDailyReminder(enabled: true, time: savedReminderTime)
         if case .permissionDenied = result {
-            reminderErrorMessage = "Allow notifications in Settings to enable daily reminders."
+            reminderErrorMessage = String(localized: "Allow notifications in Settings to enable daily reminders.")
             showReminderError = true
             dailyReminderEnabled = false
         } else if case .failed = result {
-            reminderErrorMessage = "Unable to schedule your reminder right now."
+            reminderErrorMessage = String(localized: "Unable to schedule your reminder right now.")
             showReminderError = true
             dailyReminderEnabled = false
         }
@@ -245,10 +247,10 @@ struct SettingsScreen: View {
             dailyReminderTimeInterval = reminderDraftTime.timeIntervalSinceReferenceDate
             isReminderTimePickerExpanded = false
         case .permissionDenied:
-            reminderErrorMessage = "Allow notifications in Settings to confirm a reminder time."
+            reminderErrorMessage = String(localized: "Allow notifications in Settings to confirm a reminder time.")
             showReminderError = true
         case .failed:
-            reminderErrorMessage = "Unable to save that reminder time right now."
+            reminderErrorMessage = String(localized: "Unable to save that reminder time right now.")
             showReminderError = true
         case .disabled:
             break
@@ -273,7 +275,7 @@ struct SettingsScreen: View {
                 }
             } catch {
                 await MainActor.run {
-                    exportErrorMessage = "Unable to export your journal data right now."
+                    exportErrorMessage = String(localized: "Unable to export your journal data right now.")
                     showExportError = true
                     isExportingData = false
                 }

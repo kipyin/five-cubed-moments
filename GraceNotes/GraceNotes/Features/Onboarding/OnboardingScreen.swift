@@ -6,23 +6,28 @@ struct OnboardingScreen: View {
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
-            title: "A calm daily rhythm",
-            message: "Grace Notes helps you reflect with gentle structure: gratitude, needs, and people in mind."
+            title: String(localized: "A calm daily rhythm"),
+            message: String(
+                localized: "Grace Notes helps you reflect with gentle structure: gratitude, needs, and people in mind."
+            )
         ),
         OnboardingPage(
-            title: "Review that gives insight",
-            message: "Your Review tab turns past entries into recurring themes, resurfacing ideas, "
-                + "and continuity prompts."
+            title: String(localized: "Review that gives insight"),
+            message: String(
+                localized: "Your Review tab turns past entries into recurring themes, resurfacing ideas, and continuity prompts."
+            )
         ),
         OnboardingPage(
-            title: "Progress over perfection",
-            message: "Low-energy days still count. Start small and build toward fuller reflection sessions over time."
+            title: String(localized: "Progress over perfection"),
+            message: String(
+                localized: "Low-energy days still count. Start small and build toward fuller reflection sessions over time."
+            )
         )
     ]
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Welcome to Grace Notes")
+            Text(String(localized: "Welcome to Grace Notes"))
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(AppTheme.textPrimary)
                 .padding(.top, 24)
@@ -37,7 +42,9 @@ struct OnboardingScreen: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
 
             Button(action: handlePrimaryAction) {
-                Text(selectedPage == pages.count - 1 ? "Get Started" : "Continue")
+                Text(selectedPage == pages.count - 1
+                    ? String(localized: "Get Started")
+                    : String(localized: "Continue"))
                     .font(AppTheme.warmPaperBody.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

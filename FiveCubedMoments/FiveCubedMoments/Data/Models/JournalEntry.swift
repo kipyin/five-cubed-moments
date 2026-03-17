@@ -1,6 +1,13 @@
 import Foundation
 import SwiftData
 
+enum JournalCompletionLevel: String, Equatable {
+    case none
+    case quickCheckIn
+    case standardReflection
+    case fullFiveCubed
+}
+
 @Model
 final class JournalEntry {
     var id: UUID
@@ -50,7 +57,11 @@ final class JournalEntry {
 
     /// Whether this entry meets completion criteria. Used by History and Journal.
     var isComplete: Bool {
-        Self.criteriaMet(
+        completionLevel == .fullFiveCubed
+    }
+
+    var completionLevel: JournalCompletionLevel {
+        Self.completionLevel(
             gratitudesCount: gratitudes.count,
             needsCount: needs.count,
             peopleCount: people.count,
@@ -76,6 +87,45 @@ final class JournalEntry {
             peopleCount >= slotCount &&
             !notesTrimmed.isEmpty &&
             !reflectionsTrimmed.isEmpty
+    }
+
+    static func completionLevel(
+        gratitudesCount: Int,
+        needsCount: Int,
+        peopleCount: Int,
+        readingNotes: String,
+        reflections: String
+    ) -> JournalCompletionLevel {
+        if criteriaMet(
+            gratitudesCount: gratitudesCount,
+            needsCount: needsCount,
+            peopleCount: peopleCount,
+            readingNotes: readingNotes,
+            reflections: reflections
+        ) {
+            return .fullFiveCubed
+        }
+
+        let notesTrimmed = readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reflectionsTrimmed = reflections.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasWrittenNotes = !notesTrimmed.isEmpty
+        let hasWrittenReflections = !reflectionsTrimmed.isEmpty
+        let totalChipCount = gratitudesCount + needsCount + peopleCount
+        let isStandardBySections = gratitudesCount >= 3 && needsCount >= 3 && peopleCount >= 3
+        let isStandardByMix = totalChipCount >= 6 && (hasWrittenNotes || hasWrittenReflections)
+        if isStandardBySections || isStandardByMix {
+            return .standardReflection
+        }
+
+        if totalChipCount > 0 || hasWrittenNotes || hasWrittenReflections {
+            return .quickCheckIn
+        }
+
+        return .none
+    }
+
+    var hasMeaningfulContent: Bool {
+        completionLevel != .none
     }
 
     /// Maximum number of items per chip section (gratitudes, needs, people).

@@ -174,7 +174,11 @@ final class JournalViewModel {
 
     var completedToday: Bool {
         guard journalEntry != nil else { return false }
-        return JournalEntry.criteriaMet(
+        return completionLevel == .fullFiveCubed
+    }
+
+    var completionLevel: JournalCompletionLevel {
+        JournalEntry.completionLevel(
             gratitudesCount: gratitudes.count,
             needsCount: needs.count,
             peopleCount: people.count,

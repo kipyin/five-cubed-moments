@@ -44,6 +44,34 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
         XCTAssertFalse(viewModel.completedToday)
     }
 
+    func test_completionLevel_withPartialEntry_returnsQuickCheckIn() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        _ = await viewModel.addGratitude("One")
+
+        XCTAssertEqual(viewModel.completionLevel, .quickCheckIn)
+        XCTAssertFalse(viewModel.completedToday)
+    }
+
+    func test_completionLevel_withThreeByThreeByThree_returnsStandardReflection() async throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        for index in 1...3 {
+            _ = await viewModel.addGratitude("Gratitude \(index)")
+            _ = await viewModel.addNeed("Need \(index)")
+            _ = await viewModel.addPerson("Person \(index)")
+        }
+
+        XCTAssertEqual(viewModel.completionLevel, .standardReflection)
+        XCTAssertFalse(viewModel.completedToday)
+    }
+
     func test_addGratitude_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)

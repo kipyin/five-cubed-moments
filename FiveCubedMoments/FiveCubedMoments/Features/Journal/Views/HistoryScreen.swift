@@ -133,20 +133,32 @@ private struct HistoryRow: View {
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.textPrimary)
             Spacer()
-            if entry.isComplete {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(AppTheme.complete)
-                    .font(.caption)
-            } else if entry.hasMeaningfulContent {
-                Text("Quick")
-                    .font(AppTheme.warmPaperBody.weight(.semibold))
-                    .foregroundStyle(AppTheme.textMuted)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(AppTheme.background)
-                    .clipShape(Capsule())
-            }
+            completionBadge
         }
+    }
+
+    @ViewBuilder
+    private var completionBadge: some View {
+        switch entry.completionLevel {
+        case .fullFiveCubed:
+            statusChip(text: "Full", color: AppTheme.complete)
+        case .standardReflection:
+            statusChip(text: "Standard", color: AppTheme.accent)
+        case .quickCheckIn:
+            statusChip(text: "Quick", color: AppTheme.textMuted)
+        case .none:
+            EmptyView()
+        }
+    }
+
+    private func statusChip(text: String, color: Color) -> some View {
+        Text(text)
+            .font(AppTheme.warmPaperBody.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(AppTheme.background)
+            .clipShape(Capsule())
     }
 }
 

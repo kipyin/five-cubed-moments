@@ -14,6 +14,8 @@
 - Review tab summary card showing weekly narrative, recurring themes, resurfacing, and continuity prompt
 - Data export service for full journal JSON archive from Settings
 - iCloud/CloudKit capability wiring (`FiveCubedMoments.entitlements`) and cloud-capable SwiftData configuration path
+- First-run onboarding screen introducing structure, review value, and low-pressure progress
+- Sprint-ready planning doc for review + onboarding execution (`review-onboarding-sprint-plan-2026-03-17.md`)
 
 ### Changed
 - JournalViewModel now computes and exposes a `streakSummary` whenever entries are loaded/saved
@@ -22,6 +24,8 @@
 - Progress footer now always uses plain count text (for example, `2 of 5`) without the `- editing` suffix
 - Tab/navigation copy updated from **History** to **Review**
 - Settings now include AI review-insights toggle, iCloud sync preference, and data trust/privacy messaging
+- Review screen now offers segmented **Insights** and **Timeline** modes for less cluttered navigation
+- Journal completion now supports tiered levels (`Quick check-in`, `Standard reflection`, `Full 5³`) surfaced in Today + Review UI
 
 ### Fixed
 - (none)
@@ -31,6 +35,7 @@
 - Added reminder and streak test coverage for permission flows, time scheduling, skipped-day breaks, and day-boundary normalization
 - Removed unused localization key `"%d of %d — editing"`
 - Added tests for deterministic review insights, cloud review insights decoding, provider fallback behavior, and JSON export payload integrity
+- Added completion-level test coverage for Journal model and ViewModel states
 
 ## [0.2.2] - Unreleased
 

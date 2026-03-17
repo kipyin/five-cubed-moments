@@ -11,11 +11,13 @@ Five Cubed Moments guides you through a simple daily rhythm: 5 gratitudes, 5 nee
 - **Daily journaling** – Today's 5³ entry with five gratitudes, five needs, five people in mind, reading notes, and reflections. Entries auto-create and save as you type.
 - **Sequential input** – Type a full sentence, press Enter; the app summarizes it to a chip label. Tap a chip to edit its text. Supports 5 gratitudes, 5 needs, 5 people.
 - **Review** – Browse past entries by month with weekly recurring-theme insights and continuity prompts.
+- **Structured Review modes** – Switch between Insight and Timeline modes for cleaner weekly reflection and archive browsing.
 - **Shareable cards** – Generate a formatted image of a day's entry and share via the iOS share sheet.
 - **Reminders** – Optional daily notification to complete today's 5³.
 - **Advanced review insights** – Optional AI-generated weekly reflection summary with deterministic on-device fallback.
 - **Data trust controls** – iCloud sync setting plus full JSON export for backup and ownership.
-- **Habit support** – Streak and completion indicators to reinforce the routine without feeling gamified.
+- **First-run onboarding** – A short welcome flow introducing calm structure, review value, and low-pressure progress.
+- **Habit support** – Streak plus tiered completion states (Quick, Standard, Full 5³) to reduce all-or-nothing pressure.
 
 ## Requirements
 

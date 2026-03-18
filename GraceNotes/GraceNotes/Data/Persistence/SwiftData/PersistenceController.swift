@@ -1,10 +1,13 @@
 import Foundation
 import SwiftData
 
-@MainActor
 final class PersistenceController {
-    nonisolated(unsafe) static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
-    static let shared = PersistenceController(cloudSyncEnabled: isCloudSyncEnabled)
+    private static let startupBootstrapQueue = DispatchQueue(
+        label: "com.gracenotes.persistence.bootstrap",
+        qos: .userInitiated
+    )
+
+    static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
     static let isDemoDatabaseEnabled: Bool = {
 #if USE_DEMO_DATABASE
         true
@@ -22,11 +25,34 @@ final class PersistenceController {
 
     let container: ModelContainer
 
-    /// Creates the SwiftData container. On failure, calls `fatalError` because the app cannot
-    /// function without persistence. Future improvement: surface the error to the user
-    /// (e.g., show an error screen) instead of crashing for production resilience.
-    private init(inMemory: Bool = false, cloudSyncEnabled: Bool = true) {
-        let startupTrace = PerformanceTrace.begin("PersistenceController.init")
+    private init(container: ModelContainer) {
+        self.container = container
+    }
+
+    static func makeForStartup() async throws -> PersistenceController {
+        let cloudSyncEnabled = isCloudSyncEnabled
+        return try await withCheckedThrowingContinuation { continuation in
+            startupBootstrapQueue.async {
+                do {
+                    let controller = try makeController(inMemory: false, cloudSyncEnabled: cloudSyncEnabled)
+                    continuation.resume(returning: controller)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    static func makeForUITesting() throws -> PersistenceController {
+        try makeController(inMemory: false, cloudSyncEnabled: isCloudSyncEnabled)
+    }
+
+    static func makeInMemoryForTesting() throws -> PersistenceController {
+        try makeController(inMemory: true, cloudSyncEnabled: false)
+    }
+
+    private static func makeController(inMemory: Bool, cloudSyncEnabled: Bool) throws -> PersistenceController {
+        let startupTrace = PerformanceTrace.begin("PersistenceController.makeController")
         let schema = Schema([JournalEntry.self])
         let configuration = Self.makeConfiguration(
             schema: schema,
@@ -34,8 +60,9 @@ final class PersistenceController {
             cloudSyncEnabled: cloudSyncEnabled
         )
         do {
-            container = try ModelContainer(for: schema, configurations: configuration)
-            PerformanceTrace.end("PersistenceController.init", startedAt: startupTrace)
+            let container = try ModelContainer(for: schema, configurations: configuration)
+            PerformanceTrace.end("PersistenceController.makeController", startedAt: startupTrace)
+            return PersistenceController(container: container)
         } catch {
             if !inMemory, cloudSyncEnabled {
                 do {
@@ -44,16 +71,17 @@ final class PersistenceController {
                         inMemory: false,
                         cloudSyncEnabled: false
                     )
-                    container = try ModelContainer(for: schema, configurations: fallbackConfiguration)
+                    let container = try ModelContainer(for: schema, configurations: fallbackConfiguration)
                     Self.disableCloudSyncAfterFallback()
-                    PerformanceTrace.end("PersistenceController.init.fallback", startedAt: startupTrace)
+                    PerformanceTrace.end("PersistenceController.makeController.fallback", startedAt: startupTrace)
+                    return PersistenceController(container: container)
                 } catch {
-                    PerformanceTrace.end("PersistenceController.init.failed", startedAt: startupTrace)
-                    fatalError("Failed to create SwiftData container (including local fallback): \(error)")
+                    PerformanceTrace.end("PersistenceController.makeController.failed", startedAt: startupTrace)
+                    throw PersistenceControllerError.unableToCreateContainer(error)
                 }
             } else {
-                PerformanceTrace.end("PersistenceController.init.failed", startedAt: startupTrace)
-                fatalError("Failed to create SwiftData container: \(error)")
+                PerformanceTrace.end("PersistenceController.makeController.failed", startedAt: startupTrace)
+                throw PersistenceControllerError.unableToCreateContainer(error)
             }
         }
     }
@@ -86,4 +114,12 @@ final class PersistenceController {
         return baseURL.appendingPathComponent("Demo.store", isDirectory: false)
     }
 #endif
+}
+
+enum PersistenceControllerError: LocalizedError {
+    case unableToCreateContainer(Error)
+
+    var errorDescription: String? {
+        "We couldn't finish setting up your journal space. Please try again."
+    }
 }

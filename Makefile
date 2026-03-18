@@ -6,8 +6,9 @@ ISOLATED_DERIVED_DATA := /tmp/GraceNotes-TestDerivedData
 UNIT_TEST_BUNDLE := GraceNotesTests
 UI_TEST_BUNDLE := GraceNotesUITests
 XCODE_TEST_FLAGS := -parallel-testing-enabled NO
+SIMULATOR_NAME := iPhone 17
 
-.PHONY: help lint build test test-unit test-ui test-isolated test-demo test-all ci reset-simulators verify-agent-log verify-agent-log-strict
+.PHONY: help lint lint-preflight build test test-unit test-ui test-isolated test-demo test-demo-preflight test-demo-run test-all ci reset-simulators warmup-simulator verify-agent-log verify-agent-log-strict
 
 help:
 	@echo "Available targets:"
@@ -17,15 +18,23 @@ help:
 	@echo "  make test-unit - Run unit tests only for default scheme"
 	@echo "  make test-ui   - Run UI tests only for default scheme"
 	@echo "  make test-isolated - Run tests with isolated DerivedData to avoid Xcode contention"
-	@echo "  make test-demo - Run tests for demo scheme (macOS + Xcode + iOS Simulator required)"
-	@echo "  make test-all  - Run tests for both schemes"
+	@echo "  make test-demo - Reset/warm simulators, then run tests for demo scheme"
+	@echo "  make test-all  - Reset simulators between default/demo test runs"
 	@echo "  make reset-simulators - Shutdown and erase all simulators"
 	@echo "  make verify-agent-log - Run warning-mode agent-log validation"
 	@echo "  make verify-agent-log-strict - Run strict agent-log validation"
 	@echo "  make ci     - Run lint and full-suite tests with simulator resets"
 
 lint:
+	@$(MAKE) lint-preflight
 	swiftlint lint
+
+lint-preflight:
+	@if ! command -v swiftlint >/dev/null 2>&1; then \
+		echo "SwiftLint is not installed or not on PATH."; \
+		echo "Install with Homebrew: brew install swiftlint"; \
+		exit 1; \
+	fi
 
 build:
 	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' build
@@ -43,15 +52,30 @@ test-isolated:
 	xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination '$(DESTINATION)' $(XCODE_TEST_FLAGS) -derivedDataPath "$(ISOLATED_DERIVED_DATA)" test
 
 test-demo:
+	@$(MAKE) test-demo-preflight
+	@$(MAKE) test-demo-run
+
+test-demo-run:
 	xcodebuild -project "$(PROJECT)" -scheme "$(DEMO_SCHEME)" -destination '$(DESTINATION)' $(XCODE_TEST_FLAGS) test
+
+test-demo-preflight:
+	@$(MAKE) reset-simulators
+	@$(MAKE) warmup-simulator
 
 reset-simulators:
 	xcrun simctl shutdown all || true
 	xcrun simctl erase all || true
 
+warmup-simulator:
+	@xcrun simctl boot "$(SIMULATOR_NAME)" >/dev/null 2>&1 || true
+	@xcrun simctl bootstatus "$(SIMULATOR_NAME)" -b >/dev/null 2>&1 || true
+
 test-all:
+	$(MAKE) reset-simulators
 	$(MAKE) test
-	$(MAKE) test-demo
+	$(MAKE) reset-simulators
+	$(MAKE) warmup-simulator
+	$(MAKE) test-demo-run
 
 verify-agent-log:
 	./Scripts/validate-agent-log.sh
@@ -61,7 +85,4 @@ verify-agent-log-strict:
 
 ci:
 	$(MAKE) lint
-	$(MAKE) reset-simulators
-	$(MAKE) test
-	$(MAKE) reset-simulators
-	$(MAKE) test-demo
+	$(MAKE) test-all

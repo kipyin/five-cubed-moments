@@ -21,7 +21,7 @@ final class JournalEntry {
     var reflections: String = ""
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
-    var completedAt: Date? = nil
+    var completedAt: Date?
 
     init(
         id: UUID = UUID(),

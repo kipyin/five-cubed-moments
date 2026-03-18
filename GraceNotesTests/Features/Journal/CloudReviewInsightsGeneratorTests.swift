@@ -236,47 +236,16 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
             apiKey: "test-key",
             urlSession: urlSession
         )
-        var capturedRequestBody: Data?
-        let requestCaptured = expectation(description: "Cloud request body captured")
-
-        MockURLProtocol.mockResponse = { request in
-            capturedRequestBody = request.httpBody ?? self.requestBody(from: request)
-            requestCaptured.fulfill()
-            let response: [String: Any] = [
-                "choices": [["message": ["content": """
-                {
-                  "narrativeSummary": "You reflected on Rest.",
-                  "resurfacingMessage": "You mentioned Rest 2 times this week.",
-                  "continuityPrompt": "What can protect your Rest tomorrow?",
-                  "recurringGratitudes": [],
-                  "recurringNeeds": [{"label":"Rest","count":2}],
-                  "recurringPeople": []
-                }
-                """]]]
-            ]
-            let data: Data
-            do {
-                data = try JSONSerialization.data(withJSONObject: response)
-            } catch {
-                return (nil, nil, error)
-            }
-            let http = HTTPURLResponse(
-                url: URL(string: "https://example.com")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: nil
-            )!
-            return (data, http, nil)
-        }
+        let requestCapture = makePromptCaptureMock()
 
         _ = try await generator.generateInsights(
             from: [makeEntry(on: date(year: 2026, month: 3, day: 17))],
             referenceDate: date(year: 2026, month: 3, day: 18),
             calendar: calendar
         )
-        await fulfillment(of: [requestCaptured], timeout: 1.0)
+        await fulfillment(of: [requestCapture.expectation], timeout: 1.0)
 
-        guard let capturedRequestBody else {
+        guard let capturedRequestBody = requestCapture.getBody() {
             return XCTFail("Expected request body to be captured")
         }
         let requestObject = try JSONSerialization.jsonObject(with: capturedRequestBody)
@@ -372,5 +341,26 @@ private extension CloudReviewInsightsGeneratorTests {
         }
 
         return data.isEmpty ? nil : data
+    }
+
+    func makePromptCaptureMock() -> (expectation: XCTestExpectation, getBody: () -> Data?) {
+        var capturedRequestBody: Data?
+        let requestCaptured = expectation(description: "Cloud request body captured")
+        let content = """
+        {
+          "narrativeSummary": "You reflected on Rest.",
+          "resurfacingMessage": "You mentioned Rest 2 times this week.",
+          "continuityPrompt": "What can protect your Rest tomorrow?",
+          "recurringGratitudes": [],
+          "recurringNeeds": [{"label":"Rest","count":2}],
+          "recurringPeople": []
+        }
+        """
+        MockURLProtocol.mockResponse = { request in
+            capturedRequestBody = request.httpBody ?? self.requestBody(from: request)
+            requestCaptured.fulfill()
+            return self.makeMockAPIResponse(content: content)
+        }
+        return (requestCaptured, { capturedRequestBody })
     }
 }

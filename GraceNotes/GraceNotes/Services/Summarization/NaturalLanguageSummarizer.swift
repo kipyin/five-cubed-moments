@@ -25,7 +25,9 @@ struct NaturalLanguageSummarizer: Summarizer {
 
         if section == .person, let detectedName = detectLatinPersonalName(in: trimmed) {
             let isTruncated = detectedName.count > maxKeywordLabelChars
-            let capped = isTruncated ? firstTokensUpToMaxChars(detectedName, maxChars: maxKeywordLabelChars) : detectedName
+            let capped = isTruncated
+                ? firstTokensUpToMaxChars(detectedName, maxChars: maxKeywordLabelChars)
+                : detectedName
             return SummarizationResult(label: capped, isTruncated: isTruncated)
         }
 

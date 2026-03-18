@@ -38,7 +38,10 @@ struct SettingsScreen: View {
             } footer: {
                 Text(
                     String(
-                        localized: "When on, chip labels use an online service for better summaries. When off, labels use on-device processing only."
+                        localized: """
+                        When on, chip labels use an online service for better summaries. \
+                        When off, labels use on-device processing only.
+                        """
                     )
                 )
                     .font(AppTheme.warmPaperBody)
@@ -56,7 +59,11 @@ struct SettingsScreen: View {
             } footer: {
                 Text(
                     String(
-                        localized: "When on, weekly review insights may send your recent journal text to the configured cloud AI service. When off, review insights stay on-device."
+                        localized: """
+                        When on, weekly review insights may send your recent journal text \
+                        to the configured cloud AI service. \
+                        When off, review insights stay on-device.
+                        """
                     )
                 )
                     .font(AppTheme.warmPaperBody)
@@ -181,30 +188,40 @@ struct SettingsScreen: View {
         }
     }
 
-    private var savedReminderTime: Date {
+}
+
+private extension SettingsScreen {
+    var savedReminderTime: Date {
         ReminderSettings.date(from: dailyReminderTimeInterval)
     }
 
-    private var dataPrivacyFooterText: String {
+    var dataPrivacyFooterText: String {
         if !isCloudSyncAvailable {
             return String(
-                localized: "This demo build keeps journal entries on this device only. Export creates a full JSON backup you can keep."
+                localized: """
+                This demo build keeps journal entries on this device only. \
+                Export creates a full JSON backup you can keep.
+                """
             )
         }
 
         return String(
-            localized: "Journal entries are stored locally and can sync through your iCloud private database when enabled. Sync changes apply on next app launch. Export creates a full JSON backup you can keep."
+            localized: """
+            Journal entries are stored locally and can sync through your iCloud private database when enabled. \
+            Sync changes apply on next app launch. \
+            Export creates a full JSON backup you can keep.
+            """
         )
     }
 
-    private func syncReminderSchedule() async {
+    func syncReminderSchedule() async {
         _ = await reminderScheduler.syncDailyReminder(
             enabled: dailyReminderEnabled,
             time: savedReminderTime
         )
     }
 
-    private func updateReminderEnabledState(isEnabled: Bool) async {
+    func updateReminderEnabledState(isEnabled: Bool) async {
         if !isEnabled {
             isReminderTimePickerExpanded = false
             await syncReminderSchedule()
@@ -224,7 +241,7 @@ struct SettingsScreen: View {
         }
     }
 
-    private func confirmReminderTime() async {
+    func confirmReminderTime() async {
         guard !isSavingReminderTime else {
             return
         }
@@ -247,7 +264,7 @@ struct SettingsScreen: View {
         }
     }
 
-    private func exportJournalData() {
+    func exportJournalData() {
         guard !isExportingData else { return }
         isExportingData = true
         let container = modelContext.container

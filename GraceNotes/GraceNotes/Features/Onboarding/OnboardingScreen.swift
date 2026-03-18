@@ -14,13 +14,18 @@ struct OnboardingScreen: View {
         OnboardingPage(
             title: String(localized: "Review that gives insight"),
             message: String(
-                localized: "Your Review tab turns past entries into recurring themes, resurfacing ideas, and continuity prompts."
+                localized: """
+                Your Review tab turns past entries into recurring themes, \
+                resurfacing ideas, and continuity prompts.
+                """
             )
         ),
         OnboardingPage(
             title: String(localized: "Progress over perfection"),
             message: String(
-                localized: "Low-energy days still count. Start small and build toward fuller reflection sessions over time."
+                localized: """
+                Low-energy days still count. Start small and build toward fuller reflection sessions over time.
+                """
             )
         )
     ]

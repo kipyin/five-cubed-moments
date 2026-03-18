@@ -43,12 +43,20 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 
 Use the root `Makefile` for common local workflows:
 
-- `make lint` – Run SwiftLint checks.
+- `make lint` – Run SwiftLint checks (requires `swiftlint` on your PATH).
 - `make build` – Build the app (requires macOS + Xcode).
 - `make test` – Run tests for the default scheme (requires macOS + Xcode + iOS Simulator).
-- `make test-demo` – Run tests for the demo scheme.
-- `make test-all` – Run tests for both schemes.
+- `make test-demo` – Reset/warm simulators, then run tests for the demo scheme.
+- `make test-all` – Reset simulators between default and demo test runs.
 - `make ci` – Run lint and tests for both schemes.
+
+If `make lint` reports that SwiftLint is missing, install it with Homebrew:
+
+```bash
+brew install swiftlint
+```
+
+Note: `make test-demo` and `make test-all` intentionally reset simulators to reduce flaky preflight failures. This wipes simulator state for deterministic test runs.
 
 ## Tech Stack
 

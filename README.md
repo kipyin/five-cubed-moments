@@ -6,13 +6,12 @@ A journaling iOS app for daily gratitude, reflection, and people in mind.
 
 Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes, 5 needs, 5 people in mind, reading notes, and space for what you're thinking and learning. The app offers a quiet, low-friction place for gratitude and reflection, with a gentle framing that feels welcoming rather than pushy.
 
-## What's new in 0.3.1
+## What's new in 0.3.2
 
-- Chip editing now uses context-menu actions for rename/delete, with drag-to-reorder support for better in-place organization.
-- AI-unavailable chip labels now use deterministic first-snippet fallback behavior for stable, readable results.
-- Review insights and cloud prompt handling were hardened with safer sanitization and stronger fallback coverage.
-- Full-suite automation is more reliable with simulator reset steps and serialized test execution defaults.
-- Release docs and project automation references now align with current Grace Notes naming and workflow.
+- This patch publishes release `0.3.2` as a metadata/documentation alignment update.
+- App build settings now use `0.3.2` as the marketing version.
+- Release docs were refreshed so roadmap and changelog status stay in sync.
+- No net-new user-facing features are introduced in this patch.
 
 ## Features
 

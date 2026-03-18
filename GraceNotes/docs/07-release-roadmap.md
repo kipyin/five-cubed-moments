@@ -14,9 +14,13 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 
 ## Release sequence
 
-## 0.3.2 — Stabilization patch
+## 0.3.2 — Released (2026-03-18)
 
 **Goal:** Restore confidence in first launch and daily entry flow.
+
+**Release status**
+- Shipped as `0.3.2` patch release.
+- See `CHANGELOG.md` for final packaged scope details.
 
 **Scope in**
 - `#31` App frozen at first launch

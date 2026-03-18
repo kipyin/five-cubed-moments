@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.2] - 2026-03-18
+
+### Added
+- (none)
+
+### Changed
+- Bumped app marketing version metadata to `0.3.2` across app build configurations.
+- Updated release-facing documentation to make `0.3.2` the current published version.
+
+### Fixed
+- (none)
+
+### Developer
+- Marked release roadmap status for `0.3.2` to keep sequencing and docs aligned.
+
 ## [0.3.1] - 2026-03-18
 
 ### Added

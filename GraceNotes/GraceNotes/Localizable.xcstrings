@@ -113,6 +113,9 @@
         }
       }
     },
+    "Adds another item in this section" : {
+
+    },
     "AI" : {
       "localizations" : {
         "en" : {
@@ -390,6 +393,9 @@
           }
         }
       }
+    },
+    "Dismiss" : {
+
     },
     "Done" : {
       "extractionState" : "stale",
@@ -683,6 +689,7 @@
       }
     },
     "Journal entries are stored locally on this device. Export creates a full JSON backup you can keep." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -697,6 +704,9 @@
           }
         }
       }
+    },
+    "Journal entries stay private to your devices and account. Export creates a full JSON backup you can keep." : {
+
     },
     "Label" : {
       "localizations" : {
@@ -1695,6 +1705,7 @@
       }
     },
     "Unable to create share image." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1885,6 +1896,9 @@
           }
         }
       }
+    },
+    "We couldn't create a share image right now. Please try again." : {
+
     },
     "We couldn't finish setting up your journal space. Please try again." : {
       "localizations" : {

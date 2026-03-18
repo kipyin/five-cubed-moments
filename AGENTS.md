@@ -53,6 +53,7 @@ Keep role behavior in `.cursor/rules/` as the single source of truth for role-sp
 
 - `Strategist` -> `.cursor/rules/strategist.mdc`
 - `Architect` -> `.cursor/rules/architect.mdc`
+- `Implementer` -> `.cursor/rules/implementer.mdc`
 - `Release Manager` -> `.cursor/rules/release-manager.mdc`
 - `QA Reviewer` -> `.cursor/rules/qa-reviewer.mdc`
 - `Test Lead` -> `.cursor/rules/test-lead.mdc`

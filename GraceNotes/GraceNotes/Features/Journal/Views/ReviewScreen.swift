@@ -23,13 +23,21 @@ struct ReviewScreen: View {
     @State private var isLoadingInsights = false
     @State private var selectedMode: ReviewMode = .insights
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
+    @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
 
     private let calendar = Calendar.current
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
 
-    private var groupedEntries: [(key: Date, entries: [JournalEntry])] {
-        HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
+    private var timelineGroupingVersion: Int {
+        var hasher = Hasher()
+        hasher.combine(entries.count)
+        for entry in entries {
+            hasher.combine(entry.id)
+            hasher.combine(entry.entryDate.timeIntervalSinceReferenceDate)
+            hasher.combine(entry.updatedAt.timeIntervalSinceReferenceDate)
+        }
+        return hasher.finalize()
     }
 
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
@@ -79,6 +87,9 @@ struct ReviewScreen: View {
                 await refreshReviewInsights()
             }
         }
+        .task(id: timelineGroupingVersion) {
+            refreshTimelineGroups()
+        }
     }
 
     private var emptyState: some View {
@@ -93,13 +104,33 @@ struct ReviewScreen: View {
     private var historyList: some View {
         List {
             Section {
-                Picker(String(localized: "Review mode"), selection: $selectedMode) {
+                HStack(spacing: 6) {
                     ForEach(ReviewMode.allCases) { mode in
-                        Text(mode.localizedTitle).tag(mode)
+                        Button {
+                            selectedMode = mode
+                        } label: {
+                            Text(mode.localizedTitle)
+                                .font(AppTheme.warmPaperBody.weight(.semibold))
+                                .foregroundStyle(mode == selectedMode ? AppTheme.onAccent : AppTheme.textMuted)
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(mode == selectedMode ? AppTheme.accent : .clear)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(mode.localizedTitle)
+                        .accessibilityAddTraits(mode == selectedMode ? [.isSelected] : [])
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding(.vertical, 4)
+                .padding(4)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppTheme.paper)
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(String(localized: "Review mode"))
                 .listRowBackground(AppTheme.background)
             }
 
@@ -111,7 +142,7 @@ struct ReviewScreen: View {
                         .listRowBackground(AppTheme.background)
                 }
             case .timeline:
-                ForEach(groupedEntries, id: \.key) { group in
+                ForEach(timelineGroups, id: \.key) { group in
                     Section {
                         ForEach(group.entries, id: \.id) { entry in
                             NavigationLink {
@@ -119,6 +150,8 @@ struct ReviewScreen: View {
                             } label: {
                                 HistoryRow(entry: entry)
                             }
+                            .accessibilityLabel(accessibilityTimelineRowLabel(for: entry))
+                            .accessibilityHint(String(localized: "Opens this day's journal entry."))
                             .listRowBackground(AppTheme.paper)
                         }
                     } header: {
@@ -130,8 +163,12 @@ struct ReviewScreen: View {
             }
         }
         .listStyle(.insetGrouped)
+        .listRowSpacing(10)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+        }
     }
 
     @MainActor
@@ -182,6 +219,32 @@ struct ReviewScreen: View {
         guard useAIReviewInsights else { return true }
         return insights.source == .cloudAI
     }
+
+    private func refreshTimelineGroups() {
+        timelineGroups = HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
+    }
+
+    private func accessibilityTimelineRowLabel(for entry: JournalEntry) -> String {
+        let dateText = entry.entryDate.formatted(date: .complete, time: .omitted)
+        return String(
+            format: String(localized: "%1$@, %2$@"),
+            dateText,
+            completionText(for: entry.completionLevel)
+        )
+    }
+
+    private func completionText(for completionLevel: JournalCompletionLevel) -> String {
+        switch completionLevel {
+        case .fullFiveCubed:
+            return String(localized: "Full")
+        case .standardReflection:
+            return String(localized: "Standard")
+        case .quickCheckIn:
+            return String(localized: "Quick")
+        case .none:
+            return String(localized: "No completion level")
+        }
+    }
 }
 
 enum HistoryEntryGrouping {
@@ -210,6 +273,7 @@ private struct HistoryRow: View {
                 .foregroundStyle(AppTheme.textPrimary)
             Spacer()
             completionBadge
+                .frame(minWidth: 78, alignment: .trailing)
         }
     }
 
@@ -217,24 +281,48 @@ private struct HistoryRow: View {
     private var completionBadge: some View {
         switch entry.completionLevel {
         case .fullFiveCubed:
-            statusChip(text: String(localized: "Full"), color: AppTheme.complete)
+            statusChip(
+                text: String(localized: "Full"),
+                textColor: AppTheme.textPrimary,
+                backgroundColor: AppTheme.complete.opacity(0.18),
+                borderColor: AppTheme.completeText
+            )
         case .standardReflection:
-            statusChip(text: String(localized: "Standard"), color: AppTheme.accent)
+            statusChip(
+                text: String(localized: "Standard"),
+                textColor: AppTheme.textPrimary,
+                backgroundColor: AppTheme.accent.opacity(0.18),
+                borderColor: AppTheme.accent
+            )
         case .quickCheckIn:
-            statusChip(text: String(localized: "Quick"), color: AppTheme.textMuted)
+            statusChip(
+                text: String(localized: "Quick"),
+                textColor: AppTheme.textPrimary,
+                backgroundColor: AppTheme.background,
+                borderColor: AppTheme.textMuted
+            )
         case .none:
             EmptyView()
         }
     }
 
-    private func statusChip(text: String, color: Color) -> some View {
+    private func statusChip(
+        text: String,
+        textColor: Color,
+        backgroundColor: Color,
+        borderColor: Color
+    ) -> some View {
         Text(text)
             .font(AppTheme.warmPaperBody.weight(.semibold))
-            .foregroundStyle(color)
+            .foregroundStyle(textColor)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(AppTheme.background)
+            .background(backgroundColor)
             .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(borderColor.opacity(0.8), lineWidth: 1)
+            )
     }
 }
 
@@ -243,7 +331,7 @@ private struct ReviewSummaryCard: View {
     let isLoading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(String(localized: "This Week"))
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(AppTheme.textPrimary)
@@ -267,13 +355,14 @@ private struct ReviewSummaryCard: View {
                 }
 
                 Text(weekRangeText(insights))
-                    .font(AppTheme.warmPaperBody)
+                    .font(AppTheme.warmPaperMeta)
                     .foregroundStyle(AppTheme.textMuted)
 
                 if let narrativeSummary = insights.narrativeSummary, !narrativeSummary.isEmpty {
                     Text(narrativeSummary)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.textPrimary)
+                        .lineSpacing(4)
                 }
 
                 ReviewThemeRow(title: String(localized: "Recurring Gratitudes"), items: insights.recurringGratitudes)
@@ -281,16 +370,18 @@ private struct ReviewSummaryCard: View {
                 ReviewThemeRow(title: String(localized: "People in Mind"), items: insights.recurringPeople)
 
                 Text(insights.resurfacingMessage)
-                    .font(AppTheme.warmPaperBody)
+                    .font(AppTheme.warmPaperMeta)
                     .foregroundStyle(AppTheme.textMuted)
+                    .lineSpacing(2)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(String(localized: "Continue with"))
                         .font(AppTheme.warmPaperBody.weight(.semibold))
                         .foregroundStyle(AppTheme.textPrimary)
                     Text(insights.continuityPrompt)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.textPrimary)
+                        .lineSpacing(3)
                 }
             } else {
                 Text(String(localized: "Start writing this week to unlock review insights."))
@@ -329,27 +420,32 @@ private struct ReviewThemeRow: View {
     let title: String
     let items: [ReviewInsightTheme]
 
-    private var itemText: String {
-        guard !items.isEmpty else {
-            return String(localized: "No recurring patterns yet")
-        }
-        return items.map {
-            String(
-                format: String(localized: "%1$@ (%2$lld)"),
-                $0.label,
-                $0.count
-            )
-        }.joined(separator: ", ")
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(AppTheme.warmPaperBody.weight(.semibold))
                 .foregroundStyle(AppTheme.textPrimary)
-            Text(itemText)
-                .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textMuted)
+
+            if items.isEmpty {
+                Text(String(localized: "No recurring patterns yet"))
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.textMuted)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { indexedItem in
+                        Text(
+                            String(
+                                format: String(localized: "%1$@ (%2$lld)"),
+                                indexedItem.element.label,
+                                indexedItem.element.count
+                            )
+                        )
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.textMuted)
+                        .lineSpacing(2)
+                    }
+                }
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ enum AppTheme {
     static let textPrimary = Color(hex: 0x2C2C2C)
     static let textMuted = Color(hex: 0x5C5346)
     static let accent = Color(hex: 0xC77B5B)
+    static let onAccent = Color(hex: 0x1F1A16)
     static let complete = Color(hex: 0x8B9A7D)
     static let completeText = Color(hex: 0x5F6D54)
     static let error = Color(hex: 0xA3564A)
@@ -18,11 +19,11 @@ enum AppTheme {
 
     // MARK: - Typography
 
-    static let warmPaperHeader = Font.custom("PlayfairDisplay-Regular", size: 22)
+    static let warmPaperHeader = Font.custom("PlayfairDisplay-Regular", size: 22, relativeTo: .title3)
         .weight(.semibold)
-    static let warmPaperBody = Font.custom("SourceSerif4Roman-Regular", size: 17)
-    static let warmPaperMeta = Font.custom("SourceSerif4Roman-Regular", size: 15)
-    static let warmPaperMetaEmphasis = Font.custom("SourceSerif4Roman-Regular", size: 15)
+    static let warmPaperBody = Font.custom("SourceSerif4Roman-Regular", size: 17, relativeTo: .body)
+    static let warmPaperMeta = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
+    static let warmPaperMetaEmphasis = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
         .weight(.semibold)
 
     // MARK: - Spacing & Radius

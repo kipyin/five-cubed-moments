@@ -70,7 +70,6 @@ struct GraceNotesApp: App {
     @ViewBuilder
     private func uiTestRootView(using controller: PersistenceController) -> some View {
         mainTabView
-            .preferredColorScheme(.light)
             .background(AppTheme.background)
             .toolbarBackground(AppTheme.background, for: .tabBar)
             .tint(AppTheme.accent)
@@ -91,11 +90,9 @@ struct GraceNotesApp: App {
             .task {
                 startupCoordinator.startIfNeeded()
             }
-            .preferredColorScheme(.light)
             .background(AppTheme.background)
         case .ready(let controller):
             readyContent
-                .preferredColorScheme(.light)
                 .background(AppTheme.background)
                 .toolbarBackground(AppTheme.background, for: .tabBar)
                 .tint(AppTheme.accent)

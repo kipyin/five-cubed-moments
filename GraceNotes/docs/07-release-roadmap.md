@@ -39,6 +39,25 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - Keyboard stays available after commit.
 - First launch and common settings interactions feel responsive.
 
+## 0.3.3 — UI polish and cohesion
+
+**Goal:** Make the shipped experience feel calmer, clearer, and more intentionally finished across the app.
+
+**Scope in**
+- Cross-app UI polish across onboarding or first-launch presentation, Today, Review, and Settings
+- Small consistency improvements to spacing, hierarchy, copy, labels, and interaction feedback
+- Loading, empty, success, and error states that currently feel abrupt, unclear, or visually rough
+- Presentation refinements that strengthen trust and calmness without changing the underlying feature set
+
+**Why now**
+- `0.3.2` repaired the most visible reliability failures, but the app still needs a cohesion pass so those fixes feel truly shipped rather than merely stabilized
+- This is the right size for a patch release and keeps `0.4.0` focused on the bigger product return: better insight quality
+
+**Acceptance intent**
+- Primary surfaces feel visually and tonally consistent
+- State changes are easy to understand and do not leave the user guessing what happened
+- The release reads as polish and cohesion, not as a disguised feature expansion
+
 ## 0.4.0 — Insight quality
 
 **Goal:** Make review feel specific, trustworthy, and grounded in the user’s own entries.

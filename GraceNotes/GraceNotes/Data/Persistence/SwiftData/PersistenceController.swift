@@ -48,7 +48,22 @@ final class PersistenceController {
     }
 
     static func makeForUITesting() throws -> PersistenceController {
-        try makeController(inMemory: false, cloudSyncEnabled: false)
+        let startupTrace = PerformanceTrace.begin("PersistenceController.makeForUITesting")
+        let schema = Schema([JournalEntry.self])
+        let configuration = ModelConfiguration(
+            schema: schema,
+            url: uiTestStoreURL,
+            cloudKitDatabase: .none
+        )
+        do {
+            let container = try ModelContainer(for: schema, configurations: configuration)
+            try seedUITestDataIfNeeded(in: container)
+            PerformanceTrace.end("PersistenceController.makeForUITesting", startedAt: startupTrace)
+            return PersistenceController(container: container)
+        } catch {
+            PerformanceTrace.end("PersistenceController.makeForUITesting.failed", startedAt: startupTrace)
+            throw PersistenceControllerError.unableToCreateContainer(error)
+        }
     }
 
     static func makeInMemoryForTesting() throws -> PersistenceController {
@@ -113,6 +128,51 @@ final class PersistenceController {
         return baseURL.appendingPathComponent("Demo.store", isDirectory: false)
     }
 #endif
+
+    private static var uiTestStoreURL: URL {
+        let fileManager = FileManager.default
+        let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let uiTestDirectory = appSupportURL.appendingPathComponent("GraceNotesUITests", isDirectory: true)
+        if !fileManager.fileExists(atPath: uiTestDirectory.path) {
+            try? fileManager.createDirectory(at: uiTestDirectory, withIntermediateDirectories: true)
+        }
+
+        // Use XCTest configuration path to scope storage per test run.
+        // This keeps relaunches in the same run persistent while preventing
+        // stale data from previous test runs from leaking into current runs.
+        let sessionKey = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? UUID().uuidString
+        let safeSessionKey = sessionKey
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+        let fileName = "ui-test-\(safeSessionKey).store"
+        return uiTestDirectory.appendingPathComponent(fileName, isDirectory: false)
+    }
+
+    private static func seedUITestDataIfNeeded(in container: ModelContainer) throws {
+        let context = ModelContext(container)
+        var descriptor = FetchDescriptor<JournalEntry>()
+        descriptor.fetchLimit = 1
+        if let _ = try context.fetch(descriptor).first {
+            return
+        }
+
+        let now = Date.now
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let previousDay = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+
+        let seededEntry = JournalEntry(
+            entryDate: previousDay,
+            gratitudes: [JournalItem(fullText: "Seed gratitude for timeline")],
+            needs: [JournalItem(fullText: "Seed need for timeline")],
+            people: [JournalItem(fullText: "Seed person for timeline")],
+            createdAt: now,
+            updatedAt: now
+        )
+        context.insert(seededEntry)
+        try context.save()
+    }
 }
 
 enum PersistenceControllerError: LocalizedError {

@@ -21,13 +21,22 @@ struct ReviewScreen: View {
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
-    @State private var selectedMode: ReviewMode = .insights
+    @State private var selectedMode: ReviewMode
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
     @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
 
     private let calendar = Calendar.current
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
+
+    init() {
+        let testingFlag = ProcessInfo.processInfo.environment["FIVECUBED_UI_TESTING"]
+            .map { value in
+                let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                return normalizedValue == "1" || normalizedValue == "true" || normalizedValue == "yes"
+            } ?? false
+        _selectedMode = State(initialValue: testingFlag ? .timeline : .insights)
+    }
 
     private var timelineGroupingVersion: Int {
         var hasher = Hasher()
@@ -121,6 +130,7 @@ struct ReviewScreen: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(mode.localizedTitle)
+                        .accessibilityIdentifier(accessibilityReviewModeIdentifier(for: mode))
                         .accessibilityAddTraits(mode == selectedMode ? [.isSelected] : [])
                     }
                 }
@@ -131,6 +141,7 @@ struct ReviewScreen: View {
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(String(localized: "Review mode"))
+                .accessibilityIdentifier("ReviewModePicker")
                 .listRowBackground(AppTheme.background)
             }
 
@@ -151,6 +162,7 @@ struct ReviewScreen: View {
                                 HistoryRow(entry: entry)
                             }
                             .accessibilityLabel(accessibilityTimelineRowLabel(for: entry))
+                            .accessibilityIdentifier("ReviewTimelineEntry.\(entry.id.uuidString)")
                             .accessibilityHint(String(localized: "Opens this day's journal entry."))
                             .listRowBackground(AppTheme.paper)
                         }
@@ -243,6 +255,15 @@ struct ReviewScreen: View {
             return String(localized: "Reflection Started")
         case .none:
             return String(localized: "No completion level")
+        }
+    }
+
+    private func accessibilityReviewModeIdentifier(for mode: ReviewMode) -> String {
+        switch mode {
+        case .insights:
+            return "ReviewMode.insights"
+        case .timeline:
+            return "ReviewMode.timeline"
         }
     }
 }

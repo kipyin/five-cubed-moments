@@ -49,8 +49,9 @@
 - Chinese localization now fully covers the renamed Review, Settings, and Onboarding surfaces, including deterministic review insight copy.
 
 ### Developer
-- Renamed project, app, and test paths from legacy identifiers to `GraceNotes*`, with aligned module and Xcode scheme naming.
-- Updated iCloud entitlement container identifiers to match the Grace Notes bundle naming.
+- Rebranded project/app/test paths from `FiveCubedMoments*` to `GraceNotes*` and aligned Xcode schemes/module naming
+- Updated iCloud entitlement container identifiers to the Grace Notes bundle naming
+- Removed `GRACE_NOTES_CLOUD_API_KEY` fallback; cloud key now resolves from Info.plist or placeholder only
 
 ## [0.2.3] - 2026-03-17
 

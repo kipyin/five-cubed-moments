@@ -70,8 +70,7 @@ Note: `make test-demo` and `make test-all` intentionally reset simulators to red
 
 Cloud summarization is optional and defaults to off. To enable it safely:
 
-1. Set `GRACE_NOTES_CLOUD_API_KEY` in your local environment **or**
-2. Set `CloudSummarizationAPIKey` in your local `Info.plist`.
+1. Set `CloudSummarizationAPIKey` in your local `Info.plist`.
 
 Keep real keys out of git. The checked-in placeholder value (`YOUR_KEY_HERE`) causes automatic fallback to
 on-device summarization.

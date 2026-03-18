@@ -179,6 +179,7 @@
       }
     },
     "Basic %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -890,6 +891,7 @@
       }
     },
     "Perfect %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

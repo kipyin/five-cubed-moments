@@ -47,8 +47,7 @@ struct JournalScreen: View {
             VStack(alignment: .leading, spacing: 24) {
                 DateSectionView(
                     entryDate: viewModel.entryDate,
-                    completionLevel: viewModel.completionLevel,
-                    streakSummary: viewModel.streakSummary
+                    completionLevel: viewModel.completionLevel
                 )
 
                 SequentialSectionView(

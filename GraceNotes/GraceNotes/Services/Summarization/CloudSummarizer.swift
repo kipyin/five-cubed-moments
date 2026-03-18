@@ -4,8 +4,8 @@ import os
 private let log = Logger(subsystem: "com.gracenotes.GraceNotes", category: "CloudSummarizer")
 
 /// Calls OpenAI-compatible chat completions API at chat.cloudapi.vip.
-/// On any failure (network, timeout, invalid key, empty response), falls back to NaturalLanguageSummarizer
-/// by default; a different summarizer may be injected (e.g., for tests).
+/// On any failure (network, timeout, invalid key, empty response), falls back to a deterministic
+/// first-5-words/first-5-Chinese-characters summarizer by default; a different summarizer may be injected.
 /// See doc.newapi.pro for API details.
 struct CloudSummarizer: Summarizer {
     private let baseURL: String
@@ -25,7 +25,7 @@ struct CloudSummarizer: Summarizer {
         self.baseURL = baseURL
         self.model = model
         self.apiKey = apiKey
-        self.fallback = fallback ?? NaturalLanguageSummarizer()
+        self.fallback = fallback ?? DeterministicChipLabelSummarizer()
         self.urlSession = urlSession
     }
 

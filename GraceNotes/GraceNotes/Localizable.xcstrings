@@ -17,6 +17,22 @@
         }
       }
     },
+    "%1$@ to %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ to %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 至 %2$@"
+          }
+        }
+      }
+    },
     "%d of %d" : {
       "localizations" : {
         "en" : {
@@ -188,6 +204,7 @@
       }
     },
     "Chips" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -221,6 +238,7 @@
       }
     },
     "Confirm chip deletion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -333,6 +351,7 @@
       }
     },
     "Delete %@?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -617,6 +636,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日记默认存储在本地，启用后可通过你的 iCloud 私有数据库同步。同步更改会在下次启动应用时生效。导出可生成完整 JSON 备份供你保存。"
+          }
+        }
+      }
+    },
+    "Label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Label"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标签"
           }
         }
       }
@@ -909,6 +944,22 @@
         }
       }
     },
+    "Rename label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename label"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名标签"
+          }
+        }
+      }
+    },
     "Review" : {
       "localizations" : {
         "en" : {
@@ -969,6 +1020,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有洞察的回顾"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
@@ -1197,6 +1264,22 @@
         }
       }
     },
+    "This only changes the chip label." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This only changes the chip label."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这只会更改标签文本。"
+          }
+        }
+      }
+    },
     "This Week" : {
       "localizations" : {
         "en" : {
@@ -1225,6 +1308,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本周你反思了 %@。"
+          }
+        }
+      }
+    },
+    "This week your reflection often returned to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week your reflection often returned to %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本周你的反思常常回到 %@。"
           }
         }
       }
@@ -1501,6 +1600,22 @@
         }
       }
     },
+    "What is one gentle next step you can take tomorrow?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is one gentle next step you can take tomorrow?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明天你可以采取的一个温和小步骤是什么？"
+          }
+        }
+      }
+    },
     "What is one small step you can take to support %@ tomorrow?" : {
       "localizations" : {
         "en" : {
@@ -1550,6 +1665,7 @@
       }
     },
     "When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1593,6 +1709,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天你在想谁？"
+          }
+        }
+      }
+    },
+    "You are building momentum by returning to reflection this week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are building momentum by returning to reflection this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本周你持续回到反思中，正在稳步建立节奏。"
           }
         }
       }

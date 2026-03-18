@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 private struct AddChipView: View {
     let onTap: () -> Void
@@ -39,8 +40,11 @@ struct SequentialSectionView: View {
     let editingIndex: Int?
     let onSubmit: () -> Void
     let onChipTap: (Int) -> Void
+    let onRenameChip: ((Int, String) -> Void)?
+    let onMoveChip: ((Int, Int) -> Void)?
     let onDeleteChip: ((Int) -> Void)?
     let onAddNew: (() -> Void)?
+    @State private var draggingItemID: UUID?
 
     init(
         title: String,
@@ -52,6 +56,8 @@ struct SequentialSectionView: View {
         editingIndex: Int?,
         onSubmit: @escaping () -> Void,
         onChipTap: @escaping (Int) -> Void,
+        onRenameChip: ((Int, String) -> Void)? = nil,
+        onMoveChip: ((Int, Int) -> Void)? = nil,
         onDeleteChip: ((Int) -> Void)? = nil,
         onAddNew: (() -> Void)? = nil
     ) {
@@ -64,6 +70,8 @@ struct SequentialSectionView: View {
         self.editingIndex = editingIndex
         self.onSubmit = onSubmit
         self.onChipTap = onChipTap
+        self.onRenameChip = onRenameChip
+        self.onMoveChip = onMoveChip
         self.onDeleteChip = onDeleteChip
         self.onAddNew = onAddNew
     }
@@ -101,12 +109,7 @@ struct SequentialSectionView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                            ChipView(
-                                label: item.displayLabel,
-                                isTruncated: item.isTruncated,
-                                onTap: { onChipTap(index) },
-                                onDelete: onDeleteChip.map { handler in { handler(index) } }
-                            )
+                            chipView(for: item, at: index)
                         }
                         if showAddChip, let addNew = onAddNew {
                             AddChipView(onTap: addNew)
@@ -129,5 +132,74 @@ struct SequentialSectionView: View {
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.textMuted)
         }
+    }
+
+    @ViewBuilder
+    private func chipView(for item: JournalItem, at index: Int) -> some View {
+        let chip = ChipView(
+            label: item.displayLabel,
+            isTruncated: item.isTruncated,
+            onTap: { onChipTap(index) },
+            onRenameLabel: onRenameChip.map { handler in { handler(index, $0) } },
+            onDelete: onDeleteChip.map { handler in { handler(index) } }
+        )
+
+        if let onMoveChip {
+            chip
+                .onDrag {
+                    draggingItemID = item.id
+                    return NSItemProvider(object: item.id.uuidString as NSString)
+                }
+                .onDrop(
+                    of: [UTType.text],
+                    delegate: ChipReorderDropDelegate(
+                        targetIndex: index,
+                        items: items,
+                        draggingItemID: $draggingItemID,
+                        onMoveChip: onMoveChip
+                    )
+                )
+        } else {
+            chip
+        }
+    }
+}
+
+struct ChipReorderDropDelegate: DropDelegate {
+    let targetIndex: Int
+    let items: [JournalItem]
+    @Binding var draggingItemID: UUID?
+    let onMoveChip: ((Int, Int) -> Void)?
+
+    func dropEntered(info: DropInfo) {
+        dropEntered()
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        dropUpdated()
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        performDrop()
+    }
+
+    func dropEntered() {
+        // Intentionally no-op: apply reorder only on successful drop.
+    }
+
+    func dropUpdated() -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop() -> Bool {
+        guard let draggingItemID else { return false }
+        defer { self.draggingItemID = nil }
+        guard let onMoveChip else { return false }
+        guard let sourceIndex = items.firstIndex(where: { $0.id == draggingItemID }) else { return false }
+        guard sourceIndex != targetIndex else { return true }
+
+        let destinationOffset = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
+        onMoveChip(sourceIndex, destinationOffset)
+        return true
     }
 }

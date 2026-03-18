@@ -1,15 +1,52 @@
 # Changelog
 
-## [0.3.0] - 2026-03-17
+## [0.3.1] - 2026-03-18
 
 ### Added
 - (none)
 
 ### Changed
-- Onboarding copy now uses Grace Notes naming and non-`5³` progress wording (`Welcome to Grace Notes`, `fuller reflection sessions`)
+- Updated release and automation docs to align with current Grace Notes naming, release cadence, and test workflow.
+- Refined test and project configuration references to use current targets/schemes and simulator defaults.
+- `Makefile` test targets now pass `-parallel-testing-enabled NO` to reduce simulator launch contention during full-suite execution.
+- `make test-all` now hard-resets simulators before each scheme run to reduce Xcode simulator preflight contention between `GraceNotes` and `GraceNotes (Demo)` UI-test passes.
+- Chips now use context-menu actions for rename/delete, support drag-to-reorder, and no longer expose a delete-confirmation toggle in Settings.
+- Settings privacy/help copy strings were flattened into valid single-line localized literals to restore successful Swift compilation.
+- `ChipReorderDropDelegate` now exposes direct helper entry points (`dropEntered()`, `dropUpdated()`, `performDrop()`) while preserving `DropDelegate` conformance, which keeps reorder behavior testable across SDK API changes.
+- Cloud review insight tests now use a non-cached `URLSession` test configuration and resilient request-body capture (`httpBody` or `httpBodyStream`) for prompt assertion coverage.
 
 ### Fixed
-- Chinese localization now fully covers Review, Settings, and Onboarding screens (including deterministic review insight copy)
+- Removed remaining legacy entitlement and test-path references so project assets consistently use `GraceNotes*` naming.
+- Stabilized UI test execution by removing the template launch performance case and reducing launch-test configuration fan-out that caused intermittent simulator preflight launch denials.
+- Chip label fallback now uses deterministic snippets (first 5 words, or first 5 Chinese characters) with reliable end-fade truncation behavior when AI summarization is unavailable (#39).
+- Repaired test/build breakages caused by stale symbol usage and missing return paths in chip-editing view-model logic.
+- Updated chip reorder tests for newer SwiftUI drag/drop APIs where `DropInfo` is no longer mockable as a protocol type.
+- Corrected deterministic summarizer test expectations to match the current 20-character chip-label budget behavior.
+
+### Developer
+- Reorganized GraceNotes docs into numbered structure (01–07), archived legacy plans to docs/archive.
+- Added release roadmap (07-release-roadmap.md) mapping strategy to version sequence.
+- Consolidated review insight examples into 04-review-insight-examples.md; removed obsolete doc/review-insight-examples-and-spec.md.
+- Added agent-log initiative structure and validate-agent-log script for issue #41.
+- Added role governance section to AGENTS.md; Makefile verify-agent-log targets.
+- Consolidated test-suite updates across Journal and repository coverage after the naming migration cleanup.
+- Continued maintenance pass on project metadata (`project.pbxproj`), `README.md`, and `Makefile` for release readiness.
+- Added simulator reset helper target (`make reset-simulators`) and wired it into full-suite automation.
+- Tightened cloud insight prompt-quality test synchronization by waiting for captured request traffic before asserting request payload content.
+
+## [0.3.0] - 2026-03-17
+
+0.3.0 is a major rebranding release that moves the app and project identity from legacy Five Cubed Moments naming to **Grace Notes**.
+
+### Added
+- No net-new product features in this release; the focus is full naming and identity alignment across app experience and project configuration.
+
+### Changed
+- Onboarding now consistently uses Grace Notes product language, including the welcome headline (`Welcome to Grace Notes`).
+- Progress framing now uses less pressure-driven wording (`fuller reflection sessions`) instead of legacy `5³`-centric phrasing.
+
+### Fixed
+- Chinese localization now fully covers the renamed Review, Settings, and Onboarding surfaces, including deterministic review insight copy.
 
 ### Developer
 - Rebranded project/app/test paths from `FiveCubedMoments*` to `GraceNotes*` and aligned Xcode schemes/module naming
@@ -29,7 +66,7 @@
 - Cloud AI weekly review insights generator with provider fallback to deterministic insights
 - Review tab summary card showing weekly narrative, recurring themes, resurfacing, and continuity prompt
 - Data export service for full journal JSON archive from Settings
-- iCloud/CloudKit capability wiring (`FiveCubedMoments.entitlements`) and cloud-capable SwiftData configuration path
+- iCloud/CloudKit capability wiring (`GraceNotes.entitlements`) and cloud-capable SwiftData configuration path
 - First-run onboarding screen introducing structure, review value, and low-pressure progress
 - Sprint-ready planning doc for review + onboarding execution (`review-onboarding-sprint-plan-2026-03-17.md`)
 
@@ -54,7 +91,7 @@
 - Shared iCloud sync defaults key now references a single source (`PersistenceController.iCloudSyncEnabledKey`)
 
 ### Developer
-- Demo build configuration and scheme (`FiveCubedMoments (Demo)`) with `USE_DEMO_DATABASE` for running with pre-seeded sample data; `DemoDataSeeder` and `PerformanceTrace` utilities
+- Demo build configuration and scheme (`GraceNotes (Demo)`) with `USE_DEMO_DATABASE` for running with pre-seeded sample data; `DemoDataSeeder` and `PerformanceTrace` utilities
 - Added `StreakCalculator` service and `StreakSummary` value type for derived, read-time streak metrics
 - Added reminder and streak test coverage for permission flows, time scheduling, skipped-day breaks, and day-boundary normalization
 - Removed unused localization key `"%d of %d — editing"`
@@ -89,7 +126,7 @@
 ## [0.2.1] - 2026-03-16
 
 ### Changed
-- Chip deletion UX: long-press to delete with optional confirmation (Settings: "Confirm chip deletion"); removed deletion mode, wiggle, minus badge, double-tap
+- Chip deletion UX: long-press to delete with optional confirmation (Settings: "Confirm chip deletion"); removed deletion mode, wiggle, minus badge, double-tap (later superseded in 0.3.1 by context-menu delete without the setting)
 - Journal screen dismisses keyboard immediately when scrolling
 
 ### Fixed

@@ -16,33 +16,33 @@ final class SummarizerProviderTests: XCTestCase {
         XCTAssertTrue(result is MockSummarizer)
     }
 
-    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsKeyAbsent_returnsNaturalLanguageSummarizer() {
+    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsKeyAbsent_returnsDeterministicFallback() {
         UserDefaults.standard.removeObject(forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
-        XCTAssertTrue(result is NaturalLanguageSummarizer)
+        XCTAssertTrue(result is DeterministicChipLabelSummarizer)
     }
 
-    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsFalse_returnsNaturalLanguageSummarizer() {
+    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsFalse_returnsDeterministicFallback() {
         UserDefaults.standard.set(false, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
-        XCTAssertTrue(result is NaturalLanguageSummarizer)
+        XCTAssertTrue(result is DeterministicChipLabelSummarizer)
     }
 
-    func test_currentSummarizer_UserDefaultsTrue_placeholderKey_returnsNL() {
+    func test_currentSummarizer_UserDefaultsTrue_placeholderKey_returnsDeterministicFallback() {
         UserDefaults.standard.set(true, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
         XCTAssertTrue(
-            result is NaturalLanguageSummarizer,
-            "With placeholder API key, provider should fall back to NL summarizer"
+            result is DeterministicChipLabelSummarizer,
+            "With placeholder API key, provider should fall back to deterministic summarizer"
         )
     }
 }

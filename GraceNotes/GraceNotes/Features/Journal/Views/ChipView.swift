@@ -4,10 +4,11 @@ struct ChipView: View {
     let label: String
     let isTruncated: Bool
     let onTap: () -> Void
+    let onRenameLabel: ((String) -> Void)?
     let onDelete: (() -> Void)?
 
-    @AppStorage("confirmChipDeletion") private var confirmChipDeletion = true
-    @State private var showDeleteConfirm = false
+    @State private var showRenamePrompt = false
+    @State private var renameDraft = ""
 
     private static let chipBackground = AppTheme.complete.opacity(0.2)
     private static let maxLabelWidth: CGFloat = 120
@@ -16,53 +17,53 @@ struct ChipView: View {
         label: String,
         isTruncated: Bool,
         onTap: @escaping () -> Void,
+        onRenameLabel: ((String) -> Void)? = nil,
         onDelete: (() -> Void)? = nil
     ) {
         self.label = label
         self.isTruncated = isTruncated
         self.onTap = onTap
+        self.onRenameLabel = onRenameLabel
         self.onDelete = onDelete
     }
 
     var body: some View {
         chipContent
             .contentShape(.rect)
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
-                guard let delete = onDelete else { return }
-                if confirmChipDeletion {
-                    showDeleteConfirm = true
-                } else {
-                    delete()
-                }
-            })
             .contextMenu {
+                if onRenameLabel != nil {
+                    Button {
+                        beginRename()
+                    } label: {
+                        Label(String(localized: "Rename label"), systemImage: "pencil")
+                    }
+                }
                 if onDelete != nil {
                     Button(role: .destructive) {
-                        if confirmChipDeletion {
-                            showDeleteConfirm = true
-                        } else {
-                            onDelete?()
-                        }
+                        onDelete?()
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label(String(localized: "Delete"), systemImage: "trash")
                     }
                 }
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isButton)
-            .accessibilityAction(named: "Delete") {
+            .accessibilityAction(named: Text(String(localized: "Delete"))) {
                 guard onDelete != nil else { return }
-                if confirmChipDeletion {
-                    showDeleteConfirm = true
-                } else {
-                    onDelete?()
-                }
+                onDelete?()
             }
-            .confirmationDialog("Delete \(label)?", isPresented: $showDeleteConfirm) {
-                Button("Delete", role: .destructive) {
-                    onDelete?()
+            .accessibilityAction(named: Text(String(localized: "Rename label"))) {
+                guard onRenameLabel != nil else { return }
+                beginRename()
+            }
+            .alert(String(localized: "Rename label"), isPresented: $showRenamePrompt) {
+                TextField(String(localized: "Label"), text: $renameDraft)
+                Button(String(localized: "Cancel"), role: .cancel) {}
+                Button(String(localized: "Save")) {
+                    commitRename()
                 }
-                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(String(localized: "This only changes the chip label."))
             }
     }
 
@@ -81,7 +82,11 @@ struct ChipView: View {
                     Group {
                         if isTruncated {
                             LinearGradient(
-                                colors: [.white, .clear],
+                                stops: [
+                                    .init(color: .white, location: 0),
+                                    .init(color: .white, location: 0.82),
+                                    .init(color: .clear, location: 1)
+                                ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -92,5 +97,16 @@ struct ChipView: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+
+    private func beginRename() {
+        renameDraft = label
+        showRenamePrompt = true
+    }
+
+    private func commitRename() {
+        let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onRenameLabel?(trimmed)
     }
 }

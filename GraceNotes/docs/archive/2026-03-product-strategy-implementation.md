@@ -15,7 +15,7 @@ This implementation plan focuses on two high-leverage tracks:
 
 ## Product intent
 
-Five Cubed Moments should be positioned and built as a **guided reflection journal**, not a broad mindfulness platform.
+Grace Notes should be positioned and built as a **guided reflection journal**, not a broad mindfulness platform.
 
 The implementation should strengthen:
 

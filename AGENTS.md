@@ -12,7 +12,7 @@ This project **requires macOS + Xcode 15+** to build, run, and test. The Cloud A
 
 ### What works on Linux
 
-- **Linting**: `swiftlint lint` (SwiftLint static binary is installed at `/usr/local/bin/swiftlint`). Runs without the Swift toolchain; reports style violations across all 17 Swift source files. The dynamic SwiftLint binary will crash on Linux because `libsourcekitdInProc.so` is unavailable; always use the `-static` variant.
+- **Linting**: `swiftlint lint` (invoke `swiftlint` from PATH; binary location can vary by environment). In Cursor Cloud Linux, the static SwiftLint binary is preinstalled and runs without the Swift toolchain; it reports style violations across all Swift source files. The dynamic SwiftLint binary will crash on Linux because `libsourcekitdInProc.so` is unavailable, so use the static variant there.
 - **Code review / static analysis**: Reading and reviewing Swift source files.
 
 ### What does NOT work on Linux
@@ -37,9 +37,29 @@ xcodebuild \
 swiftlint lint
 ```
 
-Runs from the repo root; lints all `.swift` files recursively. Currently reports 12 warnings (no errors).
+Runs from the repo root; lints all `.swift` files recursively. Currently reports 10 violations (9 warnings, 1 error) across 59 files. The `statement_position` rule is skipped because it requires SourceKit (unavailable in the static binary). Exit code 2 is expected when there are error-level violations; this does **not** mean the tool failed.
+
+On macOS, install SwiftLint via Homebrew if needed:
+
+```bash
+brew install swiftlint
+```
 
 ---
+
+## Role governance
+
+Keep role behavior in `.cursor/rules/` as the single source of truth for role-specific instructions. Use short role names and mapped files:
+
+- `Strategist` -> `.cursor/rules/strategist.mdc`
+- `Architect` -> `.cursor/rules/architect.mdc`
+- `Release Manager` -> `.cursor/rules/release-manager.mdc`
+- `QA Reviewer` -> `.cursor/rules/qa-reviewer.mdc`
+- `Test Lead` -> `.cursor/rules/test-lead.mdc`
+
+Use `GraceNotes/docs/agent-log/` as the canonical source for role-to-role interaction, handoffs, and deferred pushback context.
+
+Keep `AGENTS.md` focused on global constraints that apply to every role, while `.cursor/rules/` defines role behavior.
 
 ## Code style
 

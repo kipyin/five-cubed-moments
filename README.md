@@ -6,13 +6,13 @@ A journaling iOS app for daily gratitude, reflection, and people in mind.
 
 Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes, 5 needs, 5 people in mind, reading notes, and space for what you're thinking and learning. The app offers a quiet, low-friction place for gratitude and reflection, with a gentle framing that feels welcoming rather than pushy.
 
-## What's new in 0.2.3
+## What's new in 0.3.1
 
-- Review evolved from a plain history list into a clearer **Insights / Timeline** experience.
-- Weekly review insights now support optional cloud AI with stronger fallback and output safety guards.
-- First-run onboarding introduces the ritual and low-pressure progress expectations.
-- Completion status now supports **Quick**, **Standard**, and **Full 5³** levels.
-- Settings now include trust controls for AI insights, iCloud sync preference, and full JSON export (async with progress UI).
+- Chip editing now uses context-menu actions for rename/delete, with drag-to-reorder support for better in-place organization.
+- AI-unavailable chip labels now use deterministic first-snippet fallback behavior for stable, readable results.
+- Review insights and cloud prompt handling were hardened with safer sanitization and stronger fallback coverage.
+- Full-suite automation is more reliable with simulator reset steps and serialized test execution defaults.
+- Release docs and project automation references now align with current Grace Notes naming and workflow.
 
 ## Features
 
@@ -37,18 +37,26 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 1. Clone the repository.
 2. Open `GraceNotes/GraceNotes.xcodeproj` in Xcode.
 3. For code signing, select your development team in the project's Signing & Capabilities (if needed).
-4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *FiveCubedMoments (Demo)* scheme.
+4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *GraceNotes (Demo)* scheme.
 
 ## Automation
 
 Use the root `Makefile` for common local workflows:
 
-- `make lint` – Run SwiftLint checks.
+- `make lint` – Run SwiftLint checks (requires `swiftlint` on your PATH).
 - `make build` – Build the app (requires macOS + Xcode).
 - `make test` – Run tests for the default scheme (requires macOS + Xcode + iOS Simulator).
-- `make test-demo` – Run tests for the demo scheme.
-- `make test-all` – Run tests for both schemes.
+- `make test-demo` – Reset/warm simulators, then run tests for the demo scheme.
+- `make test-all` – Reset simulators between default and demo test runs.
 - `make ci` – Run lint and tests for both schemes.
+
+If `make lint` reports that SwiftLint is missing, install it with Homebrew:
+
+```bash
+brew install swiftlint
+```
+
+Note: `make test-demo` and `make test-all` intentionally reset simulators to reduce flaky preflight failures. This wipes simulator state for deterministic test runs.
 
 ## Tech Stack
 

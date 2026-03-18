@@ -245,8 +245,9 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
         )
         await fulfillment(of: [requestCapture.expectation], timeout: 1.0)
 
-        guard let capturedRequestBody = requestCapture.getBody() {
-            return XCTFail("Expected request body to be captured")
+        guard let capturedRequestBody = requestCapture.getBody() else {
+            XCTFail("Expected request body to be captured")
+            return
         }
         let requestObject = try JSONSerialization.jsonObject(with: capturedRequestBody)
         guard let requestDict = requestObject as? [String: Any],

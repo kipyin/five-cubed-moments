@@ -204,6 +204,7 @@
       }
     },
     "Chips" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -237,6 +238,7 @@
       }
     },
     "Confirm chip deletion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -349,6 +351,7 @@
       }
     },
     "Delete %@?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -636,6 +639,9 @@
           }
         }
       }
+    },
+    "Label" : {
+
     },
     "Low-energy days still count. Start small and build toward fuller reflection sessions over time." : {
       "localizations" : {
@@ -925,6 +931,9 @@
         }
       }
     },
+    "Rename label" : {
+
+    },
     "Review" : {
       "localizations" : {
         "en" : {
@@ -988,6 +997,9 @@
           }
         }
       }
+    },
+    "Save" : {
+
     },
     "Save to Photos" : {
       "localizations" : {
@@ -1212,6 +1224,9 @@
           }
         }
       }
+    },
+    "This only changes the chip label." : {
+
     },
     "This Week" : {
       "localizations" : {
@@ -1598,6 +1613,7 @@
       }
     },
     "When on, long-pressing a chip shows a confirmation before deleting. When off, long-press deletes immediately." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

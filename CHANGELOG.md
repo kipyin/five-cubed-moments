@@ -1,26 +1,6 @@
 # Changelog
 
-## [0.3.2] - 2026-03-18
-
-### Added
-- (none)
-
-### Changed
-- `make test-all` now hard-resets simulators before each scheme run to reduce Xcode simulator preflight contention between `GraceNotes` and `GraceNotes (Demo)` UI-test passes.
-- Settings privacy/help copy strings were flattened into valid single-line localized literals to restore successful Swift compilation.
-- `ChipReorderDropDelegate` now exposes direct helper entry points (`dropEntered()`, `dropUpdated()`, `performDrop()`) while preserving `DropDelegate` conformance, which keeps reorder behavior testable across SDK API changes.
-- Cloud review insight tests now use a non-cached `URLSession` test configuration and resilient request-body capture (`httpBody` or `httpBodyStream`) for prompt assertion coverage.
-
-### Fixed
-- Repaired test/build breakages caused by stale symbol usage and missing return paths in chip-editing view-model logic.
-- Updated chip reorder tests for newer SwiftUI drag/drop APIs where `DropInfo` is no longer mockable as a protocol type.
-- Corrected deterministic summarizer test expectations to match the current 20-character chip-label budget behavior.
-
-### Developer
-- Added simulator reset helper target (`make reset-simulators`) and wired it into full-suite automation.
-- Tightened cloud insight prompt-quality test synchronization by waiting for captured request traffic before asserting request payload content.
-
-## [0.3.1] - 2026-03-17
+## [0.3.1] - 2026-03-18
 
 ### Added
 - (none)
@@ -29,16 +9,25 @@
 - Updated release and automation docs to align with current Grace Notes naming, release cadence, and test workflow.
 - Refined test and project configuration references to use current targets/schemes and simulator defaults.
 - `Makefile` test targets now pass `-parallel-testing-enabled NO` to reduce simulator launch contention during full-suite execution.
+- `make test-all` now hard-resets simulators before each scheme run to reduce Xcode simulator preflight contention between `GraceNotes` and `GraceNotes (Demo)` UI-test passes.
 - Chips now use context-menu actions for rename/delete, support drag-to-reorder, and no longer expose a delete-confirmation toggle in Settings.
+- Settings privacy/help copy strings were flattened into valid single-line localized literals to restore successful Swift compilation.
+- `ChipReorderDropDelegate` now exposes direct helper entry points (`dropEntered()`, `dropUpdated()`, `performDrop()`) while preserving `DropDelegate` conformance, which keeps reorder behavior testable across SDK API changes.
+- Cloud review insight tests now use a non-cached `URLSession` test configuration and resilient request-body capture (`httpBody` or `httpBodyStream`) for prompt assertion coverage.
 
 ### Fixed
 - Removed remaining legacy entitlement and test-path references so project assets consistently use `GraceNotes*` naming.
 - Stabilized UI test execution by removing the template launch performance case and reducing launch-test configuration fan-out that caused intermittent simulator preflight launch denials.
 - Chip label fallback now uses deterministic snippets (first 5 words, or first 5 Chinese characters) with reliable end-fade truncation behavior when AI summarization is unavailable (#39).
+- Repaired test/build breakages caused by stale symbol usage and missing return paths in chip-editing view-model logic.
+- Updated chip reorder tests for newer SwiftUI drag/drop APIs where `DropInfo` is no longer mockable as a protocol type.
+- Corrected deterministic summarizer test expectations to match the current 20-character chip-label budget behavior.
 
 ### Developer
 - Consolidated test-suite updates across Journal and repository coverage after the naming migration cleanup.
 - Continued maintenance pass on project metadata (`project.pbxproj`), `README.md`, and `Makefile` for release readiness.
+- Added simulator reset helper target (`make reset-simulators`) and wired it into full-suite automation.
+- Tightened cloud insight prompt-quality test synchronization by waiting for captured request traffic before asserting request payload content.
 
 ## [0.3.0] - 2026-03-17
 

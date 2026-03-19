@@ -34,25 +34,22 @@ struct CloudSummarizer: Summarizer {
 
         do {
             let label = try await callAPI(sentence: trimmed, section: section)
-            let capped = ChipLabelUnitTruncator.truncate(label)
-            log.debug("Cloud summarization succeeded: \"\(trimmed)\" -> \"\(capped.label)\"")
-            return capped
+            let cleanedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+            log.debug("Cloud summarization succeeded: \"\(trimmed)\" -> \"\(cleanedLabel)\"")
+            return SummarizationResult(label: cleanedLabel, isTruncated: false)
         } catch {
             log.info("Cloud API failed, using fallback summarizer: \(String(describing: error))")
             if let result = try? await fallback.summarize(sentence, section: section) {
-                let capped = ChipLabelUnitTruncator.truncate(result.label)
-                return SummarizationResult(
-                    label: capped.label,
-                    isTruncated: result.isTruncated || capped.isTruncated
-                )
+                return result
             }
-            return ChipLabelUnitTruncator.truncate(trimmed)
+            return SummarizationResult(label: trimmed, isTruncated: false)
         }
     }
 
     private func prompt(for section: SummarizationSection, sentence: String) -> String {
         let bilingualNote = " Input may be in English or Chinese (中文); respond in the same language " +
-            "as the input with a short chip label (1–5 words or 1–5 字)."
+            "as the input with a short chip label (target <= 10 units, where 1 Chinese character counts as 2 units " +
+            "and 1 Latin character counts as 1 unit)."
         let baseSuffix = " Reply with only the label, no punctuation."
         switch section {
         case .gratitude:

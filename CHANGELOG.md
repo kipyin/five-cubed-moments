@@ -21,8 +21,8 @@
 
 ### Fixed
 - Journal completion logic now correctly requires full 5x5x5 completion for standard reflection gating.
-- Chip label truncation and summarizer fallback behavior aligned to prevent confusing label states.
-- Provider/hybrid summarizer fallback tests and cloud mapping assertions tightened to reduce regressions.
+- Cloud-generated chip labels now preserve the full returned phrase instead of being hard-truncated to local chip-width limits.
+- On-device chip labels now use explicit ellipsis truncation while keeping deterministic fallback behavior and cloud mapping tests aligned.
 
 ### Developer
 - Synced localized strings and expanded release/UAT documentation coverage for 0.3.3 packaging.

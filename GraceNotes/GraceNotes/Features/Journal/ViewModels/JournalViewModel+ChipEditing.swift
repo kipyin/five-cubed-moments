@@ -1,10 +1,17 @@
 import Foundation
 
-private func capForChipUnits(_ result: SummarizationResult) -> SummarizationResult {
+private func displayReadyChipResult(
+    _ result: SummarizationResult,
+    shouldLimitToChipUnits: Bool
+) -> SummarizationResult {
+    guard shouldLimitToChipUnits else {
+        return SummarizationResult(label: result.label, isTruncated: false)
+    }
     let capped = ChipLabelUnitTruncator.truncate(result.label)
+    let label = capped.isTruncated ? "\(capped.label)..." : capped.label
     return SummarizationResult(
-        label: capped.label,
-        isTruncated: result.isTruncated || capped.isTruncated
+        label: label,
+        isTruncated: capped.isTruncated
     )
 }
 
@@ -14,21 +21,22 @@ extension JournalViewModel {
     }
 
     private func summarizeForChip(_ text: String, section: SummarizationSection) async -> SummarizationResult {
+        let shouldLimitToChipUnits = !isCloudSummarizationEnabled
         let summarizer = summarizerProvider.currentSummarizer()
         return await Task.detached(priority: .utility) {
             do {
                 let result = try await summarizer.summarize(text, section: section)
-                return capForChipUnits(result)
+                return displayReadyChipResult(result, shouldLimitToChipUnits: shouldLimitToChipUnits)
             } catch {
                 let fallback = DeterministicChipLabelSummarizer().summarizeSync(text, section: section)
-                return capForChipUnits(fallback)
+                return displayReadyChipResult(fallback, shouldLimitToChipUnits: shouldLimitToChipUnits)
             }
         }.value
     }
 
     private func makeInterimResult(for text: String, section: SummarizationSection) -> SummarizationResult {
         let interim = deterministicChipLabelSummarizer.summarizeSync(text, section: section)
-        return capForChipUnits(interim)
+        return displayReadyChipResult(interim, shouldLimitToChipUnits: !isCloudSummarizationEnabled)
     }
 
     private func makeInterimItem(
@@ -284,15 +292,20 @@ extension JournalViewModel {
     private func applyRenamedLabel(_ rawLabel: String, to item: inout JournalItem) -> Bool {
         let trimmed = rawLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
-        let capped = ChipLabelUnitTruncator.truncate(trimmed)
-        let isTruncated = capped.isTruncated
-        let cappedLabel = capped.label
-        guard item.chipLabel != cappedLabel || item.isTruncated != isTruncated else { return false }
+        let renamed = displayReadyChipResult(
+            SummarizationResult(label: trimmed, isTruncated: false),
+            shouldLimitToChipUnits: !isCloudSummarizationEnabled
+        )
+        guard item.chipLabel != renamed.label || item.isTruncated != renamed.isTruncated else { return false }
 
-        item.chipLabel = cappedLabel
-        item.isTruncated = isTruncated
+        item.chipLabel = renamed.label
+        item.isTruncated = renamed.isTruncated
         scheduleAutosave()
         return true
+    }
+
+    private var isCloudSummarizationEnabled: Bool {
+        UserDefaults.standard.object(forKey: SummarizerProvider.useCloudUserDefaultsKey) as? Bool ?? false
     }
 
     /// Returns true if the item was removed (valid index).

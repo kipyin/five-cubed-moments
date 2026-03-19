@@ -75,7 +75,7 @@ final class CloudSummarizerTests: XCTestCase {
         XCTAssertFalse(result.isTruncated)
     }
 
-    func test_summarize_successPath_longLabel_truncatesWithIsTruncatedTrue() async throws {
+    func test_summarize_successPath_longLabel_keepsFullResponse() async throws {
         let longLabel = String(repeating: "a", count: 25)
         MockURLProtocol.mockResponse = { _ in
             let json: [String: Any] = [
@@ -103,8 +103,8 @@ final class CloudSummarizerTests: XCTestCase {
 
         let result = try await summarizer.summarize("Long input", section: .gratitude)
 
-        XCTAssertEqual(result.label.count, 10)
-        XCTAssertTrue(result.isTruncated)
+        XCTAssertEqual(result.label, longLabel)
+        XCTAssertFalse(result.isTruncated)
     }
 
     func test_summarize_httpError_fallsBackToInjectedFallback() async throws {

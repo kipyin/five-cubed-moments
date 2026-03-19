@@ -15,6 +15,12 @@ final class JournalViewModelMutationTests: XCTestCase {
         super.setUp()
         calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        UserDefaults.standard.set(false, forKey: SummarizerProvider.useCloudUserDefaultsKey)
+    }
+
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: SummarizerProvider.useCloudUserDefaultsKey)
+        super.tearDown()
     }
 
     func test_updateGratitudeRejectsEmptyString_leavesOriginalUnchanged() async throws {
@@ -92,7 +98,7 @@ final class JournalViewModelMutationTests: XCTestCase {
 
         XCTAssertEqual(result, 0)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, longText)
-        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, String(longText.prefix(10)))
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "\(String(longText.prefix(10)))...")
         XCTAssertTrue(viewModel.gratitudes[0].isTruncated)
     }
 
@@ -141,7 +147,7 @@ final class JournalViewModelMutationTests: XCTestCase {
 
         XCTAssertTrue(didRename)
         XCTAssertEqual(viewModel.gratitudes[0].fullText, "I am grateful for my family.")
-        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "Family sup")
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "Family sup...")
         XCTAssertTrue(viewModel.gratitudes[0].isTruncated)
     }
 
@@ -174,6 +180,40 @@ final class JournalViewModelMutationTests: XCTestCase {
 
         XCTAssertFalse(didRename)
         XCTAssertEqual(viewModel.needs[0].chipLabel, originalLabel)
+    }
+
+    func test_updateGratitudeImmediate_cloudEnabled_keepsFullLabelWithoutEllipsis() throws {
+        try skipIfKnownHostedSwiftDataCrash()
+        UserDefaults.standard.set(true, forKey: SummarizerProvider.useCloudUserDefaultsKey)
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
+        let longText = "A very long gratitude that exceeds twenty characters"
+
+        viewModel.loadEntry(for: now, using: context)
+        viewModel.gratitudes = [JournalItem(fullText: "Old", chipLabel: "Old", isTruncated: false)]
+
+        let result = viewModel.updateGratitudeImmediate(at: 0, fullText: longText)
+
+        XCTAssertEqual(result, 0)
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, longText)
+        XCTAssertFalse(viewModel.gratitudes[0].isTruncated)
+    }
+
+    func test_renameGratitudeLabel_cloudEnabled_keepsFullLabelWithoutEllipsis() async throws {
+        UserDefaults.standard.set(true, forKey: SummarizerProvider.useCloudUserDefaultsKey)
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let viewModel = makeViewModel(now: now)
+
+        viewModel.loadEntry(for: now, using: context)
+        await viewModel.addGratitude("I am grateful for my family.")
+
+        let didRename = viewModel.renameGratitudeLabel(at: 0, to: "Family support always")
+
+        XCTAssertTrue(didRename)
+        XCTAssertEqual(viewModel.gratitudes[0].chipLabel, "Family support always")
+        XCTAssertFalse(viewModel.gratitudes[0].isTruncated)
     }
 
     func test_renamePersonLabel_whenUnchanged_returnsFalse() async throws {

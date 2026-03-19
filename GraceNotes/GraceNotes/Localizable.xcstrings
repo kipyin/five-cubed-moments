@@ -84,7 +84,11 @@
         }
       }
     },
+    "A calm daily check-in in about 2 minutes" : {
+
+    },
     "A calm daily rhythm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -297,6 +301,9 @@
         }
       }
     },
+    "Capture one gratitude and move on with your day. A meaningful check-in can take under two minutes." : {
+
+    },
     "care for %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -383,6 +390,22 @@
         }
       }
     },
+    "Complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆满"
+          }
+        }
+      }
+    },
     "Completed for today" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -461,6 +484,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每日提醒"
+          }
+        }
+      }
+    },
+    "Daily Rhythm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Rhythm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日常记录"
           }
         }
       }
@@ -707,6 +746,7 @@
       }
     },
     "Full 15 Complete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -721,6 +761,9 @@
           }
         }
       }
+    },
+    "Gentle sections for gratitude, needs, and people-in-mind help you begin without overthinking." : {
+
     },
     "Get one daily local reminder to complete today's entry." : {
       "extractionState" : "stale",
@@ -788,6 +831,7 @@
       }
     },
     "Grace Notes helps you reflect with gentle structure: gratitude, needs, and people in mind." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1019,6 +1063,7 @@
       }
     },
     "Low-energy days still count. Start small and build toward fuller reflection sessions over time." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1351,6 +1396,7 @@
       }
     },
     "Perfect Daily Rhythm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1399,6 +1445,7 @@
       }
     },
     "Progress over perfection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1497,6 +1544,7 @@
       }
     },
     "Reflection Started" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1824,6 +1872,7 @@
       }
     },
     "Review that gives insight" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1838,6 +1887,9 @@
           }
         }
       }
+    },
+    "Revisit when you are ready" : {
+
     },
     "Save" : {
       "localizations" : {
@@ -1922,6 +1974,9 @@
         }
       }
     },
+    "Skip for now" : {
+
+    },
     "Source" : {
       "localizations" : {
         "en" : {
@@ -1971,6 +2026,9 @@
           }
         }
       }
+    },
+    "Start with one line" : {
+
     },
     "Start with one reflection today to build your weekly review." : {
       "localizations" : {
@@ -2033,6 +2091,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "状态"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld"
           }
         }
       }
@@ -2612,6 +2680,9 @@
         }
       }
     },
+    "Use prompts when your mind is blank" : {
+
+    },
     "We are setting up your private journal space..." : {
       "localizations" : {
         "en" : {
@@ -2909,21 +2980,8 @@
         }
       }
     },
-    "You completed your full 5³ rhythm every day this week." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You completed your full 5³ rhythm every day this week."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这周你每天都完成了完整的 5³ 节奏。"
-          }
-        }
-      }
+    "You can update reminders and preferences any time in Settings." : {
+
     },
     "You kept %1$@ in mind %2$lld times this week." : {
       "localizations" : {
@@ -2954,6 +3012,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这周你有 %2$lld 天把 %1$@ 放在心上。"
+          }
+        }
+      }
+    },
+    "You kept a steady daily rhythm and completed all 15 each day this week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You kept a steady daily rhythm and completed all 15 each day this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周你保持了稳定的每日节律，并且每天都完成了15项记录。"
           }
         }
       }
@@ -3074,7 +3148,11 @@
         }
       }
     },
+    "Your Review tab helps you spot themes later. Today, focus on one honest moment and call it complete." : {
+
+    },
     "Your Review tab turns past entries into recurring themes, resurfacing ideas, and continuity prompts." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

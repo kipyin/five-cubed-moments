@@ -111,7 +111,7 @@ private extension WeeklyInsightCandidateBuilder {
         var completionByDay: [Date: Bool] = [:]
         for entry in entries {
             let day = calendar.startOfDay(for: entry.entryDate)
-            completionByDay[day] = (completionByDay[day] ?? false) || entry.completionLevel == .fullFiveCubed
+            completionByDay[day] = (completionByDay[day] ?? false) || entry.isComplete
         }
 
         guard completionByDay.count == 7 else { return nil }
@@ -120,7 +120,7 @@ private extension WeeklyInsightCandidateBuilder {
         let insight = ReviewWeeklyInsight(
             pattern: .fullCompletion,
             observation: String(
-                localized: "You completed your full 5³ rhythm every day this week."
+                localized: "You kept a steady daily rhythm and completed all 15 each day this week."
             ),
             action: String(
                 localized: "What helped you stay this steady so you can carry it into next week?"

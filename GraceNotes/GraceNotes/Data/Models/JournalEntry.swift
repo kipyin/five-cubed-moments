@@ -57,9 +57,13 @@ final class JournalEntry {
         }
     }
 
-    /// Whether this entry meets completion criteria. Used by History and Journal.
+    /// Whether this entry has all 15 chip slots filled. Used by History and Journal.
     var isComplete: Bool {
-        completionLevel == .fullFiveCubed
+        Self.hasAllFifteenChips(
+            gratitudesCount: gratitudes.count,
+            needsCount: needs.count,
+            peopleCount: people.count
+        )
     }
 
     var completionLevel: JournalCompletionLevel {
@@ -72,9 +76,8 @@ final class JournalEntry {
         )
     }
 
-    /// Shared completion criteria used by JournalEntry and JournalViewModel.
-    /// An entry is complete when it has at least `slotCount` gratitudes, needs, and people,
-    /// plus non-empty (after trimming) reading notes and reflections.
+    /// Shared full-rhythm criteria used by JournalEntry and JournalViewModel.
+    /// A full rhythm requires all chips plus non-empty notes and reflections.
     static func criteriaMet(
         gratitudesCount: Int,
         needsCount: Int,
@@ -84,11 +87,23 @@ final class JournalEntry {
     ) -> Bool {
         let notesTrimmed = readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let reflectionsTrimmed = reflections.trimmingCharacters(in: .whitespacesAndNewlines)
-        return gratitudesCount >= slotCount &&
-            needsCount >= slotCount &&
-            peopleCount >= slotCount &&
+        return hasAllFifteenChips(
+            gratitudesCount: gratitudesCount,
+            needsCount: needsCount,
+            peopleCount: peopleCount
+        ) &&
             !notesTrimmed.isEmpty &&
             !reflectionsTrimmed.isEmpty
+    }
+
+    static func hasAllFifteenChips(
+        gratitudesCount: Int,
+        needsCount: Int,
+        peopleCount: Int
+    ) -> Bool {
+        gratitudesCount >= slotCount &&
+            needsCount >= slotCount &&
+            peopleCount >= slotCount
     }
 
     static func completionLevel(
@@ -112,10 +127,11 @@ final class JournalEntry {
         let reflectionsTrimmed = reflections.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasWrittenNotes = !notesTrimmed.isEmpty
         let hasWrittenReflections = !reflectionsTrimmed.isEmpty
-        let hasAllFifteenChips = gratitudesCount >= slotCount &&
-            needsCount >= slotCount &&
-            peopleCount >= slotCount
-        if hasAllFifteenChips {
+        if hasAllFifteenChips(
+            gratitudesCount: gratitudesCount,
+            needsCount: needsCount,
+            peopleCount: peopleCount
+        ) {
             return .standardReflection
         }
 

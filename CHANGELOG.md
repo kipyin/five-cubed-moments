@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.3] - 2026-03-19
+
+### Added
+- Completion milestone callout in Today flow to acknowledge the first full reflection milestone.
+- Accessibility/test hooks to stabilize review timeline validation in UI testing.
+
+### Changed
+- Cross-surface UI polish across Today, Review, Settings, and onboarding copy/tone for calmer, clearer guidance.
+- Review timeline and insight presentation refined for better continuity and less visual duplication.
+- Reminder controls and inline settings interactions tightened for clearer state feedback.
+- Deterministic weekly insight generation and normalization improved for more consistent theme continuity.
+
+### Fixed
+- Journal completion logic now correctly requires full 5x5x5 completion for standard reflection gating.
+- Chip label truncation and summarizer fallback behavior aligned to prevent confusing label states.
+- Provider/hybrid summarizer fallback tests and cloud mapping assertions tightened to reduce regressions.
+
+### Developer
+- Synced localized strings and expanded release/UAT documentation coverage for 0.3.3 packaging.
+
 ## [0.3.2] - 2026-03-18
 
 ### Added

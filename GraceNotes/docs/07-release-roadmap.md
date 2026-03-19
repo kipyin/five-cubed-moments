@@ -39,9 +39,13 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - Keyboard stays available after commit.
 - First launch and common settings interactions feel responsive.
 
-## 0.3.3 — UI polish and cohesion
+## 0.3.3 — Released (2026-03-19)
 
 **Goal:** Make the shipped experience feel calmer, clearer, and more intentionally finished across the app.
+
+**Release status**
+- Shipped as `0.3.3` patch release.
+- See `CHANGELOG.md` for final packaged scope details.
 
 **Scope in**
 - Cross-app UI polish across onboarding or first-launch presentation, Today, Review, and Settings

@@ -20,7 +20,7 @@
         }
       }
     },
-    "%1$@ progress: %2$d edited, %3$d editing, %4$d pending." : {
+    "%1$@ progress. %2$d complete, %3$d in progress, %4$d open." : {
 
     },
     "%1$@ to %2$@" : {
@@ -87,6 +87,15 @@
         }
       }
     },
+    "%@ input" : {
+
+    },
+    "%@ section is updating." : {
+
+    },
+    "%@ text" : {
+
+    },
     "A calm daily rhythm" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -103,6 +112,12 @@
           }
         }
       }
+    },
+    "Updating…" : {
+
+    },
+    "Write your %@ here." : {
+
     },
     "A need kept resurfacing: %1$@ on %2$lld day(s) this week." : {
       "extractionState" : "stale",

@@ -60,6 +60,7 @@ struct SequentialSectionView: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
+    let isTransitioning: Bool
     @Binding var inputText: String
     let editingIndex: Int?
     let inputFocus: FocusState<Bool>.Binding?
@@ -80,6 +81,7 @@ struct SequentialSectionView: View {
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
+        isTransitioning: Bool = false,
         inputText: Binding<String>,
         editingIndex: Int?,
         inputFocus: FocusState<Bool>.Binding? = nil,
@@ -95,6 +97,7 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
+        self.isTransitioning = isTransitioning
         self._inputText = inputText
         self.editingIndex = editingIndex
         self.inputFocus = inputFocus
@@ -135,11 +138,20 @@ struct SequentialSectionView: View {
         let editingCount = slotStatuses.filter { $0 == .editing }.count
         let pendingCount = slotStatuses.filter { $0 == .pending }.count
         return String(
-            format: String(localized: "%1$@ progress: %2$d edited, %3$d editing, %4$d pending."),
+            format: String(localized: "%1$@ progress. %2$d complete, %3$d in progress, %4$d open."),
+            locale: Locale.current,
             title,
             editedCount,
             editingCount,
             pendingCount
+        )
+    }
+
+    private var inputAccessibilityLabel: String {
+        String(
+            format: String(localized: "%@ input"),
+            locale: Locale.current,
+            title
         )
     }
 
@@ -186,6 +198,7 @@ struct SequentialSectionView: View {
                         }
                     }
                 }
+                .allowsHitTesting(!isTransitioning)
                 .mask {
                     HStack(spacing: 0) {
                         edgeMask(.leading)
@@ -221,6 +234,9 @@ struct SequentialSectionView: View {
                         .focused(inputFocus)
                         .warmPaperInputStyle()
                         .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
+                        .accessibilityLabel(inputAccessibilityLabel)
+                        .accessibilityHint(placeholder)
+                        .disabled(isTransitioning)
                 } else {
                     TextField(
                         "",
@@ -233,9 +249,40 @@ struct SequentialSectionView: View {
                         .onSubmit { onSubmit() }
                         .warmPaperInputStyle()
                         .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
+                        .accessibilityLabel(inputAccessibilityLabel)
+                        .accessibilityHint(placeholder)
+                        .disabled(isTransitioning)
                 }
             }
 
+        }
+        .opacity(isTransitioning ? 0.78 : 1)
+        .overlay(alignment: .topTrailing) {
+            if isTransitioning {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(String(localized: "Updating…"))
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.textMuted)
+                }
+                .padding(.horizontal, AppTheme.spacingTight)
+                .padding(.vertical, 6)
+                .background(AppTheme.paper.opacity(0.92))
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
+                        .stroke(AppTheme.inputBorder.opacity(0.7), lineWidth: 1)
+                )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    String(
+                        format: String(localized: "%@ section is updating."),
+                        locale: Locale.current,
+                        title
+                    )
+                )
+            }
         }
         .onAppear {
             updateEditingPulseAnimation()
@@ -267,8 +314,8 @@ struct SequentialSectionView: View {
                             Circle()
                                 .stroke(AppTheme.activeEditingAccentStrong.opacity(0.45), lineWidth: 1)
                                 .frame(width: 14, height: 14)
-                                .scaleEffect(isEditingPulseExpanded ? 1.2 : 0.92)
-                                .opacity(isEditingPulseExpanded ? 0 : 0.62)
+                                .scaleEffect(isEditingPulseExpanded ? 1.14 : 0.94)
+                                .opacity(isEditingPulseExpanded ? 0 : 0.56)
                         }
                     }
             }
@@ -295,7 +342,7 @@ struct SequentialSectionView: View {
         case .editing:
             return AppTheme.activeEditingAccentStrong.opacity(0.9)
         case .pending:
-            return AppTheme.pendingOutline.opacity(0.58)
+            return AppTheme.pendingOutline.opacity(0.52)
         }
     }
 
@@ -321,7 +368,7 @@ struct SequentialSectionView: View {
         }
 
         isEditingPulseExpanded = false
-        withAnimation(.easeOut(duration: 0.95).repeatForever(autoreverses: false)) {
+        withAnimation(.easeOut(duration: 0.82).repeatForever(autoreverses: false)) {
             isEditingPulseExpanded = true
         }
     }

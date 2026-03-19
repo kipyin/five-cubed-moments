@@ -27,6 +27,20 @@ struct EditableTextSection: View {
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: minHeight)
                 .warmPaperInputStyle()
+                .accessibilityLabel(
+                    String(
+                        format: String(localized: "%@ text"),
+                        locale: Locale.current,
+                        title
+                    )
+                )
+                .accessibilityHint(
+                    String(
+                        format: String(localized: "Write your %@ here."),
+                        locale: Locale.current,
+                        title
+                    )
+                )
         }
     }
 }

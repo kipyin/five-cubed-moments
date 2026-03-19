@@ -38,10 +38,14 @@ final class DeterministicReviewInsightsTests: XCTestCase {
         let reference = date(year: 2026, month: 3, day: 18)
         let first = makeEntry(
             on: date(year: 2026, month: 3, day: 17),
+            gratitudes: ["Family one"],
+            needs: ["Rest one"],
             people: ["Mia"]
         )
         let second = makeEntry(
             on: date(year: 2026, month: 3, day: 18),
+            gratitudes: ["Family two"],
+            needs: ["Rest two"],
             people: ["Mia"]
         )
 
@@ -60,11 +64,15 @@ final class DeterministicReviewInsightsTests: XCTestCase {
         let reference = date(year: 2026, month: 3, day: 18)
         let first = makeEntry(
             on: date(year: 2026, month: 3, day: 17),
-            needs: ["Rest"]
+            gratitudes: ["Family"],
+            needs: ["Rest"],
+            people: ["Mia"]
         )
         let second = makeEntry(
             on: date(year: 2026, month: 3, day: 18),
-            needs: ["Rest"]
+            gratitudes: ["Family"],
+            needs: ["Rest"],
+            people: ["Mia"]
         )
 
         let insights = try await generator.generateInsights(
@@ -189,7 +197,10 @@ final class DeterministicReviewInsightsTests: XCTestCase {
             "Start with one reflection today to build your weekly review."
         )
         XCTAssertEqual(insights.weeklyInsights.first?.pattern, .sparseFallback)
-        XCTAssertNil(insights.narrativeSummary)
+        XCTAssertEqual(
+            insights.narrativeSummary,
+            "Start with one reflection today to build your weekly review."
+        )
     }
 
     func test_generateInsights_preservesOriginalMixedLanguageLabelWhileGroupingCaseInsensitively() async throws {

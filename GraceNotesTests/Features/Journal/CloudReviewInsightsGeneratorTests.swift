@@ -50,7 +50,7 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
         XCTAssertEqual(insights.recurringNeeds.first?.count, 3)
         XCTAssertTrue(insights.narrativeSummary?.contains("Rest") == true)
         XCTAssertEqual(insights.weeklyInsights.count, 2)
-        XCTAssertEqual(insights.weeklyInsights.first?.observation, "You mentioned Rest 3 times this week.")
+        XCTAssertEqual(insights.weeklyInsights.first?.observation, "You mentioned rest 3 times this week.")
         XCTAssertEqual(insights.weeklyInsights.first?.action, "What can protect your rest tomorrow?")
     }
 

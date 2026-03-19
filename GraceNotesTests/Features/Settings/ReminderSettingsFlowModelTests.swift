@@ -46,8 +46,10 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
 
     func test_saveEnabledReminderTime_permissionDenied_setsErrorAndDenied() async {
         let scheduler = MockReminderScheduling()
+        scheduler.currentStatus = .enabled
         scheduler.rescheduleResult = .permissionDenied
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        await model.refreshStatus()
 
         await model.saveEnabledReminderTime()
 

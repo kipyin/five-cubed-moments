@@ -31,9 +31,9 @@ final class StreakCalculatorTests: XCTestCase {
 
         let summary = calculator.summary(from: [partialToday], now: now)
 
-        XCTAssertEqual(summary.basicCurrent, 1)
+        XCTAssertEqual(summary.basicCurrent, 0)
         XCTAssertEqual(summary.perfectCurrent, 0)
-        XCTAssertTrue(summary.basicDoneToday)
+        XCTAssertFalse(summary.basicDoneToday)
         XCTAssertFalse(summary.perfectDoneToday)
     }
 
@@ -66,11 +66,15 @@ final class StreakCalculatorTests: XCTestCase {
         let now = date(year: 2026, month: 3, day: 17, hour: 12)
         let lateYesterday = makeEntry(
             on: date(year: 2026, month: 3, day: 16, hour: 23, minute: 59),
-            gratitudes: [JournalItem(fullText: "Late note", chipLabel: nil)]
+            gratitudes: [JournalItem(fullText: "Late gratitude", chipLabel: nil)],
+            needs: [JournalItem(fullText: "Late need", chipLabel: nil)],
+            people: [JournalItem(fullText: "Late person", chipLabel: nil)]
         )
         let earlyToday = makeEntry(
             on: date(year: 2026, month: 3, day: 17, hour: 0, minute: 1),
-            gratitudes: [JournalItem(fullText: "Early note", chipLabel: nil)]
+            gratitudes: [JournalItem(fullText: "Early gratitude", chipLabel: nil)],
+            needs: [JournalItem(fullText: "Early need", chipLabel: nil)],
+            people: [JournalItem(fullText: "Early person", chipLabel: nil)]
         )
 
         let summary = calculator.summary(from: [lateYesterday, earlyToday], now: now)

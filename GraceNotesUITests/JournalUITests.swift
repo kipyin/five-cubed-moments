@@ -141,7 +141,7 @@ final class JournalUITests: XCTestCase {
         gratitudeField.tap()
         gratitudeField.typeText("Draft gratitude in progress")
 
-        let addButton = app.buttons["Add new"].firstMatch
+        let addButton = app.buttons["Add new item in Gratitudes"].firstMatch
         XCTAssertTrue(addButton.waitForExistence(timeout: 5))
         addButton.tap()
 

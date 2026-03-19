@@ -38,6 +38,21 @@ enum AppTheme {
     static let reminderPrimaryActionForeground = Color.adaptive(lightHex: 0xF8F4EF, darkHex: 0x1F1712)
     static let reminderSecondaryActionTint = Color.adaptive(lightHex: 0x8A4A34, darkHex: 0xD8A58B)
     static let reminderDestructiveActionTint = Color.adaptive(lightHex: 0xA3564A, darkHex: 0xD48C80)
+    static let reviewBackground = Color.adaptive(lightHex: 0xF8F4EF, darkHex: 0x151311)
+    static let reviewPaper = Color.adaptive(lightHex: 0xF5EDE4, darkHex: 0x201C18)
+    static let reviewTextPrimary = Color.adaptive(lightHex: 0x2C2C2C, darkHex: 0xF2E8DE)
+    static let reviewTextMuted = Color.adaptive(lightHex: 0x5C5346, darkHex: 0xC5B7A8)
+    static let reviewAccent = Color.adaptive(lightHex: 0xC77B5B, darkHex: 0xD89D82)
+    static let reviewOnAccent = Color.adaptive(lightHex: 0x1F1A16, darkHex: 0x2D1B12)
+    static let reviewCompleteBackground = Color.adaptive(lightHex: 0xE8EEDC, darkHex: 0x2A3324)
+    static let reviewCompleteBorder = Color.adaptive(lightHex: 0x9AAE78, darkHex: 0x9EB487)
+    static let reviewCompleteText = Color.adaptive(lightHex: 0x4E6040, darkHex: 0xD1DFC0)
+    static let reviewStandardBackground = Color.adaptive(lightHex: 0xF2E8D9, darkHex: 0x34271E)
+    static let reviewStandardBorder = Color.adaptive(lightHex: 0xD2B28E, darkHex: 0xD6B692)
+    static let reviewStandardText = Color.adaptive(lightHex: 0x6E452A, darkHex: 0xE4C4A5)
+    static let reviewQuickStartBackground = Color.adaptive(lightHex: 0xF5EDE4, darkHex: 0x2A241F)
+    static let reviewQuickStartBorder = Color.adaptive(lightHex: 0xD9C7B5, darkHex: 0x8D7A69)
+    static let reviewQuickStartText = Color.adaptive(lightHex: 0x6A5646, darkHex: 0xCDB9A6)
 
     /// Alias for accent; kept for backward compatibility.
     static let primaryColor = accent

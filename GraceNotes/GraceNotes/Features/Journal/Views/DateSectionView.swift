@@ -54,21 +54,14 @@ struct DateSectionView: View {
                 }
             case .standardReflection:
                 levelSurface(level: .standardReflection, isCelebrating: celebratingLevel == .standardReflection) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label(
-                            String(localized: "Full 15 Complete"),
-                            systemImage: celebratingLevel == .standardReflection
-                                ? "sparkles.rectangle.stack.fill"
-                                : "sparkles.rectangle.stack"
-                        )
-                        .font(AppTheme.warmPaperMetaEmphasis)
-                        .foregroundStyle(AppTheme.fullFifteenText)
-
-                        Text(chipsProgressText)
-                            .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.fullFifteenMetaText)
-                            .monospacedDigit()
-                    }
+                    Label(
+                        String(localized: "Full 15 Complete"),
+                        systemImage: celebratingLevel == .standardReflection
+                            ? "sparkles.rectangle.stack.fill"
+                            : "sparkles.rectangle.stack"
+                    )
+                    .font(AppTheme.warmPaperMetaEmphasis)
+                    .foregroundStyle(AppTheme.fullFifteenText)
                 }
             case .fullFiveCubed:
                 levelSurface(level: .fullFiveCubed, isCelebrating: celebratingLevel == .fullFiveCubed) {

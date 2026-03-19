@@ -84,9 +84,9 @@ struct WeeklyInsightCandidateBuilder {
 
         return ReviewWeeklyInsight(
             pattern: .sparseFallback,
-            observation: String(
-                format: String(localized: "You showed up for reflection on %lld day(s) this week."),
-                reflectionDayCount
+            observation: renderLocalizedDayCountTemplate(
+                "You showed up for reflection on %lld day(s) this week.",
+                dayCount: reflectionDayCount
             ),
             action: String(localized: "What would make tomorrow's check-in easy to start?"),
             primaryTheme: nil,
@@ -139,11 +139,11 @@ private extension WeeklyInsightCandidateBuilder {
 
         let insight = ReviewWeeklyInsight(
             pattern: .recurringPeople,
-            observation: renderLocalizedTemplate(
+            observation: renderLocalizedDayCountTemplate(
                 "You kept %1$@ in mind on %2$lld day(s) this week.",
+                dayCount: topPerson.dayCount,
                 replacements: [
-                    ("%1$@", topPerson.displayLabel),
-                    ("%2$lld", topPerson.dayCount.formatted())
+                    ("%1$@", topPerson.displayLabel)
                 ]
             ),
             action: renderLocalizedTemplate(
@@ -175,11 +175,11 @@ private extension WeeklyInsightCandidateBuilder {
         if chosen.isNeed {
             let insight = ReviewWeeklyInsight(
                 pattern: .recurringTheme,
-                observation: renderLocalizedTemplate(
+                observation: renderLocalizedDayCountTemplate(
                     "A need kept resurfacing: %1$@ on %2$lld day(s) this week.",
+                    dayCount: chosen.theme.dayCount,
                     replacements: [
-                        ("%1$@", chosen.theme.displayLabel),
-                        ("%2$lld", chosen.theme.dayCount.formatted())
+                        ("%1$@", chosen.theme.displayLabel)
                     ]
                 ),
                 action: renderLocalizedTemplate(
@@ -199,11 +199,11 @@ private extension WeeklyInsightCandidateBuilder {
 
         let insight = ReviewWeeklyInsight(
             pattern: .recurringTheme,
-            observation: renderLocalizedTemplate(
+            observation: renderLocalizedDayCountTemplate(
                 "You kept noticing %1$@ on %2$lld day(s) this week.",
+                dayCount: chosen.theme.dayCount,
                 replacements: [
-                    ("%1$@", chosen.theme.displayLabel),
-                    ("%2$lld", chosen.theme.dayCount.formatted())
+                    ("%1$@", chosen.theme.displayLabel)
                 ]
             ),
             action: renderLocalizedTemplate(
@@ -390,6 +390,24 @@ private extension WeeklyInsightCandidateBuilder {
         for replacement in replacements {
             message = message.replacingOccurrences(of: replacement.token, with: replacement.value)
         }
+        return message
+    }
+
+    func renderLocalizedDayCountTemplate(
+        _ key: String,
+        dayCount: Int,
+        replacements: [(token: String, value: String)] = []
+    ) -> String {
+        var updatedReplacements = replacements
+        let dayCountText = dayCount.formatted()
+        updatedReplacements.append(("%lld", dayCountText))
+        updatedReplacements.append(("%2$lld", dayCountText))
+
+        var message = renderLocalizedTemplate(key, replacements: updatedReplacements)
+        let dayUnit = dayCount == 1
+            ? String(localized: "day")
+            : String(localized: "days")
+        message = message.replacingOccurrences(of: "day(s)", with: dayUnit)
         return message
     }
 }

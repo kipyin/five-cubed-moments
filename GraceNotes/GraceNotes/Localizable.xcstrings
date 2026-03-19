@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%1$@ (%2$lld)" : {
       "localizations" : {
         "en" : {
@@ -196,6 +199,23 @@
         }
       }
     },
+    "Allow notifications in iOS Settings, then return and refresh." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications in iOS Settings, then return and refresh."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 iOS 设置中允许通知，然后返回并刷新。"
+          }
+        }
+      }
+    },
     "Allow notifications in Settings to confirm a reminder time." : {
       "localizations" : {
         "en" : {
@@ -213,7 +233,6 @@
       }
     },
     "Allow notifications in Settings to enable daily reminders." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -328,7 +347,27 @@
         }
       }
     },
+    "Choose a reminder time." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a reminder time."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择提醒时间。"
+          }
+        }
+      }
+    },
+    "Choose insights or timeline" : {
+
+    },
     "Choose the time for your daily reminder." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -458,6 +497,12 @@
         }
       }
     },
+    "day" : {
+
+    },
+    "days" : {
+
+    },
     "Delete" : {
       "localizations" : {
         "en" : {
@@ -492,6 +537,7 @@
       }
     },
     "Disable your daily reminder notification." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -528,6 +574,7 @@
       }
     },
     "Enable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -544,6 +591,7 @@
       }
     },
     "Enable one notification every day." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -560,6 +608,7 @@
       }
     },
     "Enabling reminder…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1049,7 +1098,11 @@
         }
       }
     },
+    "Not selected" : {
+
+    },
     "Notifications are denied." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1061,6 +1114,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通知权限已被拒绝。"
+          }
+        }
+      }
+    },
+    "Notifications denied." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications denied."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知已拒绝。"
           }
         }
       }
@@ -1093,6 +1163,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭（已拒绝）"
+          }
+        }
+      }
+    },
+    "Off." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭。"
           }
         }
       }
@@ -1161,6 +1248,23 @@
         }
       }
     },
+    "On." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启。"
+          }
+        }
+      }
+    },
     "Open iOS Settings for notification permissions." : {
       "localizations" : {
         "en" : {
@@ -1178,6 +1282,7 @@
       }
     },
     "Open iOS Settings, allow notifications for Grace Notes, then return here and refresh." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1440,6 +1545,7 @@
       }
     },
     "Refreshing reminder status…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1472,6 +1578,7 @@
       }
     },
     "Reminder is off." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1488,6 +1595,7 @@
       }
     },
     "Reminder is on." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1521,6 +1629,7 @@
       }
     },
     "Reminder status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1569,6 +1678,7 @@
       }
     },
     "Reminder unavailable. Check notification permissions and try again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1649,6 +1759,7 @@
       }
     },
     "Retrying reminder setup…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1776,6 +1887,9 @@
         }
       }
     },
+    "Selected" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "en" : {
@@ -1902,6 +2016,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本周开始写作即可解锁回顾洞察。"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
           }
         }
       }
@@ -2086,6 +2217,23 @@
         }
       }
     },
+    "Time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间"
+          }
+        }
+      }
+    },
     "Timeline" : {
       "localizations" : {
         "en" : {
@@ -2151,6 +2299,7 @@
       }
     },
     "Turn off" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2166,7 +2315,25 @@
         }
       }
     },
+    "Turn off daily reminders." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off daily reminders."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭每日提醒。"
+          }
+        }
+      }
+    },
     "Turn on a daily reminder." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2182,7 +2349,42 @@
         }
       }
     },
+    "Turn on daily reminder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启每日提醒。"
+          }
+        }
+      }
+    },
+    "Turn on one daily reminder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on one daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启一个每日提醒。"
+          }
+        }
+      }
+    },
     "Turning reminder off…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2341,6 +2543,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法更新提醒"
+          }
+        }
+      }
+    },
+    "Unavailable." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用。"
+          }
+        }
+      }
+    },
+    "Unavailable. Check notification permissions and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable. Check notification permissions and try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前不可用。请检查通知权限后重试。"
           }
         }
       }
@@ -2806,6 +3041,7 @@
       }
     },
     "You showed up for reflection on %lld day(s) this week." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

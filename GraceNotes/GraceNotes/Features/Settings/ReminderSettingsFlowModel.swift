@@ -11,6 +11,7 @@ final class ReminderSettingsFlowModel: ObservableObject {
     private let reminderScheduler: any ReminderScheduling
     private let userDefaults: UserDefaults
     private var pendingRescheduleTask: Task<Void, Never>?
+    private var pendingRescheduleAfterCurrentSave = false
     private var hasLoadedLiveStatus = false
 
     init(
@@ -41,6 +42,10 @@ final class ReminderSettingsFlowModel: ObservableObject {
 
     var isReminderEnabled: Bool {
         liveStatus == .enabled
+    }
+
+    var isPermissionDenied: Bool {
+        liveStatus == .denied
     }
 
     func refreshStatus() async {
@@ -83,33 +88,54 @@ final class ReminderSettingsFlowModel: ObservableObject {
     }
 
     func saveEnabledReminderTime() async {
-        guard !isWorking else { return }
+        guard liveStatus == .enabled else { return }
+        if isWorking {
+            pendingRescheduleAfterCurrentSave = true
+            return
+        }
+
         isWorking = true
         defer { isWorking = false }
 
-        transientErrorMessage = nil
-        let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime)
-        switch result {
-        case .scheduled:
-            persistSelectedTime()
-            await refreshStatus()
-        case .permissionDenied:
-            liveStatus = .denied
-            transientErrorMessage = String(
-                localized: "Allow notifications in Settings to confirm a reminder time."
-            )
-        case .failed:
-            liveStatus = .unavailable
-            transientErrorMessage = String(
-                localized: "Reminder time couldn't be saved. Try again in a moment."
-            )
-        case .disabled:
-            await refreshStatus()
+        while true {
+            pendingRescheduleAfterCurrentSave = false
+            transientErrorMessage = nil
+
+            let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime)
+            switch result {
+            case .scheduled:
+                persistSelectedTime()
+                liveStatus = .enabled
+            case .permissionDenied:
+                liveStatus = .denied
+                transientErrorMessage = String(
+                    localized: "Allow notifications in Settings to confirm a reminder time."
+                )
+            case .failed:
+                liveStatus = .unavailable
+                transientErrorMessage = String(
+                    localized: "Reminder time couldn't be saved. Try again in a moment."
+                )
+            case .disabled:
+                liveStatus = .off
+            }
+
+            if !pendingRescheduleAfterCurrentSave || liveStatus != .enabled {
+                break
+            }
         }
     }
 
     func clearTransientError() {
         transientErrorMessage = nil
+    }
+
+    func setReminderEnabled(_ isEnabled: Bool) async {
+        if isEnabled {
+            await enableReminders()
+        } else {
+            await disableReminders()
+        }
     }
 
     func handleSelectedTimeChanged() {

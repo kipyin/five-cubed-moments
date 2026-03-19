@@ -14,7 +14,7 @@ enum ReviewWeeklyInsightPattern: String, Sendable {
     case sparseFallback
 }
 
-struct ReviewWeeklyInsight: Equatable, Sendable {
+struct ReviewWeeklyInsight: Equatable, Hashable, Sendable {
     let pattern: ReviewWeeklyInsightPattern
     let observation: String
     let action: String?
@@ -23,7 +23,7 @@ struct ReviewWeeklyInsight: Equatable, Sendable {
     let dayCount: Int?
 }
 
-struct ReviewInsightTheme: Equatable, Sendable {
+struct ReviewInsightTheme: Equatable, Hashable, Sendable {
     let label: String
     let count: Int
 }

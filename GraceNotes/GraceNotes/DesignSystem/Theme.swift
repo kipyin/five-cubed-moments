@@ -78,6 +78,12 @@ enum AppTheme {
     static let spacingWide: CGFloat = 16
     static let spacingSection: CGFloat = 24
     static let floatingTabBarClearance: CGFloat = 84
+    static let todayHorizontalPadding: CGFloat = 16
+    static let todayTopPadding: CGFloat = 14
+    static let todaySectionSpacing: CGFloat = 22
+    static let todayClusterSpacing: CGFloat = 18
+    static let todayNotesSpacing: CGFloat = 18
+    static let todayBottomPadding: CGFloat = spacingSection + floatingTabBarClearance
     static let cornerRadiusMedium: CGFloat = 14
     static let cornerRadiusLarge: CGFloat = 16
 

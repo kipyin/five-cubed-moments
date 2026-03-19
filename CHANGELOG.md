@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.4] - 2026-03-19
+
+### Added
+- Inline completion meaning card for Today status badges (`In Progress`, `Seed`, `Harvest`), with motion-aware presentation and tap-to-dismiss behavior.
+- New iCloud sync toggle in Settings data section so users can explicitly control device-local vs synced behavior.
+
+### Changed
+- Completion tier copy was renamed from `Daily Rhythm`/`Complete` to `Seed`/`Harvest` across Today, Review, and localization.
+- Quick check-in completion now requires at least one entry in each chip section (gratitudes, needs, people), reducing accidental partial-completion labeling.
+- Completion meaning card interaction now remains visible until intentional dismissal instead of auto-hiding.
+- Review timeline now always shows an explicit status chip, including `In Progress`.
+- Data privacy helper copy in Settings now explains iCloud-on/iCloud-off behavior and when preference changes apply.
+
+### Fixed
+- Updated feature, unit, and UI tests for completion thresholds, deterministic summarization expectations, reminder denied-state flow, and accessibility label targeting.
+
+### Developer
+- Synced release docs and roadmap artifacts for `0.3.4` packaging and release merge readiness.
+
 ## [0.3.3] - 2026-03-19
 
 ### Added

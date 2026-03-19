@@ -62,6 +62,29 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - State changes are easy to understand and do not leave the user guessing what happened
 - The release reads as polish and cohesion, not as a disguised feature expansion
 
+## 0.3.4 — Released (2026-03-19)
+
+**Goal:** Clarify completion meaning and strengthen user trust controls without expanding core surface area.
+
+**Release status**
+- Shipped as `0.3.4` patch release.
+- See `CHANGELOG.md` for final packaged scope details.
+
+**Scope in**
+- Completion tier semantics and copy alignment (`In Progress` / `Seed` / `Harvest`)
+- Inline completion status education in Today and consistent status chips in Review
+- iCloud sync control and privacy copy hardening in Settings
+- Targeted test-suite alignment for completion thresholds, summarization behavior, and reminder/UI assertions
+
+**Why now**
+- `0.3.3` improved overall polish, but completion semantics and trust controls still had avoidable ambiguity in day-to-day use.
+- This patch closes those gaps while keeping `0.4.0` focused on insight quality.
+
+**Acceptance intent**
+- Users can understand what each completion level means without leaving the Today flow.
+- Completion states are coherent across Today and Review.
+- Data trust controls are explicit, understandable, and easy to verify.
+
 ## 0.4.0 — Insight quality
 
 **Goal:** Make review feel specific, trustworthy, and grounded in the user’s own entries.
@@ -145,5 +168,6 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/04-review-insight-examples.md`
 - `GraceNotes/docs/05-exploration-calendar-view.md`
 - `GraceNotes/docs/06-tech-debt-backlog.md`
+- `GraceNotes/docs/09-uat-review-notes-release-0.3.4.md`
 - `GraceNotes/docs/agent-log/initiatives/issue-41-agents-workflow/brief.md`
 - `CHANGELOG.md`

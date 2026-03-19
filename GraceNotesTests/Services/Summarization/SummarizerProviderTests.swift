@@ -16,33 +16,33 @@ final class SummarizerProviderTests: XCTestCase {
         XCTAssertTrue(result is MockSummarizer)
     }
 
-    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsKeyAbsent_returnsOnDeviceHybrid() {
+    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsKeyAbsent_returnsDeterministicSummarizer() {
         UserDefaults.standard.removeObject(forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
-        XCTAssertTrue(result is OnDeviceHybridSummarizer)
+        XCTAssertTrue(result is DeterministicChipLabelSummarizer)
     }
 
-    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsFalse_returnsOnDeviceHybrid() {
+    func test_currentSummarizer_withoutFixedSummarizer_UserDefaultsFalse_returnsDeterministicSummarizer() {
         UserDefaults.standard.set(false, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
-        XCTAssertTrue(result is OnDeviceHybridSummarizer)
+        XCTAssertTrue(result is DeterministicChipLabelSummarizer)
     }
 
-    func test_currentSummarizer_UserDefaultsTrue_placeholderKey_returnsOnDeviceHybrid() {
+    func test_currentSummarizer_UserDefaultsTrue_placeholderKey_returnsDeterministicSummarizer() {
         UserDefaults.standard.set(true, forKey: SummarizerProvider.useCloudUserDefaultsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
         XCTAssertTrue(
-            result is OnDeviceHybridSummarizer,
-            "With placeholder API key, provider should use on-device hybrid summarizer"
+            result is DeterministicChipLabelSummarizer,
+            "With placeholder API key, provider should use deterministic on-device summarizer"
         )
     }
 }

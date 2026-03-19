@@ -14,7 +14,7 @@ final class DeterministicChipLabelSummarizerTests: XCTestCase {
         let input = "I am grateful for my family and friends"
         let result = try await sut.summarize(input, section: .gratitude)
 
-        XCTAssertEqual(result.label, "I am grateful for my")
+        XCTAssertEqual(result.label, "I am grate")
         XCTAssertTrue(result.isTruncated)
     }
 
@@ -22,8 +22,8 @@ final class DeterministicChipLabelSummarizerTests: XCTestCase {
         let input = "Need wisdom today"
         let result = try await sut.summarize(input, section: .need)
 
-        XCTAssertEqual(result.label, input)
-        XCTAssertFalse(result.isTruncated)
+        XCTAssertEqual(result.label, "Need wisdo")
+        XCTAssertTrue(result.isTruncated)
     }
 
     func test_summarize_chineseSentence_returnsFirstFiveCharacters() async throws {
@@ -46,9 +46,9 @@ final class DeterministicChipLabelSummarizerTests: XCTestCase {
         let input = "为 Amy 祷告平安"
         let result = try await sut.summarize(input, section: .person)
 
-        XCTAssertEqual(result.label, input)
+        XCTAssertEqual(result.label, "为 Amy 祷")
         XCTAssertTrue(result.label.contains("Amy"))
-        XCTAssertFalse(result.isTruncated)
+        XCTAssertTrue(result.isTruncated)
     }
 
     func test_summarize_fiveOrFewerWords_overTenUnits_capsToChipBudget() async throws {

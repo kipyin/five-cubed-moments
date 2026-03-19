@@ -21,7 +21,7 @@ final class NaturalLanguageSummarizerTests: XCTestCase {
         XCTAssertFalse(result.label.isEmpty)
         // NL may extract "grateful family" or "family" etc; label should be short
         XCTAssertLessThanOrEqual(result.label.count, 50)
-        XCTAssertFalse(result.isTruncated)
+        XCTAssertLessThanOrEqual(result.label.count, ChipLabelUnitTruncator.maxUnits)
     }
 
     func test_summarize_singleWord_returnsSensibleResult() async throws {

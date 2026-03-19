@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%1$@ (%2$lld)" : {
       "localizations" : {
         "en" : {
@@ -29,6 +32,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ 至 %2$@"
+          }
+        }
+      }
+    },
+    "%1$@, %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，%2$@"
           }
         }
       }
@@ -66,6 +85,7 @@
       }
     },
     "A calm daily rhythm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -81,7 +101,25 @@
         }
       }
     },
+    "A need kept resurfacing: %1$@ on %2$lld day(s) this week." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A need kept resurfacing: %1$@ on %2$lld day(s) this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周有一个需求反复出现：%1$@（%2$lld 天）。"
+          }
+        }
+      }
+    },
     "a recurring need for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -98,6 +136,7 @@
       }
     },
     "Add new" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -109,6 +148,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加"
+          }
+        }
+      }
+    },
+    "Add new item in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add new item in %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 中新增一项"
+          }
+        }
+      }
+    },
+    "Adds another item in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds another item in %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 中再添加一项"
           }
         }
       }
@@ -125,6 +196,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI"
+          }
+        }
+      }
+    },
+    "Allow notifications in iOS Settings, then return and refresh." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications in iOS Settings, then return and refresh."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 iOS 设置中允许通知，然后返回并刷新。"
           }
         }
       }
@@ -146,7 +234,6 @@
       }
     },
     "Allow notifications in Settings to enable daily reminders." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -211,7 +298,11 @@
         }
       }
     },
+    "Capture one gratitude and move on with your day. A meaningful check-in can take under two minutes." : {
+
+    },
     "care for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -223,6 +314,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "对 %@ 的关怀"
+          }
+        }
+      }
+    },
+    "Check if notification permissions have changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check if notification permissions have changed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查通知权限是否已更改。"
           }
         }
       }
@@ -240,6 +347,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "标签"
+          }
+        }
+      }
+    },
+    "Choose a reminder time." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a reminder time."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择提醒时间。"
+          }
+        }
+      }
+    },
+    "Choose insights or timeline" : {
+
+    },
+    "Choose the time for your daily reminder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the time for your daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择每日提醒时间。"
+          }
+        }
+      }
+    },
+    "Complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆满"
           }
         }
       }
@@ -326,6 +485,22 @@
         }
       }
     },
+    "Daily Rhythm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Rhythm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日常记录"
+          }
+        }
+      }
+    },
     "Data & Privacy" : {
       "localizations" : {
         "en" : {
@@ -357,6 +532,12 @@
           }
         }
       }
+    },
+    "day" : {
+
+    },
+    "days" : {
+
     },
     "Delete" : {
       "localizations" : {
@@ -391,6 +572,26 @@
         }
       }
     },
+    "Disable your daily reminder notification." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable your daily reminder notification."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭你的每日提醒通知。"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+
+    },
     "Done" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -409,6 +610,7 @@
       }
     },
     "Enable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -420,6 +622,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "启用"
+          }
+        }
+      }
+    },
+    "Enable one notification every day." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable one notification every day."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天开启一条通知提醒。"
+          }
+        }
+      }
+    },
+    "Enabling reminder…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabling reminder…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在开启提醒…"
+          }
+        }
+      }
+    },
+    "Entries stay private to your devices and account. Export creates a full JSON backup." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entries stay private to your devices and account. Export creates a full JSON backup."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日记会保留在你的设备和账户私有范围内。导出可生成完整 JSON 备份。"
           }
         }
       }
@@ -456,7 +708,25 @@
         }
       }
     },
+    "First complete milestone reached." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First complete milestone reached."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首次达到完整里程碑。"
+          }
+        }
+      }
+    },
     "Full" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -473,6 +743,7 @@
       }
     },
     "Full 5³ complete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -488,12 +759,49 @@
         }
       }
     },
+    "Full 15 Complete" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full 15 Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "十五条已完成"
+          }
+        }
+      }
+    },
+    "Gentle sections for gratitude, needs, and people-in-mind help you begin without overthinking." : {
+
+    },
     "Get one daily local reminder to complete today's entry." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get one daily local reminder to complete today's entry."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天接收一次本地提醒，完成今天的记录。"
+          }
+        }
+      }
+    },
+    "Get one local reminder each day to complete today's entry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get one local reminder each day to complete today's entry."
           }
         },
         "zh-Hans" : {
@@ -537,6 +845,7 @@
       }
     },
     "Grace Notes helps you reflect with gentle structure: gratitude, needs, and people in mind." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -553,6 +862,7 @@
       }
     },
     "gratitude around %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -633,6 +943,23 @@
         }
       }
     },
+    "How could you make space for %@ again next week?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How could you make space for %@ again next week?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下周你可以怎样再次为 %@ 留出空间？"
+          }
+        }
+      }
+    },
     "In progress" : {
       "localizations" : {
         "en" : {
@@ -665,6 +992,23 @@
         }
       }
     },
+    "Is this shift toward %@ something you want to keep building?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is this shift toward %@ something you want to keep building?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想继续培养这个转向 %@ 的变化吗？"
+          }
+        }
+      }
+    },
     "Journal entries are stored locally and can sync through your iCloud private database when enabled. Sync changes apply on next app launch. Export creates a full JSON backup you can keep." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -683,6 +1027,7 @@
       }
     },
     "Journal entries are stored locally on this device. Export creates a full JSON backup you can keep." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -694,6 +1039,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日记仅保存在此设备上。导出可生成完整 JSON 备份供你保存。"
+          }
+        }
+      }
+    },
+    "Journal entries stay private to your devices and account. Export creates a full JSON backup you can keep." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Journal entries stay private to your devices and account. Export creates a full JSON backup you can keep."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日记会保留在你的设备和账户私有范围内。导出可生成完整 JSON 备份供你保存。"
           }
         }
       }
@@ -715,6 +1077,7 @@
       }
     },
     "Low-energy days still count. Start small and build toward fuller reflection sessions over time." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -742,6 +1105,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要的事"
+          }
+        }
+      }
+    },
+    "No completion level" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No completion level"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未达成完成等级"
           }
         }
       }
@@ -778,7 +1157,11 @@
         }
       }
     },
+    "Not selected" : {
+
+    },
     "Notifications are denied." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -790,6 +1173,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通知权限已被拒绝。"
+          }
+        }
+      }
+    },
+    "Notifications denied." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications denied."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知已拒绝。"
           }
         }
       }
@@ -826,6 +1226,23 @@
         }
       }
     },
+    "Off." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭。"
+          }
+        }
+      }
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -858,6 +1275,88 @@
         }
       }
     },
+    "On: chip labels use an online summarization service. Off: labels are generated on-device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On: chip labels use an online summarization service. Off: labels are generated on-device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启：标签使用在线摘要服务。关闭：标签仅在设备本地生成。"
+          }
+        }
+      }
+    },
+    "On: weekly insights may send recent journal text to your configured cloud AI service. Off: review insights stay on-device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On: weekly insights may send recent journal text to your configured cloud AI service. Off: review insights stay on-device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启：每周洞察可能会将近期日记文本发送到你配置的云端 AI 服务。关闭：回顾洞察仅在设备本地处理。"
+          }
+        }
+      }
+    },
+    "On." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启。"
+          }
+        }
+      }
+    },
+    "Open iOS Settings for notification permissions." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open iOS Settings for notification permissions."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 iOS 设置以调整通知权限。"
+          }
+        }
+      }
+    },
+    "Open iOS Settings, allow notifications for Grace Notes, then return here and refresh." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open iOS Settings, allow notifications for Grace Notes, then return here and refresh."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 iOS 设置，为 Grace Notes 允许通知，然后返回此页刷新。"
+          }
+        }
+      }
+    },
     "Open Settings" : {
       "localizations" : {
         "en" : {
@@ -873,6 +1372,9 @@
           }
         }
       }
+    },
+    "Opens this day's journal entry." : {
+
     },
     "People in Mind" : {
       "localizations" : {
@@ -903,6 +1405,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "完美 %lld"
+          }
+        }
+      }
+    },
+    "Perfect Daily Rhythm" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perfect Daily Rhythm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完美每日节奏"
           }
         }
       }
@@ -940,6 +1459,7 @@
       }
     },
     "Progress over perfection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -956,6 +1476,7 @@
       }
     },
     "Quick" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -972,6 +1493,7 @@
       }
     },
     "Quick check-in" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1035,6 +1557,23 @@
         }
       }
     },
+    "Reflection Started" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reflection Started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已开始反思"
+          }
+        }
+      }
+    },
     "Reflections" : {
       "localizations" : {
         "en" : {
@@ -1067,7 +1606,41 @@
         }
       }
     },
+    "Refreshing reminder status…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refreshing reminder status…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在刷新提醒状态…"
+          }
+        }
+      }
+    },
+    "Reminder couldn't be scheduled. Check notification permissions and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder couldn't be scheduled. Check notification permissions and try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法安排提醒。请检查通知权限后重试。"
+          }
+        }
+      }
+    },
     "Reminder is off." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1084,6 +1657,7 @@
       }
     },
     "Reminder is on." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1100,6 +1674,7 @@
       }
     },
     "Reminder is unavailable right now." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1111,6 +1686,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "提醒当前不可用。"
+          }
+        }
+      }
+    },
+    "Reminder status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder status"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒状态"
           }
         }
       }
@@ -1127,6 +1719,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "提醒时间"
+          }
+        }
+      }
+    },
+    "Reminder time couldn't be saved. Try again in a moment." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder time couldn't be saved. Try again in a moment."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法保存提醒时间。请稍后再试。"
+          }
+        }
+      }
+    },
+    "Reminder unavailable. Check notification permissions and try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder unavailable. Check notification permissions and try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒当前不可用。请检查通知权限后重试。"
           }
         }
       }
@@ -1175,6 +1800,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重试"
+          }
+        }
+      }
+    },
+    "Retry scheduling your daily reminder." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry scheduling your daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新尝试安排每日提醒。"
+          }
+        }
+      }
+    },
+    "Retrying reminder setup…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrying reminder setup…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重试设置提醒…"
           }
         }
       }
@@ -1228,6 +1886,7 @@
       }
     },
     "Review that gives insight" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1242,6 +1901,9 @@
           }
         }
       }
+    },
+    "Revisit when you are ready" : {
+
     },
     "Save" : {
       "localizations" : {
@@ -1291,6 +1953,9 @@
         }
       }
     },
+    "Selected" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "en" : {
@@ -1323,6 +1988,9 @@
         }
       }
     },
+    "Skip for now" : {
+
+    },
     "Source" : {
       "localizations" : {
         "en" : {
@@ -1340,6 +2008,7 @@
       }
     },
     "Standard" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1356,6 +2025,7 @@
       }
     },
     "Standard reflection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1370,6 +2040,9 @@
           }
         }
       }
+    },
+    "Start with one line" : {
+
     },
     "Start with one reflection today to build your weekly review." : {
       "localizations" : {
@@ -1415,6 +2088,33 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本周开始写作即可解锁回顾洞察。"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld"
           }
         }
       }
@@ -1567,6 +2267,7 @@
       }
     },
     "This week you reflected on %@." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1594,6 +2295,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本周你的反思常常回到 %@。"
+          }
+        }
+      }
+    },
+    "Time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间"
           }
         }
       }
@@ -1663,6 +2381,7 @@
       }
     },
     "Turn off" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1678,7 +2397,25 @@
         }
       }
     },
+    "Turn off daily reminders." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off daily reminders."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭每日提醒。"
+          }
+        }
+      }
+    },
     "Turn on a daily reminder." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1694,7 +2431,59 @@
         }
       }
     },
+    "Turn on daily reminder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启每日提醒。"
+          }
+        }
+      }
+    },
+    "Turn on one daily reminder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on one daily reminder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启一个每日提醒。"
+          }
+        }
+      }
+    },
+    "Turning reminder off…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turning reminder off…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在关闭提醒…"
+          }
+        }
+      }
+    },
     "Unable to create share image." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1759,6 +2548,7 @@
       }
     },
     "Unable to save that reminder time right now." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1791,6 +2581,7 @@
       }
     },
     "Unable to schedule your reminder right now." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1838,6 +2629,39 @@
         }
       }
     },
+    "Unavailable." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用。"
+          }
+        }
+      }
+    },
+    "Unavailable. Check notification permissions and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable. Check notification permissions and try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前不可用。请检查通知权限后重试。"
+          }
+        }
+      }
+    },
     "Use AI review insights" : {
       "localizations" : {
         "en" : {
@@ -1870,6 +2694,9 @@
         }
       }
     },
+    "Use prompts when your mind is blank" : {
+
+    },
     "We are setting up your private journal space..." : {
       "localizations" : {
         "en" : {
@@ -1885,6 +2712,9 @@
           }
         }
       }
+    },
+    "We couldn't create a share image right now. Please try again." : {
+
     },
     "We couldn't finish setting up your journal space. Please try again." : {
       "localizations" : {
@@ -1950,6 +2780,22 @@
         }
       }
     },
+    "What helped you stay this steady so you can carry it into next week?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What helped you stay this steady so you can carry it into next week?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是什么帮助你保持这样的稳定，并带到下周？"
+          }
+        }
+      }
+    },
     "What is one gentle next step you can take tomorrow?" : {
       "localizations" : {
         "en" : {
@@ -1966,6 +2812,23 @@
         }
       }
     },
+    "What is one small step that could support %@ tomorrow?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is one small step that could support %@ tomorrow?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明天有什么一个小步骤可以支持 %@？"
+          }
+        }
+      }
+    },
     "What is one small step you can take to support %@ tomorrow?" : {
       "localizations" : {
         "en" : {
@@ -1978,6 +2841,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "明天你可以采取哪一个小步骤来支持 %@？"
+          }
+        }
+      }
+    },
+    "What is one tiny way to turn %@ into a gratitude this week?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is one tiny way to turn %@ into a gratitude this week?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周有什么一个微小方式，可以把 %@ 变成感恩？"
+          }
+        }
+      }
+    },
+    "What would make tomorrow's check-in easy to start?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What would make tomorrow's check-in easy to start?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "怎样能让你明天更容易开始一次简短记录？"
           }
         }
       }
@@ -1999,6 +2895,7 @@
       }
     },
     "When on, chip labels use an online service for better summaries. When off, labels use on-device processing only." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2032,6 +2929,7 @@
       }
     },
     "When on, weekly review insights may send your recent journal text to the configured cloud AI service. When off, review insights stay on-device." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2059,6 +2957,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天你在想谁？"
+          }
+        }
+      }
+    },
+    "Would a short check-in with %@ feel supportive this week?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Would a short check-in with %@ feel supportive this week?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周和 %@ 简短联系一下，会不会对你有帮助？"
           }
         }
       }
@@ -2095,6 +3010,39 @@
         }
       }
     },
+    "You kept %1$@ in mind on %2$lld day(s) this week." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You kept %1$@ in mind on %2$lld day(s) this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周你有 %2$lld 天把 %1$@ 放在心上。"
+          }
+        }
+      }
+    },
+    "You kept a steady daily rhythm and completed all 15 each day this week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You kept a steady daily rhythm and completed all 15 each day this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周你保持了稳定的每日节律，并且每天都完成了15项记录。"
+          }
+        }
+      }
+    },
     "You kept a steady reflection rhythm this week." : {
       "localizations" : {
         "en" : {
@@ -2111,6 +3059,23 @@
         }
       }
     },
+    "You kept noticing %1$@ on %2$lld day(s) this week." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You kept noticing %1$@ on %2$lld day(s) this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这周你有 %2$lld 天持续注意到 %1$@。"
+          }
+        }
+      }
+    },
     "You mentioned %1$@ %2$lld times this week." : {
       "localizations" : {
         "en" : {
@@ -2123,6 +3088,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本周你提到 %1$@ 共 %2$lld 次。"
+          }
+        }
+      }
+    },
+    "You often named %@ as a need, but it did not appear in your gratitudes yet." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You often named %@ as a need, but it did not appear in your gratitudes yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你常把 %@ 写成需要，但它还没有出现在感恩里。"
           }
         }
       }
@@ -2144,6 +3126,7 @@
       }
     },
     "You showed up for reflection on %lld day(s) this week." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2159,7 +3142,28 @@
         }
       }
     },
+    "Your focus shifted from %1$@ last week to %2$@ this week." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your focus shifted from %1$@ last week to %2$@ this week."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的关注从上周的 %1$@ 转向了这周的 %2$@。"
+          }
+        }
+      }
+    },
+    "Your Review tab helps you spot themes later. Today, focus on one honest moment and call it complete." : {
+
+    },
     "Your Review tab turns past entries into recurring themes, resurfacing ideas, and continuity prompts." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

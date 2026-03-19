@@ -5,7 +5,25 @@ enum ReviewInsightSource: String, Sendable {
     case cloudAI
 }
 
-struct ReviewInsightTheme: Equatable, Sendable {
+enum ReviewWeeklyInsightPattern: String, Sendable {
+    case recurringPeople
+    case recurringTheme
+    case needsGratitudeGap
+    case fullCompletion
+    case continuityShift
+    case sparseFallback
+}
+
+struct ReviewWeeklyInsight: Equatable, Hashable, Sendable {
+    let pattern: ReviewWeeklyInsightPattern
+    let observation: String
+    let action: String?
+    let primaryTheme: String?
+    let mentionCount: Int?
+    let dayCount: Int?
+}
+
+struct ReviewInsightTheme: Equatable, Hashable, Sendable {
     let label: String
     let count: Int
 }
@@ -15,6 +33,7 @@ struct ReviewInsights: Equatable, Sendable {
     let generatedAt: Date
     let weekStart: Date
     let weekEnd: Date
+    let weeklyInsights: [ReviewWeeklyInsight]
     let recurringGratitudes: [ReviewInsightTheme]
     let recurringNeeds: [ReviewInsightTheme]
     let recurringPeople: [ReviewInsightTheme]

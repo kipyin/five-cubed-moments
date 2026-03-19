@@ -2,6 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct ReviewScreen: View {
+    private struct TimelineRefreshKey: Hashable {
+        let entryCount: Int
+        let newestEntryUpdateAt: Date
+    }
+
     private enum ReviewMode: CaseIterable, Identifiable {
         case insights
         case timeline
@@ -21,15 +26,29 @@ struct ReviewScreen: View {
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
-    @State private var selectedMode: ReviewMode = .insights
+    @State private var selectedMode: ReviewMode
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
+    @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let calendar = Calendar.current
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
 
-    private var groupedEntries: [(key: Date, entries: [JournalEntry])] {
-        HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
+    init() {
+        let testingFlag = ProcessInfo.processInfo.environment["FIVECUBED_UI_TESTING"]
+            .map { value in
+                let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                return normalizedValue == "1" || normalizedValue == "true" || normalizedValue == "yes"
+            } ?? false
+        _selectedMode = State(initialValue: testingFlag ? .timeline : .insights)
+    }
+
+    private var timelineRefreshKey: TimelineRefreshKey {
+        TimelineRefreshKey(
+            entryCount: entries.count,
+            newestEntryUpdateAt: entries.map(\.updatedAt).max() ?? .distantPast
+        )
     }
 
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
@@ -65,7 +84,7 @@ struct ReviewScreen: View {
             }
         }
         .navigationTitle(String(localized: "Review"))
-        .background(AppTheme.background)
+        .background(AppTheme.reviewBackground)
         .onAppear {
             PerformanceTrace.instant("ReviewScreen.onAppear")
         }
@@ -78,6 +97,9 @@ struct ReviewScreen: View {
             Task {
                 await refreshReviewInsights()
             }
+        }
+        .task(id: timelineRefreshKey) {
+            refreshTimelineGroups()
         }
     }
 
@@ -92,46 +114,83 @@ struct ReviewScreen: View {
 
     private var historyList: some View {
         List {
-            Section {
-                Picker(String(localized: "Review mode"), selection: $selectedMode) {
-                    ForEach(ReviewMode.allCases) { mode in
-                        Text(mode.localizedTitle).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.vertical, 4)
-                .listRowBackground(AppTheme.background)
-            }
+            reviewModeSection
 
             switch selectedMode {
             case .insights:
-                Section {
-                    ReviewSummaryCard(insights: reviewInsights, isLoading: isLoadingInsights)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                        .listRowBackground(AppTheme.background)
-                }
+                insightsSection
             case .timeline:
-                ForEach(groupedEntries, id: \.key) { group in
-                    Section {
-                        ForEach(group.entries, id: \.id) { entry in
-                            NavigationLink {
-                                JournalScreen(entryDate: entry.entryDate)
-                            } label: {
-                                HistoryRow(entry: entry)
-                            }
-                            .listRowBackground(AppTheme.paper)
-                        }
-                    } header: {
-                        Text(monthYearString(from: group.key))
-                            .font(AppTheme.warmPaperHeader)
-                            .foregroundStyle(AppTheme.textPrimary)
-                    }
-                }
+                timelineSections
             }
         }
         .listStyle(.insetGrouped)
+        .listRowSpacing(10)
         .scrollContentBackground(.hidden)
-        .background(AppTheme.background)
+        .background(AppTheme.reviewBackground)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: selectedMode)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+        }
+    }
+
+    private var reviewModeSection: some View {
+        Section {
+            HStack(spacing: 6) {
+                ForEach(ReviewMode.allCases) { mode in
+                    ReviewModeOptionButton(
+                        title: mode.localizedTitle,
+                        isSelected: mode == selectedMode,
+                        accessibilityValue: reviewModeSelectionValue(for: mode),
+                        accessibilityIdentifier: accessibilityReviewModeIdentifier(for: mode)
+                    ) {
+                        selectedMode = mode
+                    }
+                }
+            }
+            .padding(4)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppTheme.reviewPaper)
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(String(localized: "Review mode"))
+            .accessibilityValue(selectedMode.localizedTitle)
+            .accessibilityHint(String(localized: "Choose insights or timeline"))
+            .accessibilityIdentifier("ReviewModePicker")
+            .listRowBackground(AppTheme.reviewBackground)
+        }
+    }
+
+    private var insightsSection: some View {
+        Section {
+            ReviewSummaryCard(insights: reviewInsights, isLoading: isLoadingInsights)
+                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                .listRowBackground(AppTheme.reviewBackground)
+        }
+    }
+
+    @ViewBuilder
+    private var timelineSections: some View {
+        ForEach(timelineGroups, id: \.key) { group in
+            Section {
+                ForEach(group.entries, id: \.id) { entry in
+                    NavigationLink {
+                        JournalScreen(entryDate: entry.entryDate)
+                    } label: {
+                        HistoryRow(entry: entry)
+                    }
+                    .accessibilityLabel(accessibilityTimelineRowLabel(for: entry))
+                    .accessibilityIdentifier("ReviewTimelineEntry.\(entry.id.uuidString)")
+                    .accessibilityHint(String(localized: "Opens this day's journal entry."))
+                    .listRowBackground(AppTheme.reviewPaper)
+                }
+            } header: {
+                Text(monthYearString(from: group.key))
+                    .font(AppTheme.warmPaperHeader)
+                    .foregroundStyle(AppTheme.reviewTextPrimary)
+                    .accessibilityAddTraits(.isHeader)
+            }
+        }
     }
 
     @MainActor
@@ -182,6 +241,73 @@ struct ReviewScreen: View {
         guard useAIReviewInsights else { return true }
         return insights.source == .cloudAI
     }
+
+    private func refreshTimelineGroups() {
+        timelineGroups = HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
+    }
+
+    private func accessibilityTimelineRowLabel(for entry: JournalEntry) -> String {
+        let dateText = entry.entryDate.formatted(date: .complete, time: .omitted)
+        return String(
+            format: String(localized: "%1$@, %2$@"),
+            dateText,
+            completionText(for: entry.completionLevel)
+        )
+    }
+
+    private func completionText(for completionLevel: JournalCompletionLevel) -> String {
+        switch completionLevel {
+        case .fullFiveCubed:
+            return String(localized: "Complete")
+        case .standardReflection:
+            return String(localized: "Complete")
+        case .quickCheckIn:
+            return String(localized: "Daily Rhythm")
+        case .none:
+            return String(localized: "No completion level")
+        }
+    }
+
+    private func accessibilityReviewModeIdentifier(for mode: ReviewMode) -> String {
+        switch mode {
+        case .insights:
+            return "ReviewMode.insights"
+        case .timeline:
+            return "ReviewMode.timeline"
+        }
+    }
+
+    private func reviewModeSelectionValue(for mode: ReviewMode) -> String {
+        mode == selectedMode ? String(localized: "Selected") : String(localized: "Not selected")
+    }
+}
+
+private struct ReviewModeOptionButton: View {
+    let title: String
+    let isSelected: Bool
+    let accessibilityValue: String
+    let accessibilityIdentifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(AppTheme.warmPaperBody.weight(.semibold))
+                .foregroundStyle(isSelected ? AppTheme.reviewOnAccent : AppTheme.reviewTextMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(isSelected ? AppTheme.reviewAccent : .clear)
+                )
+        }
+        .buttonStyle(WarmPaperPressStyle())
+        .accessibilityLabel(title)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(String(localized: "Choose insights or timeline"))
+        .accessibilityIdentifier(accessibilityIdentifier)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
 }
 
 enum HistoryEntryGrouping {
@@ -204,103 +330,206 @@ private struct HistoryRow: View {
     let entry: JournalEntry
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
-                .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textPrimary)
-            Spacer()
-            completionBadge
+        ViewThatFits(in: .horizontal) {
+            compactLayout
+            stackedLayout
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var compactLayout: some View {
+        HStack(alignment: .center, spacing: 10) {
+            dateText
+            if hasCompletionBadge {
+                Spacer(minLength: 8)
+                completionBadge(lineLimit: 1)
+            }
+        }
+    }
+
+    private var stackedLayout: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            dateText
+            if hasCompletionBadge {
+                completionBadge(lineLimit: 2)
+            }
+        }
+    }
+
+    private var dateText: some View {
+        Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
+            .font(AppTheme.warmPaperBody)
+            .foregroundStyle(AppTheme.reviewTextPrimary)
+    }
+
+    private var hasCompletionBadge: Bool {
+        switch entry.completionLevel {
+        case .none:
+            return false
+        default:
+            return true
         }
     }
 
     @ViewBuilder
-    private var completionBadge: some View {
+    private func completionBadge(lineLimit: Int) -> some View {
         switch entry.completionLevel {
         case .fullFiveCubed:
-            statusChip(text: String(localized: "Full"), color: AppTheme.complete)
+            statusChip(
+                text: String(localized: "Complete"),
+                icon: "checkmark.seal.fill",
+                textColor: AppTheme.reviewCompleteText,
+                backgroundColor: AppTheme.reviewCompleteBackground,
+                borderColor: AppTheme.reviewCompleteBorder
+            )
+            .lineLimit(lineLimit)
         case .standardReflection:
-            statusChip(text: String(localized: "Standard"), color: AppTheme.accent)
+            statusChip(
+                text: String(localized: "Complete"),
+                icon: "checkmark.circle.fill",
+                textColor: AppTheme.reviewStandardText,
+                backgroundColor: AppTheme.reviewStandardBackground,
+                borderColor: AppTheme.reviewStandardBorder
+            )
+            .lineLimit(lineLimit)
         case .quickCheckIn:
-            statusChip(text: String(localized: "Quick"), color: AppTheme.textMuted)
+            statusChip(
+                text: String(localized: "Daily Rhythm"),
+                icon: "pencil.circle.fill",
+                textColor: AppTheme.reviewQuickStartText,
+                backgroundColor: AppTheme.reviewQuickStartBackground,
+                borderColor: AppTheme.reviewQuickStartBorder
+            )
+            .lineLimit(lineLimit)
         case .none:
             EmptyView()
         }
     }
 
-    private func statusChip(text: String, color: Color) -> some View {
-        Text(text)
+    private func statusChip(
+        text: String,
+        icon: String,
+        textColor: Color,
+        backgroundColor: Color,
+        borderColor: Color
+    ) -> some View {
+        Label(text, systemImage: icon)
             .font(AppTheme.warmPaperBody.weight(.semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(AppTheme.background)
+            .foregroundStyle(textColor)
+            .multilineTextAlignment(.leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(backgroundColor)
             .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(borderColor.opacity(0.8), lineWidth: 1)
+            )
+            .accessibilityLabel(text)
     }
 }
 
 private struct ReviewSummaryCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let insights: ReviewInsights?
     let isLoading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(String(localized: "This Week"))
                 .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+                .accessibilityAddTraits(.isHeader)
 
             if isLoading, insights == nil {
                 ProgressView()
-                    .tint(AppTheme.accent)
+                    .tint(AppTheme.reviewAccent)
             } else if let insights {
-                HStack {
-                    Text(String(localized: "Source"))
-                        .font(AppTheme.warmPaperBody.weight(.semibold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                    Text(insightSourceText(insights.source))
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textMuted)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppTheme.background)
-                        .clipShape(Capsule())
-                    Spacer()
-                }
+                sourceRow(for: insights.source)
 
                 Text(weekRangeText(insights))
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .font(AppTheme.warmPaperMeta)
+                    .foregroundStyle(AppTheme.reviewTextMuted)
 
-                if let narrativeSummary = insights.narrativeSummary, !narrativeSummary.isEmpty {
+                if shouldShowNarrativeSummary(for: insights),
+                   let narrativeSummary = insights.narrativeSummary {
                     Text(narrativeSummary)
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textPrimary)
+                        .foregroundStyle(AppTheme.reviewTextPrimary)
+                        .lineSpacing(4)
+                }
+
+                if !insights.weeklyInsights.isEmpty {
+                    ReviewWeeklyInsightsSection(items: insights.weeklyInsights)
+                } else {
+                    Text(insights.resurfacingMessage)
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
+                        .lineSpacing(2)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(String(localized: "Continue with"))
+                            .font(AppTheme.warmPaperBody.weight(.semibold))
+                            .foregroundStyle(AppTheme.reviewTextPrimary)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(insights.continuityPrompt)
+                            .font(AppTheme.warmPaperBody)
+                            .foregroundStyle(AppTheme.reviewTextPrimary)
+                            .lineSpacing(3)
+                    }
                 }
 
                 ReviewThemeRow(title: String(localized: "Recurring Gratitudes"), items: insights.recurringGratitudes)
                 ReviewThemeRow(title: String(localized: "Recurring Needs"), items: insights.recurringNeeds)
                 ReviewThemeRow(title: String(localized: "People in Mind"), items: insights.recurringPeople)
-
-                Text(insights.resurfacingMessage)
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Continue with"))
-                        .font(AppTheme.warmPaperBody.weight(.semibold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                    Text(insights.continuityPrompt)
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textPrimary)
-                }
             } else {
                 Text(String(localized: "Start writing this week to unlock review insights."))
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.reviewTextMuted)
             }
         }
         .padding(16)
-        .background(AppTheme.paper)
+        .background(AppTheme.reviewPaper)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppTheme.border.opacity(0.4), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func sourceRow(for source: ReviewInsightSource) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                sourceLabelAndChip(for: source)
+            }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    sourceLabelAndChip(for: source)
+                    Spacer(minLength: 0)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    sourceLabelAndChip(for: source)
+                }
+            }
+        }
+    }
+
+    private func sourceLabelAndChip(for source: ReviewInsightSource) -> some View {
+        HStack(spacing: 8) {
+            Text(String(localized: "Source"))
+                .font(AppTheme.warmPaperBody.weight(.semibold))
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+            Text(insightSourceText(source))
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.reviewTextMuted)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(AppTheme.reviewBackground)
+                .clipShape(Capsule())
+        }
     }
 
     private func insightSourceText(_ source: ReviewInsightSource) -> String {
@@ -323,33 +552,91 @@ private struct ReviewSummaryCard: View {
             endText
         )
     }
+
+    private func shouldShowNarrativeSummary(for insights: ReviewInsights) -> Bool {
+        guard let narrativeSummary = insights.narrativeSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !narrativeSummary.isEmpty
+        else {
+            return false
+        }
+        guard let firstInsightObservation = insights.weeklyInsights.first?.observation else {
+            return true
+        }
+        return normalizedInsightText(narrativeSummary) != normalizedInsightText(firstInsightObservation)
+    }
+
+    private func normalizedInsightText(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct ReviewWeeklyInsightsSection: View {
+    let items: [ReviewWeeklyInsight]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(String(localized: "Insights"))
+                .font(AppTheme.warmPaperBody.weight(.semibold))
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+                .accessibilityAddTraits(.isHeader)
+
+            ForEach(Array(items.enumerated()), id: \.element) { index, item in
+                VStack(alignment: .leading, spacing: 6) {
+                    if index > 0 {
+                        Divider()
+                    }
+
+                    Text(item.observation)
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.reviewTextPrimary)
+                        .lineSpacing(2)
+
+                    if let action = item.action, !action.isEmpty {
+                        Text(action)
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.reviewTextMuted)
+                            .lineSpacing(2)
+                    }
+                }
+            }
+        }
+    }
 }
 
 private struct ReviewThemeRow: View {
     let title: String
     let items: [ReviewInsightTheme]
 
-    private var itemText: String {
-        guard !items.isEmpty else {
-            return String(localized: "No recurring patterns yet")
-        }
-        return items.map {
-            String(
-                format: String(localized: "%1$@ (%2$lld)"),
-                $0.label,
-                $0.count
-            )
-        }.joined(separator: ", ")
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(AppTheme.warmPaperBody.weight(.semibold))
-                .foregroundStyle(AppTheme.textPrimary)
-            Text(itemText)
-                .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textMuted)
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+                .accessibilityAddTraits(.isHeader)
+
+            if items.isEmpty {
+                Text(String(localized: "No recurring patterns yet"))
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.reviewTextMuted)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(items, id: \.self) { item in
+                        Text(
+                            String(
+                                format: String(localized: "%1$@ (%2$lld)"),
+                                item.label,
+                                item.count
+                            )
+                        )
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
+                        .lineSpacing(2)
+                    }
+                }
+            }
         }
     }
 }

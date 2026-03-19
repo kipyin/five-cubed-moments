@@ -1,14 +1,20 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct SettingsScreen: View {
     /// Default false to align with SummarizerProvider; first launch uses on-device NL summarization.
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @StateObject private var reminderState = ReminderSettingsFlowModel()
+    @State private var isReminderPickerExpanded = false
+    @State private var isReminderToggleOn = false
     @State private var exportErrorMessage: String?
     @State private var showExportError = false
     @State private var exportFile: ShareableFile?
@@ -21,66 +27,76 @@ struct SettingsScreen: View {
             Section {
                 Toggle(String(localized: "Use cloud summarization"), isOn: $useCloudSummarization)
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } header: {
                 Text(String(localized: "Summarization"))
                     .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } footer: {
                 Text(
                     String(
                         localized: """
-                        When on, chip labels use an online service for better summaries. \
-                        When off, labels use on-device processing only.
+                        On: chip labels use an online summarization service. \
+                        Off: labels are generated on-device.
                         """
                     )
                 )
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.settingsTextMuted)
             }
 
             Section {
                 Toggle(String(localized: "Use AI review insights"), isOn: $useAIReviewInsights)
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } header: {
                 Text(String(localized: "Review Insights"))
                     .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } footer: {
                 Text(
                     String(
                         localized: """
-                        When on, weekly review insights may send your recent journal text \
-                        to the configured cloud AI service. \
-                        When off, review insights stay on-device.
+                        On: weekly insights may send recent journal text to your configured cloud AI service. \
+                        Off: review insights stay on-device.
                         """
                     )
                 )
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.settingsTextMuted)
             }
 
             Section {
-                NavigationLink {
-                    ReminderSettingsDetailScreen(reminderState: reminderState)
-                } label: {
-                    HStack {
-                        Text(String(localized: "Daily reminder"))
-                        Spacer()
-                        Text(reminderState.summaryText)
-                            .foregroundStyle(AppTheme.textMuted)
+                VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+                    reminderTimeControlRow
+                    if reminderState.isReminderEnabled && isReminderPickerExpanded {
+                        reminderTimePicker
                     }
-                    .font(AppTheme.warmPaperBody)
+                    if reminderState.isPermissionDenied {
+                        reminderPermissionDeniedGuidance
+                    } else if reminderState.liveStatus == .unavailable {
+                        reminderUnavailableGuidance
+                    }
+                }
+                .padding(.vertical, AppTheme.spacingTight / 2)
+                .alert(
+                    String(localized: "Unable to update reminder"),
+                    isPresented: reminderErrorIsPresented
+                ) {
+                    Button(String(localized: "OK"), role: .cancel) {
+                        reminderState.clearTransientError()
+                    }
+                } message: {
+                    Text(reminderState.transientErrorMessage ?? String(localized: "Please try again."))
                 }
             } header: {
                 Text(String(localized: "Reminders"))
                     .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } footer: {
-                Text(String(localized: "Get one daily local reminder to complete today's entry."))
+                Text(String(localized: "Get one local reminder each day to complete today's entry."))
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.settingsTextMuted)
             }
 
             Section {
@@ -88,32 +104,43 @@ struct SettingsScreen: View {
                     exportJournalData()
                 }
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.accent)
+                .foregroundStyle(AppTheme.accentText)
                 .disabled(isExportingData)
             } header: {
                 Text(String(localized: "Data & Privacy"))
                     .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
             } footer: {
                 Text(dataPrivacyFooterText)
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.settingsTextMuted)
             }
         }
+        .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
         .scrollContentBackground(.hidden)
-        .background(AppTheme.background)
+        .background(AppTheme.settingsBackground)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+        }
         .navigationTitle(String(localized: "Settings"))
         .sheet(item: $exportFile) { file in
             ShareSheet(activityItems: [file.url])
         }
         .task {
             await reminderState.refreshStatus()
+            syncReminderControlState(with: reminderState.liveStatus)
         }
         .onChange(of: scenePhase) { _, newValue in
             guard newValue == .active else { return }
             Task {
                 await reminderState.refreshStatus()
             }
+        }
+        .onChange(of: reminderState.selectedTime) { _, _ in
+            reminderState.handleSelectedTimeChanged()
+        }
+        .onChange(of: reminderState.liveStatus) { _, newValue in
+            syncReminderControlState(with: newValue)
         }
         .alert(String(localized: "Unable to export data"), isPresented: $showExportError) {
             Button(String(localized: "OK"), role: .cancel) {}
@@ -134,11 +161,189 @@ struct SettingsScreen: View {
 }
 
 private extension SettingsScreen {
+    var shouldUseCompactReminderPicker: Bool {
+        dynamicTypeSize >= .accessibility1 || verticalSizeClass == .compact
+    }
+
+    var reminderToggleBinding: Binding<Bool> {
+        Binding(
+            get: { isReminderToggleOn },
+            set: { newValue in
+                guard !reminderState.isPermissionDenied else { return }
+                isReminderToggleOn = newValue
+                isReminderPickerExpanded = newValue
+                Task {
+                    await reminderState.setReminderEnabled(newValue)
+                }
+            }
+        )
+    }
+
+    var reminderTimeControlRow: some View {
+        HStack(spacing: AppTheme.spacingRegular) {
+            Button {
+                guard reminderState.isReminderEnabled else { return }
+                isReminderPickerExpanded.toggle()
+            } label: {
+                HStack(spacing: AppTheme.spacingRegular) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacingTight / 2) {
+                        Text(String(localized: "Daily reminder"))
+                            .font(AppTheme.warmPaperBody)
+                            .foregroundStyle(AppTheme.settingsTextPrimary)
+                        Text(reminderState.summaryText)
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.settingsTextMuted)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: AppTheme.spacingRegular)
+
+                    if reminderState.isReminderEnabled {
+                        Image(systemName: isReminderPickerExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.settingsTextMuted)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!reminderState.isReminderEnabled || reminderState.isWorking)
+            .accessibilityLabel(String(localized: "Reminder time"))
+            .accessibilityValue(
+                reminderState.isReminderEnabled
+                    ? reminderState.selectedTime.formatted(date: .omitted, time: .shortened)
+                    : String(localized: "Off")
+            )
+
+            Toggle("", isOn: reminderToggleBinding)
+                .labelsHidden()
+                .tint(AppTheme.reminderPrimaryActionBackground)
+                .disabled(reminderState.isPermissionDenied || reminderState.isWorking)
+                .accessibilityLabel(String(localized: "Daily reminder"))
+        }
+        .frame(minHeight: 44)
+    }
+
+    var reminderPermissionDeniedGuidance: some View {
+        VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+            Text(String(localized: "Allow notifications in Settings to enable daily reminders."))
+                .font(AppTheme.warmPaperMeta)
+                .foregroundStyle(AppTheme.settingsTextMuted)
+
+            Button {
+                openSystemSettings()
+            } label: {
+                Text(String(localized: "Open Settings"))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.reminderPrimaryActionBackground)
+            .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+            .font(AppTheme.warmPaperBody)
+            .accessibilityHint(String(localized: "Open iOS Settings for notification permissions."))
+        }
+    }
+
+    var reminderUnavailableGuidance: some View {
+        VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+            Text(String(localized: "Unavailable. Check notification permissions and try again."))
+                .font(AppTheme.warmPaperMeta)
+                .foregroundStyle(AppTheme.settingsTextMuted)
+
+            HStack(spacing: AppTheme.spacingRegular) {
+                Button {
+                    Task {
+                        await reminderState.enableReminders()
+                    }
+                } label: {
+                    Text(String(localized: "Try again"))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.reminderPrimaryActionBackground)
+                .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                .font(AppTheme.warmPaperBody)
+                .disabled(reminderState.isWorking)
+                .accessibilityHint(String(localized: "Retry scheduling your daily reminder."))
+
+                Button {
+                    Task {
+                        await reminderState.refreshStatus()
+                    }
+                } label: {
+                    Text(String(localized: "Refresh"))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .tint(AppTheme.reminderSecondaryActionTint)
+                .foregroundStyle(AppTheme.reminderSecondaryActionTint)
+                .font(AppTheme.warmPaperBody)
+                .disabled(reminderState.isWorking)
+                .accessibilityHint(String(localized: "Check if notification permissions have changed."))
+            }
+        }
+    }
+
+    @ViewBuilder
+    var reminderTimePicker: some View {
+        if shouldUseCompactReminderPicker {
+            DatePicker(
+                "",
+                selection: $reminderState.selectedTime,
+                displayedComponents: .hourAndMinute
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .font(AppTheme.warmPaperBody)
+            .foregroundStyle(AppTheme.settingsTextPrimary)
+            .tint(AppTheme.reminderSecondaryActionTint)
+            .accessibilityLabel(String(localized: "Reminder time"))
+            .accessibilityHint(String(localized: "Choose a reminder time."))
+        } else {
+            DatePicker(
+                "",
+                selection: $reminderState.selectedTime,
+                displayedComponents: .hourAndMinute
+            )
+            .labelsHidden()
+            .datePickerStyle(.wheel)
+            .font(AppTheme.warmPaperBody)
+            .foregroundStyle(AppTheme.settingsTextPrimary)
+            .accessibilityLabel(String(localized: "Reminder time"))
+            .accessibilityHint(String(localized: "Choose a reminder time."))
+        }
+    }
+
+    func syncReminderControlState(with status: ReminderLiveStatus) {
+        isReminderToggleOn = status == .enabled
+        if status != .enabled {
+            isReminderPickerExpanded = false
+        }
+    }
+
+    var reminderErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { reminderState.transientErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    reminderState.clearTransientError()
+                }
+            }
+        )
+    }
+
+    func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        openURL(url)
+    }
+
     var dataPrivacyFooterText: String {
         return String(
             localized: """
-            Journal entries stay private to your devices and account. \
-            Export creates a full JSON backup you can keep.
+            Entries stay private to your devices and account. \
+            Export creates a full JSON backup.
             """
         )
     }

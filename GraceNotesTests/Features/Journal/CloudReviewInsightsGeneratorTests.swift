@@ -1,6 +1,7 @@
 import XCTest
 @testable import GraceNotes
 
+// swiftlint:disable file_length type_body_length
 final class CloudReviewInsightsGeneratorTests: XCTestCase {
     private var urlSession: URLSession!
     private var calendar: Calendar!
@@ -48,6 +49,9 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
         XCTAssertEqual(insights.recurringNeeds.first?.label, "Rest")
         XCTAssertEqual(insights.recurringNeeds.first?.count, 3)
         XCTAssertTrue(insights.narrativeSummary?.contains("Rest") == true)
+        XCTAssertEqual(insights.weeklyInsights.count, 2)
+        XCTAssertEqual(insights.weeklyInsights.first?.observation, "You mentioned Rest 3 times this week.")
+        XCTAssertEqual(insights.weeklyInsights.first?.action, "What can protect your rest tomorrow?")
     }
 
     func test_generateInsights_invalidPayload_throws() async {
@@ -178,6 +182,8 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
 
         XCTAssertEqual(insights.recurringNeeds.first?.label, "Rest")
         XCTAssertTrue(insights.continuityPrompt.contains("Rest"))
+        XCTAssertEqual(insights.weeklyInsights.first?.observation, "You mentioned Rest 2 times this week.")
+        XCTAssertEqual(insights.weeklyInsights.first?.action, "What can protect your Rest tomorrow?")
     }
 
     func test_generateInsights_genericContinuityPrompt_isReplacedWithThemePrompt() async throws {
@@ -259,6 +265,41 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
 
         XCTAssertTrue(prompt.contains("Ground messages in the provided week context"))
         XCTAssertTrue(prompt.contains("continuityPrompt must be a specific follow-up question"))
+    }
+
+    func test_generateInsights_withoutMeaningfulCurrentWeekEntries_throwsBeforeAPICall() async {
+        let generator = CloudReviewInsightsGenerator(
+            apiKey: "test-key",
+            urlSession: urlSession
+        )
+        var didCallAPI = false
+        MockURLProtocol.mockResponse = { _ in
+            didCallAPI = true
+            let http = HTTPURLResponse(
+                url: URL(string: "https://example.com")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (Data(), http, nil)
+        }
+
+        let blankCurrentWeekEntry = JournalEntry(entryDate: date(year: 2026, month: 3, day: 18))
+        let previousWeekEntry = JournalEntry(
+            entryDate: date(year: 2026, month: 3, day: 10),
+            gratitudes: [JournalItem(fullText: "Family", chipLabel: "Family")]
+        )
+
+        do {
+            _ = try await generator.generateInsights(
+                from: [blankCurrentWeekEntry, previousWeekEntry],
+                referenceDate: date(year: 2026, month: 3, day: 18),
+                calendar: calendar
+            )
+            XCTFail("Expected insufficient context error")
+        } catch {
+            XCTAssertFalse(didCallAPI)
+        }
     }
 
 }
@@ -365,3 +406,4 @@ private extension CloudReviewInsightsGeneratorTests {
         return (requestCaptured, { capturedRequestBody })
     }
 }
+// swiftlint:enable file_length type_body_length

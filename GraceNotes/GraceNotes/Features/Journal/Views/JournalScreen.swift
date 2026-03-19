@@ -5,6 +5,7 @@ import UIKit
 
 struct JournalScreen: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel = JournalViewModel()
     @State private var shareableImage: ShareableImage?
     @State private var showShareError = false
@@ -14,6 +15,10 @@ struct JournalScreen: View {
     @State private var gratitudeSummarizationTask: Task<Void, Never>?
     @State private var needSummarizationTask: Task<Void, Never>?
     @State private var personSummarizationTask: Task<Void, Never>?
+    @State private var statusCelebrationDismissTask: Task<Void, Never>?
+    @State private var celebratingLevel: JournalCompletionLevel?
+    @State private var hasInitializedCompletionTracking = false
+    @State private var previousCompletionLevel: JournalCompletionLevel = .none
 
     @State private var gratitudeInput = ""
     @State private var needInput = ""
@@ -44,85 +49,93 @@ struct JournalScreen: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: AppTheme.spacingSection) {
                 DateSectionView(
                     entryDate: viewModel.entryDate,
-                    completionLevel: viewModel.completionLevel
+                    completionLevel: viewModel.completionLevel,
+                    chipsProgressText: viewModel.chipsProgressText,
+                    celebratingLevel: celebratingLevel
                 )
 
-                SequentialSectionView(
-                    title: String(localized: "Gratitudes"),
-                    items: viewModel.gratitudes,
-                    placeholder: String(localized: "What's one thing you're grateful for?"),
-                    slotCount: JournalViewModel.slotCount,
-                    inputAccessibilityIdentifier: "Gratitude 1",
-                    inputText: $gratitudeInput,
-                    editingIndex: editingGratitudeIndex,
-                    inputFocus: $isGratitudeInputFocused,
-                    onSubmit: submitGratitude,
-                    onChipTap: { index in chipTapped(section: .gratitude, index: index) },
-                    onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
-                    onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
-                    onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
-                    onAddNew: { addNewTapped(section: .gratitude) }
-                )
-
-                SequentialSectionView(
-                    title: String(localized: "Needs"),
-                    items: viewModel.needs,
-                    placeholder: String(localized: "What do you need today?"),
-                    slotCount: JournalViewModel.slotCount,
-                    inputAccessibilityIdentifier: "Need 1",
-                    inputText: $needInput,
-                    editingIndex: editingNeedIndex,
-                    inputFocus: $isNeedInputFocused,
-                    onSubmit: submitNeed,
-                    onChipTap: { index in chipTapped(section: .need, index: index) },
-                    onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
-                    onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
-                    onDeleteChip: { index in deleteChip(section: .need, index: index) },
-                    onAddNew: { addNewTapped(section: .need) }
-                )
-
-                SequentialSectionView(
-                    title: String(localized: "People in Mind"),
-                    items: viewModel.people,
-                    placeholder: String(localized: "Who are you thinking of today?"),
-                    slotCount: JournalViewModel.slotCount,
-                    inputAccessibilityIdentifier: "Person 1",
-                    inputText: $personInput,
-                    editingIndex: editingPersonIndex,
-                    inputFocus: $isPersonInputFocused,
-                    onSubmit: submitPerson,
-                    onChipTap: { index in chipTapped(section: .person, index: index) },
-                    onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
-                    onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
-                    onDeleteChip: { index in deleteChip(section: .person, index: index) },
-                    onAddNew: { addNewTapped(section: .person) }
-                )
-
-                EditableTextSection(
-                    title: String(localized: "Reading Notes"),
-                    text: Binding(
-                        get: { viewModel.readingNotes },
-                        set: { viewModel.updateReadingNotes($0) }
+                VStack(alignment: .leading, spacing: AppTheme.spacingSection) {
+                    SequentialSectionView(
+                        title: String(localized: "Gratitudes"),
+                        items: viewModel.gratitudes,
+                        placeholder: String(localized: "What's one thing you're grateful for?"),
+                        slotCount: JournalViewModel.slotCount,
+                        inputAccessibilityIdentifier: "Gratitude 1",
+                        inputText: $gratitudeInput,
+                        editingIndex: editingGratitudeIndex,
+                        inputFocus: $isGratitudeInputFocused,
+                        onSubmit: submitGratitude,
+                        onChipTap: { index in chipTapped(section: .gratitude, index: index) },
+                        onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
+                        onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
+                        onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
+                        onAddNew: { addNewTapped(section: .gratitude) }
                     )
-                )
-                EditableTextSection(
-                    title: String(localized: "Reflections"),
-                    text: Binding(
-                        get: { viewModel.reflections },
-                        set: { viewModel.updateReflections($0) }
+
+                    SequentialSectionView(
+                        title: String(localized: "Needs"),
+                        items: viewModel.needs,
+                        placeholder: String(localized: "What do you need today?"),
+                        slotCount: JournalViewModel.slotCount,
+                        inputAccessibilityIdentifier: "Need 1",
+                        inputText: $needInput,
+                        editingIndex: editingNeedIndex,
+                        inputFocus: $isNeedInputFocused,
+                        onSubmit: submitNeed,
+                        onChipTap: { index in chipTapped(section: .need, index: index) },
+                        onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
+                        onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
+                        onDeleteChip: { index in deleteChip(section: .need, index: index) },
+                        onAddNew: { addNewTapped(section: .need) }
                     )
-                )
+
+                    SequentialSectionView(
+                        title: String(localized: "People in Mind"),
+                        items: viewModel.people,
+                        placeholder: String(localized: "Who are you thinking of today?"),
+                        slotCount: JournalViewModel.slotCount,
+                        inputAccessibilityIdentifier: "Person 1",
+                        inputText: $personInput,
+                        editingIndex: editingPersonIndex,
+                        inputFocus: $isPersonInputFocused,
+                        onSubmit: submitPerson,
+                        onChipTap: { index in chipTapped(section: .person, index: index) },
+                        onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
+                        onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
+                        onDeleteChip: { index in deleteChip(section: .person, index: index) },
+                        onAddNew: { addNewTapped(section: .person) }
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: AppTheme.spacingWide) {
+                    EditableTextSection(
+                        title: String(localized: "Reading Notes"),
+                        text: Binding(
+                            get: { viewModel.readingNotes },
+                            set: { viewModel.updateReadingNotes($0) }
+                        )
+                    )
+                    EditableTextSection(
+                        title: String(localized: "Reflections"),
+                        text: Binding(
+                            get: { viewModel.reflections },
+                            set: { viewModel.updateReflections($0) }
+                        )
+                    )
+                }
 
                 if let saveErrorMessage = viewModel.saveErrorMessage {
                     Text(saveErrorMessage)
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppTheme.error)
                 }
             }
-            .padding()
+            .padding(.horizontal, AppTheme.spacingRegular)
+            .padding(.top, AppTheme.spacingRegular)
+            .padding(.bottom, AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
         }
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
@@ -146,11 +159,11 @@ struct JournalScreen: View {
             )
         }
         .alert("Unable to share", isPresented: $showShareError) {
-            Button("OK") {
+            Button("Dismiss") {
                 showShareError = false
             }
         } message: {
-            Text("Unable to create share image.")
+            Text("We couldn't create a share image right now. Please try again.")
         }
         .overlay {
             if showSavedToPhotosToast {
@@ -159,6 +172,9 @@ struct JournalScreen: View {
                     SavedToPhotosToastView()
                 }
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppTheme.spacingSection)
         }
         .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
             savedToPhotosDismissTask?.cancel()
@@ -176,6 +192,26 @@ struct JournalScreen: View {
             gratitudeSummarizationTask?.cancel()
             needSummarizationTask?.cancel()
             personSummarizationTask?.cancel()
+            statusCelebrationDismissTask?.cancel()
+        }
+        .onChange(of: viewModel.completionLevel) { _, newLevel in
+            if !hasInitializedCompletionTracking {
+                previousCompletionLevel = newLevel
+                hasInitializedCompletionTracking = true
+                return
+            }
+
+            let previousRank = rank(for: previousCompletionLevel)
+            let newRank = rank(for: newLevel)
+
+            if newRank > previousRank, newLevel != .none {
+                triggerStatusCelebration(for: newLevel)
+            } else if newRank < previousRank {
+                statusCelebrationDismissTask?.cancel()
+                celebratingLevel = nil
+            }
+
+            previousCompletionLevel = newLevel
         }
         .task {
             if !hasTrackedInitialLoad {
@@ -188,6 +224,8 @@ struct JournalScreen: View {
             } else {
                 viewModel.loadTodayIfNeeded(using: modelContext)
             }
+            previousCompletionLevel = viewModel.completionLevel
+            hasInitializedCompletionTracking = true
             PerformanceTrace.end("JournalScreen.loadTask", startedAt: loadTrace)
         }
     }
@@ -394,6 +432,73 @@ private extension JournalScreen {
             if !focus.wrappedValue {
                 focus.wrappedValue = true
             }
+        }
+    }
+
+    private func triggerStatusCelebration(for level: JournalCompletionLevel) {
+        statusCelebrationDismissTask?.cancel()
+        triggerStatusHaptics(for: level)
+
+        let entranceAnimation = reduceMotion ? nil : AppTheme.celebrationEntranceAnimation(for: level)
+        withAnimation(entranceAnimation) {
+            celebratingLevel = level
+        }
+
+        statusCelebrationDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AppTheme.celebrationVisibleSeconds(for: level)))
+            let exitAnimation = reduceMotion ? nil : AppTheme.celebrationExitAnimation(for: level)
+            withAnimation(exitAnimation) {
+                celebratingLevel = nil
+            }
+        }
+    }
+
+    private func triggerStatusHaptics(for level: JournalCompletionLevel) {
+        switch level {
+        case .quickCheckIn:
+            let light = UIImpactFeedbackGenerator(style: .light)
+            light.prepare()
+            light.impactOccurred(intensity: reduceMotion ? 0.45 : 0.65)
+        case .standardReflection:
+            let notification = UINotificationFeedbackGenerator()
+            notification.prepare()
+            notification.notificationOccurred(.success)
+
+            let medium = UIImpactFeedbackGenerator(style: .medium)
+            medium.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                medium.impactOccurred(intensity: self.reduceMotion ? 0.6 : 0.85)
+            }
+        case .fullFiveCubed:
+            let notification = UINotificationFeedbackGenerator()
+            notification.prepare()
+            notification.notificationOccurred(.success)
+
+            let emphasis = UIImpactFeedbackGenerator(style: .rigid)
+            emphasis.prepare()
+            let firstDelay = reduceMotion ? 0.0 : 0.08
+            let secondDelay = reduceMotion ? 0.1 : 0.18
+            DispatchQueue.main.asyncAfter(deadline: .now() + firstDelay) {
+                emphasis.impactOccurred(intensity: self.reduceMotion ? 0.75 : 1.0)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + secondDelay) {
+                emphasis.impactOccurred(intensity: self.reduceMotion ? 0.55 : 0.8)
+            }
+        case .none:
+            break
+        }
+    }
+
+    private func rank(for level: JournalCompletionLevel) -> Int {
+        switch level {
+        case .none:
+            return 0
+        case .quickCheckIn:
+            return 1
+        case .standardReflection:
+            return 2
+        case .fullFiveCubed:
+            return 3
         }
     }
 }

@@ -30,8 +30,12 @@ struct CloudReviewInsightsGenerator: ReviewInsightsGenerating {
             .filter { weekRange.contains($0.entryDate) }
             .sorted { $0.entryDate < $1.entryDate }
             .suffix(maxEntriesForContext)
+        let meaningfulWeeklyEntries = weeklyEntries.filter(\.hasMeaningfulContent)
+        guard !meaningfulWeeklyEntries.isEmpty else {
+            throw CloudReviewInsightsError.insufficientContext
+        }
 
-        let contexts = weeklyEntries.map(makeContextEntry)
+        let contexts = meaningfulWeeklyEntries.map(makeContextEntry)
         let payload = sanitizer.sanitizePayload(
             try await callAPI(
                 request: CloudReviewInsightsRequest(
@@ -42,12 +46,14 @@ struct CloudReviewInsightsGenerator: ReviewInsightsGenerating {
                 )
             )
         )
+        let weeklyInsights = makeWeeklyInsights(from: payload)
 
         return ReviewInsights(
             source: .cloudAI,
             generatedAt: referenceDate,
             weekStart: weekRange.lowerBound,
             weekEnd: weekRange.upperBound,
+            weeklyInsights: weeklyInsights,
             recurringGratitudes: payload.recurringGratitudes.map { .init(label: $0.label, count: $0.count) },
             recurringNeeds: payload.recurringNeeds.map { .init(label: $0.label, count: $0.count) },
             recurringPeople: payload.recurringPeople.map { .init(label: $0.label, count: $0.count) },
@@ -55,6 +61,34 @@ struct CloudReviewInsightsGenerator: ReviewInsightsGenerating {
             continuityPrompt: payload.continuityPrompt,
             narrativeSummary: payload.narrativeSummary
         )
+    }
+
+    private func makeWeeklyInsights(from payload: CloudReviewInsightsPayload) -> [ReviewWeeklyInsight] {
+        let primaryTheme = payload.recurringNeeds.first?.label
+            ?? payload.recurringPeople.first?.label
+            ?? payload.recurringGratitudes.first?.label
+
+        let firstInsight = ReviewWeeklyInsight(
+            pattern: .recurringTheme,
+            observation: payload.resurfacingMessage,
+            action: payload.continuityPrompt,
+            primaryTheme: primaryTheme,
+            mentionCount: payload.recurringNeeds.first?.count
+                ?? payload.recurringPeople.first?.count
+                ?? payload.recurringGratitudes.first?.count,
+            dayCount: nil
+        )
+
+        guard !payload.narrativeSummary.isEmpty else { return [firstInsight] }
+        let secondInsight = ReviewWeeklyInsight(
+            pattern: .continuityShift,
+            observation: payload.narrativeSummary,
+            action: nil,
+            primaryTheme: primaryTheme,
+            mentionCount: nil,
+            dayCount: nil
+        )
+        return [firstInsight, secondInsight]
     }
 
     private func weekDateRange(containing date: Date, calendar: Calendar) -> Range<Date> {
@@ -202,4 +236,5 @@ private enum CloudReviewInsightsError: Error {
     case httpError(statusCode: Int)
     case missingContent
     case invalidPayload
+    case insufficientContext
 }

@@ -49,7 +49,7 @@ struct JournalScreen: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.spacingSection) {
+            VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
                 DateSectionView(
                     entryDate: viewModel.entryDate,
                     completionLevel: viewModel.completionLevel,
@@ -57,13 +57,14 @@ struct JournalScreen: View {
                     celebratingLevel: celebratingLevel
                 )
 
-                VStack(alignment: .leading, spacing: AppTheme.spacingSection) {
+                VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
                     SequentialSectionView(
                         title: String(localized: "Gratitudes"),
                         items: viewModel.gratitudes,
                         placeholder: String(localized: "What's one thing you're grateful for?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Gratitude 1",
+                        isTransitioning: isGratitudeTransitioning,
                         inputText: $gratitudeInput,
                         editingIndex: editingGratitudeIndex,
                         inputFocus: $isGratitudeInputFocused,
@@ -81,6 +82,7 @@ struct JournalScreen: View {
                         placeholder: String(localized: "What do you need today?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Need 1",
+                        isTransitioning: isNeedTransitioning,
                         inputText: $needInput,
                         editingIndex: editingNeedIndex,
                         inputFocus: $isNeedInputFocused,
@@ -98,6 +100,7 @@ struct JournalScreen: View {
                         placeholder: String(localized: "Who are you thinking of today?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Person 1",
+                        isTransitioning: isPersonTransitioning,
                         inputText: $personInput,
                         editingIndex: editingPersonIndex,
                         inputFocus: $isPersonInputFocused,
@@ -109,8 +112,9 @@ struct JournalScreen: View {
                         onAddNew: { addNewTapped(section: .person) }
                     )
                 }
+                .padding(.top, AppTheme.spacingTight)
 
-                VStack(alignment: .leading, spacing: AppTheme.spacingWide) {
+                VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
                     EditableTextSection(
                         title: String(localized: "Reading Notes"),
                         text: Binding(
@@ -126,6 +130,7 @@ struct JournalScreen: View {
                         )
                     )
                 }
+                .padding(.top, AppTheme.spacingTight)
 
                 if let saveErrorMessage = viewModel.saveErrorMessage {
                     Text(saveErrorMessage)
@@ -133,9 +138,9 @@ struct JournalScreen: View {
                         .foregroundStyle(AppTheme.error)
                 }
             }
-            .padding(.horizontal, AppTheme.spacingRegular)
-            .padding(.top, AppTheme.spacingRegular)
-            .padding(.bottom, AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+            .padding(.horizontal, AppTheme.todayHorizontalPadding)
+            .padding(.top, AppTheme.todayTopPadding)
+            .padding(.bottom, AppTheme.todayBottomPadding)
         }
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)

@@ -51,9 +51,7 @@ struct JournalScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
                 DateSectionView(
-                    entryDate: viewModel.entryDate,
                     completionLevel: viewModel.completionLevel,
-                    chipsProgressText: viewModel.chipsProgressText,
                     celebratingLevel: celebratingLevel
                 )
 

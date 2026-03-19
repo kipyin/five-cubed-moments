@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Displays the journal entry date and completion status.
+/// Displays the journal entry completion status.
 struct DateSectionView: View {
     private enum CompletionBadgeInfo {
         case dailyRhythm
@@ -21,46 +21,17 @@ struct DateSectionView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var selectedBadgeInfo: CompletionBadgeInfo?
 
-    let entryDate: Date
     let completionLevel: JournalCompletionLevel
-    let chipsProgressText: String
     let celebratingLevel: JournalCompletionLevel?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-            Text(String(localized: "Date"))
-                .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.journalTextPrimary)
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-                    dateLabel
-                    completionStatusLabel
-                }
-            } else {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: AppTheme.spacingRegular) {
-                        dateLabel
-                        completionStatusLabel
-                    }
-                    VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-                        dateLabel
-                        completionStatusLabel
-                    }
-                }
-            }
-        }
+        completionStatusLabel
+            .frame(maxWidth: .infinity, alignment: .leading)
         .alert(String(localized: "Completion status"), isPresented: completionInfoIsPresented) {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: {
             Text(selectedBadgeInfo?.description ?? "")
         }
-    }
-
-    private var dateLabel: some View {
-        Text(entryDate.formatted(date: .abbreviated, time: .omitted))
-            .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalTextPrimary)
-            .monospacedDigit()
     }
 
     private var completionStatusLabel: some View {

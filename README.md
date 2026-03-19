@@ -6,12 +6,10 @@ A journaling iOS app for daily gratitude, reflection, and people in mind.
 
 Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes, 5 needs, 5 people in mind, reading notes, and space for what you're thinking and learning. The app offers a quiet, low-friction place for gratitude and reflection, with a gentle framing that feels welcoming rather than pushy.
 
-## What's new in 0.3.2
+## What's new in 0.3.5
 
-- First-launch startup now shows an immediate loading surface with calm rotating copy, reassurance, and retry-safe recovery instead of appearing frozen.
-- Daily reminder setup now uses a dedicated drill-in flow with explicit permission prompting and clearer denied/off guidance.
-- Reminder status now reflects live notification authorization plus pending schedule state rather than optimistic toggle intent.
-- Input-pipeline stabilization fixes preserve typed text and keep keyboard momentum when committing entries and adding chips.
+- This patch is a maintenance release focused on release metadata and packaging consistency.
+- Font resources now use deterministic build outputs during app packaging for more reliable release builds.
 
 ## Features
 

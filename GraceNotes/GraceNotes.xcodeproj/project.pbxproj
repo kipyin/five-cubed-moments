@@ -249,12 +249,12 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Fonts/PlayfairDisplay-Variable.ttf",
-				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Fonts/SourceSerif4-Variable.ttf",
+				"$(TARGET_BUILD_DIR)/$(WRAPPER_NAME)/Fonts/PlayfairDisplay-Variable.ttf",
+				"$(TARGET_BUILD_DIR)/$(WRAPPER_NAME)/Fonts/SourceSerif4-Variable.ttf",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "FONT_SRC=\"${PROJECT_DIR}/GraceNotes/Resources/Fonts\"\nFONT_DEST=\"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Fonts\"\nmkdir -p \"$FONT_DEST\"\nfor f in \"$FONT_SRC\"/*.ttf; do\n  [ -f \"$f\" ] && cp \"$f\" \"$FONT_DEST/\"\ndone\n";
+			shellScript = "set -euo pipefail\n\nFONT_SRC=\"${PROJECT_DIR}/GraceNotes/Resources/Fonts\"\nFONT_DEST=\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}/Fonts\"\n\nmkdir -p \"$FONT_DEST\"\ncp \"${FONT_SRC}/PlayfairDisplay-Variable.ttf\" \"${SCRIPT_OUTPUT_FILE_0}\"\ncp \"${FONT_SRC}/SourceSerif4-Variable.ttf\" \"${SCRIPT_OUTPUT_FILE_1}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -454,7 +454,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.3.4;
+				MARKETING_VERSION = 0.3.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gracenotes.GraceNotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -492,7 +492,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.3.4;
+				MARKETING_VERSION = 0.3.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gracenotes.GraceNotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -677,7 +677,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.3.4;
+				MARKETING_VERSION = 0.3.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gracenotes.GraceNotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.5] - 2026-03-20
+
+### Changed
+- Font-copy build phase now writes to the target build directory and declares explicit output paths for deterministic app packaging.
+
+### Developer
+- Bumped app `MARKETING_VERSION` to `0.3.5` for Grace Notes app configurations.
+- Updated `README.md` "What's new" content to align with this release scope.
+
 ## [0.3.4] - 2026-03-19
 
 ### Added

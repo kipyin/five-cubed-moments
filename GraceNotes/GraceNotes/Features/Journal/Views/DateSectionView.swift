@@ -30,7 +30,7 @@ struct DateSectionView: View {
         VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
             Text(String(localized: "Date"))
                 .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.journalTextPrimary)
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
                     dateLabel
@@ -59,7 +59,7 @@ struct DateSectionView: View {
     private var dateLabel: some View {
         Text(entryDate.formatted(date: .abbreviated, time: .omitted))
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.textPrimary)
+            .foregroundStyle(AppTheme.journalTextPrimary)
             .monospacedDigit()
     }
 
@@ -73,7 +73,7 @@ struct DateSectionView: View {
                     levelSurface(level: .quickCheckIn, isCelebrating: celebratingLevel == .quickCheckIn) {
                         Label(String(localized: "Daily Rhythm"), systemImage: "sparkles")
                             .font(AppTheme.warmPaperMetaEmphasis)
-                            .foregroundStyle(AppTheme.reflectionStartedText)
+                            .foregroundStyle(AppTheme.journalQuickCheckInText)
                     }
                 }
                 .buttonStyle(.plain)
@@ -89,7 +89,7 @@ struct DateSectionView: View {
                                 : "sparkles.rectangle.stack"
                         )
                         .font(AppTheme.warmPaperMetaEmphasis)
-                        .foregroundStyle(AppTheme.fullFifteenText)
+                        .foregroundStyle(AppTheme.journalStandardText)
                     }
                 }
                 .buttonStyle(.plain)
@@ -100,17 +100,19 @@ struct DateSectionView: View {
                     levelSurface(level: .fullFiveCubed, isCelebrating: celebratingLevel == .fullFiveCubed) {
                         Label(
                             String(localized: "Complete"),
-                            systemImage: celebratingLevel == .fullFiveCubed ? "checkmark.circle.fill" : "checkmark.circle"
+                            systemImage: celebratingLevel == .fullFiveCubed
+                                ? "checkmark.circle.fill"
+                                : "checkmark.circle"
                         )
                         .font(AppTheme.warmPaperMetaEmphasis)
-                        .foregroundStyle(AppTheme.perfectRhythmText)
+                        .foregroundStyle(AppTheme.journalFullText)
                     }
                 }
                 .buttonStyle(.plain)
             case .none:
                 Label(String(localized: "In progress"), systemImage: "pencil.circle")
                     .font(AppTheme.warmPaperMetaEmphasis)
-                    .foregroundStyle(AppTheme.textMuted)
+                    .foregroundStyle(AppTheme.journalTextMuted)
             }
         }
         .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
@@ -151,11 +153,11 @@ struct DateSectionView: View {
     private func backgroundFill(for level: JournalCompletionLevel) -> AnyShapeStyle {
         switch level {
         case .quickCheckIn:
-            return AnyShapeStyle(AppTheme.reflectionStartedBackground)
+            return AnyShapeStyle(AppTheme.journalQuickCheckInBackground)
         case .standardReflection:
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [AppTheme.fullFifteenBackgroundStart, AppTheme.fullFifteenBackgroundEnd],
+                    colors: [AppTheme.journalStandardBackgroundStart, AppTheme.journalStandardBackgroundEnd],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -163,26 +165,26 @@ struct DateSectionView: View {
         case .fullFiveCubed:
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [AppTheme.perfectRhythmBackgroundStart, AppTheme.perfectRhythmBackgroundEnd],
+                    colors: [AppTheme.journalFullBackgroundStart, AppTheme.journalFullBackgroundEnd],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
         case .none:
-            return AnyShapeStyle(AppTheme.background)
+            return AnyShapeStyle(AppTheme.journalBackground)
         }
     }
 
     private func borderColor(for level: JournalCompletionLevel) -> Color {
         switch level {
         case .quickCheckIn:
-            return AppTheme.reflectionStartedBorder
+            return AppTheme.journalQuickCheckInBorder
         case .standardReflection:
-            return AppTheme.fullFifteenBorder
+            return AppTheme.journalStandardBorder
         case .fullFiveCubed:
-            return AppTheme.perfectRhythmBorder
+            return AppTheme.journalFullBorder
         case .none:
-            return AppTheme.border
+            return AppTheme.journalBorder
         }
     }
 
@@ -204,11 +206,11 @@ struct DateSectionView: View {
         guard isCelebrating, !reduceTransparency else { return .clear }
         switch level {
         case .quickCheckIn:
-            return AppTheme.reflectionStartedGlow.opacity(0.25)
+            return AppTheme.journalQuickCheckInGlow.opacity(0.25)
         case .standardReflection:
-            return AppTheme.fullFifteenGlow.opacity(0.4)
+            return AppTheme.journalStandardGlow.opacity(0.4)
         case .fullFiveCubed:
-            return AppTheme.perfectRhythmGlow.opacity(0.48)
+            return AppTheme.journalFullGlow.opacity(0.48)
         case .none:
             return .clear
         }

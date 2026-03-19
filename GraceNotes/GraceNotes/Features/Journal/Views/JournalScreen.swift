@@ -135,7 +135,7 @@ struct JournalScreen: View {
                 if let saveErrorMessage = viewModel.saveErrorMessage {
                     Text(saveErrorMessage)
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.error)
+                        .foregroundStyle(AppTheme.journalError)
                 }
             }
             .padding(.horizontal, AppTheme.todayHorizontalPadding)
@@ -144,7 +144,7 @@ struct JournalScreen: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
-        .background(AppTheme.background)
+        .background(AppTheme.journalBackground)
         .navigationTitle(navigationTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

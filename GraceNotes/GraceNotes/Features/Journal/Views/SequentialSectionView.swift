@@ -10,11 +10,11 @@ private struct AddChipView: View {
         Button(action: onTap) {
             Image(systemName: "plus.circle.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(AppTheme.textMuted)
+                .foregroundStyle(AppTheme.journalTextMuted)
                 .padding(.horizontal, AppTheme.spacingRegular)
                 .padding(.vertical, AppTheme.spacingTight)
                 .frame(minWidth: 44, minHeight: 44)
-                .background(AppTheme.complete.opacity(0.2))
+                .background(AppTheme.journalComplete.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusLarge))
         }
         .buttonStyle(WarmPaperPressStyle())
@@ -173,7 +173,7 @@ struct SequentialSectionView: View {
             HStack {
                 Text(title)
                     .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(AppTheme.journalTextPrimary)
                 Spacer(minLength: AppTheme.spacingTight)
                 sectionProgressDots
             }
@@ -225,10 +225,10 @@ struct SequentialSectionView: View {
                     TextField(
                         "",
                         text: $inputText,
-                        prompt: Text(placeholder).foregroundStyle(AppTheme.inputPlaceholder)
+                        prompt: Text(placeholder).foregroundStyle(AppTheme.journalInputPlaceholder)
                     )
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textPrimary)
+                        .foregroundStyle(AppTheme.journalTextPrimary)
                         .textInputAutocapitalization(.sentences)
                         .onSubmit { onSubmit() }
                         .focused(inputFocus)
@@ -241,10 +241,10 @@ struct SequentialSectionView: View {
                     TextField(
                         "",
                         text: $inputText,
-                        prompt: Text(placeholder).foregroundStyle(AppTheme.inputPlaceholder)
+                        prompt: Text(placeholder).foregroundStyle(AppTheme.journalInputPlaceholder)
                     )
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.textPrimary)
+                        .foregroundStyle(AppTheme.journalTextPrimary)
                         .textInputAutocapitalization(.sentences)
                         .onSubmit { onSubmit() }
                         .warmPaperInputStyle()
@@ -264,15 +264,15 @@ struct SequentialSectionView: View {
                         .controlSize(.small)
                     Text(String(localized: "Updating…"))
                         .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.textMuted)
+                        .foregroundStyle(AppTheme.journalTextMuted)
                 }
                 .padding(.horizontal, AppTheme.spacingTight)
                 .padding(.vertical, 6)
-                .background(AppTheme.paper.opacity(0.92))
+                .background(AppTheme.journalPaper.opacity(0.92))
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .stroke(AppTheme.inputBorder.opacity(0.7), lineWidth: 1)
+                        .stroke(AppTheme.journalInputBorder.opacity(0.7), lineWidth: 1)
                 )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(
@@ -305,14 +305,14 @@ struct SequentialSectionView: View {
                     .overlay {
                         if status == .editing {
                             Circle()
-                                .fill(AppTheme.activeEditingAccentStrong)
+                                .fill(AppTheme.journalActiveEditingAccentStrong)
                                 .frame(width: 4, height: 4)
                         }
                     }
                     .overlay {
                         if status == .editing && shouldAnimateEditingPulse {
                             Circle()
-                                .stroke(AppTheme.activeEditingAccentStrong.opacity(0.45), lineWidth: 1)
+                                .stroke(AppTheme.journalActiveEditingAccentStrong.opacity(0.45), lineWidth: 1)
                                 .frame(width: 14, height: 14)
                                 .scaleEffect(isEditingPulseExpanded ? 1.14 : 0.94)
                                 .opacity(isEditingPulseExpanded ? 0 : 0.56)
@@ -327,9 +327,9 @@ struct SequentialSectionView: View {
     private func dotFill(for status: SlotStatus) -> Color {
         switch status {
         case .edited:
-            return AppTheme.complete
+            return AppTheme.journalComplete
         case .editing:
-            return AppTheme.activeEditingAccent.opacity(0.28)
+            return AppTheme.journalActiveEditingAccent.opacity(0.28)
         case .pending:
             return .clear
         }
@@ -340,9 +340,9 @@ struct SequentialSectionView: View {
         case .edited:
             return .clear
         case .editing:
-            return AppTheme.activeEditingAccentStrong.opacity(0.9)
+            return AppTheme.journalActiveEditingAccentStrong.opacity(0.9)
         case .pending:
-            return AppTheme.pendingOutline.opacity(0.52)
+            return AppTheme.journalPendingOutline.opacity(0.52)
         }
     }
 
@@ -407,8 +407,8 @@ struct SequentialSectionView: View {
     private func edgeFeather(_ edge: HorizontalEdge) -> some View {
         LinearGradient(
             colors: edge == .leading
-                ? [AppTheme.background, AppTheme.background.opacity(0)]
-                : [AppTheme.background.opacity(0), AppTheme.background],
+                ? [AppTheme.journalBackground, AppTheme.journalBackground.opacity(0)]
+                : [AppTheme.journalBackground.opacity(0), AppTheme.journalBackground],
             startPoint: .leading,
             endPoint: .trailing
         )

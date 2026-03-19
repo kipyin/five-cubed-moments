@@ -20,10 +20,10 @@ struct EditableTextSection: View {
         VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
             Text(title)
                 .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.journalTextPrimary)
             TextEditor(text: $text)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.journalTextPrimary)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: minHeight)
                 .warmPaperInputStyle()

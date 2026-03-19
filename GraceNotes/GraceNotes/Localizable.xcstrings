@@ -84,9 +84,6 @@
         }
       }
     },
-    "A calm daily check-in in about 2 minutes" : {
-
-    },
     "A calm daily rhythm" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -707,6 +704,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出中…"
+          }
+        }
+      }
+    },
+    "First complete milestone reached." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First complete milestone reached."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首次达到完整里程碑。"
           }
         }
       }
@@ -2979,9 +2992,6 @@
           }
         }
       }
-    },
-    "You can update reminders and preferences any time in Settings." : {
-
     },
     "You kept %1$@ in mind %2$lld times this week." : {
       "localizations" : {

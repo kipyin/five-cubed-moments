@@ -59,6 +59,35 @@ enum AppTheme {
     static let reviewQuickStartBorder = Color.adaptive(lightHex: 0xD9C7B5, darkHex: 0x8D7A69)
     static let reviewQuickStartText = Color.adaptive(lightHex: 0x6A5646, darkHex: 0xCDB9A6)
 
+    // MARK: - Journal Semantic Colors
+
+    static let journalBackground = Color("JournalBackground")
+    static let journalPaper = Color("JournalPaper")
+    static let journalTextPrimary = Color("JournalTextPrimary")
+    static let journalTextMuted = Color("JournalTextMuted")
+    static let journalBorder = Color("JournalBorder")
+    static let journalInputBorder = Color("JournalInputBorder")
+    static let journalInputPlaceholder = Color("JournalInputPlaceholder")
+    static let journalComplete = Color("JournalComplete")
+    static let journalPendingOutline = Color("JournalPendingOutline")
+    static let journalActiveEditingAccent = Color("JournalActiveEditingAccent")
+    static let journalActiveEditingAccentStrong = Color("JournalActiveEditingAccentStrong")
+    static let journalQuickCheckInBackground = Color("JournalQuickCheckInBackground")
+    static let journalQuickCheckInBorder = Color("JournalQuickCheckInBorder")
+    static let journalQuickCheckInText = Color("JournalQuickCheckInText")
+    static let journalQuickCheckInGlow = Color("JournalQuickCheckInGlow")
+    static let journalStandardBackgroundStart = Color("JournalStandardBackgroundStart")
+    static let journalStandardBackgroundEnd = Color("JournalStandardBackgroundEnd")
+    static let journalStandardBorder = Color("JournalStandardBorder")
+    static let journalStandardText = Color("JournalStandardText")
+    static let journalStandardGlow = Color("JournalStandardGlow")
+    static let journalFullBackgroundStart = Color("JournalFullBackgroundStart")
+    static let journalFullBackgroundEnd = Color("JournalFullBackgroundEnd")
+    static let journalFullBorder = Color("JournalFullBorder")
+    static let journalFullText = Color("JournalFullText")
+    static let journalFullGlow = Color("JournalFullGlow")
+    static let journalError = Color.adaptive(lightHex: 0xA3564A, darkHex: 0xD48C80)
+
     /// Alias for accent; kept for backward compatibility.
     static let primaryColor = accent
 
@@ -150,11 +179,11 @@ struct WarmPaperInputStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(AppTheme.spacingRegular)
-            .background(AppTheme.paper.opacity(0.6))
+            .background(AppTheme.journalPaper.opacity(0.6))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                    .stroke(AppTheme.inputBorder, lineWidth: 1)
+                    .stroke(AppTheme.journalInputBorder, lineWidth: 1)
             )
     }
 }

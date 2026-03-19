@@ -4,6 +4,15 @@
     "" : {
 
     },
+    "%@ input" : {
+
+    },
+    "%@ section is updating." : {
+
+    },
+    "%@ text" : {
+
+    },
     "%1$@ (%2$lld)" : {
       "localizations" : {
         "en" : {
@@ -87,15 +96,6 @@
         }
       }
     },
-    "%@ input" : {
-
-    },
-    "%@ section is updating." : {
-
-    },
-    "%@ text" : {
-
-    },
     "A calm daily rhythm" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -112,12 +112,6 @@
           }
         }
       }
-    },
-    "Updating…" : {
-
-    },
-    "Write your %@ here." : {
-
     },
     "A need kept resurfacing: %1$@ on %2$lld day(s) this week." : {
       "extractionState" : "stale",
@@ -548,6 +542,7 @@
       }
     },
     "Date" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2699,6 +2694,9 @@
         }
       }
     },
+    "Updating…" : {
+
+    },
     "Use AI review insights" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3016,6 +3014,9 @@
           }
         }
       }
+    },
+    "Write your %@ here." : {
+
     },
     "You are building momentum by returning to reflection this week." : {
       "localizations" : {

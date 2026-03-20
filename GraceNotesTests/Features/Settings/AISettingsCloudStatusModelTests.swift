@@ -83,7 +83,7 @@ final class AISettingsCloudStatusModelTests: XCTestCase {
         XCTAssertNil(model.statusRow)
     }
 
-    func test_misconfiguredWhenKeyMissing() {
+    func test_misconfiguredWhenKeyMissing() async {
         let model = AISettingsCloudStatusModel(
             connectivityVerifier: MockConnectivityVerifier(result: true),
             userDefaults: isolatedDefaults(),

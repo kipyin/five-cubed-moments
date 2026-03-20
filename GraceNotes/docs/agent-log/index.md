@@ -27,6 +27,7 @@ For small changes, add one concise update with:
 For larger efforts, keep role files in the initiative folder:
 
 - `brief.md`
+- `design.md` (optional; **Designer** output for UI-heavy work — specs and acceptance for front end)
 - `architecture.md`
 - `qa.md`
 - `testing.md`

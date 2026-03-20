@@ -651,66 +651,82 @@
         }
       }
     },
-    "DataPrivacy.attention.noAccount" : {
+    "DataPrivacy.a11y.storage.cloudActive" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This device isn't signed in to iCloud. To turn on sync, sign in under Apple ID in Settings. Afterward, fully close Grace Notes and open it again."
+            "value" : "Storage: your journal uses iCloud sync from this device."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此设备尚未登录 iCloud。若要开启同步，请先在系统设置中登录 Apple ID，然后完全退出感恩记再重新打开。"
+            "value" : "存储：感恩记正通过本设备使用 iCloud 同步。"
           }
         }
       }
     },
-    "DataPrivacy.attention.preferenceMismatchRelaunch" : {
+    "DataPrivacy.attention.noAccount.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your saved sync setting doesn't match how data is stored right now. When iCloud is available, close Grace Notes completely and open it again to apply your setting."
+            "value" : "This device isn’t signed in to iCloud, so sync can’t start yet. Sign in from Settings, or open Settings below."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已保存的同步设置与当前存储方式不一致。请在 iCloud 可用后完全退出感恩记再重新打开，以应用你的设置。"
+            "value" : "此设备尚未登录 iCloud，暂时还不能开启同步。请到「设置」登录，或轻点下方的「打开设置」。"
           }
         }
       }
     },
-    "DataPrivacy.attention.restricted" : {
+    "DataPrivacy.attention.preferenceMismatchRelaunch.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud is restricted on this device. Review Screen Time or device management in Settings. When that's resolved, fully close Grace Notes and open it again."
+            "value" : "Your sync setting doesn’t match how data is stored on this device right now."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本设备限制了 iCloud。请在系统设置中查看屏幕使用时间或设备管理。处理好后，请完全退出感恩记再重新打开。"
+            "value" : "同步开关和当前在本机的存储方式不一致。"
           }
         }
       }
     },
-    "DataPrivacy.attention.retryICloudAfterRelaunch" : {
+    "DataPrivacy.attention.restricted.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Grace Notes completely and open it again to try connecting to iCloud."
+            "value" : "iCloud is restricted on this device."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请完全退出感恩记再重新打开，以尝试连接 iCloud。"
+            "value" : "此设备上的 iCloud 目前受到限制。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.attention.retryICloudAfterRelaunch.summary" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit Grace Notes once and open it again to try connecting to iCloud."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先关掉感恩记再打开，试试能否连上 iCloud。"
           }
         }
       }
@@ -726,39 +742,39 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前无法使用 iCloud，你的记录仍会保存在本设备。"
+            "value" : "暂时用不了 iCloud，记录照常保存在本设备。"
           }
         }
       }
     },
-    "DataPrivacy.attention.tempUnavailableMismatch" : {
+    "DataPrivacy.attention.tempUnavailableMismatch.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud is temporarily unavailable. Your entries still save on this device. Close Grace Notes completely and reopen it once iCloud is back to apply sync changes."
+            "value" : "iCloud is temporarily unavailable. Your entries still save on this device."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂时无法使用 iCloud，你的记录仍会保存在本设备。待 iCloud 恢复后，请完全退出感恩记再重新打开，以应用同步更改。"
+            "value" : "暂时连不上 iCloud，记录仍保存在本设备。"
           }
         }
       }
     },
-    "DataPrivacy.attention.toggleChangedRelaunch" : {
+    "DataPrivacy.attention.toggleChangedRelaunch.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You changed iCloud sync here. Close Grace Notes completely and open it again to apply it."
+            "value" : "Restart Grace Notes to apply your iCloud sync change."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你已在此更改 iCloud 同步。请完全退出感恩记再重新打开以使更改生效。"
+            "value" : "改了 iCloud 同步后，需要重新打开感恩记才会生效。"
           }
         }
       }
@@ -774,23 +790,23 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂时无法确认 iCloud 状态，你的记录仍会保存在本设备。"
+            "value" : "暂时看不清 iCloud 状态，记录仍保存在本设备。"
           }
         }
       }
     },
-    "DataPrivacy.attention.unknownMismatch" : {
+    "DataPrivacy.attention.unknownMismatch.summary" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't verify iCloud status. Your entries still save on this device. Close Grace Notes completely and reopen when iCloud is reachable to apply sync changes."
+            "value" : "Couldn’t verify iCloud status. Your entries still save on this device."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂时无法确认 iCloud 状态，你的记录仍会保存在本设备。请在 iCloud 可用后完全退出感恩记再重新打开，以应用同步更改。"
+            "value" : "暂时看不清 iCloud 状态，记录仍保存在本设备。"
           }
         }
       }
@@ -811,18 +827,194 @@
         }
       }
     },
-    "DataPrivacy.footer.exportAndImport" : {
+    "DataPrivacy.backup.subtitle" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Export saves a JSON file you can keep as a personal backup. Importing from a file in the app isn't available yet."
+            "value" : "Save a copy of your journal as a JSON file you can store anywhere."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "导出会生成可保留为个人备份的 JSON 文件。应用内暂不支持从文件导入。"
+            "value" : "把感恩记导出成 JSON 文件，方便自行保存。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.confirm.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each calendar day in the file replaces your journal entry for that day if one exists; otherwise a new entry is added. Large imports may take a while to sync with iCloud."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件中每个日历日会覆盖本地该日的感恩记（若已有），否则新增。数据量大时与 iCloud 同步可能需要一些时间。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.confirm.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import this backup?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入此备份？"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.error.generic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to import your data right now. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时无法导入数据，请稍后再试。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.error.invalid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file doesn’t look like a Grace Notes export."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该文件看起来不是 Grace Notes 的导出格式。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.error.readFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t read the file you selected."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取所选文件。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.error.schema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This export uses format version %lld, which this version of Grace Notes doesn’t support yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该导出为第 %lld 版格式，当前应用尚不支持。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.error.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入失败"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.success.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %lld new day(s) and replaced %lld existing day(s)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增 %lld 个日历日，替换 %lld 个已有日历日。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.import.success.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入完成"
+          }
+        }
+      }
+    },
+    "DataPrivacy.footer.exportAndImport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export saves a JSON backup you can keep anywhere. Import merges that file by calendar day: it replaces an existing day’s entry or adds a new one."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出可得到 JSON 备份，自行保存。导入会按日历日合并：若该日已有记录则替换，否则新增。"
           }
         }
       }
@@ -838,7 +1030,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud 同步便于在多设备间使用，但本身不能替代完整备份。"
+            "value" : "仅靠 iCloud 同步，不能作为完整备份。"
           }
         }
       }
@@ -875,7 +1067,8 @@
         }
       }
     },
-    "DataPrivacy.storage.iCloudOn" : {
+    "DataPrivacy.storage.iCloudOn.detail" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -886,7 +1079,24 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在账户与网络允许时，你的记录会同步到 iCloud。在其他设备上显示可能会有短暂延迟。"
+            "value" : "已登录 iCloud 且网络正常时，记录会同步。同步需要一点时间，各台设备上出现的时间可能不完全一样。"
+          }
+        }
+      }
+    },
+    "DataPrivacy.storage.iCloudOn.summary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your journal syncs to iCloud from this device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感恩记会通过本设备同步到 iCloud。"
           }
         }
       }
@@ -1089,6 +1299,22 @@
         }
       }
     },
+    "Import Grace Notes data (JSON)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Grace Notes data (JSON)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入感恩记数据（JSON）"
+          }
+        }
+      }
+    },
     "Exporting…" : {
       "localizations" : {
         "en" : {
@@ -1101,6 +1327,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出中…"
+          }
+        }
+      }
+    },
+    "Importing…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入中…"
           }
         }
       }
@@ -1200,7 +1442,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每天接收一次提醒，完成今天的记录。"
+            "value" : "每天一条本地提醒，帮你记得完成今天的记录。"
           }
         }
       }
@@ -1475,13 +1717,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importing or restoring Grace Notes from a file in the app is not available yet."
+            "value" : "Use Import in Settings → Data & Privacy to restore or merge from a Grace Notes JSON export."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂不支持在 App 内通过文件导入或恢复感恩记。"
+            "value" : "在「设置 → 数据与隐私」中使用「导入」，可从 Grace Notes 的 JSON 导出恢复或合并感恩记。"
           }
         }
       }

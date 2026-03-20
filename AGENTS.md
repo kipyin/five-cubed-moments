@@ -49,18 +49,21 @@ brew install swiftlint
 
 ## Role governance
 
-Keep role behavior in `.cursor/rules/` as the single source of truth for role-specific instructions. Use short role names and mapped files:
+Keep role behavior in `.agents/skills/` as the single source of truth for role-specific instructions (same tree as Impeccable task skills). Use short role names and mapped files:
 
-- `Strategist` -> `.cursor/rules/strategist.mdc`
-- `Architect` -> `.cursor/rules/architect.mdc`
-- `Implementer` -> `.cursor/rules/implementer.mdc`
-- `Release Manager` -> `.cursor/rules/release-manager.mdc`
-- `QA Reviewer` -> `.cursor/rules/qa-reviewer.mdc`
-- `Test Lead` -> `.cursor/rules/test-lead.mdc`
+- `Strategist` -> `.agents/skills/strategist/SKILL.md`
+- `Designer` -> `.agents/skills/designer/SKILL.md`
+- `Architect` -> `.agents/skills/architect/SKILL.md`
+- `Translator` -> `.agents/skills/translator/SKILL.md`
+- `Builder` -> `.agents/skills/builder/SKILL.md`
+- `Release Manager` -> `.agents/skills/release-manager/SKILL.md`
+- `QA Reviewer` -> `.agents/skills/qa-reviewer/SKILL.md`
+- `Test Lead` -> `.agents/skills/test-lead/SKILL.md`
+- Role index and shared contract -> `.agents/skills/roles-index/SKILL.md`
 
 Use `GraceNotes/docs/agent-log/` as the canonical source for role-to-role interaction, handoffs, and deferred pushback context.
 
-Keep `AGENTS.md` focused on global constraints that apply to every role, while `.cursor/rules/` defines role behavior.
+Keep `AGENTS.md` focused on global constraints that apply to every role, while `.agents/skills/` defines role behavior for the mapped roles above.
 
 ## Code style
 

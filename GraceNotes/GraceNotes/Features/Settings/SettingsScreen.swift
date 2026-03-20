@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UniformTypeIdentifiers
 
 struct SettingsScreen: View {
     /// Default false to align with SummarizerProvider; first launch uses on-device NL summarization.
@@ -23,8 +24,17 @@ struct SettingsScreen: View {
     @State private var showExportError = false
     @State private var exportFile: ShareableFile?
     @State private var isExportingData = false
+    @State private var showImportPicker = false
+    @State private var showImportConfirm = false
+    @State private var pendingImportURL: URL?
+    @State private var isImportingData = false
+    @State private var importErrorMessage: String?
+    @State private var showImportError = false
+    @State private var importSuccessSummary: JournalDataImportSummary?
+    @State private var showImportSuccess = false
 
     private let dataExportService = JournalDataExportService()
+    private let dataImportService = JournalDataImportService()
 
     var body: some View {
         List {
@@ -43,6 +53,10 @@ struct SettingsScreen: View {
 
             Section {
                 VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+                    Text(String(localized: "Get one local reminder each day to complete today's entry."))
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.settingsTextMuted)
+                        .fixedSize(horizontal: false, vertical: true)
                     reminderTimeControlRow
                     if reminderState.isReminderEnabled && isReminderPickerExpanded {
                         reminderTimePicker
@@ -68,10 +82,6 @@ struct SettingsScreen: View {
                 Text(String(localized: "Reminders"))
                     .font(AppTheme.warmPaperHeader)
                     .foregroundStyle(AppTheme.settingsTextPrimary)
-            } footer: {
-                Text(String(localized: "Get one local reminder each day to complete today's entry."))
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.settingsTextMuted)
             }
 
             DataPrivacySettingsSection(
@@ -79,7 +89,9 @@ struct SettingsScreen: View {
                 iCloudAccountState: iCloudAccountState,
                 persistenceRuntimeSnapshot: persistenceRuntimeSnapshot,
                 isExportingData: isExportingData,
+                isImportingData: isImportingData,
                 onExport: { exportJournalData() },
+                onImport: { showImportPicker = true },
                 openSystemSettings: { openSystemSettings() }
             )
         }
@@ -129,9 +141,60 @@ struct SettingsScreen: View {
         } message: {
             Text(exportErrorMessage ?? String(localized: "Please try again."))
         }
+        .fileImporter(
+            isPresented: $showImportPicker,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                pendingImportURL = url
+                showImportConfirm = true
+            case .failure:
+                importErrorMessage = String(localized: "DataPrivacy.import.error.readFailed")
+                showImportError = true
+            }
+        }
+        .alert(String(localized: "DataPrivacy.import.confirm.title"), isPresented: $showImportConfirm) {
+            Button(String(localized: "Cancel"), role: .cancel) {
+                pendingImportURL = nil
+            }
+            Button(String(localized: "DataPrivacy.import.action")) {
+                importJournalDataFromPendingURL()
+            }
+        } message: {
+            Text(String(localized: "DataPrivacy.import.confirm.message"))
+        }
+        .alert(String(localized: "DataPrivacy.import.success.title"), isPresented: $showImportSuccess) {
+            Button(String(localized: "OK"), role: .cancel) {
+                importSuccessSummary = nil
+            }
+        } message: {
+            if let summary = importSuccessSummary {
+                Text(
+                    String(
+                        format: String(localized: "DataPrivacy.import.success.detail"),
+                        summary.insertedCount,
+                        summary.updatedCount
+                    )
+                )
+            }
+        }
+        .alert(String(localized: "DataPrivacy.import.error.title"), isPresented: $showImportError) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(importErrorMessage ?? String(localized: "DataPrivacy.import.error.generic"))
+        }
         .overlay {
             if isExportingData {
                 ProgressView(String(localized: "Exporting…"))
+                    .font(AppTheme.warmPaperBody)
+                    .padding(16)
+                    .background(AppTheme.paper)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if isImportingData {
+                ProgressView(String(localized: "Importing…"))
                     .font(AppTheme.warmPaperBody)
                     .padding(16)
                     .background(AppTheme.paper)
@@ -445,6 +508,58 @@ private extension SettingsScreen {
                 }
             }
         }
+    }
+
+    func importJournalDataFromPendingURL() {
+        guard let url = pendingImportURL else { return }
+        pendingImportURL = nil
+        guard !isImportingData else { return }
+        isImportingData = true
+        let container = modelContext.container
+        let importService = dataImportService
+        let calendar = Calendar.current
+
+        Task {
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessed {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+            do {
+                let fileData = try Data(contentsOf: url)
+                let summary = try await Task.detached(priority: .userInitiated) {
+                    let backgroundContext = ModelContext(container)
+                    return try importService.importData(fileData, context: backgroundContext, calendar: calendar)
+                }.value
+                await MainActor.run {
+                    importSuccessSummary = summary
+                    showImportSuccess = true
+                    isImportingData = false
+                }
+            } catch {
+                await MainActor.run {
+                    importErrorMessage = importFailureMessage(for: error)
+                    showImportError = true
+                    isImportingData = false
+                }
+            }
+        }
+    }
+
+    func importFailureMessage(for error: Error) -> String {
+        if let importError = error as? JournalDataImportError {
+            switch importError {
+            case .invalidGraceNotesExport:
+                return String(localized: "DataPrivacy.import.error.invalid")
+            case .unsupportedSchemaVersion(let version):
+                return String(
+                    format: String(localized: "DataPrivacy.import.error.schema"),
+                    version
+                )
+            }
+        }
+        return String(localized: "DataPrivacy.import.error.generic")
     }
 }
 

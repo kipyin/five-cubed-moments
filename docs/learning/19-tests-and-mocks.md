@@ -2,6 +2,8 @@
 
 This repo has unit tests and UI tests.
 
+Use this page to learn where to look when a change feels risky.
+
 ## Test folders
 
 - `../../GraceNotesTests/` — unit tests
@@ -21,6 +23,10 @@ These are used to:
 - count calls
 - make behavior deterministic
 
+Quick examples:
+- `MockURLProtocol` intercepts `URLSession` for cloud tests.
+- `SpySummarizer` counts calls for behavior assertions.
+
 ## What is covered well
 
 Examples:
@@ -30,6 +36,8 @@ Examples:
 - import service validation and merge logic
 - reminder scheduler + reminder settings model
 - startup coordinator states
+
+These suites are good reading material for how the team expects behavior to be specified.
 
 Browse:
 
@@ -47,6 +55,8 @@ File to start with:
 
 These tests launch the app and drive real UI interactions.
 
+They set specific launch flags to keep scenarios deterministic.
+
 ## Important caveats in current tests
 
 You can see these in code comments and `XCTSkip` usage:
@@ -55,6 +65,8 @@ You can see these in code comments and `XCTSkip` usage:
 - some timeline UI tests are intentionally skipped due simulator reliability issues
 
 This is real project context, not test framework theory.
+
+When reading tests, treat skip reasons as part of engineering reality, not “ignored noise.”
 
 ## Running tests
 
@@ -70,6 +82,20 @@ Make targets are defined in:
 
 - `../../Makefile`
 
+Linux note:
+- you cannot run these iOS XCTest targets on Linux VM.
+- you can still read test files and reason about behavior.
+
+## How to use tests when making changes
+
+1. Find the closest existing test file for your area.
+2. Read how current behavior is asserted.
+3. Add/update focused tests for your change.
+4. Run only relevant targets first.
+5. Broaden run scope after focused pass.
+
+This keeps feedback fast and avoids noisy full-suite runs too early.
+
 ## If you know Python
 
 Think of this as:
@@ -78,3 +104,8 @@ Think of this as:
 - UI automation tests for integration/user flows
 
 The test doubles are the same idea as mocks/stubs in Python testing.
+
+## Read next
+
+- Move to Swift track page 20:
+  [20-swift-for-python-types-and-optionals.md](./20-swift-for-python-types-and-optionals.md)

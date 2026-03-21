@@ -1,5 +1,7 @@
 # Onboarding flow
 
+This page explains first-run behavior and where to edit it.
+
 ## Screen
 
 File: `../../GraceNotes/GraceNotes/Features/Onboarding/OnboardingScreen.swift`  
@@ -18,6 +20,8 @@ Controls:
 - Get Started (on last page)
 - Skip for now
 
+`selectedPage` tracks the current step in this screen.
+
 ## How app decides to show onboarding
 
 File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
@@ -35,6 +39,8 @@ When onboarding ends, callback sets:
 
 - `hasCompletedOnboarding = true`
 
+This decision is in app root, not in the onboarding screen itself.
+
 ## What onboarding teaches
 
 Current copy focuses on:
@@ -42,6 +48,8 @@ Current copy focuses on:
 - low-pressure start
 - gentle section prompts
 - value of revisiting in Review tab
+
+The copy aims to reduce pressure and encourage small daily progress.
 
 ## Where to change onboarding
 
@@ -55,8 +63,26 @@ If you change onboarding completion behavior, also read:
 
 - `GraceNotesApp.readyContent`
 
+Also check:
+- onboarding related localization entries in `Localizable.xcstrings` when changing text.
+
+## Common confusion
+
+- “Why onboarding did not show after edit?”  
+  Stored flag may already be true in simulator state.
+
+- “Where is onboarding completion saved?”  
+  In `@AppStorage("hasCompletedOnboarding")`.
+
+- “Can I test this on Linux?”  
+  You can edit/read code on Linux. Running onboarding UI needs macOS + Xcode.
+
 ## If you know Python
 
 `@AppStorage` here acts like a small persisted flag in user defaults.
 
 It is not a database model. It is a simple preference/state flag.
+
+## Read next
+
+- Next page: [19-tests-and-mocks.md](./19-tests-and-mocks.md)

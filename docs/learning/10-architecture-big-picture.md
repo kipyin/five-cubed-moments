@@ -4,6 +4,9 @@ This app is split into clear layers.
 
 That helps keep code calm and easy to change.
 
+Use this page first to build a mental map.
+Then details in later pages will make sense faster.
+
 ## Main layers
 
 Source root: `GraceNotes/GraceNotes/`
@@ -18,6 +21,14 @@ Source root: `GraceNotes/GraceNotes/`
   Shared logic (summarization, reminders).
 - `DesignSystem/`  
   Colors, fonts, spacing, shared styles.
+
+## Quick map of “who owns what”
+
+- `Application/` decides what root UI is shown.
+- `Features/` renders screens and user interactions.
+- `Data/` owns persisted models and query rules.
+- `Services/` handles shared logic used by features.
+- `DesignSystem/` keeps look and feel consistent.
 
 ## Why this split is used here
 
@@ -34,6 +45,10 @@ You can see this in:
 - Journal screen: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
 - Journal ViewModel: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
 - Repository: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
+
+In short:
+- UI files should not carry data query rules.
+- Data query rules should not be scattered across screens.
 
 ## One real call path (Today tab)
 
@@ -56,6 +71,17 @@ Files:
 - `../../GraceNotes/GraceNotes/Features/Journal/Views/ReviewScreen.swift`
 - `../../GraceNotes/GraceNotes/Features/Journal/Services/ReviewInsightsProvider.swift`
 
+## Common confusion
+
+- “Is ViewModel the same as repository?”  
+  No. ViewModel coordinates UI state. Repository handles fetch rules.
+
+- “Do Services always call network?”  
+  No. Some services are local-only (for example deterministic summarization logic).
+
+- “Is this strict MVVM?”  
+  Not a textbook version. It is a practical split that keeps boundaries clear.
+
 ## If you know Python
 
 Think in layers like this:
@@ -65,3 +91,7 @@ Think in layers like this:
 - `JournalRepository` ~= data access object
 
 But unlike many Python apps, this is a local iOS app with on-device persistence.
+
+## Read next
+
+- Next page: [11-app-startup-flow.md](./11-app-startup-flow.md)

@@ -2,6 +2,8 @@
 
 This is the main feature flow in the app.
 
+If you only study one feature deeply first, pick this one.
+
 ## Main screen
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`  
@@ -20,6 +22,8 @@ The screen owns:
 - local UI state (editing, focus, temporary input strings)
 - a `JournalViewModel` for data and rules
 
+`JournalScreen` should mostly coordinate UI behavior, not persistence rules.
+
 ## ViewModel responsibilities
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`  
@@ -35,6 +39,9 @@ Main jobs:
 
 The autosave trigger uses Combine debounce (`400ms`) before `persistChanges()`.
 
+Important save path:
+- UI edit -> `scheduleAutosave()` -> debounced sink -> `persistChanges()` -> `context.save()`
+
 ## Chip editing behavior
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEditing.swift`
@@ -47,9 +54,15 @@ Pattern used:
 
 This helps avoid stale async updates when user edits quickly.
 
+This is a key design choice in this app:
+- responsive UI first
+- async refinement second
+
 UI-side helper functions are in:
 
 - `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreenChipHandling.swift`
+
+Those helpers keep section interaction logic centralized and testable.
 
 ## Supporting views
 
@@ -65,6 +78,17 @@ Files:
 - `../../GraceNotes/GraceNotes/Features/Journal/Views/EditableTextSection.swift`
 - `../../GraceNotes/GraceNotes/Features/Journal/Views/DateSectionView.swift`
 
+## Common confusion
+
+- “Where is chip add logic?”  
+  In `JournalViewModel+ChipEditing.swift`, not in `SequentialSectionView`.
+
+- “Where is save called?”  
+  In `JournalViewModel.persistChanges()` after debounce.
+
+- “Why can chip label differ from full text?”  
+  App stores both so UI can show short chips while preserving full entry text.
+
 ## If you know Python
 
 Think of `JournalScreen` as the presentational layer.
@@ -72,3 +96,7 @@ Think of `JournalScreen` as the presentational layer.
 Think of `JournalViewModel` as the state + behavior layer.
 
 The split is similar to “UI component + view model/controller” in Python UI stacks.
+
+## Read next
+
+- Next page: [15-summarization.md](./15-summarization.md)

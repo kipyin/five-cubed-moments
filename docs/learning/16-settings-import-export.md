@@ -1,5 +1,10 @@
 # Settings, import, and export
 
+This page focuses on user trust features:
+- where data is stored
+- how backup/restore works
+- how settings reflect real runtime state
+
 ## Settings entry
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/SettingsScreen.swift`
@@ -9,6 +14,8 @@ Main sections:
 - AI settings row (toggle + cloud connectivity status)
 - Reminders controls
 - Data & Privacy section
+
+Read this file together with service files below for full flow.
 
 ## Data & Privacy section
 
@@ -22,6 +29,8 @@ This section shows:
 - navigation row to import/export screen
 
 It reads runtime persistence state from `persistenceRuntimeSnapshot`.
+
+That is why the copy can show cloud/local/fallback context honestly.
 
 ## Import/export screen
 
@@ -37,6 +46,9 @@ Uses:
 - `JournalDataExportService`
 - `JournalDataImportService`
 
+Import path includes confirm step before write.
+Export path writes JSON archive then opens share sheet.
+
 ## Export service
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/Services/JournalDataExportService.swift`
@@ -46,6 +58,8 @@ Behavior:
 - fetches all entries sorted by day
 - encodes archive payload with schema version
 - writes JSON file in temporary directory
+
+Archive includes schema version and full entry payloads.
 
 ## Import service
 
@@ -64,6 +78,8 @@ Write behavior:
 - updates existing day rows when present
 - inserts new day rows otherwise
 
+This merge style is “replace by day”, not “append duplicate rows per day”.
+
 ## iCloud account status helper
 
 Files:
@@ -74,9 +90,24 @@ Files:
 
 This is used to choose guidance text and whether toggle should show.
 
+## Common confusion
+
+- “Does iCloud toggle mean immediate migration?”  
+  Not immediate. Some messages explicitly say changes apply on next launch.
+
+- “Can import file break app memory?”  
+  Service has size and count guards to reduce that risk.
+
+- “Is import overwrite total database?”  
+  Import logic merges by calendar day and updates matching day rows.
+
 ## If you know Python
 
 Think of import/export services as pure application services.
 
 UI code does file picking and alerts.
 Service code does decode/validate/merge rules.
+
+## Read next
+
+- Next page: [17-reminders.md](./17-reminders.md)

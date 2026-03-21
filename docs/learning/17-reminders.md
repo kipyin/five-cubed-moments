@@ -2,6 +2,8 @@
 
 Reminders are controlled by a view model + scheduler service split.
 
+This split keeps permission/schedule details out of screen code.
+
 ## Reminder UI state model
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/ReminderSettingsFlowModel.swift`  
@@ -13,6 +15,8 @@ This model owns:
 - selected reminder time
 - enable/disable actions
 - transient error text
+
+It also throttles time-change rescheduling to avoid noisy repeated writes.
 
 Key methods:
 
@@ -35,6 +39,8 @@ It handles:
 - authorization request (when allowed)
 - schedule daily repeating notification
 - remove pending reminder request
+
+It returns typed outcomes (`ReminderSyncResult`) that UI model maps to user-facing state.
 
 ## Reminder settings constants
 
@@ -61,6 +67,8 @@ Examples:
 - `.denied`
 - `.unavailable`
 
+These explicit states make Settings copy clearer and easier to test.
+
 ## Where reminders appear in UI
 
 In `SettingsScreen`:
@@ -71,6 +79,22 @@ In `SettingsScreen`:
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/SettingsScreen.swift`
 
+Look at:
+- `reminderToggleBinding`
+- `reminderTimePicker`
+- denied/unavailable guidance blocks
+
+## Common confusion
+
+- “Why is reminder toggle off after I changed time?”  
+  If permission is denied/unavailable, model can move state off and show guidance.
+
+- “Does refresh ask permission pop-up?”  
+  No. `refreshStatus()` is passive; explicit enable flow handles prompts.
+
+- “Why both model and scheduler exist?”  
+  Model coordinates UI behavior; scheduler wraps OS notifications.
+
 ## If you know Python
 
 This is similar to:
@@ -79,3 +103,7 @@ This is similar to:
 - one service that wraps OS notification API
 
 The UI model calls the service and maps result into user-facing state.
+
+## Read next
+
+- Next page: [18-onboarding.md](./18-onboarding.md)

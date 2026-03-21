@@ -2,6 +2,11 @@
 
 This app stores journal entries locally with SwiftData.
 
+Use this page to understand:
+- what is persisted
+- where persistence is configured
+- how data is read back by day
+
 ## Core data types
 
 ### `JournalEntry` (`@Model`)
@@ -22,6 +27,9 @@ Completion helpers are also here:
 - `completionLevel`
 - `criteriaMet(...)`
 
+This model is the center of journal persistence.
+Most feature flows read or update this type.
+
 ### `JournalItem` (`struct`)
 
 File: `../../GraceNotes/GraceNotes/Data/Models/JournalItem.swift`
@@ -34,6 +42,8 @@ Represents one chip item:
 - `id`
 
 `displayLabel` chooses `chipLabel` when present, else falls back to `fullText`.
+
+This split lets app keep full user text and a shorter chip label separately.
 
 ## Persistence bootstrap
 
@@ -53,6 +63,8 @@ That runtime state is carried by:
 
 - `../../GraceNotes/GraceNotes/Data/Persistence/SwiftData/PersistenceRuntimeSnapshot.swift`
 
+That snapshot is injected into SwiftUI environment and used by Settings UI.
+
 ## Repository access
 
 Query logic is in:
@@ -64,6 +76,8 @@ The repository fetches:
 - all entries
 - one entry for a day (`[dayStart, nextDay)` range)
 
+This day-range query style helps avoid time-of-day mismatch bugs.
+
 ## Why chip arrays are optional in `JournalEntry`
 
 `JournalEntry` uses optional arrays for chip lists.
@@ -74,6 +88,17 @@ See comment near:
 
 - `var gratitudes: [JournalItem]?`
 
+## Common confusion
+
+- “Why not store chips as plain `[String]`?”  
+  Because app needs `fullText`, `chipLabel`, and truncation state.
+
+- “Why start-of-day normalization?”  
+  So one logical day maps to one entry row.
+
+- “Does Linux run this persistence stack?”  
+  You can read code on Linux, but app runtime/test execution needs macOS + Xcode.
+
 ## If you know Python
 
 `@Model` is not like a plain dataclass.
@@ -81,3 +106,7 @@ See comment near:
 It is a persisted model type managed by SwiftData.
 
 So reads/writes happen through `ModelContext`, not just in-memory objects.
+
+## Read next
+
+- Next page: [13-journal-repository.md](./13-journal-repository.md)

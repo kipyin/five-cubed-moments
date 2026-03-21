@@ -7,6 +7,8 @@ It covers:
 - how to open the project
 - where to start reading code
 
+If you feel lost, come back to this page first.
+
 ## 1) Folder layout
 
 At repo root (`/workspace`), start here:
@@ -25,6 +27,13 @@ Inside `GraceNotes/GraceNotes/`, these are the main app layers:
 - `Features/` — screen-level code (Journal, Settings, Onboarding)
 - `Services/` — cross-feature logic (summarization, reminders)
 - `DesignSystem/` — app theme and shared UI styles
+
+### Fast mental model
+
+- `Application/` decides what starts.
+- `Features/` is what user sees.
+- `Data/` stores and fetches entries.
+- `Services/` supports feature logic.
 
 ## 2) How to open the project
 
@@ -46,6 +55,18 @@ On Linux, you can still:
 - read code
 - read tests
 - run `swiftlint lint`
+
+## 2.5) First-day reading plan (no coding yet)
+
+If this is your first day in the repo:
+
+1. Read this page fully.
+2. Open `GraceNotesApp.swift` and `StartupCoordinator.swift`.
+3. Open `JournalScreen.swift` and `JournalViewModel.swift`.
+4. Open `JournalRepository.swift`.
+5. Write your own 6-step flow summary.
+
+If you can explain that flow, you are ready for the next pages.
 
 ## 3) Where to start reading code
 
@@ -132,6 +153,16 @@ Read:
 
 This is the data query layer used by the ViewModel.
 
+## 3.5) What to skip at first
+
+Do not start from:
+
+- large style/theme constants
+- deep test edge cases
+- cloud prompt text details
+
+Start with the app path first. Then return to those later.
+
 ## 4) If you know Python
 
 ### `struct` vs `class`
@@ -167,6 +198,17 @@ Similar idea to Python `asyncio`, but Swift uses structured concurrency.
 In this repo:
 - async summarize flow in `JournalViewModel+ChipEditing.swift`
 - background startup work in `StartupCoordinator.swift`
+
+## 4.5) Common confusion for Python developers
+
+- “Why so many explicit types?”  
+  Swift favors compile-time clarity over runtime guessing.
+
+- “Why are there separate extensions for ViewModel?”  
+  It keeps one file focused and easier to scan.
+
+- “Why are some properties wrapped like `@State`/`@AppStorage`?”  
+  SwiftUI uses wrappers to declare ownership and persistence behavior.
 
 ## 5) What to read next
 

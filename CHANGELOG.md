@@ -14,7 +14,7 @@ Insight quality: Review that feels specific and grounded, better chip source mat
 - (Planned, `#39`) AI prompts for chip labels tuned to improve review inputs; deterministic paths unchanged in spirit
 
 ### Fixed
-- (TBD as work lands)
+- Journal: completion status info card opens and toggles reliably when tapping the pill quickly; tap outside the pill in the date row, or on the card, dismisses it. Paired pill–card geometry morph is off for this flow to avoid layout collapse; dismiss tasks are cleared when cancelled or finished (#66).
 
 ## [0.4.0] - 2026-03-20
 

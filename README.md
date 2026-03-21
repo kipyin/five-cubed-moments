@@ -8,7 +8,10 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 
 ## What's new in 0.5.0 (upcoming)
 
-Target: **insight quality**—Review and weekly insights that better reflect your own entries, refined chip-label prompts for AI where used, and clearer feedback when a section is fully filled (`#40`, `#39`, `#11`). See `GraceNotes/docs/07-release-roadmap.md`.
+- **Insight quality** — Review and weekly insights that better reflect your own entries, refined chip-label prompts for AI where used, and clearer feedback when a section is fully filled (`#40`, `#39`, `#11`).
+- **First-run tutorial** — Dismissible hints on Today toward Seed and Harvest, with one-time congratulations when you first reach those tiers (`#60`).
+
+See `GraceNotes/docs/07-release-roadmap.md`.
 
 ## What's new in 0.4.0
 

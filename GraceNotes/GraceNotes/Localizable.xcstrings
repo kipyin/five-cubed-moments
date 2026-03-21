@@ -3657,6 +3657,54 @@
         }
       }
     },
+    "You completed the full rhythm today." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed the full rhythm today."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天你写好了阅读笔记和反思，这一篇感恩记也更完整了。"
+          }
+        }
+      }
+    },
+    "You planted a seed today." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You planted a seed today."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天你达到了「撒种」。"
+          }
+        }
+      }
+    },
+    "You reached Harvest." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You reached Harvest."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天你达到了「丰收」。"
+          }
+        }
+      }
+    },
     "Your focus shifted from %1$@ last week to %2$@ this week." : {
       "extractionState" : "stale",
       "localizations" : {

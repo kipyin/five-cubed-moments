@@ -1,5 +1,7 @@
 import XCTest
 
+/// UI tests use `-ui-testing`. To reset journal tutorial flags (issue #60), add
+/// `-reset-journal-tutorial` to `launchArguments` before `launch()`.
 final class JournalUITests: XCTestCase {
     @MainActor
     private func launchApp() -> XCUIApplication {

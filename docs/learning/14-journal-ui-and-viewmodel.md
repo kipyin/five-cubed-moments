@@ -24,6 +24,12 @@ The screen owns:
 
 `JournalScreen` should mostly coordinate UI behavior, not persistence rules.
 
+Real snippet (initial load trigger):
+
+```swift
+viewModel.loadTodayIfNeeded(using: modelContext)
+```
+
 ## ViewModel responsibilities
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`  
@@ -42,6 +48,17 @@ The autosave trigger uses Combine debounce (`400ms`) before `persistChanges()`.
 Important save path:
 - UI edit -> `scheduleAutosave()` -> debounced sink -> `persistChanges()` -> `context.save()`
 
+Real snippets:
+
+```swift
+autosaveTrigger
+    .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+```
+
+```swift
+try context.save()
+```
+
 ## Chip editing behavior
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEditing.swift`
@@ -57,6 +74,21 @@ This helps avoid stale async updates when user edits quickly.
 This is a key design choice in this app:
 - responsive UI first
 - async refinement second
+
+Real snippets:
+
+```swift
+let result = await summarizeForChip(trimmed, section: .gratitude)
+```
+
+```swift
+gratitudes.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTruncated: result.isTruncated))
+```
+
+```swift
+if let idx = gratitudes.firstIndex(where: { $0.id == itemId }),
+   gratitudes[idx].fullText == expectedFullText {
+```
 
 UI-side helper functions are in:
 

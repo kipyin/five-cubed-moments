@@ -17,6 +17,12 @@ Main sections:
 
 Read this file together with service files below for full flow.
 
+Real snippet:
+
+```swift
+@AppStorage("useCloudSummarization") private var useCloudSummarization = false
+```
+
 ## Data & Privacy section
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/DataPrivacySettingsSection.swift`
@@ -31,6 +37,12 @@ This section shows:
 It reads runtime persistence state from `persistenceRuntimeSnapshot`.
 
 That is why the copy can show cloud/local/fallback context honestly.
+
+Real snippet:
+
+```swift
+@Environment(\.persistenceRuntimeSnapshot) private var persistenceRuntimeSnapshot
+```
 
 ## Import/export screen
 
@@ -49,6 +61,17 @@ Uses:
 Import path includes confirm step before write.
 Export path writes JSON archive then opens share sheet.
 
+Real snippets:
+
+```swift
+.fileImporter(
+    isPresented: $showImportPicker,
+```
+
+```swift
+let summary = try await Task.detached(priority: .userInitiated) {
+```
+
 ## Export service
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/Services/JournalDataExportService.swift`
@@ -60,6 +83,12 @@ Behavior:
 - writes JSON file in temporary directory
 
 Archive includes schema version and full entry payloads.
+
+Real snippet:
+
+```swift
+let filename = "five-cubed-journal-export-\(timestampString(from: now)).json"
+```
 
 ## Import service
 
@@ -79,6 +108,20 @@ Write behavior:
 - inserts new day rows otherwise
 
 This merge style is “replace by day”, not “append duplicate rows per day”.
+
+Real snippets:
+
+```swift
+static let maxImportFileSizeBytes = 100 * 1024 * 1024
+```
+
+```swift
+static let maxImportEntryCount = 10_000
+```
+
+```swift
+let entries = dedupeByCalendarDayLastWins(archive.entries, calendar: calendar)
+```
 
 ## iCloud account status helper
 

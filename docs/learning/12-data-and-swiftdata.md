@@ -27,6 +27,13 @@ Completion helpers are also here:
 - `completionLevel`
 - `criteriaMet(...)`
 
+Real snippet:
+
+```swift
+@Model
+final class JournalEntry {
+```
+
 This model is the center of journal persistence.
 Most feature flows read or update this type.
 
@@ -42,6 +49,12 @@ Represents one chip item:
 - `id`
 
 `displayLabel` chooses `chipLabel` when present, else falls back to `fullText`.
+
+Real snippet:
+
+```swift
+struct JournalItem: Codable {
+```
 
 This split lets app keep full user text and a shorter chip label separately.
 
@@ -65,6 +78,16 @@ That runtime state is carried by:
 
 That snapshot is injected into SwiftUI environment and used by Settings UI.
 
+Real snippets:
+
+```swift
+let schema = Schema([JournalEntry.self])
+```
+
+```swift
+let container = try ModelContainer(for: schema, configurations: configuration)
+```
+
 ## Repository access
 
 Query logic is in:
@@ -78,6 +101,12 @@ The repository fetches:
 
 This day-range query style helps avoid time-of-day mismatch bugs.
 
+Real snippet:
+
+```swift
+entry.entryDate >= dayStart && entry.entryDate < nextDay
+```
+
 ## Why chip arrays are optional in `JournalEntry`
 
 `JournalEntry` uses optional arrays for chip lists.
@@ -87,6 +116,12 @@ The comment in the model explains why: CloudKit/Core Data compatibility during s
 See comment near:
 
 - `var gratitudes: [JournalItem]?`
+
+Real snippet:
+
+```swift
+var gratitudes: [JournalItem]?
+```
 
 ## Common confusion
 

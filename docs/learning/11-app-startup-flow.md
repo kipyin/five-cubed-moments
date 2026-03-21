@@ -13,6 +13,13 @@ Type: `GraceNotesApp`
 
 `@main` marks this as app entry.
 
+Real snippet:
+
+```swift
+@main
+struct GraceNotesApp: App {
+```
+
 ## Startup phases
 
 `GraceNotesApp` holds a `StartupCoordinator`.
@@ -26,6 +33,17 @@ Coordinator phases:
 
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
 
+Real snippet:
+
+```swift
+enum Phase {
+    case loading
+    case reassurance
+    case retryableFailure(message: String)
+    case ready(PersistenceController)
+}
+```
+
 ## What happens on launch
 
 1. `GraceNotesApp.init()` checks test flags.
@@ -34,6 +52,22 @@ File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
 4. While waiting, UI shows `StartupLoadingView`.
 5. On success, phase changes to `.ready`.
 6. App shows onboarding or main tabs.
+
+Real snippet from loading task:
+
+```swift
+startupCoordinator.startIfNeeded()
+```
+
+Real snippet from coordinator:
+
+```swift
+let controller = try await persistenceFactory()
+```
+
+```swift
+phase = .ready(controller)
+```
 
 ## What StartupCoordinator adds
 
@@ -58,6 +92,16 @@ Key points:
 - Tries to build a SwiftData `ModelContainer`.
 - If cloud setup fails during startup, it can fall back to local-only disk store.
 
+Real snippet:
+
+```swift
+if !inMemory, cloudSyncEnabled {
+```
+
+```swift
+let container = try ModelContainer(for: schema, configurations: fallbackConfiguration)
+```
+
 The runtime result is recorded in `PersistenceRuntimeSnapshot`.
 That later helps Settings show honest storage status.
 
@@ -73,6 +117,16 @@ Tabs:
 - Today (`JournalScreen`)
 - Review (`ReviewScreen`)
 - Settings (`SettingsScreen`)
+
+Real snippet:
+
+```swift
+} else if !hasCompletedOnboarding {
+    OnboardingScreen {
+        hasCompletedOnboarding = true
+    }
+}
+```
 
 ## UI test-specific path
 

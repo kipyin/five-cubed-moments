@@ -18,6 +18,16 @@ This model owns:
 
 It also throttles time-change rescheduling to avoid noisy repeated writes.
 
+Real snippets:
+
+```swift
+@Published private(set) var liveStatus: ReminderLiveStatus = .off
+```
+
+```swift
+try await Task.sleep(nanoseconds: 400_000_000)
+```
+
 Key methods:
 
 - `refreshStatus()`
@@ -41,6 +51,22 @@ It handles:
 - remove pending reminder request
 
 It returns typed outcomes (`ReminderSyncResult`) that UI model maps to user-facing state.
+
+Real snippets:
+
+```swift
+func enableDailyReminder(at time: Date) async -> ReminderSyncResult {
+```
+
+```swift
+let trigger = UNCalendarNotificationTrigger(dateMatching: timeComponents, repeats: true)
+```
+
+```swift
+notificationCenter.removePendingNotificationRequests(
+    withIdentifiers: [ReminderSettings.notificationIdentifier]
+)
+```
 
 ## Reminder settings constants
 

@@ -24,12 +24,26 @@ It has three public methods:
 
 This is used in streak and review-related flows.
 
+Real snippet:
+
+```swift
+let descriptor = FetchDescriptor<JournalEntry>(
+    sortBy: [SortDescriptor(\.entryDate, order: .reverse)]
+)
+```
+
 ### `fetchEntry(for:context:)`
 
 - Normalizes incoming date to start-of-day.
 - Calls `fetchEntry(dayStart:context:)`.
 
 This keeps date handling consistent for callers.
+
+Real snippet:
+
+```swift
+let dayStart = calendar.startOfDay(for: date)
+```
 
 ### `fetchEntry(dayStart:context:)`
 
@@ -41,6 +55,16 @@ This keeps date handling consistent for callers.
 This range style matches other code paths (for example import/dedupe behavior).
 
 It also avoids errors from comparing full timestamps directly.
+
+Real snippet:
+
+```swift
+guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
+```
+
+```swift
+let entry = try context.fetch(descriptor).first
+```
 
 ## Where this repository is used
 

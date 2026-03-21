@@ -30,6 +30,40 @@ Source root: `GraceNotes/GraceNotes/`
 - `Services/` handles shared logic used by features.
 - `DesignSystem/` keeps look and feel consistent.
 
+## Real snippet map (one-liners)
+
+From app root:
+
+```swift
+@StateObject private var startupCoordinator: StartupCoordinator
+```
+
+File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
+
+From Today screen:
+
+```swift
+@State private var viewModel = JournalViewModel()
+```
+
+File: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
+
+From ViewModel:
+
+```swift
+@ObservationIgnored private let repository: JournalRepository
+```
+
+File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
+
+From repository:
+
+```swift
+func fetchEntry(for date: Date, context: ModelContext) throws -> JournalEntry?
+```
+
+File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
+
 ## Why this split is used here
 
 This repo tries to keep boundaries explicit:

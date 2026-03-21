@@ -22,6 +22,16 @@ Controls:
 
 `selectedPage` tracks the current step in this screen.
 
+Real snippets:
+
+```swift
+@State private var selectedPage = 0
+```
+
+```swift
+Button(String(localized: "Skip for now"), action: onGetStarted)
+```
+
 ## How app decides to show onboarding
 
 File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
@@ -40,6 +50,20 @@ When onboarding ends, callback sets:
 - `hasCompletedOnboarding = true`
 
 This decision is in app root, not in the onboarding screen itself.
+
+Real snippet from app root:
+
+```swift
+@AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+```
+
+```swift
+} else if !hasCompletedOnboarding {
+    OnboardingScreen {
+        hasCompletedOnboarding = true
+    }
+}
+```
 
 ## What onboarding teaches
 

@@ -29,6 +29,15 @@ File: `../../GraceNotes/GraceNotes/Services/Summarization/SummarizerProvider.swi
 
 So runtime path is settings-driven, not hardcoded by section.
 
+Real snippet:
+
+```swift
+if useCloud, ApiSecrets.isCloudApiKeyConfigured {
+    return CloudSummarizer(apiKey: ApiSecrets.cloudApiKey)
+}
+return DeterministicChipLabelSummarizer()
+```
+
 ## Deterministic path
 
 File: `../../GraceNotes/GraceNotes/Services/Summarization/DeterministicChipLabelSummarizer.swift`
@@ -38,6 +47,12 @@ Current deterministic behavior:
 - label = trimmed full input text
 
 Then display capping may add `...` depending on provider path.
+
+Real snippet:
+
+```swift
+return SummarizationResult(label: trimmed, isTruncated: false)
+```
 
 Display truncation is applied separately when needed by:
 
@@ -64,6 +79,18 @@ Cloud summarizer:
 
 This means cloud failure should not block chip creation.
 
+Real snippets:
+
+```swift
+let (data, response) = try await urlSession.data(for: request)
+```
+
+```swift
+if let result = try? await fallback.summarize(sentence, section: section) {
+    return result
+}
+```
+
 API key source:
 
 - `../../GraceNotes/GraceNotes/Services/Summarization/ApiSecrets.swift`
@@ -87,6 +114,12 @@ Search for:
 - `../../GraceNotesTests/Services/Summarization/NaturalLanguageSummarizerTests.swift`
 
 But current `SummarizerProvider` route is deterministic/cloud.
+
+Real snippet from existing NL implementation:
+
+```swift
+struct NaturalLanguageSummarizer: Summarizer {
+```
 
 ## Common confusion
 

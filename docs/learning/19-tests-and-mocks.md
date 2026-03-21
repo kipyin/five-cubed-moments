@@ -27,6 +27,20 @@ Quick examples:
 - `MockURLProtocol` intercepts `URLSession` for cloud tests.
 - `SpySummarizer` counts calls for behavior assertions.
 
+Real snippets:
+
+```swift
+final class MockSummarizer: Summarizer {
+```
+
+```swift
+private(set) var summarizeCallCount = 0
+```
+
+```swift
+static var mockResponse: ((URLRequest) -> (Data?, HTTPURLResponse?, Error?))?
+```
+
 ## What is covered well
 
 Examples:
@@ -68,6 +82,12 @@ This is real project context, not test framework theory.
 
 When reading tests, treat skip reasons as part of engineering reality, not “ignored noise.”
 
+Real snippet:
+
+```swift
+throw XCTSkip("Skipping due to known hosted SwiftData malloc crash on current iOS simulator runtime.")
+```
+
 ## Running tests
 
 Requires macOS + Xcode.
@@ -95,6 +115,12 @@ Linux note:
 5. Broaden run scope after focused pass.
 
 This keeps feedback fast and avoids noisy full-suite runs too early.
+
+Example assertion style from repo:
+
+```swift
+XCTAssertEqual((entries[0].gratitudes ?? []).map(\.fullText), ["Family"])
+```
 
 ## If you know Python
 

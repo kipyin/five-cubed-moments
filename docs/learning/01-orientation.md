@@ -88,6 +88,19 @@ This shows how the app decides:
 - loading screen vs ready screen
 - onboarding vs main tabs
 
+Real snippets:
+
+```swift
+@main
+struct GraceNotesApp: App {
+```
+
+```swift
+if isRunningUnitTests {
+    Color.clear
+}
+```
+
 ### Step B — Startup state machine
 
 File: `GraceNotes/GraceNotes/Application/StartupCoordinator.swift`  
@@ -102,6 +115,17 @@ Read:
 
 This is the startup lifecycle controller.
 
+Real snippets:
+
+```swift
+func startIfNeeded() {
+    guard !hasStarted else { return }
+```
+
+```swift
+phase = .ready(controller)
+```
+
 ### Step C — Persistence bootstrap
 
 File: `GraceNotes/GraceNotes/Data/Persistence/SwiftData/PersistenceController.swift`  
@@ -114,6 +138,16 @@ Read:
 
 This is where SwiftData container setup happens.
 
+Real snippets:
+
+```swift
+let schema = Schema([JournalEntry.self])
+```
+
+```swift
+let container = try ModelContainer(for: schema, configurations: configuration)
+```
+
 ### Step D — Today screen
 
 File: `GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`  
@@ -123,6 +157,16 @@ Read:
 - section layout (Gratitudes, Needs, People in Mind)
 - `.task` that triggers initial load
 - calls into `JournalViewModel`
+
+Real snippets:
+
+```swift
+@State private var viewModel = JournalViewModel()
+```
+
+```swift
+viewModel.loadTodayIfNeeded(using: modelContext)
+```
 
 ### Step E — Today screen logic
 
@@ -141,6 +185,17 @@ File: `GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEd
 
 This extension contains chip add/update/remove behavior.
 
+Real snippets:
+
+```swift
+autosaveTrigger
+    .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+```
+
+```swift
+try context.save()
+```
+
 ### Step F — Repository reads
 
 File: `GraceNotes/GraceNotes/Data/JournalRepository.swift`  
@@ -152,6 +207,16 @@ Read:
 - `fetchEntry(dayStart:context:)`
 
 This is the data query layer used by the ViewModel.
+
+Real snippets:
+
+```swift
+let dayStart = calendar.startOfDay(for: date)
+```
+
+```swift
+entry.entryDate >= dayStart && entry.entryDate < nextDay
+```
 
 ## 3.5) What to skip at first
 

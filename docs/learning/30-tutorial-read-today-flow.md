@@ -41,6 +41,35 @@ Time estimate:
    - open `../../GraceNotes/GraceNotes/Features/Journal/Views/SequentialSectionView.swift`
    - see how UI input routes into submit callbacks
 
+## Real snippets to anchor each step
+
+From app root:
+
+```swift
+NavigationStack {
+    JournalScreen()
+}
+```
+
+From `JournalScreen` load:
+
+```swift
+viewModel.loadTodayIfNeeded(using: modelContext)
+```
+
+From `JournalViewModel` autosave:
+
+```swift
+autosaveTrigger
+    .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+```
+
+From repository date range:
+
+```swift
+entry.entryDate >= dayStart && entry.entryDate < nextDay
+```
+
 ## How to check it worked
 
 Write a short call path in your own words.

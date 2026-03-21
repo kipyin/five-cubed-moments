@@ -27,6 +27,16 @@ In practice here:
 - payload/config/result types are often `struct`
 - they move between layers without shared mutable state
 
+Real snippets:
+
+```swift
+struct JournalItem: Codable {
+```
+
+```swift
+struct JournalExportPayload {
+```
+
 ## `class` in this repo
 
 Use `class` for shared mutable state or framework-required reference types.
@@ -40,6 +50,18 @@ Examples:
 In practice here:
 - UI state holders are usually `class`
 - persistence model `JournalEntry` is class-based because SwiftData model behavior needs reference semantics
+
+Real snippets:
+
+```swift
+@Model
+final class JournalEntry {
+```
+
+```swift
+@Observable
+final class JournalViewModel {
+```
 
 ## Protocols in this repo
 
@@ -60,6 +82,16 @@ This helps tests inject fakes and spies.
 
 Examples in tests:
 - summarizer test doubles in `../../GraceNotesTests/TestDoubles/`
+
+Real snippets:
+
+```swift
+protocol Summarizer: Sendable {
+```
+
+```swift
+protocol ReminderScheduling {
+```
 
 ## If you know Python
 

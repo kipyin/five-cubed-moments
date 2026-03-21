@@ -33,6 +33,17 @@ In `persistChanges()`:
 
 This gives a user-facing message instead of silent failure.
 
+Real snippet:
+
+```swift
+do {
+    try context.save()
+    saveErrorMessage = nil
+} catch {
+    saveErrorMessage = String(localized: "Unable to save your journal entry.")
+}
+```
+
 ## Example: startup error to retry state
 
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
@@ -45,6 +56,12 @@ UI then shows retry action.
 
 This keeps startup resilient instead of crashing or hanging.
 
+Real snippet:
+
+```swift
+phase = .retryableFailure(message: message)
+```
+
 ## Example: cloud fallback behavior
 
 File: `../../GraceNotes/GraceNotes/Services/Summarization/CloudSummarizer.swift`
@@ -54,6 +71,14 @@ Cloud request failure does not crash flow.
 It logs and falls back to deterministic summarizer.
 
 So user can keep journaling even when cloud path fails.
+
+Real snippet:
+
+```swift
+if let result = try? await fallback.summarize(sentence, section: section) {
+    return result
+}
+```
 
 ## Example: import validation errors
 
@@ -68,6 +93,14 @@ Screen maps these to friendly messages:
 - `ImportExportSettingsScreen.importFailureMessage(for:)`
 
 This keeps validation strict while still showing clear feedback.
+
+Real snippet:
+
+```swift
+guard archive.entries.count <= Self.maxImportEntryCount else {
+    throw JournalDataImportError.tooManyEntries
+}
+```
 
 ## Common confusion
 

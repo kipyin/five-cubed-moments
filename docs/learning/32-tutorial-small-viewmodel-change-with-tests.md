@@ -38,6 +38,28 @@ Suggested sequence:
 - then run `JournalViewModelCompletionAndLimitsTests`
 - then nearby JournalViewModel test files if needed
 
+## Real snippets to anchor this workflow
+
+From `JournalViewModel` (computed property pattern example):
+
+```swift
+var chipsFilledCount: Int {
+    gratitudes.count + needs.count + people.count
+}
+```
+
+From existing test style:
+
+```swift
+XCTAssertFalse(viewModel.isChipsFiveCubedComplete)
+```
+
+Another assertion style used in repo:
+
+```swift
+XCTAssertEqual(viewModel.chipsFilledCount, 14)
+```
+
 ## How to check it worked
 
 Success means:

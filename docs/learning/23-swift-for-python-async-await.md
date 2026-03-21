@@ -14,6 +14,16 @@ Read this page when async behavior feels hard to follow.
 
 This is why startup screen can show loading, reassurance, retry, or ready.
 
+Real snippet:
+
+```swift
+startupTask = Task { [weak self] in
+```
+
+```swift
+let controller = try await persistenceFactory()
+```
+
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
 
 ## Async summarization flow
@@ -28,6 +38,12 @@ Pattern:
 
 This guards against race conditions from quick edits.
 
+Real snippet:
+
+```swift
+let result = await summarizeForChip(trimmed, section: .gratitude)
+```
+
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEditing.swift`
 
 ## Async service calls
@@ -40,6 +56,12 @@ Examples:
   `../../GraceNotes/GraceNotes/Features/Journal/Services/CloudReviewInsightsGenerator.swift`
 
 Both services use async network requests with fallback/error handling.
+
+Real snippet:
+
+```swift
+let (data, response) = try await urlSession.data(for: request)
+```
 
 ## Async reminder checks
 
@@ -63,6 +85,12 @@ File: `../../GraceNotes/GraceNotes/Features/Settings/ImportExportSettingsScreen.
 This file is a good example of:
 - running heavier work away from UI thread
 - returning to main actor for UI state updates
+
+Real snippet:
+
+```swift
+let fileURL = try await Task.detached(priority: .userInitiated) {
+```
 
 ## If you know Python
 

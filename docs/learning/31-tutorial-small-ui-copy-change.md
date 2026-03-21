@@ -30,6 +30,32 @@ Time estimate:
 6. Swipe through onboarding pages and confirm your new text appears.
 7. Check one small and one large simulator size if possible (for wrap/clipping check).
 
+## Real snippets to anchor this change
+
+In onboarding page data:
+
+```swift
+private let pages: [OnboardingPage] = [
+```
+
+One message entry:
+
+```swift
+message: String(
+    localized: "Capture one gratitude and move on with your day. A meaningful check-in can take under two minutes."
+)
+```
+
+Where onboarding is gated in app root:
+
+```swift
+} else if !hasCompletedOnboarding {
+    OnboardingScreen {
+        hasCompletedOnboarding = true
+    }
+}
+```
+
 ## How to check it worked
 
 Success means:

@@ -22,6 +22,17 @@ Why this helps:
 - clearer function contracts
 - easier refactoring with compiler help
 
+Real snippet:
+
+```swift
+enum JournalCompletionLevel: String, Equatable {
+    case none
+    case quickCheckIn
+    case standardReflection
+    case fullFiveCubed
+}
+```
+
 ## Optionals (`?`) are explicit “maybe missing”
 
 Python often uses `None` dynamically.
@@ -52,6 +63,20 @@ if let value = maybeValue {
 
 This is optional unwrapping in a safe block.
 
+Real snippets from this repo:
+
+```swift
+var gratitudes: [JournalItem]?
+```
+
+```swift
+var completedAt: Date?
+```
+
+```swift
+gratitudes = entry.gratitudes ?? []
+```
+
 ## `let` vs `var`
 
 - `let` = immutable after set
@@ -59,6 +84,16 @@ This is optional unwrapping in a safe block.
 
 In this repo, immutable local values are common in service/repository code.
 Mutable state is common in ViewModels and some SwiftUI views.
+
+Real snippet pair:
+
+```swift
+private let calendar: Calendar
+```
+
+```swift
+var entryDate: Date = .now
+```
 
 You can see both in almost every file.
 

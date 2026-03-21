@@ -14,6 +14,13 @@ This is the persisted row type for daily entries.
 
 In this app, one logical day maps to one `JournalEntry`.
 
+Real snippet:
+
+```swift
+@Model
+final class JournalEntry {
+```
+
 ## Model container
 
 `PersistenceController` creates `ModelContainer`.
@@ -28,6 +35,16 @@ Used for:
 
 Container setup is centralized so startup paths stay consistent.
 
+Real snippets:
+
+```swift
+let schema = Schema([JournalEntry.self])
+```
+
+```swift
+let container = try ModelContainer(for: schema, configurations: configuration)
+```
+
 ## Model context
 
 `ModelContext` is used for fetch/insert/save.
@@ -38,6 +55,16 @@ Examples:
 - import/export screen creates background context from container
 
 `ModelContext` is the object that performs fetch/insert/save actions.
+
+Real snippets:
+
+```swift
+@Environment(\.modelContext) private var modelContext
+```
+
+```swift
+let backgroundContext = ModelContext(container)
+```
 
 Files:
 
@@ -55,6 +82,12 @@ Examples:
 
 Read repository file to see real query predicates and sorting.
 
+Real snippet:
+
+```swift
+let descriptor = FetchDescriptor<JournalEntry>(
+```
+
 File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
 
 ## View-level query
@@ -64,6 +97,12 @@ File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
 File: `../../GraceNotes/GraceNotes/Features/Journal/Views/ReviewScreen.swift`
 
 This keeps Review list data reactive as stored entries change.
+
+Real snippet:
+
+```swift
+@Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
+```
 
 ## One practical pattern to notice
 

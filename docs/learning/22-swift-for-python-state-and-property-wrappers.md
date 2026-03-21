@@ -18,6 +18,12 @@ Example:
 
 Use when state belongs only to this view instance.
 
+Real snippet:
+
+```swift
+@State private var gratitudeInput = ""
+```
+
 ## `@StateObject`
 
 Owns lifecycle of reference-type observable models in a view.
@@ -28,6 +34,12 @@ Example:
 - File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
 
 Use when view owns lifecycle of an observable reference model.
+
+Real snippet:
+
+```swift
+@StateObject private var startupCoordinator: StartupCoordinator
+```
 
 ## `@AppStorage`
 
@@ -45,6 +57,12 @@ Files:
 
 Good for small persisted flags and preferences.
 
+Real snippet:
+
+```swift
+@AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+```
+
 ## `@Environment`
 
 Reads values provided by the environment.
@@ -61,6 +79,12 @@ Files:
 
 Use to read values injected by parent/root context.
 
+Real snippet:
+
+```swift
+@Environment(\.modelContext) private var modelContext
+```
+
 ## `@Query`
 
 SwiftData-backed query for views.
@@ -72,6 +96,12 @@ Example:
 
 This is SwiftData-integrated query state for views.
 
+Real snippet:
+
+```swift
+@Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
+```
+
 ## `@Observable`
 
 Observation macro for state models.
@@ -82,6 +112,13 @@ Example:
 - File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
 
 Used here for view model state change tracking.
+
+Real snippet:
+
+```swift
+@Observable
+final class JournalViewModel {
+```
 
 ## If you know Python
 

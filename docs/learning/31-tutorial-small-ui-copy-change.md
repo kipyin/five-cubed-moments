@@ -6,6 +6,8 @@ Change one onboarding sentence and verify it in the app.
 
 This teaches the smallest safe UI edit path.
 
+You will change one string only.
+
 ## What you need first
 
 - macOS + Xcode 15+
@@ -14,6 +16,9 @@ This teaches the smallest safe UI edit path.
 
 If you are on Linux, you can still follow the edit steps, but you cannot run the iOS app there.
 
+Time estimate:
+- 15 to 30 minutes
+
 ## Steps
 
 1. Open `../../GraceNotes/GraceNotes/Features/Onboarding/OnboardingScreen.swift`.
@@ -21,8 +26,9 @@ If you are on Linux, you can still follow the edit steps, but you cannot run the
 3. Change the text to a short variant.
    - Keep tone calm and clear.
 4. Build and run in Xcode.
-5. If onboarding does not appear (because the flag is already set), reset app data in simulator and run again.
+5. If onboarding does not appear (flag already set), reset simulator app data and run again.
 6. Swipe through onboarding pages and confirm your new text appears.
+7. Check one small and one large simulator size if possible (for wrap/clipping check).
 
 ## How to check it worked
 
@@ -33,11 +39,18 @@ Success means:
 - edited sentence appears exactly once where expected
 - layout still looks clean (no clipping/truncation)
 
+Nice-to-have evidence:
+- take one screenshot of edited onboarding page for your own notes/review
+
 ## What often goes wrong
 
 - Editing the wrong string (title vs message).
 - Simulator still has `hasCompletedOnboarding = true`, so onboarding is skipped.
 - Copy becomes too long and wraps poorly on smaller devices.
+
+If onboarding still does not show:
+- uninstall app from simulator
+- re-run app from Xcode
 
 ## Optional harder step
 
@@ -48,3 +61,5 @@ Start from:
 - `../../GraceNotes/GraceNotes/Localizable.xcstrings`
 
 Keep meaning identical across languages.
+
+Also check that the edited key is still used by `OnboardingScreen`.

@@ -6,6 +6,8 @@ Understand how one Today entry is loaded, edited, and saved.
 
 No code changes in this tutorial.
 
+You are building a clear mental model first.
+
 ## What you need first
 
 - This repo checked out
@@ -13,6 +15,9 @@ No code changes in this tutorial.
 - Optional: markdown notes to write what you find
 
 You do **not** need Xcode for this tutorial.
+
+Time estimate:
+- 25 to 40 minutes
 
 ## Steps
 
@@ -32,6 +37,10 @@ You do **not** need Xcode for this tutorial.
    - Read one add method (for example `addGratitude`).
    - Follow how it calls `scheduleAutosave()`.
 
+6. Optional but useful:
+   - open `../../GraceNotes/GraceNotes/Features/Journal/Views/SequentialSectionView.swift`
+   - see how UI input routes into submit callbacks
+
 ## How to check it worked
 
 Write a short call path in your own words.
@@ -45,11 +54,25 @@ You should be able to explain:
 
 If you can explain that clearly, this tutorial worked.
 
+Example expected summary:
+
+1. Today tab loads `JournalScreen`.
+2. `JournalScreen` asks `JournalViewModel` to load today.
+3. ViewModel fetches day entry via repository.
+4. User edits fields/chips.
+5. ViewModel debounces autosave and persists through `ModelContext`.
+
 ## What often goes wrong
 
 - Reading view code only, but skipping ViewModel code.
 - Missing that repository fetch uses a day range (`dayStart` to `nextDay`), not exact timestamp equality.
 - Missing that chip editing has both immediate UI updates and async summarize steps.
+
+If stuck:
+
+- Go back to `JournalScreen` and find `.task` first.
+- Then jump only to called function definitions.
+- Avoid reading unrelated UI style code at this stage.
 
 ## Optional harder step
 
@@ -58,3 +81,5 @@ Trace the same flow for a **past date** opened from Review:
 - start from `ReviewScreen`
 - follow `NavigationLink` to `JournalScreen(entryDate:)`
 - verify `loadEntry(for:using:)` path for non-today dates
+
+Write 3 bullets on what is the same vs different between today and past-date flow.

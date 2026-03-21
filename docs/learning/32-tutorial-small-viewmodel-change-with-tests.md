@@ -6,6 +6,8 @@ Add one tiny computed property to `JournalViewModel` and cover it with tests.
 
 This teaches the normal “change + test” loop in this repo.
 
+This is a small but real production-style workflow.
+
 ## What you need first
 
 - Understand `JournalViewModel` basics
@@ -13,6 +15,10 @@ This teaches the normal “change + test” loop in this repo.
 - Comfort editing files in:
   - `GraceNotes/GraceNotes/Features/Journal/ViewModels/`
   - `GraceNotesTests/Features/Journal/`
+
+Linux note:
+- you can write the code on Linux
+- running iOS XCTest still needs macOS + Xcode
 
 ## Steps
 
@@ -27,6 +33,11 @@ This teaches the normal “change + test” loop in this repo.
 6. Run the specific test file in Xcode.
 7. If tests pass, run related Journal ViewModel test group.
 
+Suggested sequence:
+- run only your new tests first
+- then run `JournalViewModelCompletionAndLimitsTests`
+- then nearby JournalViewModel test files if needed
+
 ## How to check it worked
 
 Success means:
@@ -36,11 +47,20 @@ Success means:
 - new tests pass after your change
 - existing nearby tests still pass
 
+Good output to capture in notes:
+- test file name
+- test names added
+- pass/fail result before and after
+
 ## What often goes wrong
 
 - Adding broad logic in the wrong layer (keep it in ViewModel, not UI file).
 - Writing tests that rely on unrelated state.
 - Running full suite first (slow); start with the targeted file.
+
+If tests fail unexpectedly:
+- check whether test setup creates and loads entry before assertions
+- check whether your property uses correct arrays (`gratitudes`, `needs`, `people`)
 
 ## Optional harder step
 
@@ -49,3 +69,5 @@ Use the new property in `JournalScreen` for a tiny conditional UI hint, then add
 - `../../GraceNotesUITests/JournalUITests.swift`
 
 Keep the UI change very small and easy to verify.
+
+If you do this optional step, add one focused UI assertion only.

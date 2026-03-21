@@ -24,6 +24,12 @@ private struct ChipRowScrollSnapshot: Equatable {
     var elasticDeltaY: CGFloat
 }
 
+/// Drives `.animation(nil, value:)` so only elastic scaling is non-animated; chip reorder springs stay intact.
+private struct ChipRowElasticAnimationKey: Equatable {
+    var deltaX: CGFloat
+    var deltaY: CGFloat
+}
+
 private enum ChipRowScrollElasticity {
     /// Max horizontal deviation from 1.0 (tuned for a clearly readable stretch).
     static let maxDeltaX: CGFloat = 0.034
@@ -272,7 +278,13 @@ struct SequentialSectionView: View {
                         y: 1 + chipScrollSnapshot.elasticDeltaY,
                         anchor: .center
                     )
-                    .transaction { $0.animation = nil }
+                    .animation(
+                        nil,
+                        value: ChipRowElasticAnimationKey(
+                            deltaX: chipScrollSnapshot.elasticDeltaX,
+                            deltaY: chipScrollSnapshot.elasticDeltaY
+                        )
+                    )
                     .background {
                         HorizontalScrollMetricsReader(reduceMotion: reduceMotion) { snapshot in
                             if chipScrollSnapshot != snapshot {
@@ -598,6 +610,11 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
             detachPanTarget()
             tearDownObservations()
 
+            lastOffsetX = nil
+            lastSampleTime = nil
+            smoothedVelocity = 0
+            isUserDraggingScroll = false
+
             observedScrollView = scrollView
             scrollView.panGestureRecognizer.addTarget(self, action: #selector(handlePan(_:)))
 
@@ -625,17 +642,20 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
 
         @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
             switch recognizer.state {
-            case .began, .changed:
+            case .began:
+                isUserDraggingScroll = true
+                publishSnapshot()
+            case .changed:
                 isUserDraggingScroll = true
             case .ended, .cancelled, .failed:
                 isUserDraggingScroll = false
                 smoothedVelocity = 0
                 lastOffsetX = nil
                 lastSampleTime = nil
+                publishSnapshot()
             default:
                 break
             }
-            publishSnapshot()
         }
 
         private func publishSnapshot() {

@@ -1,4 +1,11 @@
-# Swift for Python: SwiftData basics in this repo
+# 25 — Swift for Python: SwiftData basics in this repo
+
+## What you will learn
+
+You will learn:
+- which objects define store shape
+- which objects perform fetch/save work
+- how view-level query differs from repository query
 
 This page focuses on what this app actually uses.
 
@@ -20,6 +27,10 @@ Real snippet:
 @Model
 final class JournalEntry {
 ```
+
+How to read this snippet:
+- this type is persistence-managed
+- model lifecycle is not plain class lifecycle
 
 ## Model container
 
@@ -45,6 +56,10 @@ let schema = Schema([JournalEntry.self])
 let container = try ModelContainer(for: schema, configurations: configuration)
 ```
 
+How to read these snippets:
+- first line defines model set in store
+- second line creates real persistence container
+
 ## Model context
 
 `ModelContext` is used for fetch/insert/save.
@@ -65,6 +80,10 @@ Real snippets:
 ```swift
 let backgroundContext = ModelContext(container)
 ```
+
+How to read these snippets:
+- first line reads context injected into UI
+- second line builds separate context for background work
 
 Files:
 
@@ -88,6 +107,9 @@ Real snippet:
 let descriptor = FetchDescriptor<JournalEntry>(
 ```
 
+How to read this snippet:
+- descriptor defines query shape before fetch executes
+
 File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
 
 ## View-level query
@@ -103,6 +125,10 @@ Real snippet:
 ```swift
 @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
 ```
+
+How to read this snippet:
+- this is view-level reactive query binding
+- it is convenient for read-heavy screen UI
 
 ## One practical pattern to notice
 
@@ -134,5 +160,10 @@ But this stack is local-first and integrated into SwiftUI app lifecycle.
 
 ## Read next
 
-- Go to tutorial track:
-  [30-tutorial-read-today-flow.md](./30-tutorial-read-today-flow.md)
+[30-tutorial-read-today-flow.md](./30-tutorial-read-today-flow.md)
+
+## Quick check
+
+1. Which line creates the SwiftData container?
+2. Which line shows view-level reactive query?
+3. Why might a background `ModelContext` be used in import/export work?

@@ -1,4 +1,11 @@
-# Swift for Python: async/await
+# 23 — Swift for Python: async/await
+
+## What you will learn
+
+You will learn:
+- where async work starts in this app
+- where awaited network/persistence calls happen
+- why some async paths guard against stale updates
 
 This app uses async work in startup, summarization, reminders, and import/export.
 
@@ -24,6 +31,10 @@ startupTask = Task { [weak self] in
 let controller = try await persistenceFactory()
 ```
 
+How to read these snippets:
+- first line creates startup async task
+- second line awaits persistence setup completion
+
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
 
 ## Async summarization flow
@@ -44,6 +55,10 @@ Real snippet:
 let result = await summarizeForChip(trimmed, section: .gratitude)
 ```
 
+How to read this snippet:
+- summarization is async call
+- caller waits for result before label update
+
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEditing.swift`
 
 ## Async service calls
@@ -62,6 +77,9 @@ Real snippet:
 ```swift
 let (data, response) = try await urlSession.data(for: request)
 ```
+
+How to read this snippet:
+- async network call returns payload + response metadata
 
 ## Async reminder checks
 
@@ -92,6 +110,10 @@ Real snippet:
 let fileURL = try await Task.detached(priority: .userInitiated) {
 ```
 
+How to read this snippet:
+- heavier work is moved off main actor
+- UI can stay responsive during export/import preparation
+
 ## If you know Python
 
 Conceptually close to `asyncio`:
@@ -114,4 +136,10 @@ Main difference: Swift’s structured concurrency and actor rules are built into
 
 ## Read next
 
-- Next page: [24-swift-for-python-error-handling.md](./24-swift-for-python-error-handling.md)
+[24-swift-for-python-error-handling.md](./24-swift-for-python-error-handling.md)
+
+## Quick check
+
+1. Which snippet shows startup async task creation?
+2. Which snippet shows awaited network call?
+3. Why does this app use detached task in import/export flow?

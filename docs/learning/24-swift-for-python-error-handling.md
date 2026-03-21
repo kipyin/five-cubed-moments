@@ -1,4 +1,11 @@
-# Swift for Python: error handling
+# 24 — Swift for Python: error handling
+
+## What you will learn
+
+You will learn:
+- where this app surfaces user-friendly errors
+- where fallback keeps flow usable
+- how typed errors guide UI messaging
 
 Swift uses `throw`, `try`, and `do/catch`.
 
@@ -44,6 +51,10 @@ do {
 }
 ```
 
+How to read this snippet:
+- success path clears error state
+- catch path sets clear user-facing message
+
 ## Example: startup error to retry state
 
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
@@ -62,6 +73,10 @@ Real snippet:
 phase = .retryableFailure(message: message)
 ```
 
+How to read this snippet:
+- startup failure is converted to explicit UI state
+- app can show retry button instead of breaking silently
+
 ## Example: cloud fallback behavior
 
 File: `../../GraceNotes/GraceNotes/Services/Summarization/CloudSummarizer.swift`
@@ -79,6 +94,10 @@ if let result = try? await fallback.summarize(sentence, section: section) {
     return result
 }
 ```
+
+How to read this snippet:
+- cloud error does not stop journaling flow
+- fallback path returns usable result
 
 ## Example: import validation errors
 
@@ -102,6 +121,10 @@ guard archive.entries.count <= Self.maxImportEntryCount else {
 }
 ```
 
+How to read this snippet:
+- hard limit check runs before write
+- typed error makes downstream UI mapping reliable
+
 ## Common confusion
 
 - “Should every catch show raw error details?”  
@@ -121,4 +144,10 @@ You must mark throwing functions with `throws` and call them with `try`.
 
 ## Read next
 
-- Next page: [25-swift-for-python-swiftdata-basics.md](./25-swift-for-python-swiftdata-basics.md)
+[25-swift-for-python-swiftdata-basics.md](./25-swift-for-python-swiftdata-basics.md)
+
+## Quick check
+
+1. Which snippet maps startup failure into retryable UI state?
+2. Which snippet shows fallback behavior after cloud failure?
+3. Why is typed import error safer than generic error string matching?

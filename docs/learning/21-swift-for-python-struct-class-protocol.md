@@ -1,4 +1,11 @@
-# Swift for Python: struct, class, protocol
+# 21 — Swift for Python: struct, class, protocol
+
+## What you will learn
+
+You will learn:
+- when this repo uses `struct`
+- when this repo uses `class`
+- why protocols are useful for boundaries and tests
 
 This app uses all three heavily.
 
@@ -37,6 +44,10 @@ struct JournalItem: Codable {
 struct JournalExportPayload {
 ```
 
+How to read these snippets:
+- both are value-like data carriers
+- no UI lifecycle ownership is implied
+
 ## `class` in this repo
 
 Use `class` for shared mutable state or framework-required reference types.
@@ -62,6 +73,10 @@ final class JournalEntry {
 @Observable
 final class JournalViewModel {
 ```
+
+How to read these snippets:
+- class allows shared mutable state updates
+- macros/attributes (`@Model`, `@Observable`) signal framework behavior
 
 ## Protocols in this repo
 
@@ -93,6 +108,10 @@ protocol Summarizer: Sendable {
 protocol ReminderScheduling {
 ```
 
+How to read these snippets:
+- protocol defines capability contract
+- implementations can vary without changing caller code
+
 ## If you know Python
 
 You can think of protocols like typed interfaces.
@@ -112,4 +131,10 @@ They are stricter than Python duck typing, but great for test doubles and clear 
 
 ## Read next
 
-- Next page: [22-swift-for-python-state-and-property-wrappers.md](./22-swift-for-python-state-and-property-wrappers.md)
+[22-swift-for-python-state-and-property-wrappers.md](./22-swift-for-python-state-and-property-wrappers.md)
+
+## Quick check
+
+1. Which one is a persisted model in this app: `struct JournalItem` or `JournalEntry`?
+2. Why is `JournalViewModel` a class instead of struct?
+3. Which protocol in this repo is used to abstract summarization behavior?

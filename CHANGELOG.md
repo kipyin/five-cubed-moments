@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.0] - Unreleased
+## [0.5.0] - 2026-03-21
 
 Insight quality: Review that feels specific and grounded, better chip source material, calmer completion feedback. Release scope context: `GraceNotes/docs/07-release-roadmap.md` §0.5.0.
 

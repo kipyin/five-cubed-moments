@@ -1,11 +1,13 @@
-# Data and SwiftData in this repo
+# 12 — Data and SwiftData
 
-This app stores journal entries locally with SwiftData.
+## What you will learn
 
-Use this page to understand:
-- what is persisted
-- where persistence is configured
-- how data is read back by day
+You will learn:
+- which types are persisted
+- how container setup happens
+- how day-based fetch is implemented
+
+This page is about *how* storage works, not just where files are.
 
 ## Core data types
 
@@ -34,6 +36,10 @@ Real snippet:
 final class JournalEntry {
 ```
 
+How to read this snippet:
+- `@Model` means SwiftData manages this type.
+- `final class` means reference semantics (needed in this persistence style).
+
 This model is the center of journal persistence.
 Most feature flows read or update this type.
 
@@ -55,6 +61,10 @@ Real snippet:
 ```swift
 struct JournalItem: Codable {
 ```
+
+How to read this snippet:
+- `struct` keeps item value-like and simple.
+- `Codable` lets it be encoded/decoded as part of model payloads.
 
 This split lets app keep full user text and a shorter chip label separately.
 
@@ -88,6 +98,10 @@ let schema = Schema([JournalEntry.self])
 let container = try ModelContainer(for: schema, configurations: configuration)
 ```
 
+How to read these snippets:
+- first line: define which models are in store
+- second line: create the real storage container
+
 ## Repository access
 
 Query logic is in:
@@ -107,6 +121,11 @@ Real snippet:
 entry.entryDate >= dayStart && entry.entryDate < nextDay
 ```
 
+How to read this snippet:
+- left side includes start of day
+- right side excludes next day
+- result: all timestamps in one calendar day map to same day bucket
+
 ## Why chip arrays are optional in `JournalEntry`
 
 `JournalEntry` uses optional arrays for chip lists.
@@ -122,6 +141,10 @@ Real snippet:
 ```swift
 var gratitudes: [JournalItem]?
 ```
+
+How to read this snippet:
+- `?` means data may be missing at load time
+- app code then safely uses `?? []` where needed
 
 ## Common confusion
 
@@ -144,4 +167,10 @@ So reads/writes happen through `ModelContext`, not just in-memory objects.
 
 ## Read next
 
-- Next page: [13-journal-repository.md](./13-journal-repository.md)
+[13-journal-repository.md](./13-journal-repository.md)
+
+## Quick check
+
+1. Which type is the persisted day row?
+2. Which snippet shows day-range fetch logic?
+3. Why does this app keep both `fullText` and `chipLabel`?

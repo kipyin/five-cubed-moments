@@ -1,4 +1,11 @@
-# JournalRepository guided tour
+# 13 — JournalRepository
+
+## What you will learn
+
+You will learn:
+- why repository exists in this app
+- how date normalization works
+- how one-day query is built
 
 File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`  
 Type: `JournalRepository`
@@ -32,6 +39,10 @@ let descriptor = FetchDescriptor<JournalEntry>(
 )
 ```
 
+How to read this snippet:
+- build query descriptor
+- sort newest first
+
 ### `fetchEntry(for:context:)`
 
 - Normalizes incoming date to start-of-day.
@@ -44,6 +55,10 @@ Real snippet:
 ```swift
 let dayStart = calendar.startOfDay(for: date)
 ```
+
+How to read this snippet:
+- caller can pass any timestamp
+- repository normalizes to day boundary once
 
 ### `fetchEntry(dayStart:context:)`
 
@@ -66,6 +81,10 @@ guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
 let entry = try context.fetch(descriptor).first
 ```
 
+How to read these snippets:
+- compute day end safely
+- fetch the first match in [dayStart, nextDay)
+
 ## Where this repository is used
 
 In `JournalViewModel`:
@@ -87,6 +106,10 @@ Here, date fetch rules live in one place.
 
 That reduces duplicated query predicates in screens.
 
+In teacher terms:
+- ViewModel asks “get entry for day”
+- repository decides *how* to query
+
 ## Common confusion
 
 - “Why two fetchEntry methods?”  
@@ -106,4 +129,10 @@ It keeps query details out of UI logic.
 
 ## Read next
 
-- Next page: [14-journal-ui-and-viewmodel.md](./14-journal-ui-and-viewmodel.md)
+[14-journal-ui-and-viewmodel.md](./14-journal-ui-and-viewmodel.md)
+
+## Quick check
+
+1. Why does repository have both `fetchEntry(for:)` and `fetchEntry(dayStart:)`?
+2. What bug risk is reduced by day normalization?
+3. Where in ViewModel is this repository called first?

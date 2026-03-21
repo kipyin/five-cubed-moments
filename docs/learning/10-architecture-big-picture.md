@@ -1,131 +1,106 @@
-# Architecture: big picture
+# 10 — Architecture big picture
 
-This app is split into clear layers.
+## What you will learn
 
-That helps keep code calm and easy to change.
+You will learn the app’s “who does what” map.
 
-Use this page first to build a mental map.
-Then details in later pages will make sense faster.
+After this page, you should know:
+- where UI code belongs
+- where data query rules belong
+- where shared logic belongs
 
-## Main layers
+---
 
-Source root: `GraceNotes/GraceNotes/`
+## Layer map (real repo)
 
-- `Application/`  
-  App entry and startup flow.
-- `Data/`  
-  Models, persistence, and repository queries.
-- `Features/`  
-  Screen-level UI and view logic.
-- `Services/`  
-  Shared logic (summarization, reminders).
-- `DesignSystem/`  
-  Colors, fonts, spacing, shared styles.
+Source root: `../../GraceNotes/GraceNotes/`
 
-## Quick map of “who owns what”
+- `Application/` -> app startup + root navigation
+- `Features/` -> screens and screen state
+- `Data/` -> models + repository + persistence
+- `Services/` -> reusable behavior across features
+- `DesignSystem/` -> shared look and style
 
-- `Application/` decides what root UI is shown.
-- `Features/` renders screens and user interactions.
-- `Data/` owns persisted models and query rules.
-- `Services/` handles shared logic used by features.
-- `DesignSystem/` keeps look and feel consistent.
+---
 
-## Real snippet map (one-liners)
+## Real snippet set
 
-From app root:
+### Snippet A: root startup owner
+
+File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
 
 ```swift
 @StateObject private var startupCoordinator: StartupCoordinator
 ```
 
-File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
+### Snippet B: screen state owner
 
-From Today screen:
+File: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
 
 ```swift
 @State private var viewModel = JournalViewModel()
 ```
 
-File: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
+### Snippet C: data boundary in ViewModel
 
-From ViewModel:
+File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
 
 ```swift
 @ObservationIgnored private let repository: JournalRepository
 ```
 
-File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
+### Snippet D: query boundary
 
-From repository:
+File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
 
 ```swift
 func fetchEntry(for date: Date, context: ModelContext) throws -> JournalEntry?
 ```
 
-File: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
+---
 
-## Why this split is used here
+## How these snippets work together
 
-This repo tries to keep boundaries explicit:
+1. App root owns startup state object.
+2. Screen owns UI-facing ViewModel state.
+3. ViewModel calls repository for data fetch rules.
+4. Repository talks to persistence/query APIs.
 
-- Views render UI.
-- ViewModels coordinate actions.
-- Repositories fetch/write data.
-- Services handle cross-cutting logic.
+This is the practical architecture in this app.
 
-You can see this in:
+---
 
-- App entry: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
-- Journal screen: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
-- Journal ViewModel: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
-- Repository: `../../GraceNotes/GraceNotes/Data/JournalRepository.swift`
+## Why this design is used here
 
-In short:
-- UI files should not carry data query rules.
-- Data query rules should not be scattered across screens.
+If query logic lived in views:
+- screen files would grow fast
+- behavior would duplicate
+- testing would be harder
 
-## One real call path (Today tab)
+If everything lived in repository:
+- UI state transitions would become messy
 
-1. `GraceNotesApp` builds `TabView`.
-2. Today tab shows `JournalScreen`.
-3. `JournalScreen` triggers `viewModel.loadTodayIfNeeded(using:)`.
-4. `JournalViewModel` calls `JournalRepository.fetchEntry(...)`.
-5. User edits text.
-6. ViewModel schedules autosave and writes back through `ModelContext.save()`.
+Current split is a balanced middle.
 
-## Another real call path (Review insights)
+---
 
-1. Review tab shows `ReviewScreen`.
-2. `ReviewScreen` asks `ReviewInsightsProvider` for insights.
-3. Provider tries cloud insights when AI toggle is on and key is usable.
-4. If cloud path fails, provider falls back to deterministic generator.
+## Common mistake
 
-Files:
+Treating all non-UI logic as “service” logic.
 
-- `../../GraceNotes/GraceNotes/Features/Journal/Views/ReviewScreen.swift`
-- `../../GraceNotes/GraceNotes/Features/Journal/Services/ReviewInsightsProvider.swift`
+In this repo:
+- screen behavior state -> ViewModel
+- data fetch/write rules -> repository
+- cross-feature helper logic -> service
 
-## Common confusion
+---
 
-- “Is ViewModel the same as repository?”  
-  No. ViewModel coordinates UI state. Repository handles fetch rules.
+## Quick check
 
-- “Do Services always call network?”  
-  No. Some services are local-only (for example deterministic summarization logic).
-
-- “Is this strict MVVM?”  
-  Not a textbook version. It is a practical split that keeps boundaries clear.
-
-## If you know Python
-
-Think in layers like this:
-
-- SwiftUI `View` ~= Python web template/component layer
-- ViewModel ~= controller/service object
-- `JournalRepository` ~= data access object
-
-But unlike many Python apps, this is a local iOS app with on-device persistence.
+1. Which layer owns `JournalRepository`?
+2. Which layer owns `JournalScreen`?
+3. Which layer owns `StartupCoordinator`?
 
 ## Read next
 
-- Next page: [11-app-startup-flow.md](./11-app-startup-flow.md)
+[11-app-startup-flow.md](./11-app-startup-flow.md)

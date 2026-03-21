@@ -1,4 +1,11 @@
-# Tests and mocks
+# 19 — Tests and mocks
+
+## What you will learn
+
+You will learn:
+- where to find high-signal tests in this repo
+- how mocks/spies are used here
+- how to run focused tests first
 
 This repo has unit tests and UI tests.
 
@@ -40,6 +47,11 @@ private(set) var summarizeCallCount = 0
 ```swift
 static var mockResponse: ((URLRequest) -> (Data?, HTTPURLResponse?, Error?))?
 ```
+
+How to read these snippets:
+- first line defines deterministic summarizer fake
+- second line tracks invocation count
+- third line injects network response behavior for URLSession tests
 
 ## What is covered well
 
@@ -88,6 +100,10 @@ Real snippet:
 throw XCTSkip("Skipping due to known hosted SwiftData malloc crash on current iOS simulator runtime.")
 ```
 
+How to read this snippet:
+- skip is intentional and documented
+- this prevents false failures from known environment issue
+
 ## Running tests
 
 Requires macOS + Xcode.
@@ -133,5 +149,10 @@ The test doubles are the same idea as mocks/stubs in Python testing.
 
 ## Read next
 
-- Move to Swift track page 20:
-  [20-swift-for-python-types-and-optionals.md](./20-swift-for-python-types-and-optionals.md)
+[20-swift-for-python-types-and-optionals.md](./20-swift-for-python-types-and-optionals.md)
+
+## Quick check
+
+1. Which test double helps intercept network requests?
+2. Which snippet shows call-count tracking?
+3. Why is `XCTSkip` sometimes the correct behavior?

@@ -1,4 +1,11 @@
-# Settings, import, and export
+# 16 — Settings, import, export
+
+## What you will learn
+
+You will learn:
+- where settings state is stored
+- how backup export is created
+- how import validation + merge works
 
 This page focuses on user trust features:
 - where data is stored
@@ -23,6 +30,10 @@ Real snippet:
 @AppStorage("useCloudSummarization") private var useCloudSummarization = false
 ```
 
+How to read this snippet:
+- this setting is persisted in user defaults
+- UI toggle and behavior can stay in sync across launches
+
 ## Data & Privacy section
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/DataPrivacySettingsSection.swift`
@@ -43,6 +54,10 @@ Real snippet:
 ```swift
 @Environment(\.persistenceRuntimeSnapshot) private var persistenceRuntimeSnapshot
 ```
+
+How to read this snippet:
+- screen reads runtime storage state from environment
+- UI copy can reflect real startup outcome (including fallback)
 
 ## Import/export screen
 
@@ -72,6 +87,10 @@ Real snippets:
 let summary = try await Task.detached(priority: .userInitiated) {
 ```
 
+How to read these snippets:
+- first block opens system file picker
+- second block runs import work away from UI thread
+
 ## Export service
 
 File: `../../GraceNotes/GraceNotes/Features/Settings/Services/JournalDataExportService.swift`
@@ -89,6 +108,10 @@ Real snippet:
 ```swift
 let filename = "five-cubed-journal-export-\(timestampString(from: now)).json"
 ```
+
+How to read this snippet:
+- export file name includes timestamp
+- this helps users keep multiple backup files
 
 ## Import service
 
@@ -123,6 +146,10 @@ static let maxImportEntryCount = 10_000
 let entries = dedupeByCalendarDayLastWins(archive.entries, calendar: calendar)
 ```
 
+How to read these snippets:
+- first two lines enforce size/count safety
+- third line prevents duplicate rows for the same day
+
 ## iCloud account status helper
 
 Files:
@@ -153,4 +180,10 @@ Service code does decode/validate/merge rules.
 
 ## Read next
 
-- Next page: [17-reminders.md](./17-reminders.md)
+[17-reminders.md](./17-reminders.md)
+
+## Quick check
+
+1. Which line shows import runs in detached task?
+2. Which line enforces 10,000-entry limit?
+3. Which line dedupes by day before write?

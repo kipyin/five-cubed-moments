@@ -1,280 +1,166 @@
-# Orientation
+# 01 — Orientation
 
-This page helps you get your bearings in this repo.
+## What you will learn
 
-It covers:
-- folder layout
-- how to open the project
-- where to start reading code
+By the end of this page, you should be able to answer:
 
-If you feel lost, come back to this page first.
+1. Where is app entry?
+2. Where is startup logic?
+3. Where does Today screen load/save data?
+4. Which folder should I open first when I debug?
 
-## 1) Folder layout
+---
 
-At repo root (`/workspace`), start here:
+## Repo map (first 30 seconds)
 
-- `GraceNotes/` — app project folder  
-  - contains `GraceNotes.xcodeproj`
-  - contains the app source in `GraceNotes/GraceNotes/`
-- `GraceNotesTests/` — unit tests
-- `GraceNotesUITests/` — UI tests
-- `docs/learning/` — this learning path
+At repo root:
 
-Inside `GraceNotes/GraceNotes/`, these are the main app layers:
+- `GraceNotes/` -> app project + app source
+- `GraceNotesTests/` -> unit tests
+- `GraceNotesUITests/` -> UI tests
+- `docs/learning/` -> this guide
 
-- `Application/` — app entry and startup flow
-- `Data/` — models, repository, persistence setup
-- `Features/` — screen-level code (Journal, Settings, Onboarding)
-- `Services/` — cross-feature logic (summarization, reminders)
-- `DesignSystem/` — app theme and shared UI styles
+Inside `GraceNotes/GraceNotes/`:
 
-### Fast mental model
+- `Application/` -> app start and root navigation
+- `Data/` -> models + repository + persistence
+- `Features/` -> screen code
+- `Services/` -> shared behavior (summarization/reminders)
+- `DesignSystem/` -> colors/fonts/spacing
 
-- `Application/` decides what starts.
-- `Features/` is what user sees.
-- `Data/` stores and fetches entries.
-- `Services/` supports feature logic.
+---
 
-## 2) How to open the project
+## Platform truth
 
-Use macOS + Xcode 15+.
-
-1. Open Xcode.
-2. Open `GraceNotes/GraceNotes.xcodeproj`.
-3. Select a scheme (`GraceNotes` or `GraceNotes (Demo)`).
-4. Run with a simulator.
-
-### Important platform truth
-
-On Linux, you cannot run this iOS app.
-
-You also cannot run `xcodebuild test` here.
-That needs macOS + Xcode + iOS Simulator.
+You need macOS + Xcode to run this iOS app.
 
 On Linux, you can still:
 - read code
 - read tests
 - run `swiftlint lint`
 
-## 2.5) First-day reading plan (no coding yet)
+---
 
-If this is your first day in the repo:
+## First real code chain to read
 
-1. Read this page fully.
-2. Open `GraceNotesApp.swift` and `StartupCoordinator.swift`.
-3. Open `JournalScreen.swift` and `JournalViewModel.swift`.
-4. Open `JournalRepository.swift`.
-5. Write your own 6-step flow summary.
+Follow this order:
 
-If you can explain that flow, you are ready for the next pages.
+1. `Application/GraceNotesApp.swift`
+2. `Application/StartupCoordinator.swift`
+3. `Data/Persistence/SwiftData/PersistenceController.swift`
+4. `Features/Journal/Views/JournalScreen.swift`
+5. `Features/Journal/ViewModels/JournalViewModel.swift`
+6. `Data/JournalRepository.swift`
 
-## 3) Where to start reading code
+This is the minimum path to understand “open app -> load today -> save edits.”
 
-Use this exact order first.
+---
 
-### Step A — App entry
+## Real snippet 1 (app entry)
 
-File: `GraceNotes/GraceNotes/Application/GraceNotesApp.swift`  
-Type: `GraceNotesApp`
-
-Read:
-- `init()` (startup setup)
-- `body` (root view switching)
-- `startupRootView`
-- `readyContent`
-- `mainTabView`
-
-This shows how the app decides:
-- loading screen vs ready screen
-- onboarding vs main tabs
-
-Real snippets:
+File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
 
 ```swift
 @main
 struct GraceNotesApp: App {
 ```
 
+### How this snippet works
+
+- `@main` tells Swift this is the app entry point.
+- `GraceNotesApp` is the root container for startup and tab setup.
+
+### Why this matters in this app
+
+If you do not start here, later files feel disconnected.
+This file decides onboarding vs tabs and test vs normal startup path.
+
+---
+
+## Real snippet 2 (startup state machine)
+
+File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
+
 ```swift
-if isRunningUnitTests {
-    Color.clear
+enum Phase {
+    case loading
+    case reassurance
+    case retryableFailure(message: String)
+    case ready(PersistenceController)
 }
 ```
 
-### Step B — Startup state machine
+### How this snippet works
 
-File: `GraceNotes/GraceNotes/Application/StartupCoordinator.swift`  
-Type: `StartupCoordinator`
+- Startup is modeled as explicit states.
+- UI can render different screens for each state.
 
-Read:
-- `Phase` enum
-- `startIfNeeded()`
-- `beginStartupAttempt()`
-- `handleStartupSuccess(...)`
-- `handleStartupFailure(...)`
+### Why this matters in this app
 
-This is the startup lifecycle controller.
+Startup can fail or take time (persistence setup, cloud fallback).
+This enum keeps those cases clear instead of hidden booleans.
 
-Real snippets:
+---
 
-```swift
-func startIfNeeded() {
-    guard !hasStarted else { return }
-```
+## Real snippet 3 (Today load trigger)
 
-```swift
-phase = .ready(controller)
-```
-
-### Step C — Persistence bootstrap
-
-File: `GraceNotes/GraceNotes/Data/Persistence/SwiftData/PersistenceController.swift`  
-Type: `PersistenceController`
-
-Read:
-- `makeForStartup()`
-- `makeController(inMemory:cloudSyncEnabled:)`
-- cloud fallback path in `catch` block
-
-This is where SwiftData container setup happens.
-
-Real snippets:
-
-```swift
-let schema = Schema([JournalEntry.self])
-```
-
-```swift
-let container = try ModelContainer(for: schema, configurations: configuration)
-```
-
-### Step D — Today screen
-
-File: `GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`  
-Type: `JournalScreen`
-
-Read:
-- section layout (Gratitudes, Needs, People in Mind)
-- `.task` that triggers initial load
-- calls into `JournalViewModel`
-
-Real snippets:
-
-```swift
-@State private var viewModel = JournalViewModel()
-```
+File: `../../GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift`
 
 ```swift
 viewModel.loadTodayIfNeeded(using: modelContext)
 ```
 
-### Step E — Today screen logic
+### How this snippet works
 
-File: `GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`  
-Type: `JournalViewModel`
+- Screen asks ViewModel to load one entry for today.
+- ViewModel uses repository/persistence to fetch or create.
 
-Read:
-- `loadTodayIfNeeded(using:)`
-- `loadEntry(for:using:)`
-- `persistChanges()`
-- `completionLevel`
+### Why this matters in this app
 
-Then read:
+Load logic is in ViewModel, not in SwiftUI view body.
+That keeps UI code simpler and easier to test.
 
-File: `GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel+ChipEditing.swift`
+---
 
-This extension contains chip add/update/remove behavior.
+## Real snippet 4 (save debounce)
 
-Real snippets:
+File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`
 
 ```swift
-autosaveTrigger
-    .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+.debounce(for: .milliseconds(400), scheduler: RunLoop.main)
 ```
 
-```swift
-try context.save()
-```
+### How this snippet works
 
-### Step F — Repository reads
+- Many fast edits are grouped.
+- Save runs after short quiet period.
 
-File: `GraceNotes/GraceNotes/Data/JournalRepository.swift`  
-Type: `JournalRepository`
+### Why this matters in this app
 
-Read:
-- `fetchAllEntries(context:)`
-- `fetchEntry(for:context:)`
-- `fetchEntry(dayStart:context:)`
+Typing stays smooth.
+App avoids saving on every keystroke.
 
-This is the data query layer used by the ViewModel.
+---
 
-Real snippets:
+## Common mistake
 
-```swift
-let dayStart = calendar.startOfDay(for: date)
-```
+Reading only `JournalScreen.swift` and assuming that is the full behavior.
 
-```swift
-entry.entryDate >= dayStart && entry.entryDate < nextDay
-```
+Most real logic is in:
+- `JournalViewModel`
+- `JournalRepository`
+- persistence setup files
 
-## 3.5) What to skip at first
+---
 
-Do not start from:
+## Quick check
 
-- large style/theme constants
-- deep test edge cases
-- cloud prompt text details
+1. Which file defines startup phases?
+2. Which file contains `loadTodayIfNeeded`?
+3. Which file contains date-range fetch (`dayStart` to `nextDay`)?
 
-Start with the app path first. Then return to those later.
+If you can answer quickly, move to page 10.
 
-## 4) If you know Python
+## Read next
 
-### `struct` vs `class`
-
-Swift `struct` is a value type.  
-Swift `class` is a reference type.
-
-In this repo:
-- `JournalItem` is a `struct` (`Data/Models/JournalItem.swift`)
-- `JournalEntry` is a `class` with `@Model` (`Data/Models/JournalEntry.swift`)
-
-### Optionals are like explicit `None`
-
-`String?` or `[JournalItem]?` means value may be missing.  
-You must unwrap before use.
-
-In this repo:
-- `JournalEntry.gratitudes` is `[JournalItem]?`
-- many reads use `(entry.gratitudes ?? [])`
-
-### Protocols are interface contracts
-
-Similar to a Python abstract interface pattern.
-
-In this repo:
-- `Summarizer` protocol in `Services/Summarization/Summarizer.swift`
-- implementations: `CloudSummarizer`, `DeterministicChipLabelSummarizer`
-
-### `async/await` and `Task`
-
-Similar idea to Python `asyncio`, but Swift uses structured concurrency.
-
-In this repo:
-- async summarize flow in `JournalViewModel+ChipEditing.swift`
-- background startup work in `StartupCoordinator.swift`
-
-## 4.5) Common confusion for Python developers
-
-- “Why so many explicit types?”  
-  Swift favors compile-time clarity over runtime guessing.
-
-- “Why are there separate extensions for ViewModel?”  
-  It keeps one file focused and easier to scan.
-
-- “Why are some properties wrapped like `@State`/`@AppStorage`?”  
-  SwiftUI uses wrappers to declare ownership and persistence behavior.
-
-## 5) What to read next
-
-After this page, go back to [README](./README.md) and continue with the repo track.
+[10-architecture-big-picture.md](./10-architecture-big-picture.md)

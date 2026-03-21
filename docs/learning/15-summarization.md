@@ -1,4 +1,11 @@
-# Summarization flow
+# 15 — Summarization flow
+
+## What you will learn
+
+You will learn:
+- how summarizer implementation is selected
+- what deterministic path really does
+- where cloud fallback happens
 
 This page follows the real chip label path used now.
 
@@ -38,6 +45,10 @@ if useCloud, ApiSecrets.isCloudApiKeyConfigured {
 return DeterministicChipLabelSummarizer()
 ```
 
+How to read this snippet:
+- first branch: cloud only when both toggle and key are valid
+- second line: deterministic default when cloud is not active
+
 ## Deterministic path
 
 File: `../../GraceNotes/GraceNotes/Services/Summarization/DeterministicChipLabelSummarizer.swift`
@@ -53,6 +64,10 @@ Real snippet:
 ```swift
 return SummarizationResult(label: trimmed, isTruncated: false)
 ```
+
+How to read this snippet:
+- deterministic path does not “invent” a new phrase
+- it returns trimmed original text as label
 
 Display truncation is applied separately when needed by:
 
@@ -90,6 +105,10 @@ if let result = try? await fallback.summarize(sentence, section: section) {
     return result
 }
 ```
+
+How to read these snippets:
+- first line is network call
+- second block is graceful fallback path
 
 API key source:
 
@@ -140,4 +159,10 @@ It picks an implementation at runtime based on settings.
 
 ## Read next
 
-- Next page: [16-settings-import-export.md](./16-settings-import-export.md)
+[16-settings-import-export.md](./16-settings-import-export.md)
+
+## Quick check
+
+1. Which exact condition enables cloud summarizer?
+2. What does deterministic summarizer return?
+3. Which line shows cloud fallback to deterministic path?

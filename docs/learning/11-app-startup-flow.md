@@ -1,39 +1,32 @@
-# App startup flow
+# 11 — App startup flow
 
-This page follows the real startup call path.
+## What you will learn
 
-Use this page to answer:
-- What happens before the first screen appears?
-- Where does startup failure handling live?
+You will learn what runs before the first normal screen appears.
 
-## Start point
+You will also learn where retry/failure behavior is defined.
 
-File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`  
-Type: `GraceNotesApp`
+---
 
-`@main` marks this as app entry.
+## Real snippet 1: app entry
 
-Real snippet:
+File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
 
 ```swift
 @main
 struct GraceNotesApp: App {
 ```
 
-## Startup phases
+### How this works
 
-`GraceNotesApp` holds a `StartupCoordinator`.
+- Swift starts here first.
+- Root scene chooses loading UI vs ready UI.
 
-Coordinator phases:
+---
 
-- `.loading`
-- `.reassurance`
-- `.retryableFailure(message:)`
-- `.ready(PersistenceController)`
+## Real snippet 2: startup phases
 
 File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
-
-Real snippet:
 
 ```swift
 enum Phase {
@@ -44,22 +37,16 @@ enum Phase {
 }
 ```
 
-## What happens on launch
+### How this works
 
-1. `GraceNotesApp.init()` checks test flags.
-2. In normal app mode, `startupCoordinator.startIfNeeded()` runs.
-3. Coordinator calls `PersistenceController.makeForStartup()`.
-4. While waiting, UI shows `StartupLoadingView`.
-5. On success, phase changes to `.ready`.
-6. App shows onboarding or main tabs.
+- startup is modeled as explicit states
+- UI can switch cleanly based on state
 
-Real snippet from loading task:
+---
 
-```swift
-startupCoordinator.startIfNeeded()
-```
+## Real snippet 3: startup work
 
-Real snippet from coordinator:
+File: `../../GraceNotes/GraceNotes/Application/StartupCoordinator.swift`
 
 ```swift
 let controller = try await persistenceFactory()
@@ -69,56 +56,21 @@ let controller = try await persistenceFactory()
 phase = .ready(controller)
 ```
 
-## What StartupCoordinator adds
+### How this works
 
-`StartupCoordinator` is useful because it centralizes:
+- coordinator runs async persistence setup
+- when setup succeeds, state becomes ready
+- app can now show normal content
 
-- retry behavior
-- message rotation while loading
-- reassurance delay state
-- failure message mapping
+---
 
-Without it, this logic would spread across views.
+## Real snippet 4: onboarding gate
 
-## Persistence boot
-
-Persistence setup is in:
-
-- `../../GraceNotes/GraceNotes/Data/Persistence/SwiftData/PersistenceController.swift`
-
-Key points:
-
-- Reads iCloud sync preference from `UserDefaults`.
-- Tries to build a SwiftData `ModelContainer`.
-- If cloud setup fails during startup, it can fall back to local-only disk store.
-
-Real snippet:
+File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
 
 ```swift
-if !inMemory, cloudSyncEnabled {
+@AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 ```
-
-```swift
-let container = try ModelContainer(for: schema, configurations: fallbackConfiguration)
-```
-
-The runtime result is recorded in `PersistenceRuntimeSnapshot`.
-That later helps Settings show honest storage status.
-
-## After ready
-
-`GraceNotesApp.readyContent` chooses:
-
-- `OnboardingScreen` when `hasCompletedOnboarding` is false
-- `TabView` when onboarding is done
-
-Tabs:
-
-- Today (`JournalScreen`)
-- Review (`ReviewScreen`)
-- Settings (`SettingsScreen`)
-
-Real snippet:
 
 ```swift
 } else if !hasCompletedOnboarding {
@@ -128,31 +80,41 @@ Real snippet:
 }
 ```
 
-## UI test-specific path
+### How this works
 
-There is special bootstrap logic for UI test sessions in `GraceNotesApp.init()`.
+- first launch: flag is false -> onboarding appears
+- completion callback sets flag true
+- later launches skip onboarding
 
-It can use `PersistenceController.makeForUITesting()`.
+---
 
-That seeds predictable data for tests.
+## Why this design is used here
 
-## Common confusion
+Startup can be slow or fail (persistence init, cloud fallback).
+Explicit phases avoid “blank screen” confusion.
 
-- “Why does app start with loading UI?”  
-  Because persistence setup is async and can fail/retry.
+Onboarding gate at app root keeps first-run logic centralized.
 
-- “Why separate UI-test startup path?”  
-  To keep UI tests stable with known seeded data.
+---
 
-- “Is onboarding shown every time?”  
-  No. It depends on `@AppStorage("hasCompletedOnboarding")`.
+## Common mistake
 
-## If you know Python
+Assuming startup is “just app entry + tab view.”
 
-`StartupCoordinator` is like a small state machine object.
+In this app, startup has:
+- asynchronous work
+- retry path
+- reassurance copy path
+- test-mode path
 
-It owns retry logic and phase transitions, instead of putting that logic in the view.
+---
+
+## Quick check
+
+1. Which file defines startup phases?
+2. Which line switches state to ready?
+3. Where is onboarding completion persisted?
 
 ## Read next
 
-- Next page: [12-data-and-swiftdata.md](./12-data-and-swiftdata.md)
+[12-data-and-swiftdata.md](./12-data-and-swiftdata.md)

@@ -1,4 +1,11 @@
-# Journal UI and ViewModel
+# 14 — Journal UI and ViewModel
+
+## What you will learn
+
+You will learn:
+- what belongs in `JournalScreen`
+- what belongs in `JournalViewModel`
+- how edits become saved data
 
 This is the main feature flow in the app.
 
@@ -30,6 +37,10 @@ Real snippet (initial load trigger):
 viewModel.loadTodayIfNeeded(using: modelContext)
 ```
 
+How to read this snippet:
+- view triggers load
+- view does not build fetch query itself
+
 ## ViewModel responsibilities
 
 File: `../../GraceNotes/GraceNotes/Features/Journal/ViewModels/JournalViewModel.swift`  
@@ -58,6 +69,10 @@ autosaveTrigger
 ```swift
 try context.save()
 ```
+
+How to read these snippets:
+- first block delays rapid save calls
+- second line does actual persistence write
 
 ## Chip editing behavior
 
@@ -89,6 +104,11 @@ gratitudes.append(JournalItem(fullText: trimmed, chipLabel: result.label, isTrun
 if let idx = gratitudes.firstIndex(where: { $0.id == itemId }),
    gratitudes[idx].fullText == expectedFullText {
 ```
+
+How to read these snippets:
+- async summarize result is computed
+- update is applied only if item is still the same item
+- this avoids stale async overwrite
 
 UI-side helper functions are in:
 
@@ -131,4 +151,10 @@ The split is similar to “UI component + view model/controller” in Python UI 
 
 ## Read next
 
-- Next page: [15-summarization.md](./15-summarization.md)
+[15-summarization.md](./15-summarization.md)
+
+## Quick check
+
+1. Which file contains debounce save behavior?
+2. Why does async chip update verify `id` and `fullText` before apply?
+3. Which file should own query predicates: screen or repository?

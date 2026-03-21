@@ -1,4 +1,11 @@
-# Reminders flow
+# 17 — Reminders flow
+
+## What you will learn
+
+You will learn:
+- why reminders use model + scheduler split
+- where permission flow is handled
+- where UI-facing reminder state comes from
 
 Reminders are controlled by a view model + scheduler service split.
 
@@ -27,6 +34,10 @@ Real snippets:
 ```swift
 try await Task.sleep(nanoseconds: 400_000_000)
 ```
+
+How to read these snippets:
+- first line exposes state to UI while protecting write access
+- second line debounces rapid time picker updates
 
 Key methods:
 
@@ -67,6 +78,11 @@ notificationCenter.removePendingNotificationRequests(
     withIdentifiers: [ReminderSettings.notificationIdentifier]
 )
 ```
+
+How to read these snippets:
+- function signature shows async typed result
+- trigger line shows daily repeating reminder scheduling
+- remove call shows explicit disable/cleanup path
 
 ## Reminder settings constants
 
@@ -132,4 +148,10 @@ The UI model calls the service and maps result into user-facing state.
 
 ## Read next
 
-- Next page: [18-onboarding.md](./18-onboarding.md)
+[18-onboarding.md](./18-onboarding.md)
+
+## Quick check
+
+1. Which snippet shows state published to Settings UI?
+2. Which snippet shows daily schedule trigger creation?
+3. Which snippet removes pending reminder request?

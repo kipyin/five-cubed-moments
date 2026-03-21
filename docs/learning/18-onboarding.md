@@ -1,4 +1,11 @@
-# Onboarding flow
+# 18 — Onboarding flow
+
+## What you will learn
+
+You will learn:
+- where onboarding UI is defined
+- where onboarding gate logic lives
+- how completion state is persisted
 
 This page explains first-run behavior and where to edit it.
 
@@ -32,6 +39,10 @@ Real snippets:
 Button(String(localized: "Skip for now"), action: onGetStarted)
 ```
 
+How to read these snippets:
+- first line keeps local page index in this screen
+- second line provides explicit skip action
+
 ## How app decides to show onboarding
 
 File: `../../GraceNotes/GraceNotes/Application/GraceNotesApp.swift`
@@ -64,6 +75,11 @@ Real snippet from app root:
     }
 }
 ```
+
+How to read these snippets:
+- first line reads/writes persisted onboarding flag
+- second block gates onboarding at app root
+- callback marks onboarding complete
 
 ## What onboarding teaches
 
@@ -109,4 +125,10 @@ It is not a database model. It is a simple preference/state flag.
 
 ## Read next
 
-- Next page: [19-tests-and-mocks.md](./19-tests-and-mocks.md)
+[19-tests-and-mocks.md](./19-tests-and-mocks.md)
+
+## Quick check
+
+1. Which line persists onboarding completion state?
+2. Which line exposes “Skip for now” action?
+3. Which file controls whether onboarding appears at launch?

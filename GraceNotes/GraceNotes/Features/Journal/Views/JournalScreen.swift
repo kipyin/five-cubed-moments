@@ -19,6 +19,8 @@ struct JournalScreen: View {
     @State private var celebratingLevel: JournalCompletionLevel?
     @State private var hasInitializedCompletionTracking = false
     @State private var previousCompletionLevel: JournalCompletionLevel = .none
+    @State private var unlockToastLevel: JournalCompletionLevel?
+    @State private var unlockToastDismissTask: Task<Void, Never>?
 
     @State private var gratitudeInput = ""
     @State private var needInput = ""
@@ -170,11 +172,23 @@ struct JournalScreen: View {
             Text("We couldn't create a share image right now. Please try again.")
         }
         .overlay {
-            if showSavedToPhotosToast {
-                VStack {
-                    Spacer()
-                    SavedToPhotosToastView()
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                VStack(spacing: AppTheme.spacingTight) {
+                    if let toastLevel = unlockToastLevel {
+                        HStack {
+                            Spacer(minLength: 0)
+                            JournalUnlockToastView(level: toastLevel)
+                                .transition(unlockToastTransition(for: toastLevel))
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, AppTheme.todayHorizontalPadding)
+                    }
+                    if showSavedToPhotosToast {
+                        SavedToPhotosToastView()
+                    }
                 }
+                .padding(.bottom, AppTheme.spacingSection)
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -197,6 +211,7 @@ struct JournalScreen: View {
             needSummarizationTask?.cancel()
             personSummarizationTask?.cancel()
             statusCelebrationDismissTask?.cancel()
+            unlockToastDismissTask?.cancel()
         }
         .onChange(of: viewModel.completionLevel) { _, newLevel in
             if !hasInitializedCompletionTracking {
@@ -210,9 +225,19 @@ struct JournalScreen: View {
 
             if newRank > previousRank, newLevel != .none {
                 triggerStatusCelebration(for: newLevel)
+                presentUnlockToast(for: newLevel)
             } else if newRank < previousRank {
                 statusCelebrationDismissTask?.cancel()
                 celebratingLevel = nil
+                unlockToastDismissTask?.cancel()
+                let dismissingLevel = unlockToastLevel
+                let fallbackExit = Animation.easeOut(duration: 0.16)
+                let toastExit = reduceMotion
+                    ? nil
+                    : dismissingLevel.map { AppTheme.unlockToastExitAnimation(for: $0) } ?? fallbackExit
+                withAnimation(toastExit) {
+                    unlockToastLevel = nil
+                }
             }
 
             previousCompletionLevel = newLevel
@@ -436,6 +461,61 @@ private extension JournalScreen {
             if !focus.wrappedValue {
                 focus.wrappedValue = true
             }
+        }
+    }
+
+    private func presentUnlockToast(for level: JournalCompletionLevel) {
+        unlockToastDismissTask?.cancel()
+        let entrance = reduceMotion ? nil : AppTheme.unlockToastEntranceAnimation(for: level)
+        withAnimation(entrance) {
+            unlockToastLevel = level
+        }
+        unlockToastDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(unlockToastVisibleSeconds(for: level)))
+            guard !Task.isCancelled else { return }
+            let exit = reduceMotion ? nil : AppTheme.unlockToastExitAnimation(for: level)
+            withAnimation(exit) {
+                unlockToastLevel = nil
+            }
+        }
+    }
+
+    private func unlockToastTransition(for level: JournalCompletionLevel) -> AnyTransition {
+        if reduceMotion {
+            return .opacity
+        }
+        switch level {
+        case .quickCheckIn:
+            return .move(edge: .bottom).combined(with: .opacity)
+        case .standardReflection:
+            return .asymmetric(
+                insertion: .move(edge: .bottom)
+                    .combined(with: .opacity)
+                    .combined(with: .scale(scale: 0.96, anchor: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .bottom))
+            )
+        case .fullFiveCubed:
+            return .asymmetric(
+                insertion: .move(edge: .bottom)
+                    .combined(with: .opacity)
+                    .combined(with: .scale(scale: 0.93, anchor: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .bottom))
+            )
+        case .none:
+            return .opacity
+        }
+    }
+
+    private func unlockToastVisibleSeconds(for level: JournalCompletionLevel) -> Double {
+        switch level {
+        case .quickCheckIn:
+            return 2.2
+        case .standardReflection:
+            return 2.75
+        case .fullFiveCubed:
+            return 3.05
+        case .none:
+            return 0
         }
     }
 

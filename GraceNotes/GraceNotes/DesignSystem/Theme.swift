@@ -181,6 +181,32 @@ enum AppTheme {
             return .easeOut(duration: 0.12)
         }
     }
+
+    static func unlockToastEntranceAnimation(for level: JournalCompletionLevel) -> Animation {
+        switch level {
+        case .quickCheckIn:
+            return .easeOut(duration: 0.22)
+        case .standardReflection:
+            return celebrationEntranceAnimation(for: .standardReflection)
+        case .fullFiveCubed:
+            return celebrationEntranceAnimation(for: .fullFiveCubed)
+        case .none:
+            return .easeOut(duration: 0.12)
+        }
+    }
+
+    static func unlockToastExitAnimation(for level: JournalCompletionLevel) -> Animation {
+        switch level {
+        case .quickCheckIn:
+            return .easeOut(duration: 0.2)
+        case .standardReflection:
+            return celebrationExitAnimation(for: .standardReflection)
+        case .fullFiveCubed:
+            return celebrationExitAnimation(for: .fullFiveCubed)
+        case .none:
+            return .easeOut(duration: 0.12)
+        }
+    }
 }
 
 // MARK: - Input Styling
@@ -203,6 +229,29 @@ struct WarmPaperInputStyle: ViewModifier {
 extension View {
     func warmPaperInputStyle() -> some View {
         modifier(WarmPaperInputStyle())
+    }
+
+    /// Soft tier-tinted halo around journal toasts; collapses to a single modest shadow when Reduce Transparency is on.
+    func journalToastOuterGlow(accentColor: Color, reduceTransparency: Bool) -> some View {
+        modifier(JournalToastOuterGlowModifier(accentGlow: accentColor, reduceTransparency: reduceTransparency))
+    }
+}
+
+/// Feathered outer glow for floating journal toasts (unlock, saved-to-photos).
+private struct JournalToastOuterGlowModifier: ViewModifier {
+    let accentGlow: Color
+    let reduceTransparency: Bool
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .shadow(color: .black.opacity(0.16), radius: 4, x: 0, y: 2)
+        } else {
+            content
+                .shadow(color: accentGlow.opacity(0.14), radius: 6, x: 0, y: 2)
+                .shadow(color: accentGlow.opacity(0.09), radius: 16, x: 0, y: 3)
+                .shadow(color: accentGlow.opacity(0.05), radius: 28, x: 0, y: 0)
+        }
     }
 }
 

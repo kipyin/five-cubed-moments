@@ -139,6 +139,7 @@ struct SequentialSectionView: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
+    let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
     @Binding var inputText: String
     let editingIndex: Int?
@@ -167,6 +168,7 @@ struct SequentialSectionView: View {
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
+        onboardingState: JournalOnboardingSectionState = .standard,
         isTransitioning: Bool = false,
         inputText: Binding<String>,
         editingIndex: Int?,
@@ -184,6 +186,7 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
+        self.onboardingState = onboardingState
         self.isTransitioning = isTransitioning
         self._inputText = inputText
         self.editingIndex = editingIndex
@@ -248,6 +251,68 @@ struct SequentialSectionView: View {
         return items.count < slotCount
     }
 
+    private var showsGuidedContainer: Bool {
+        onboardingState != .standard
+    }
+
+    private var isLockedByGuidance: Bool {
+        onboardingState.isLocked
+    }
+
+    private var isInteractionEnabled: Bool {
+        !isTransitioning && !isLockedByGuidance
+    }
+
+    private var sectionContentOpacity: Double {
+        switch onboardingState {
+        case .standard:
+            return isTransitioning ? 0.78 : 1
+        case .active:
+            return isTransitioning ? 0.82 : 1
+        case .available:
+            return isTransitioning ? 0.76 : 0.94
+        case .locked:
+            return isTransitioning ? 0.64 : 0.7
+        }
+    }
+
+    private var sectionTitleColor: Color {
+        switch onboardingState {
+        case .standard, .available:
+            return AppTheme.journalTextPrimary
+        case .active:
+            return AppTheme.accentText
+        case .locked:
+            return AppTheme.journalTextMuted
+        }
+    }
+
+    private var sectionContainerBackground: Color {
+        switch onboardingState {
+        case .standard:
+            return .clear
+        case .active:
+            return AppTheme.journalPaper.opacity(0.9)
+        case .available:
+            return AppTheme.journalPaper.opacity(0.58)
+        case .locked:
+            return AppTheme.journalPaper.opacity(0.42)
+        }
+    }
+
+    private var sectionContainerBorder: Color {
+        switch onboardingState {
+        case .standard:
+            return .clear
+        case .active:
+            return AppTheme.journalInputBorder
+        case .available:
+            return AppTheme.journalBorder
+        case .locked:
+            return AppTheme.journalBorder.opacity(0.72)
+        }
+    }
+
     private var canScrollChipsLeft: Bool {
         canScrollLeft(for: chipScrollSnapshot.metrics)
     }
@@ -258,13 +323,22 @@ struct SequentialSectionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-            HStack {
-                Text(title)
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.journalTextPrimary)
-                Spacer(minLength: AppTheme.spacingTight)
-                sectionProgressDots
-                    .padding(.trailing, Self.sectionProgressDotsTrailingInset)
+            VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+                HStack {
+                    Text(title)
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(sectionTitleColor)
+                    Spacer(minLength: AppTheme.spacingTight)
+                    sectionProgressDots
+                        .padding(.trailing, Self.sectionProgressDotsTrailingInset)
+                }
+
+                if let guidanceNote = onboardingState.guidanceNote {
+                    Text(guidanceNote)
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.journalTextMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             if !items.isEmpty || showAddChip {
@@ -298,7 +372,7 @@ struct SequentialSectionView: View {
                         }
                     }
                 }
-                .allowsHitTesting(!isTransitioning)
+                .allowsHitTesting(isInteractionEnabled)
                 .mask {
                     HStack(spacing: 0) {
                         edgeMask(.leading)
@@ -338,7 +412,7 @@ struct SequentialSectionView: View {
                         .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
                         .accessibilityLabel(inputAccessibilityLabel)
                         .accessibilityHint(placeholder)
-                        .disabled(isTransitioning)
+                        .disabled(!isInteractionEnabled)
                 } else {
                     TextField(
                         "",
@@ -355,12 +429,25 @@ struct SequentialSectionView: View {
                         .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
                         .accessibilityLabel(inputAccessibilityLabel)
                         .accessibilityHint(placeholder)
-                        .disabled(isTransitioning)
+                        .disabled(!isInteractionEnabled)
                 }
             }
 
         }
-        .opacity(isTransitioning ? 0.78 : 1)
+        .padding(showsGuidedContainer ? AppTheme.spacingRegular : 0)
+        .background {
+            if showsGuidedContainer {
+                RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
+                    .fill(sectionContainerBackground)
+            }
+        }
+        .overlay {
+            if showsGuidedContainer {
+                RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
+                    .stroke(sectionContainerBorder, lineWidth: 1)
+            }
+        }
+        .opacity(sectionContentOpacity)
         .overlay(alignment: .topTrailing) {
             if isTransitioning {
                 HStack(spacing: 6) {

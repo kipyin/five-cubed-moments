@@ -20,6 +20,17 @@ enum JournalOnboardingStorageKeys {
 final class JournalOnboardingProgress {
     private let defaults: UserDefaults
 
+    private static let hasCompletedOnboardingKey = "hasCompletedOnboarding"
+    private static let reminderTimeIntervalKey = "dailyReminderTimeInterval"
+    private static let useCloudSummarizationKey = "useCloudSummarization"
+    private static let useAIReviewInsightsKey = "useAIReviewInsights"
+    private static let legacyTutorialKeys = [
+        JournalTutorialStorageKeys.dismissedSeedGuidance,
+        JournalTutorialStorageKeys.dismissedHarvestGuidance,
+        JournalTutorialStorageKeys.celebratedFirstSeed,
+        JournalTutorialStorageKeys.celebratedFirstHarvest
+    ]
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
@@ -45,6 +56,16 @@ final class JournalOnboardingProgress {
         defaults.set(opened, forKey: openedKey(for: suggestion))
     }
 
+    static func resolvedHasCompletedGuidedJournal(using defaults: UserDefaults = .standard) -> Bool {
+        if let storedValue = defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) as? Bool {
+            return storedValue
+        }
+
+        let migratedValue = shouldTreatInstallAsPreviouslyOnboarded(using: defaults)
+        defaults.set(migratedValue, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        return migratedValue
+    }
+
     static func resetAll(in defaults: UserDefaults = .standard) {
         let keys = [
             JournalOnboardingStorageKeys.completedGuidedJournal,
@@ -58,6 +79,26 @@ final class JournalOnboardingProgress {
         for key in keys {
             defaults.removeObject(forKey: key)
         }
+    }
+
+    private static func shouldTreatInstallAsPreviouslyOnboarded(using defaults: UserDefaults) -> Bool {
+        if defaults.object(forKey: hasCompletedOnboardingKey) as? Bool == true {
+            return true
+        }
+
+        if defaults.object(forKey: reminderTimeIntervalKey) != nil {
+            return true
+        }
+
+        if defaults.object(forKey: useCloudSummarizationKey) != nil {
+            return true
+        }
+
+        if defaults.object(forKey: useAIReviewInsightsKey) != nil {
+            return true
+        }
+
+        return legacyTutorialKeys.contains { defaults.object(forKey: $0) != nil }
     }
 
     private func dismissedKey(for suggestion: JournalOnboardingSuggestion) -> String {

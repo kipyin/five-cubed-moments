@@ -40,8 +40,13 @@ struct GraceNotesApp: App {
         isRunningUITests = isUITestBundle || hasUITestLaunchArgument || hasUITestEnvironmentFlag
         isRunningUnitTests = isXCTestSession && !isRunningUITests
 
+        if !isRunningUnitTests {
+            _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
+        }
+
         if processInfo.arguments.contains("-reset-journal-tutorial") {
             JournalTutorialProgress.resetAll()
+            JournalOnboardingProgress.resetAll()
         }
 
         let preloadedUITestController: PersistenceController?

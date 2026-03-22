@@ -5,7 +5,7 @@ struct SettingsScreen: View {
     /// Default false to align with SummarizerProvider; first launch uses on-device NL summarization.
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
-    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = true
+    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass

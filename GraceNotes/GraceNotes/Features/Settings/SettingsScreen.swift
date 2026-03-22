@@ -6,6 +6,7 @@ struct SettingsScreen: View {
     @AppStorage("useCloudSummarization") private var useCloudSummarization = false
     @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
+    @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -17,97 +18,114 @@ struct SettingsScreen: View {
     @StateObject private var aiCloudStatus = AISettingsCloudStatusModel()
     @State private var isReminderPickerExpanded = false
     @State private var isReminderToggleOn = false
+    @State private var highlightedTarget: SettingsScrollTarget?
+    @State private var settingsHighlightDismissTask: Task<Void, Never>?
 
     var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-                    aiConnectionControlRow
+        ScrollViewReader { proxy in
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+                        aiConnectionControlRow
+                    }
+                    .padding(.vertical, AppTheme.spacingTight / 2)
+                    .id(SettingsScrollTarget.aiFeatures)
+                    .settingsTargetHighlight(highlightedTarget == .aiFeatures)
+                } header: {
+                    Text(String(localized: "Settings.ai.sectionTitle"))
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(AppTheme.settingsTextPrimary)
                 }
-                .padding(.vertical, AppTheme.spacingTight / 2)
-            } header: {
-                Text(String(localized: "Settings.ai.sectionTitle"))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.settingsTextPrimary)
-            }
 
-            Section {
-                VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-                    reminderTimeControlRow
-                    if reminderState.isReminderEnabled && isReminderPickerExpanded {
-                        reminderTimePicker
+                Section {
+                    VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+                        reminderTimeControlRow
+                        if reminderState.isReminderEnabled && isReminderPickerExpanded {
+                            reminderTimePicker
+                        }
+                        if reminderState.isPermissionDenied {
+                            reminderPermissionDeniedGuidance
+                        } else if reminderState.liveStatus == .unavailable {
+                            reminderUnavailableGuidance
+                        }
                     }
-                    if reminderState.isPermissionDenied {
-                        reminderPermissionDeniedGuidance
-                    } else if reminderState.liveStatus == .unavailable {
-                        reminderUnavailableGuidance
+                    .padding(.vertical, AppTheme.spacingTight / 2)
+                    .id(SettingsScrollTarget.reminders)
+                    .settingsTargetHighlight(highlightedTarget == .reminders)
+                    .alert(
+                        String(localized: "Unable to update reminder"),
+                        isPresented: reminderErrorIsPresented
+                    ) {
+                        Button(String(localized: "OK"), role: .cancel) {
+                            reminderState.clearTransientError()
+                        }
+                    } message: {
+                        Text(reminderState.transientErrorMessage ?? String(localized: "Please try again."))
                     }
+                } header: {
+                    Text(String(localized: "Reminders"))
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(AppTheme.settingsTextPrimary)
                 }
-                .padding(.vertical, AppTheme.spacingTight / 2)
-                .alert(
-                    String(localized: "Unable to update reminder"),
-                    isPresented: reminderErrorIsPresented
-                ) {
-                    Button(String(localized: "OK"), role: .cancel) {
-                        reminderState.clearTransientError()
-                    }
-                } message: {
-                    Text(reminderState.transientErrorMessage ?? String(localized: "Please try again."))
-                }
-            } header: {
-                Text(String(localized: "Reminders"))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.settingsTextPrimary)
-            }
 
-            DataPrivacySettingsSection(
-                isICloudSyncEnabled: $isICloudSyncEnabled,
-                iCloudAccountState: iCloudAccountState,
-                persistenceRuntimeSnapshot: persistenceRuntimeSnapshot,
-                openSystemSettings: { openSystemSettings() }
-            )
-        }
-        .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
-        .scrollContentBackground(.hidden)
-        .background(AppTheme.settingsBackground)
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
-        }
-        .navigationTitle(String(localized: "Settings"))
-        .onAppear {
-            clampCloudAIFeaturesIfApiKeyMissing()
-        }
-        .task {
-            clampCloudAIFeaturesIfApiKeyMissing()
-            await reminderState.refreshStatus()
-            syncReminderControlState(with: reminderState.liveStatus)
-            iCloudAccountState.refresh()
-            syncAICloudStatusModel()
-            aiCloudStatus.scheduleThrottledAutoCheckIfNeeded()
-        }
-        .onDisappear {
-            aiCloudStatus.onSettingsDisappear()
-        }
-        .onChange(of: scenePhase) { _, newValue in
-            guard newValue == .active else { return }
-            Task {
+                DataPrivacySettingsSection(
+                    isICloudSyncEnabled: $isICloudSyncEnabled,
+                    iCloudAccountState: iCloudAccountState,
+                    persistenceRuntimeSnapshot: persistenceRuntimeSnapshot,
+                    highlightedTarget: highlightedTarget,
+                    openSystemSettings: { openSystemSettings() }
+                )
+            }
+            .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.settingsBackground)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+            }
+            .navigationTitle(String(localized: "Settings"))
+            .onAppear {
+                clampCloudAIFeaturesIfApiKeyMissing()
+            }
+            .task {
+                clampCloudAIFeaturesIfApiKeyMissing()
                 await reminderState.refreshStatus()
+                syncReminderControlState(with: reminderState.liveStatus)
+                iCloudAccountState.refresh()
+                syncAICloudStatusModel()
+                aiCloudStatus.scheduleThrottledAutoCheckIfNeeded()
+                if let target = appNavigation.settingsScrollTarget {
+                    focusSettingsTarget(target, proxy: proxy)
+                }
             }
-            iCloudAccountState.refresh()
-            aiCloudStatus.sceneDidBecomeActive()
-            syncAICloudStatusModel()
-        }
-        .onChange(of: useCloudSummarization) { _, _ in
-            syncAICloudStatusModel()
-        }
-        .onChange(of: useAIReviewInsights) { _, _ in
-            syncAICloudStatusModel()
-        }
-        .onChange(of: reminderState.selectedTime) { _, _ in
-            reminderState.handleSelectedTimeChanged()
-        }
-        .onChange(of: reminderState.liveStatus) { _, newValue in
-            syncReminderControlState(with: newValue)
+            .onDisappear {
+                aiCloudStatus.onSettingsDisappear()
+                settingsHighlightDismissTask?.cancel()
+            }
+            .onChange(of: scenePhase) { _, newValue in
+                guard newValue == .active else { return }
+                Task {
+                    await reminderState.refreshStatus()
+                }
+                iCloudAccountState.refresh()
+                aiCloudStatus.sceneDidBecomeActive()
+                syncAICloudStatusModel()
+            }
+            .onChange(of: useCloudSummarization) { _, _ in
+                syncAICloudStatusModel()
+            }
+            .onChange(of: useAIReviewInsights) { _, _ in
+                syncAICloudStatusModel()
+            }
+            .onChange(of: reminderState.selectedTime) { _, _ in
+                reminderState.handleSelectedTimeChanged()
+            }
+            .onChange(of: reminderState.liveStatus) { _, newValue in
+                syncReminderControlState(with: newValue)
+            }
+            .onChange(of: appNavigation.settingsScrollTarget) { _, newValue in
+                guard let target = newValue else { return }
+                focusSettingsTarget(target, proxy: proxy)
+            }
         }
     }
 
@@ -384,6 +402,24 @@ private extension SettingsScreen {
         isReminderToggleOn = status == .enabled
         if status != .enabled {
             isReminderPickerExpanded = false
+        }
+    }
+
+    func focusSettingsTarget(_ target: SettingsScrollTarget, proxy: ScrollViewProxy) {
+        settingsHighlightDismissTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.24)) {
+            proxy.scrollTo(target, anchor: .center)
+            highlightedTarget = target
+        }
+        appNavigation.clearSettingsTarget(target)
+        settingsHighlightDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.6))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                if highlightedTarget == target {
+                    highlightedTarget = nil
+                }
+            }
         }
     }
 

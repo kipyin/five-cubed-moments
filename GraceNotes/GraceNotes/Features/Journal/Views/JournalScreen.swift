@@ -6,6 +6,7 @@ import UIKit
 
 // swiftlint:disable type_body_length
 struct JournalScreen: View {
+    @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel = JournalViewModel()
@@ -26,6 +27,21 @@ struct JournalScreen: View {
     @State private var unlockToastDismissTask: Task<Void, Never>?
     @State private var tutorialProgress = JournalTutorialProgress()
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
+    @AppStorage(JournalOnboardingStorageKeys.dismissedRemindersSuggestion)
+    private var dismissedRemindersSuggestion = false
+    @AppStorage(JournalOnboardingStorageKeys.dismissedAISuggestion)
+    private var dismissedAISuggestion = false
+    @AppStorage(JournalOnboardingStorageKeys.dismissedICloudSuggestion)
+    private var dismissedICloudSuggestion = false
+    @AppStorage(JournalOnboardingStorageKeys.openedRemindersSuggestion)
+    private var openedRemindersSuggestion = false
+    @AppStorage(JournalOnboardingStorageKeys.openedAISuggestion)
+    private var openedAISuggestion = false
+    @AppStorage(JournalOnboardingStorageKeys.openedICloudSuggestion)
+    private var openedICloudSuggestion = false
+    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudSummarization = false
+    @AppStorage(ReviewInsightsProvider.useAIReviewInsightsKey) private var useAIReviewInsights = false
+    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @AppStorage("journalTutorial.dismissedSeedGuidance") private var dismissedSeedGuidance = false
     @AppStorage("journalTutorial.dismissedHarvestGuidance") private var dismissedHarvestGuidance = false
 
@@ -87,6 +103,17 @@ struct JournalScreen: View {
                             dismissedHarvestGuidance = true
                         }
                     }
+                }
+
+                if let onboardingSuggestion {
+                    JournalOnboardingSuggestionView(
+                        title: suggestionTitle(for: onboardingSuggestion),
+                        message: suggestionMessage(for: onboardingSuggestion),
+                        primaryActionTitle: String(localized: "Open Settings"),
+                        secondaryActionTitle: String(localized: "Not now"),
+                        onPrimaryAction: { openSettings(for: onboardingSuggestion) },
+                        onSecondaryAction: { dismissSuggestion(onboardingSuggestion) }
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
@@ -342,6 +369,42 @@ private extension JournalScreen {
             isReflectionsFocused
     }
 
+    private var onboardingSuggestion: JournalOnboardingSuggestion? {
+        guard entryDate == nil else { return nil }
+
+        if tutorialProgress.hasCelebratedFirstSeed,
+           !dismissedRemindersSuggestion,
+           !openedRemindersSuggestion,
+           !hasConfiguredReminderTime {
+            return .reminders
+        }
+
+        if tutorialProgress.hasCelebratedFirstHarvest,
+           !dismissedAISuggestion,
+           !openedAISuggestion,
+           !aiFeaturesEnabled,
+           ApiSecrets.isCloudApiKeyConfigured {
+            return .aiFeatures
+        }
+
+        if hasCompletedGuidedJournal,
+           !dismissedICloudSuggestion,
+           !openedICloudSuggestion,
+           !isICloudSyncEnabled {
+            return .iCloudSync
+        }
+
+        return nil
+    }
+
+    private var aiFeaturesEnabled: Bool {
+        useCloudSummarization || useAIReviewInsights
+    }
+
+    private var hasConfiguredReminderTime: Bool {
+        UserDefaults.standard.object(forKey: ReminderSettings.timeIntervalKey) != nil
+    }
+
     private func submitGratitude() {
         submit(section: .gratitude)
     }
@@ -422,6 +485,69 @@ private extension JournalScreen {
         }
         if viewModel.people.count < targetCount {
             restoreInputFocus($isPersonInputFocused)
+        }
+    }
+
+    private func suggestionTitle(for suggestion: JournalOnboardingSuggestion) -> String {
+        switch suggestion {
+        case .reminders:
+            return String(localized: "Keep the rhythm close")
+        case .aiFeatures:
+            return String(localized: "Make Review more specific")
+        case .iCloudSync:
+            return String(localized: "Keep this journal with you")
+        }
+    }
+
+    private func suggestionMessage(for suggestion: JournalOnboardingSuggestion) -> String {
+        switch suggestion {
+        case .reminders:
+            return String(localized: "If you'd like, you can turn on a gentle daily reminder in Settings.")
+        case .aiFeatures:
+            return String(
+                // swiftlint:disable:next line_length
+                localized: "AI features can help with chip labels and Review insights when you want a little more support."
+            )
+        case .iCloudSync:
+            return String(localized: "You can turn on iCloud sync in Settings whenever you're ready.")
+        }
+    }
+
+    private func openSettings(for suggestion: JournalOnboardingSuggestion) {
+        markSuggestionOpened(suggestion)
+        appNavigation.openSettings(target: settingsTarget(for: suggestion))
+    }
+
+    private func dismissSuggestion(_ suggestion: JournalOnboardingSuggestion) {
+        switch suggestion {
+        case .reminders:
+            dismissedRemindersSuggestion = true
+        case .aiFeatures:
+            dismissedAISuggestion = true
+        case .iCloudSync:
+            dismissedICloudSuggestion = true
+        }
+    }
+
+    private func markSuggestionOpened(_ suggestion: JournalOnboardingSuggestion) {
+        switch suggestion {
+        case .reminders:
+            openedRemindersSuggestion = true
+        case .aiFeatures:
+            openedAISuggestion = true
+        case .iCloudSync:
+            openedICloudSuggestion = true
+        }
+    }
+
+    private func settingsTarget(for suggestion: JournalOnboardingSuggestion) -> SettingsScrollTarget {
+        switch suggestion {
+        case .reminders:
+            return .reminders
+        case .aiFeatures:
+            return .aiFeatures
+        case .iCloudSync:
+            return .dataPrivacy
         }
     }
 

@@ -42,6 +42,7 @@ struct GraceNotesApp: App {
 
         if !isRunningUnitTests {
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
+            _ = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: .standard)
         }
 
         if processInfo.arguments.contains("-reset-journal-tutorial") {

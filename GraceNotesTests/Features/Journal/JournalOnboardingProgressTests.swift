@@ -2,6 +2,27 @@ import XCTest
 @testable import GraceNotes
 
 final class JournalOnboardingProgressTests: XCTestCase {
+    func test_resolvedHasCompletedGuidedJournal_whenFreshInstall_defaultsToFalse() {
+        let defaults = makeIsolatedDefaults()
+
+        let resolvedValue = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: defaults)
+
+        XCTAssertFalse(resolvedValue)
+        XCTAssertEqual(
+            defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) as? Bool,
+            false
+        )
+    }
+
+    func test_resolvedHasCompletedGuidedJournal_whenCompletedLegacyOnboarding_setsTrue() {
+        let defaults = makeIsolatedDefaults()
+        defaults.set(true, forKey: "hasCompletedOnboarding")
+
+        let resolvedValue = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: defaults)
+
+        XCTAssertTrue(resolvedValue)
+    }
+
     func test_resetAll_clearsGuidedJournalAndSuggestionFlags() {
         let defaults = makeIsolatedDefaults()
         let progress = JournalOnboardingProgress(defaults: defaults)

@@ -25,6 +25,7 @@ struct JournalScreen: View {
     @State private var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
     @State private var unlockToastDismissTask: Task<Void, Never>?
     @State private var tutorialProgress = JournalTutorialProgress()
+    @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
     @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
     @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
 
@@ -65,7 +66,13 @@ struct JournalScreen: View {
                     celebratingLevel: celebratingLevel
                 )
 
-                if let hintKind = JournalTutorialHintPresentation.hintKind(
+                if let onboardingTitle = onboardingPresentation.title,
+                   let onboardingMessage = onboardingPresentation.message {
+                    JournalOnboardingGuidanceView(
+                        title: onboardingTitle,
+                        message: onboardingMessage
+                    )
+                } else if let hintKind = JournalTutorialHintPresentation.hintKind(
                     entryDate: entryDate,
                     completionLevel: viewModel.completionLevel,
                     chipsFilledCount: viewModel.chipsFilledCount,
@@ -89,6 +96,7 @@ struct JournalScreen: View {
                         placeholder: String(localized: "What's one thing you're grateful for?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Gratitude 1",
+                        onboardingState: onboardingPresentation.state(for: .gratitude),
                         isTransitioning: isGratitudeTransitioning,
                         inputText: $gratitudeInput,
                         editingIndex: editingGratitudeIndex,
@@ -108,6 +116,7 @@ struct JournalScreen: View {
                         placeholder: String(localized: "What do you need today?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Need 1",
+                        onboardingState: onboardingPresentation.state(for: .need),
                         isTransitioning: isNeedTransitioning,
                         inputText: $needInput,
                         editingIndex: editingNeedIndex,
@@ -127,6 +136,7 @@ struct JournalScreen: View {
                         placeholder: String(localized: "Who are you thinking of today?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Person 1",
+                        onboardingState: onboardingPresentation.state(for: .person),
                         isTransitioning: isPersonTransitioning,
                         inputText: $personInput,
                         editingIndex: editingPersonIndex,
@@ -149,6 +159,7 @@ struct JournalScreen: View {
                             get: { viewModel.readingNotes },
                             set: { viewModel.updateReadingNotes($0) }
                         ),
+                        onboardingState: onboardingPresentation.state(for: .readingNotes),
                         inputFocus: $isReadingNotesFocused
                     )
                     EditableTextSection(
@@ -157,6 +168,7 @@ struct JournalScreen: View {
                             get: { viewModel.reflections },
                             set: { viewModel.updateReflections($0) }
                         ),
+                        onboardingState: onboardingPresentation.state(for: .reflections),
                         inputFocus: $isReflectionsFocused
                     )
                 }
@@ -243,10 +255,14 @@ struct JournalScreen: View {
             statusCelebrationDismissTask?.cancel()
             unlockToastDismissTask?.cancel()
         }
+        .onChange(of: onboardingPresentation.step) { _, newStep in
+            focusOnboardingStepIfNeeded(newStep)
+        }
         .onChange(of: viewModel.completionLevel) { _, newLevel in
             if !hasInitializedCompletionTracking {
                 previousCompletionLevel = newLevel
                 hasInitializedCompletionTracking = true
+                syncGuidedJournalCompletionIfNeeded(for: newLevel)
                 return
             }
 
@@ -280,6 +296,7 @@ struct JournalScreen: View {
             }
 
             previousCompletionLevel = newLevel
+            syncGuidedJournalCompletionIfNeeded(for: newLevel)
         }
         .task {
             if !hasTrackedInitialLoad {
@@ -294,6 +311,8 @@ struct JournalScreen: View {
             }
             previousCompletionLevel = viewModel.completionLevel
             hasInitializedCompletionTracking = true
+            syncGuidedJournalCompletionIfNeeded(for: viewModel.completionLevel)
+            focusOnboardingStepIfNeeded(onboardingPresentation.step)
             PerformanceTrace.end("JournalScreen.loadTask", startedAt: loadTrace)
         }
     }
@@ -301,6 +320,28 @@ struct JournalScreen: View {
 // swiftlint:enable type_body_length
 
 private extension JournalScreen {
+    private var onboardingPresentation: JournalOnboardingPresentation {
+        JournalOnboardingFlowEvaluator.presentation(
+            for: JournalOnboardingContext(
+                entryDate: entryDate,
+                gratitudesCount: viewModel.gratitudes.count,
+                needsCount: viewModel.needs.count,
+                peopleCount: viewModel.people.count,
+                readingNotes: viewModel.readingNotes,
+                reflections: viewModel.reflections,
+                hasCompletedGuidedJournal: hasCompletedGuidedJournal
+            )
+        )
+    }
+
+    private var isAnyJournalFieldFocused: Bool {
+        isGratitudeInputFocused ||
+            isNeedInputFocused ||
+            isPersonInputFocused ||
+            isReadingNotesFocused ||
+            isReflectionsFocused
+    }
+
     private func submitGratitude() {
         submit(section: .gratitude)
     }
@@ -318,6 +359,72 @@ private extension JournalScreen {
             showShareError = true
         }
     }
+
+    private func syncGuidedJournalCompletionIfNeeded(for level: JournalCompletionLevel) {
+        guard entryDate == nil else { return }
+        guard level == .abundance else { return }
+        guard !hasCompletedGuidedJournal else { return }
+        hasCompletedGuidedJournal = true
+    }
+
+    private func focusOnboardingStepIfNeeded(_ step: JournalOnboardingStep?) {
+        guard entryDate == nil else { return }
+        guard !hasCompletedGuidedJournal else { return }
+        guard !isAnyJournalFieldFocused else { return }
+
+        switch step {
+        case .gratitude:
+            restoreInputFocus($isGratitudeInputFocused)
+        case .need:
+            restoreInputFocus($isNeedInputFocused)
+        case .person:
+            restoreInputFocus($isPersonInputFocused)
+        case .ripening:
+            focusOnboardingChipStep(.ripening)
+        case .harvest:
+            focusOnboardingChipStep(.harvest)
+        case .abundance:
+            focusAbundanceInputsIfNeeded()
+        case .none:
+            break
+        }
+    }
+
+    private func focusOnboardingChipStep(_ step: JournalOnboardingStep) {
+        switch step {
+        case .ripening:
+            focusFirstIncompleteChipSection(targetCount: 3)
+        case .harvest:
+            focusFirstIncompleteChipSection(targetCount: JournalViewModel.slotCount)
+        case .gratitude, .need, .person, .abundance:
+            break
+        }
+    }
+
+    private func focusAbundanceInputsIfNeeded() {
+        let notesTrimmed = viewModel.readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reflectionsTrimmed = viewModel.reflections.trimmingCharacters(in: .whitespacesAndNewlines)
+        if notesTrimmed.isEmpty {
+            restoreInputFocus($isReadingNotesFocused)
+        } else if reflectionsTrimmed.isEmpty {
+            restoreInputFocus($isReflectionsFocused)
+        }
+    }
+
+    private func focusFirstIncompleteChipSection(targetCount: Int) {
+        if viewModel.gratitudes.count < targetCount {
+            restoreInputFocus($isGratitudeInputFocused)
+            return
+        }
+        if viewModel.needs.count < targetCount {
+            restoreInputFocus($isNeedInputFocused)
+            return
+        }
+        if viewModel.people.count < targetCount {
+            restoreInputFocus($isPersonInputFocused)
+        }
+    }
+
     private enum ChipSection {
         case gratitude, need, person
     }

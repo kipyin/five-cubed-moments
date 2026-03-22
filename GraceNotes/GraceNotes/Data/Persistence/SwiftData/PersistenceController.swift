@@ -12,12 +12,12 @@ final class PersistenceController {
 #if USE_DEMO_DATABASE
         false
 #else
-        cloudSyncEnabled(using: .standard)
+        ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
 #endif
     }
 
     static func cloudSyncEnabled(using defaults: UserDefaults) -> Bool {
-        defaults.object(forKey: iCloudSyncEnabledKey) as? Bool ?? true
+        ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: defaults)
     }
 
     let container: ModelContainer

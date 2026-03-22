@@ -12,18 +12,12 @@ import UIKit
 @main
 struct GraceNotesApp: App {
     @UIApplicationDelegateAdaptor(GraceNotesAppDelegate.self) private var appDelegate
-    private enum AppTab: Hashable {
-        case today
-        case history
-        case settings
-    }
-
     private let isRunningUITests: Bool
     private let isRunningUnitTests: Bool
     @StateObject private var startupCoordinator: StartupCoordinator
+    @StateObject private var appNavigation = AppNavigationModel()
     @State private var uiTestPersistenceController: PersistenceController?
     @State private var hasRunDeferredStartupTasks = false
-    @State private var selectedTab: AppTab = .today
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     init() {
@@ -88,6 +82,7 @@ struct GraceNotesApp: App {
             .background(AppTheme.background)
             .toolbarBackground(AppTheme.background, for: .tabBar)
             .tint(AppTheme.accent)
+            .environmentObject(appNavigation)
             .modelContainer(controller.container)
             .environment(\.persistenceRuntimeSnapshot, controller.runtimeSnapshot)
     }
@@ -112,6 +107,7 @@ struct GraceNotesApp: App {
                 .background(AppTheme.background)
                 .toolbarBackground(AppTheme.background, for: .tabBar)
                 .tint(AppTheme.accent)
+                .environmentObject(appNavigation)
                 .task {
                     await runDeferredStartupTasksIfNeeded(using: controller)
                 }
@@ -156,7 +152,7 @@ struct GraceNotesApp: App {
     }
 
     private var mainTabView: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appNavigation.selectedTab) {
             NavigationStack {
                 JournalScreen()
             }
@@ -165,7 +161,7 @@ struct GraceNotesApp: App {
             }
             .tag(AppTab.today)
             NavigationStack {
-                DeferredReviewRoot(isSelected: selectedTab == .history)
+                DeferredReviewRoot(isSelected: appNavigation.selectedTab == .history)
             }
             .tabItem {
                 Label(String(localized: "Review"), systemImage: "clock.arrow.circlepath")

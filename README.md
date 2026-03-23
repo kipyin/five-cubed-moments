@@ -10,6 +10,8 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 
 - **Packaging** — Patch bump on the 0.5.x line: marketing version **0.5.1**, build **2**, Debug builds emit **dSYM** for richer crash logs, and the shared **GraceNotes** scheme’s Run action uses the **Release** configuration (verify this matches your day-to-day workflow in Xcode).
 - **Onboarding** — Milestone cards that jump to Settings share one eligibility rule with the UI and re-check it when you tap; onboarding/iCloud continuity keys use shared constants (see CHANGELOG **Developer** for detail).
+- **Localization** — String Catalog **zh-Hans** polish (including onboarding and Abundance-related copy) and aligned **Save to Photos** permission wording for **感恩记**.
+- **UI tests** — Journal UI tests use stable chip identifiers, English locale, relaunch-safe launch arguments, and a UI-test SwiftData session key so data survives `terminate()` + `launch()` (see CHANGELOG **Developer**).
 
 ## What's new in 0.5.0 (upcoming)
 

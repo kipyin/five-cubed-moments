@@ -60,28 +60,33 @@ struct JournalCompletionPill: View {
     private var pillLabel: some View {
         switch completionLevel {
         case .soil:
-            Label(String(localized: "Soil"), systemImage: "circle.dotted")
-                .foregroundStyle(AppTheme.journalTextMuted)
+            Label(
+                String(localized: "Soil"),
+                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
+            )
+            .foregroundStyle(AppTheme.journalTextMuted)
         case .seed:
-            Label(String(localized: "Seed"), systemImage: "leaf.fill")
-                .foregroundStyle(AppTheme.journalQuickCheckInText)
+            Label(
+                String(localized: "Seed"),
+                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
+            )
+            .foregroundStyle(AppTheme.journalQuickCheckInText)
         case .ripening:
-            Label(String(localized: "Ripening"), systemImage: "leaf.circle.fill")
-                .foregroundStyle(AppTheme.journalStandardText)
+            Label(
+                String(localized: "Ripening"),
+                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
+            )
+            .foregroundStyle(AppTheme.journalStandardText)
         case .harvest:
             Label(
                 String(localized: "Harvest"),
-                systemImage: celebratingLevel == .harvest
-                    ? "sparkles.rectangle.stack.fill"
-                    : "sparkles.rectangle.stack"
+                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
             )
             .foregroundStyle(AppTheme.journalStandardText)
         case .abundance:
             Label(
                 String(localized: "Abundance"),
-                systemImage: celebratingLevel == .abundance
-                    ? "checkmark.circle.fill"
-                    : "checkmark.circle"
+                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
             )
             .foregroundStyle(AppTheme.journalFullText)
         }

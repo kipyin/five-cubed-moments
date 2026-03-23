@@ -90,18 +90,7 @@ struct JournalUnlockToastView: View {
     }
 
     private var iconName: String {
-        switch level {
-        case .soil:
-            return "circle.dotted"
-        case .seed:
-            return "leaf.fill"
-        case .ripening:
-            return "leaf.circle.fill"
-        case .harvest:
-            return "sparkles.rectangle.stack.fill"
-        case .abundance:
-            return "checkmark.circle.fill"
-        }
+        level.completionStatusSystemImage(isEmphasized: true)
     }
 
     private var iconTint: Color {

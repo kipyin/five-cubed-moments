@@ -99,6 +99,8 @@ enum AppTheme {
     static let warmPaperMeta = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
     static let warmPaperMetaEmphasis = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
         .weight(.semibold)
+    /// Supporting copy under meta titles (e.g. path criteria); scales with Dynamic Type caption.
+    static let warmPaperCaption = Font.custom("SourceSerif4Roman-Regular", size: 13, relativeTo: .caption)
 
     // MARK: - Interface sans (Outfit)
 

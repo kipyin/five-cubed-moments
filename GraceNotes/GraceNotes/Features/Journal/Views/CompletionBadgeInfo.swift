@@ -23,17 +23,21 @@ enum CompletionBadgeInfo: Equatable {
     }
 
     var iconName: String {
+        journalCompletionLevel.completionStatusSystemImage(isEmphasized: true)
+    }
+
+    private var journalCompletionLevel: JournalCompletionLevel {
         switch self {
         case .soil:
-            return "circle.dotted"
+            return .soil
         case .seed:
-            return "leaf.fill"
+            return .seed
         case .ripening:
-            return "leaf.circle.fill"
+            return .ripening
         case .harvest:
-            return "checkmark.circle.fill"
+            return .harvest
         case .abundance:
-            return "sparkles"
+            return .abundance
         }
     }
 

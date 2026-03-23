@@ -99,6 +99,23 @@ final class JournalCompletionLevelTests: XCTestCase {
         XCTAssertEqual(level, .abundance)
     }
 
+    func test_completionStatusSystemImage_matchesCompletionIconDesign() {
+        XCTAssertEqual(JournalCompletionLevel.soil.completionStatusSystemImage(isEmphasized: false), "circle.dotted")
+        XCTAssertEqual(JournalCompletionLevel.soil.completionStatusSystemImage(isEmphasized: true), "circle.dotted")
+
+        XCTAssertEqual(JournalCompletionLevel.seed.completionStatusSystemImage(isEmphasized: false), "leaf")
+        XCTAssertEqual(JournalCompletionLevel.seed.completionStatusSystemImage(isEmphasized: true), "leaf.fill")
+
+        XCTAssertEqual(JournalCompletionLevel.ripening.completionStatusSystemImage(isEmphasized: false), "tree")
+        XCTAssertEqual(JournalCompletionLevel.ripening.completionStatusSystemImage(isEmphasized: true), "tree.fill")
+
+        XCTAssertEqual(JournalCompletionLevel.harvest.completionStatusSystemImage(isEmphasized: false), "sparkles")
+        XCTAssertEqual(JournalCompletionLevel.harvest.completionStatusSystemImage(isEmphasized: true), "sparkles")
+
+        XCTAssertEqual(JournalCompletionLevel.abundance.completionStatusSystemImage(isEmphasized: false), "sun.max")
+        XCTAssertEqual(JournalCompletionLevel.abundance.completionStatusSystemImage(isEmphasized: true), "sun.max.fill")
+    }
+
     func test_hasHarvestChips_and_hasAbundanceRhythm_alignWithLevels() throws {
         let context = try makeInMemoryContext()
         let items = (1...JournalEntry.slotCount).map { JournalItem(fullText: "x\($0)", chipLabel: nil) }

@@ -78,7 +78,7 @@ extension PostSeedJourneyView {
     var congratulationsPage: some View {
         journeyPage {
             HStack(alignment: .firstTextBaseline, spacing: AppTheme.spacingRegular) {
-                Image(systemName: "leaf.circle.fill")
+                Image(systemName: JournalCompletionLevel.seed.completionStatusSystemImage(isEmphasized: true))
                     .font(.title2)
                     .foregroundStyle(AppTheme.accent)
                     .accessibilityHidden(true)
@@ -156,7 +156,7 @@ extension PostSeedJourneyView {
 
     var remindersPage: some View {
         journeyPage {
-            Text(String(localized: "Gentle reminders"))
+            Text(String(localized: "Daily reminders"))
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(AppTheme.textPrimary)
 

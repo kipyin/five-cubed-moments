@@ -111,6 +111,153 @@ struct PostSeedJourneyView: View {
 
 // MARK: - Path strip
 
+private enum PostSeedJourneyPathTitleMetricsKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+/// One row of the path strip: timeline dot is vertically centered on the **title** line only (not the criterion).
+private struct PostSeedJourneyPathStepRow: View {
+    let index: Int
+    let stepCount: Int
+    let title: String
+    let titleSystemImage: String
+    let criterionText: String
+    let isHighlighted: Bool
+    let dotFill: Color
+    let dotBorder: Color
+    let dotStrokeWidth: CGFloat
+    let pathSpineStroke: Color
+
+    @State private var titleLineHeight: CGFloat = 0
+
+    private var isLastStep: Bool { index >= stepCount - 1 }
+
+    private static let dotDiameter: CGFloat = 10
+
+    var body: some View {
+        Group {
+            stepRow
+            if !isLastStep {
+                connectorRow
+            }
+        }
+    }
+
+    private var stepRow: some View {
+        HStack(alignment: .top, spacing: AppTheme.spacingRegular) {
+            ZStack(alignment: .top) {
+                spineBetweenDotCenters
+                Circle()
+                    .fill(dotFill)
+                    .frame(width: Self.dotDiameter, height: Self.dotDiameter)
+                    .background {
+                        if isHighlighted {
+                            Circle().fill(AppTheme.paper)
+                        }
+                    }
+                    .overlay(
+                        Circle()
+                            .stroke(dotBorder, lineWidth: dotStrokeWidth)
+                    )
+                    .offset(y: dotVerticalOffset)
+            }
+            .frame(width: Self.dotDiameter)
+
+            VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.spacingTight) {
+                    Image(systemName: titleSystemImage)
+                        .font(isHighlighted ? AppTheme.warmPaperMetaEmphasis : AppTheme.warmPaperMeta)
+                        .foregroundStyle(isHighlighted ? AppTheme.accentText : AppTheme.textMuted)
+                        .accessibilityHidden(true)
+                    Text(title)
+                        .font(isHighlighted ? AppTheme.warmPaperMetaEmphasis : AppTheme.warmPaperMeta)
+                        .foregroundStyle(isHighlighted ? AppTheme.accentText : AppTheme.textMuted)
+                }
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: PostSeedJourneyPathTitleMetricsKey.self,
+                            value: geometry.size.height
+                        )
+                    }
+                }
+
+                Text(criterionText)
+                    .font(AppTheme.warmPaperCaption)
+                    .foregroundStyle(AppTheme.textMuted.opacity(0.88))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !isLastStep {
+                    Rectangle()
+                        .fill(AppTheme.journalInputBorder.opacity(0.35))
+                        .frame(height: 1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, AppTheme.spacingTight / 2)
+                        .padding(.bottom, AppTheme.spacingTight)
+                }
+            }
+            .onPreferenceChange(PostSeedJourneyPathTitleMetricsKey.self) { titleLineHeight = $0 }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Places the dot’s vertical center on the title’s vertical center (measured).
+    private var dotVerticalOffset: CGFloat {
+        guard titleLineHeight > 0 else { return 0 }
+        return max(0, titleLineHeight / 2 - Self.dotDiameter / 2)
+    }
+
+    /// Y-offset from the top of this row’s spine column to the dot’s vertical center.
+    private var dotCenterY: CGFloat {
+        dotVerticalOffset + Self.dotDiameter / 2
+    }
+
+    /// Spine runs **between** dot centers: no stub above the first dot, full run through the last dot.
+    private var spineBetweenDotCenters: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let centerY = dotCenterY
+            let incomingHeight = max(0, min(centerY, h))
+            let outgoingHeight = max(0, h - centerY)
+
+            ZStack(alignment: .top) {
+                if index > 0 && incomingHeight > 0 {
+                    Rectangle()
+                        .fill(pathSpineStroke)
+                        .frame(width: 1, height: incomingHeight)
+                        .position(x: w / 2, y: incomingHeight / 2)
+                }
+                if !isLastStep && outgoingHeight > 0 {
+                    Rectangle()
+                        .fill(pathSpineStroke)
+                        .frame(width: 1, height: outgoingHeight)
+                        .position(x: w / 2, y: centerY + outgoingHeight / 2)
+                }
+            }
+        }
+    }
+
+    private var connectorRow: some View {
+        HStack(alignment: .top, spacing: AppTheme.spacingRegular) {
+            Color.clear
+                .frame(width: Self.dotDiameter, height: AppTheme.spacingRegular)
+                .overlay(alignment: .center) {
+                    Rectangle()
+                        .fill(pathSpineStroke)
+                        .frame(width: 1, height: AppTheme.spacingRegular)
+                }
+            Color.clear
+                .frame(height: AppTheme.spacingRegular)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 struct PostSeedJourneyPathStrip: View {
     let highlightedLevel: JournalCompletionLevel
 
@@ -118,43 +265,25 @@ struct PostSeedJourneyPathStrip: View {
         .soil, .seed, .ripening, .harvest, .abundance
     ]
 
+    private var pathSpineStroke: Color {
+        AppTheme.journalInputBorder.opacity(0.45)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(Self.orderedLevels.enumerated()), id: \.offset) { index, level in
-                HStack(alignment: .top, spacing: AppTheme.spacingRegular) {
-                    VStack(spacing: 0) {
-                        Circle()
-                            .fill(dotFill(for: level))
-                            .frame(width: 10, height: 10)
-                            .overlay(
-                                Circle()
-                                    .stroke(dotBorder(for: level), lineWidth: level == highlightedLevel ? 2 : 1)
-                            )
-
-                        if index < Self.orderedLevels.count - 1 {
-                            Rectangle()
-                                .fill(AppTheme.journalInputBorder.opacity(0.45))
-                                .frame(width: 1, height: 10)
-                                .padding(.top, 2)
-                        }
-                    }
-                    .frame(width: 10)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(displayName(for: level))
-                            .font(level == highlightedLevel ? AppTheme.warmPaperMetaEmphasis : AppTheme.warmPaperMeta)
-                            .foregroundStyle(
-                                level == highlightedLevel ? AppTheme.accentText : AppTheme.textMuted
-                            )
-
-                        Text(criterion(for: level))
-                            .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.textMuted.opacity(0.92))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
+                PostSeedJourneyPathStepRow(
+                    index: index,
+                    stepCount: Self.orderedLevels.count,
+                    title: displayName(for: level),
+                    titleSystemImage: level.completionStatusSystemImage(isEmphasized: level == highlightedLevel),
+                    criterionText: criterion(for: level),
+                    isHighlighted: level == highlightedLevel,
+                    dotFill: dotFill(for: level),
+                    dotBorder: dotBorder(for: level),
+                    dotStrokeWidth: level == highlightedLevel ? 2 : 1,
+                    pathSpineStroke: pathSpineStroke
+                )
             }
         }
         .padding(AppTheme.spacingWide)
@@ -217,13 +346,12 @@ struct PostSeedJourneyPathStrip: View {
 struct PostSeedJourneyInsightsPreview: View {
     private static let fadeBandHeight: CGFloat = 100
 
-    /// Same week boundaries as Review (``ReviewScreen``) and the shared “%1$@ to %2$@” range line.
+    /// Same review period as ``ReviewScreen`` (past seven calendar days) and the shared “%1$@ to %2$@” range line.
     private var sampleWeekRangeLine: String {
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
-        let weekStart = calendar.date(from: components) ?? calendar.startOfDay(for: Date())
-        let weekEndExclusive = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-        let inclusiveEnd = calendar.date(byAdding: .day, value: -1, to: weekEndExclusive) ?? weekEndExclusive
+        let period = ReviewInsightsPeriod.currentPeriod(containing: Date(), calendar: calendar)
+        let weekStart = period.lowerBound
+        let inclusiveEnd = calendar.date(byAdding: .day, value: -1, to: period.upperBound) ?? period.upperBound
         let startText = weekStart.formatted(.dateTime.month(.abbreviated).day())
         let endText = inclusiveEnd.formatted(.dateTime.month(.abbreviated).day())
         return String(

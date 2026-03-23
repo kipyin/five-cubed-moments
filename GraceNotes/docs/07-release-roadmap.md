@@ -139,7 +139,8 @@ Work tracked on branch `release/0.5.0`.
 **Goal:** Make review feel specific, trustworthy, and grounded in the user’s own entries, while giving new and returning users calm first-week guidance that does not dilute the core ritual.
 
 **Scope in**
-- `#40` Review page is still generic even with AI Insights
+- `#40` Review → Insights **insight-first** presentation redo (layout, hierarchy, framing; ship before leaning on engine-only fixes for “generic” feel)
+- `#80` Review **insight engine** depth: prompts, sanitizer iteration, fixture audits, and contract-conformance testing (see `03-review-insight-quality-contract.md`)
 - `#39` Fine tune AI prompts for chips
 - `#11` Add a check mark after all 5 entries are complete within a section
 - ~~Guided return and first-week support (hints, coaching, or light onboarding tied to Seed/Harvest and the rhythm)—including `#60` first-run Today tutorial and related unlock feedback where shipped under this line~~
@@ -159,7 +160,8 @@ Work tracked on branch `release/0.5.0`.
 - This lane follows `0.4.0` so insight investment and guidance sit on firmer data-trust footing.
 
 **Acceptance intent**
-- Review language references real recurring themes, people, and counts.
+- **#40:** Review → Insights feels insight-first; primary weekly content is clearly the hero of the mode.
+- **#80:** Review language increasingly references real recurring themes, people, and counts per the quality contract.
 - AI output remains optional and falls back cleanly to deterministic insights.
 - Completion feedback stays calm and legible inside the current ritual.
 - First-week and return flows feel supportive rather than demanding; users understand how to progress without extra pressure.

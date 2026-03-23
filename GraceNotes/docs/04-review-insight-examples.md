@@ -6,7 +6,7 @@ This document captures:
 1. product-quality examples of "good insights",
 2. technical language for implementation requirements.
 
-See also: `03-review-insight-quality-contract.md` for the full contract.
+See also: `03-review-insight-quality-contract.md` for the full contract (and **#40** / **#80** for how presentation vs engine work is split on GitHub).
 
 ## 1) Product purpose
 

@@ -13,6 +13,8 @@ It should help users:
 
 AI is optional. On-device deterministic insights are the baseline product behavior.
 
+**GitHub tracking:** **#40** covers an **insight-first presentation** redo on Review → Insights. **#80** covers **deeper generation** work (prompts, sanitizer, fixture audits, tests) to reduce generic output against this contract.
+
 ---
 
 ## Review period

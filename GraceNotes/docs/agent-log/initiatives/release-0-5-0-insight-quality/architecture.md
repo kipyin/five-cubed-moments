@@ -3,11 +3,11 @@ initiative_id: release-0-5-0-insight-quality
 role: Architect
 status: in_progress
 updated_at: 2026-03-23
-related_issue: 40
+related_issue: 40,80
 related_pr: none
 ---
 
-# Architecture — Issue #40 (Review insight quality)
+# Architecture — Review insight quality (#40 presentation, #80 engine)
 
 ## Decision
 

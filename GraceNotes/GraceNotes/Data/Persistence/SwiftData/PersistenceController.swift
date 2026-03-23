@@ -153,10 +153,22 @@ final class PersistenceController {
             try? fileManager.createDirectory(at: uiTestDirectory, withIntermediateDirectories: true)
         }
 
-        // Use XCTest configuration path to scope storage per test run.
-        // This keeps relaunches in the same run persistent while preventing
-        // stale data from previous test runs from leaking into current runs.
-        let sessionKey = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? UUID().uuidString
+        // Prefer XCTest's config path so parallel runs stay isolated. After `terminate()` + `launch()`,
+        // that env var is often missing in the app; reuse the last key so relaunch hits the same store.
+        let markerURL = uiTestDirectory.appendingPathComponent("active-uitest-session-key.txt", isDirectory: false)
+        let configPath = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? ""
+        let sessionKey: String
+        if !configPath.isEmpty {
+            sessionKey = configPath
+            try? configPath.write(to: markerURL, atomically: true, encoding: .utf8)
+        } else if let remembered = try? String(contentsOf: markerURL, encoding: .utf8),
+                  !remembered.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            sessionKey = remembered
+        } else {
+            sessionKey = UUID().uuidString
+            try? sessionKey.write(to: markerURL, atomically: true, encoding: .utf8)
+        }
+
         let safeSessionKey = sessionKey
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: ":", with: "_")

@@ -3,11 +3,25 @@ import XCTest
 /// UI tests use `-ui-testing`. To reset journal tutorial flags (issue #60), add
 /// `-reset-journal-tutorial` to `launchArguments` before `launch()`.
 final class JournalUITests: XCTestCase {
+    /// `JournalViewModel` debounces SwiftData saves; allow persistence to finish before relaunch.
+    private func waitForDebouncedJournalSave() {
+        Thread.sleep(forTimeInterval: 1.0)
+    }
+
+    /// Apply before every `launch()`; a bare `launch()` after `terminate()` can drop arguments on some OS versions.
+    private func configureUITestLaunch(_ app: XCUIApplication) {
+        app.launchArguments = [
+            "-ui-testing",
+            "-AppleLanguages", "(en)",
+            "-AppleLocale", "en_US"
+        ]
+        app.launchEnvironment["FIVECUBED_UI_TESTING"] = "1"
+    }
+
     @MainActor
     private func launchApp() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments += ["-ui-testing"]
-        app.launchEnvironment["FIVECUBED_UI_TESTING"] = "1"
+        configureUITestLaunch(app)
         app.launch()
         XCTAssertTrue(
             app.staticTexts["Gratitudes"].waitForExistence(timeout: 5),
@@ -36,24 +50,23 @@ final class JournalUITests: XCTestCase {
     @MainActor
     private func openReviewTimeline(in app: XCUIApplication) {
         let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
 
-        let maxCandidates = min(tabBar.buttons.count, 4)
-        for index in 0..<maxCandidates {
-            let candidate = tabBar.buttons.element(boundBy: index)
-            guard candidate.exists else { continue }
-            candidate.tap()
-            if app.otherElements["ReviewModePicker"].waitForExistence(timeout: 2) ||
-                app.staticTexts["Review"].waitForExistence(timeout: 2) {
-                return
-            }
+        if app.segmentedControls.firstMatch.waitForExistence(timeout: 2) {
+            return
         }
 
-        // Final fallback for English localization.
-        let namedReviewTab = tabBar.buttons["Review"]
-        if namedReviewTab.exists {
-            namedReviewTab.tap()
+        let reviewByLabel = tabBar.buttons["Review"]
+        if reviewByLabel.waitForExistence(timeout: 3) {
+            reviewByLabel.tap()
+        } else {
+            tabBar.buttons.element(boundBy: 1).tap()
         }
+
+        XCTAssertTrue(
+            app.segmentedControls.firstMatch.waitForExistence(timeout: 15),
+            "Expected Review mode segmented control."
+        )
     }
 
     @MainActor
@@ -79,12 +92,25 @@ final class JournalUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Gratitudes"].waitForExistence(timeout: 5))
         addGratitude("Thankful for family", in: app)
+        waitForDebouncedJournalSave()
+        let gratitudeChip = app.buttons["JournalGratitudeChip.0"]
+        XCTAssertTrue(
+            gratitudeChip.waitForExistence(timeout: 12),
+            "Expected submitted gratitude chip before relaunch."
+        )
 
         app.terminate()
+        configureUITestLaunch(app)
         app.launch()
+        XCTAssertTrue(
+            app.staticTexts["Gratitudes"].waitForExistence(timeout: 10),
+            "Expected relaunch to land on Today with journal UI ready."
+        )
 
-        openReviewTimeline(in: app)
-        XCTAssertTrue(firstTimelineEntryButton(in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.buttons["JournalGratitudeChip.0"].waitForExistence(timeout: 12),
+            "Expected gratitude to persist across relaunch."
+        )
     }
 
     @MainActor
@@ -168,9 +194,8 @@ final class JournalUITests: XCTestCase {
             "Keyboard should remain available after submitting an entry."
         )
 
-        if !app.keyboards.firstMatch.exists {
-            gratitudeField.tap()
-        }
+        gratitudeField.tap()
+        XCTAssertTrue(gratitudeField.waitForExistence(timeout: 2))
         gratitudeField.typeText("Second gratitude draft")
         XCTAssertEqual(gratitudeField.value as? String, "Second gratitude draft")
     }

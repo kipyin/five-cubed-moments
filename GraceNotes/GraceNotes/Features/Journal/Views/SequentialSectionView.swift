@@ -145,6 +145,8 @@ struct SequentialSectionView: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
+    /// When set (e.g. UI tests), chips use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
+    let chipAccessibilityIdentifierPrefix: String?
     let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
     @Binding var inputText: String
@@ -177,6 +179,7 @@ struct SequentialSectionView: View {
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
+        chipAccessibilityIdentifierPrefix: String? = nil,
         onboardingState: JournalOnboardingSectionState = .standard,
         isTransitioning: Bool = false,
         inputText: Binding<String>,
@@ -198,6 +201,7 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
+        self.chipAccessibilityIdentifierPrefix = chipAccessibilityIdentifierPrefix
         self.onboardingState = onboardingState
         self.isTransitioning = isTransitioning
         self._inputText = inputText
@@ -535,6 +539,7 @@ struct SequentialSectionView: View {
 
     @ViewBuilder
     private func chipView(for item: JournalItem, at index: Int) -> some View {
+        let chipIdentifier = chipAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
         let chip = ChipView(
             label: item.displayLabel,
             isTruncated: item.isTruncated,
@@ -547,6 +552,7 @@ struct SequentialSectionView: View {
         if let onMoveChip {
             let isSourceOfDrag = draggingItemID == item.id
             chip
+                .modifier(ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
                 .scaleEffect(reduceMotion || !isSourceOfDrag ? 1 : 0.9)
                 .opacity(reduceMotion || !isSourceOfDrag ? 1 : 0.42)
                 .onDrag {
@@ -575,6 +581,7 @@ struct SequentialSectionView: View {
                 )
         } else {
             chip
+                .modifier(ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
         }
     }
 

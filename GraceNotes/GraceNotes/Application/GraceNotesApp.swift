@@ -24,14 +24,7 @@ struct GraceNotesApp: App {
         let startupTrace = PerformanceTrace.begin("App.init")
         let processInfo = ProcessInfo.processInfo
         let isXCTestSession = processInfo.environment["XCTestConfigurationFilePath"] != nil
-        let isUITestBundle = processInfo.environment["XCTestBundlePath"]?.contains("UITests") == true
-        let hasUITestLaunchArgument = processInfo.arguments.contains("-ui-testing")
-        let hasUITestEnvironmentFlag = processInfo.environment["FIVECUBED_UI_TESTING"]
-            .map { value in
-                let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                return normalizedValue == "1" || normalizedValue == "true" || normalizedValue == "yes"
-            } ?? false
-        isRunningUITests = isUITestBundle || hasUITestLaunchArgument || hasUITestEnvironmentFlag
+        isRunningUITests = ProcessInfo.graceNotesIsRunningUITests
         isRunningUnitTests = isXCTestSession && !isRunningUITests
 
         if !isRunningUnitTests {

@@ -148,6 +148,9 @@ struct JournalScreen: View {
                         placeholder: String(localized: "What's one thing you're grateful for?"),
                         slotCount: JournalViewModel.slotCount,
                         inputAccessibilityIdentifier: "Gratitude 1",
+                        chipAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                            ? "JournalGratitudeChip"
+                            : nil,
                         onboardingState: onboardingPresentation.state(for: .gratitude),
                         isTransitioning: isGratitudeTransitioning,
                         inputText: $gratitudeInput,
@@ -505,6 +508,7 @@ private extension JournalScreen {
 
     /// Presents the one-time post-Seed journey for Today when the user is at Seed and the tutorial is still active.
     private func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
+        guard !ProcessInfo.graceNotesIsRunningUITests else { return }
         guard entryDate == nil else { return }
         guard level == .seed else { return }
         guard !hasSeenPostSeedJourney else { return }

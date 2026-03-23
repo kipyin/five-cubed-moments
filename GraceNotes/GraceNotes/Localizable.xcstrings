@@ -2,7 +2,20 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        }
+      }
     },
     "%@ input" : {
       "localizations" : {
@@ -149,7 +162,20 @@
       }
     },
     "•" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        }
+      }
     },
     "A need kept resurfacing: %1$@ on %2$lld day(s) this week." : {
       "extractionState" : "stale",
@@ -195,7 +221,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「满溢」表示十五个格子都填好了，而且今天的阅读笔记和反思也都写了。"
+            "value" : "感恩的事、需要的事和牵挂的人都写满了，阅读笔记和反思也在——今天这篇记录。"
           }
         }
       }
@@ -282,7 +308,20 @@
       }
     },
     "AI features can help with chip labels and Review insights when you want a little more support." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI features can help with chip labels and Review insights when you want a little more support."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要多一点帮忙时，AI 可以帮你起草小标签、帮助生成「回顾」里的洞察。"
+          }
+        }
+      }
     },
     "AI support" : {
       "localizations" : {
@@ -366,7 +405,20 @@
       }
     },
     "Begin today's entry" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Begin today's entry"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始写今天的感恩记"
+          }
+        }
+      }
     },
     "Cancel" : {
       "localizations" : {
@@ -900,7 +952,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "会将所有日记条目保存到文件。若要找回条目，请使用 Grace Notes 的备份文件。"
+            "value" : "会将感恩记里的记录保存到文件。若要找回记录，请使用备份文件。"
           }
         }
       }
@@ -1045,7 +1097,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "该导出为第 %lld 版格式，当前应用尚不支持。"
+            "value" : "该文件是第 %lld 版导出格式，当前版本尚不支持。"
           }
         }
       }
@@ -1584,7 +1636,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "温和提醒"
+            "value" : "每日提醒"
           }
         }
       }
@@ -1732,7 +1784,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「丰收」表示感恩的事、需要的事和牵挂的人三个栏目各有五条，十五个格子都填好了。再补上阅读笔记和反思，就能到「满溢」。"
+            "value" : "十五个格子都写满了。若想走到「满溢」，不妨给今天补上阅读笔记和反思。"
           }
         }
       }
@@ -1831,7 +1883,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud 同步可以让日记在你的设备间可用。准备好了随时在设置里打开。"
+            "value" : "iCloud 同步可以让感恩记在你的设备之间保持可用。准备好了随时在设置里打开。"
           }
         }
       }
@@ -1922,7 +1974,20 @@
       }
     },
     "If you'd like, you can turn on a gentle daily reminder in Settings." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you'd like, you can turn on a gentle daily reminder in Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "愿意的话，可以在「设置」里打开温和的日常提醒。"
+          }
+        }
+      }
     },
     "Importing or restoring Grace Notes from a file in the app is not available yet." : {
       "extractionState" : "stale",
@@ -2003,7 +2068,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「进行中」表示你还没开始记录。先写下 1 件感恩的事、1 件需要的事和 1 位牵挂的人，就能达到「撒种」。"
+            "value" : "再记下一件感恩的事、一件需要的事和一位牵挂的人，今天的记录就能「撒种」。"
           }
         }
       }
@@ -2058,13 +2123,52 @@
       }
     },
     "Keep going" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep going"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续写下去"
+          }
+        }
+      }
     },
     "Keep the rhythm close" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the rhythm close"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把节奏留在手边"
+          }
+        }
+      }
     },
     "Keep this journal with you" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep this journal with you"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让感恩记跟着你走"
+          }
+        }
+      }
     },
     "Label" : {
       "localizations" : {
@@ -2083,7 +2187,20 @@
       }
     },
     "Make Review more specific" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make Review more specific"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让「回顾」更具体"
+          }
+        }
+      }
     },
     "Needs" : {
       "localizations" : {
@@ -2102,7 +2219,20 @@
       }
     },
     "Needs will open after your first gratitude." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs will open after your first gratitude."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写下第一件感恩的事之后，「需要的事」就会打开。"
+          }
+        }
+      }
     },
     "Next" : {
       "localizations" : {
@@ -2186,7 +2316,20 @@
       }
     },
     "Not now" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时不要"
+          }
+        }
+      }
     },
     "Not selected" : {
       "extractionState" : "stale",
@@ -2206,7 +2349,20 @@
       }
     },
     "Now add one need for today." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now add one need for today."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在为今天加一条需要的事吧。"
+          }
+        }
+      }
     },
     "Off" : {
       "localizations" : {
@@ -2273,7 +2429,20 @@
       }
     },
     "One more step" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One more step"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还差一小步"
+          }
+        }
+      }
     },
     "Open iOS Settings for notification permissions." : {
       "localizations" : {
@@ -2340,7 +2509,20 @@
       }
     },
     "Opens Today and starts the guided journal path." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens Today and starts the guided journal path."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开「今天」，开始引导式记录。"
+          }
+        }
+      }
     },
     "People in Mind" : {
       "localizations" : {
@@ -2359,10 +2541,36 @@
       }
     },
     "People in Mind will open after your first gratitude." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People in Mind will open after your first gratitude."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写下第一件感恩的事之后，「牵挂的人」就会打开。"
+          }
+        }
+      }
     },
     "People in Mind will open after your first need." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People in Mind will open after your first need."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写下第一件需要的事之后，「牵挂的人」就会打开。"
+          }
+        }
+      }
     },
     "Please try again." : {
       "localizations" : {
@@ -2423,7 +2631,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「种子」已经种下——温柔的一小步。"
+            "value" : "感恩的事、需要的事和牵挂的人，你都写下了一条——向今天的记录「撒种」，温柔的一小步。"
           }
         }
       }
@@ -2583,7 +2791,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "土壤、种子、转熟、丰收与满溢，说的是你在「今天」写下的这一篇有多饱满——不是比赛，只是一张温柔的地图。"
+            "value" : "土壤、撒种、成长、丰收与满溢，说的是你在「今天」写下的这一篇有多饱满——不是比赛，只是一张温柔的地图。"
           }
         }
       }
@@ -2717,7 +2925,20 @@
       }
     },
     "Reading Notes open after the chip rows are full." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading Notes open after the chip rows are full."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小标签行都填满后，即可写阅读笔记。"
+          }
+        }
+      }
     },
     "Recurring Gratitudes" : {
       "localizations" : {
@@ -2768,7 +2989,20 @@
       }
     },
     "Reflections open after the chip rows are full." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reflections open after the chip rows are full."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小标签行都填满后，即可写反思。"
+          }
+        }
+      }
     },
     "Refresh" : {
       "localizations" : {
@@ -2991,7 +3225,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「成长」表示每个栏目都至少有三条。继续写，把每个栏目的五个格子都填满，就能到「丰收」。"
+            "value" : "每个栏目至少都有三条了。把格子一行行填到五条，就走向「丰收」吧。"
           }
         }
       }
@@ -3007,7 +3241,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "激活时会检查云端 AI 是否可达。"
+            "value" : "开启时会检查云端 AI 是否可用。"
           }
         }
       }
@@ -3087,7 +3321,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「撒种」表示每个栏目都至少有一条，继续写，朝着每个栏目各三条前进。"
+            "value" : "三个栏目里都已经有了字。再多写几条，让今天这篇记录慢慢「成长」起来。"
           }
         }
       }
@@ -3200,7 +3434,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明今天「满溢」表示什么。"
+            "value" : "打开今天「满溢」阶段的说明。"
           }
         }
       }
@@ -3216,7 +3450,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明今天「丰收」表示什么。"
+            "value" : "打开今天「丰收」阶段的说明。"
           }
         }
       }
@@ -3233,7 +3467,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明「进行中」在今天代表什么。"
+            "value" : "打开「进行中」阶段的说明。"
           }
         }
       }
@@ -3249,7 +3483,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明今天「成长」表示什么。"
+            "value" : "打开今天「成长」阶段的说明。"
           }
         }
       }
@@ -3265,7 +3499,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明今天「撒种」表示什么。"
+            "value" : "打开今天「撒种」阶段的说明。"
           }
         }
       }
@@ -3281,7 +3515,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "说明今天「土壤」表示什么。"
+            "value" : "打开今天「土壤」阶段的说明。"
           }
         }
       }
@@ -3363,7 +3597,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「土壤」表示你还没有在感恩的事、需要的事和牵挂的人三个栏目各写至少一条。"
+            "value" : "今天的记录里，感恩的事、需要的事和牵挂的人，还有哪一栏是空的？随便从一处写下第一条，就当松一松土。"
           }
         }
       }
@@ -3380,7 +3614,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "土壤、种子、成熟、收获与满溢，标记的是这篇记录有多饱满——不是比赛，只是一张温柔的地图。"
+            "value" : "土壤、撒种、成长、丰收与满溢，标记的是这篇记录有多饱满——不是比赛，只是一张温柔的地图。"
           }
         }
       }
@@ -3402,10 +3636,36 @@
       }
     },
     "Start gently" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start gently"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻轻开始"
+          }
+        }
+      }
     },
     "Start with one gratitude, and the rest will follow." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start with one gratitude, and the rest will follow."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从一件感恩的事写起，其余的会跟着来。"
+          }
+        }
+      }
     },
     "Start with one gratitude." : {
       "localizations" : {
@@ -3977,7 +4237,20 @@
       }
     },
     "We'll guide your first entry on Today—one quiet step at a time." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll guide your first entry on Today—one quiet step at a time."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我们会在「今天」陪你写完第一篇——一步一步，很轻。"
+          }
+        }
+      }
     },
     "Welcome to Grace Notes" : {
       "localizations" : {
@@ -4241,7 +4514,20 @@
       }
     },
     "Who is on your mind today?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who is on your mind today?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天你在惦记谁？"
+          }
+        }
+      }
     },
     "Would a short check-in with %@ feel supportive this week?" : {
       "extractionState" : "stale",
@@ -4309,7 +4595,20 @@
       }
     },
     "You can turn on iCloud sync in Settings whenever you're ready." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can turn on iCloud sync in Settings whenever you're ready."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备好了，随时可以在「设置」里打开 iCloud 同步。"
+          }
+        }
+      }
     },
     "You changed iCloud sync here." : {
       "extractionState" : "stale",
@@ -4488,7 +4787,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你已种下「种子」"
+            "value" : "今天的记录里，感恩、需要和牵挂各有一条——这就是「撒种」。"
           }
         }
       }
@@ -4575,10 +4874,36 @@
       }
     },
     "You're ready to keep filling the rows. Reach five in each section when it feels right." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're ready to keep filling the rows. Reach five in each section when it feels right."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以接着把行填满了。每个栏目写到五条，觉得合适就好。"
+          }
+        }
+      }
     },
     "You've filled the chip rows. Add reading notes and reflections when you're ready for Abundance." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've filled the chip rows. Add reading notes and reflections when you're ready for Abundance."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小标签行都填满了。想走向「满溢」时，再写阅读笔记和反思就好。"
+          }
+        }
+      }
     },
     "You've planted Seed for the first time—one gratitude, one need, and someone on your mind. Lovely." : {
       "localizations" : {
@@ -4597,7 +4922,20 @@
       }
     },
     "You've planted Seed. Keep going until each section has three." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've planted Seed. Keep going until each section has three."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你已经「撒种」了。继续写，直到每个栏目都有三条。"
+          }
+        }
+      }
     },
     "You've taken the first full step on Today. Keep journaling at your own pace—there's more room when you're ready." : {
       "extractionState" : "stale",

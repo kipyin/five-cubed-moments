@@ -3,10 +3,10 @@ import QuartzCore
 import UniformTypeIdentifiers
 import UIKit
 
-private enum ChipReorderMotion {
-    /// Slight overshoot so lift/release feels lively without feeling toy-like.
-    static let liftSpring = Animation.spring(response: 0.3, dampingFraction: 0.62)
-    static let releaseSpring = Animation.spring(response: 0.34, dampingFraction: 0.72)
+private enum ChipReorderAnimation {
+    /// Critically damped: no overshoot on lift/release.
+    static let lift = Animation.spring(response: 0.28, dampingFraction: 1)
+    static let release = Animation.spring(response: 0.3, dampingFraction: 1)
 }
 
 private struct HorizontalScrollMetrics: Equatable {
@@ -15,68 +15,29 @@ private struct HorizontalScrollMetrics: Equatable {
     var contentOffsetX: CGFloat = 0
 }
 
-// MARK: - Chip row elastic scroll (~±3.4% x, ±1.9% y; reduce motion = off)
+// MARK: - Chip row scroll metrics (elastic stretch disabled; keeps edge masks in sync)
 
 private struct ChipRowScrollSnapshot: Equatable {
     var metrics: HorizontalScrollMetrics
-    /// Added to 1.0 for `scaleEffect` (see `ChipRowScrollElasticity`).
+    /// Added to 1.0 for `scaleEffect`; kept at zero (no rubber-band scaling).
     var elasticDeltaX: CGFloat
     var elasticDeltaY: CGFloat
 }
 
-/// Drives `.animation(nil, value:)` so only elastic scaling is non-animated; chip reorder springs stay intact.
+/// Drives `.animation(nil, value:)` so chip-row scale stays non-animated.
 private struct ChipRowElasticAnimationKey: Equatable {
     var deltaX: CGFloat
     var deltaY: CGFloat
 }
 
 private enum ChipRowScrollElasticity {
-    /// Max horizontal deviation from 1.0 (tuned for a clearly readable stretch).
-    static let maxDeltaX: CGFloat = 0.034
-    /// Max vertical deviation from 1.0.
-    static let maxDeltaY: CGFloat = 0.019
-    /// Speed at which velocity-driven deformation approaches its cap (points / second).
-    static let velocityReference: CGFloat = 750
-    /// Maps overscroll distance into extra deformation; uses a fraction of viewport width.
-    static let overscrollViewportFraction: CGFloat = 0.13
-
-    static func clampedDeltas(deltaX: CGFloat, deltaY: CGFloat) -> (CGFloat, CGFloat) {
-        let clampedX = min(max(deltaX, -maxDeltaX), maxDeltaX)
-        let clampedY = min(max(deltaY, -maxDeltaY), maxDeltaY)
-        return (clampedX, clampedY)
-    }
-
     static func deltas(
-        metrics: HorizontalScrollMetrics,
-        velocityPointsPerSec: CGFloat,
-        isUserDragging: Bool,
-        reduceMotion: Bool
+        metrics _: HorizontalScrollMetrics,
+        velocityPointsPerSec _: CGFloat,
+        isUserDragging _: Bool,
+        reduceMotion _: Bool
     ) -> (CGFloat, CGFloat) {
-        guard !reduceMotion, isUserDragging else { return (0, 0) }
-
-        let viewportWidth = metrics.viewportWidth
-        let contentWidth = metrics.contentWidth
-        let offsetX = metrics.contentOffsetX
-        guard viewportWidth > 0, contentWidth > 0 else { return (0, 0) }
-
-        let maxOffset = max(0, contentWidth - viewportWidth)
-        let overscrollLeading = max(0, -offsetX)
-        let overscrollTrailing = max(0, offsetX - maxOffset)
-        let overscroll = max(overscrollLeading, overscrollTrailing)
-
-        let vNorm = min(max(velocityPointsPerSec / velocityReference, -1), 1)
-        var deltaX = vNorm * (maxDeltaX * 0.9)
-        var deltaY = -abs(vNorm) * (maxDeltaY * 0.92)
-
-        if overscroll > 0.35 {
-            let denom = max(viewportWidth * overscrollViewportFraction, 44)
-            let overscrollFactor = min(1, overscroll / denom)
-            let direction: CGFloat = overscrollLeading >= overscrollTrailing ? -1 : 1
-            deltaX += direction * overscrollFactor * (maxDeltaX * 0.85)
-            deltaY += -overscrollFactor * (maxDeltaY * 0.76)
-        }
-
-        return clampedDeltas(deltaX: deltaX, deltaY: deltaY)
+        (0, 0)
     }
 }
 
@@ -559,7 +520,7 @@ struct SequentialSectionView: View {
                     if reduceMotion {
                         draggingItemID = item.id
                     } else {
-                        withAnimation(ChipReorderMotion.liftSpring) {
+                        withAnimation(ChipReorderAnimation.lift) {
                             draggingItemID = item.id
                         }
                     }
@@ -854,7 +815,7 @@ struct ChipReorderDropDelegate: DropDelegate {
 
     private func clearDraggingState(animated: Bool) {
         if animated, !reduceMotion {
-            withAnimation(ChipReorderMotion.releaseSpring) {
+            withAnimation(ChipReorderAnimation.release) {
                 draggingItemID = nil
             }
         } else {

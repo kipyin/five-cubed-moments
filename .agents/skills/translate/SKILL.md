@@ -24,7 +24,7 @@ Provide focused string recommendations or direct localization edits. When handin
 ## Decision Checklist
 
 - English source strings use **American English** spelling.
-- Match the app tone: calm, warm, supportive, and trustworthy—then pass user-visible strings to **Marketing** for a final en + `zh-Hans` pass (see `.agents/skills/market/SKILL.md`). If “calm/warm” wording drifts into empty filler, Marketing and product intent win.
+- Match the app tone: calm, warm, supportive, and trustworthy—then pass user-visible strings to **Marketing** for a final en + `zh-Hans` pass (see `.agents/skills/promote/SKILL.md`). If “calm/warm” wording drifts into empty filler, Marketing and product intent win.
 - Prefer `感恩记` over `日记` for the product or journal concept.
 - Keep category language consistent: `感恩的事`, `需要的事`, `牵挂的人`.
 - Keep Apple names and platform terms in official form, such as `iCloud`.

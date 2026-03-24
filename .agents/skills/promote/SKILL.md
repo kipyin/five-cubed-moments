@@ -1,9 +1,9 @@
 ---
-name: market
+name: promote
 description: Final pass on all user-facing English and Chinese copy—tone, parity, and anti-slop—after Translator
 ---
 
-# Market
+# Promote
 
 ## Purpose
 

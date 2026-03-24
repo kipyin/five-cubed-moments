@@ -55,7 +55,7 @@ Keep role behavior in `.agents/skills/` as the single source of truth for role-s
 - `Designer` -> `.agents/skills/designer/SKILL.md`
 - `Architect` -> `.agents/skills/architect/SKILL.md`
 - `Translator` -> `.agents/skills/translate/SKILL.md`
-- `Marketing` -> `.agents/skills/market/SKILL.md`
+- `Marketing` -> `.agents/skills/promote/SKILL.md`
 - `Builder` -> `.agents/skills/build/SKILL.md`
 - `Release Manager` -> `.agents/skills/git/SKILL.md`
 - `QA Reviewer` -> `.agents/skills/qa-review/SKILL.md`

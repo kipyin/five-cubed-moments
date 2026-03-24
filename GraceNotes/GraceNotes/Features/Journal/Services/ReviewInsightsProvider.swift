@@ -2,22 +2,25 @@ import Foundation
 
 struct ReviewInsightsProvider: Sendable {
     static let aiFeaturesEnabledKey = SummarizerProvider.useCloudUserDefaultsKey
-    private static let legacyUseAIReviewInsightsKey = "useAIReviewInsights"
-    private static let placeholderApiKey = "YOUR_KEY_HERE"
+    /// Legacy key removed by `migrateLegacyAIFeaturesToggleIfNeeded`; still consulted for install-continuity heuristics.
+    static let legacyAIFeaturesUserDefaultsKey = "useAIReviewInsights"
 
     private let deterministicGenerator: any ReviewInsightsGenerating
     private let cloudGenerator: (any ReviewInsightsGenerating)?
+    private let userDefaults: UserDefaults
 
     init(
         deterministicGenerator: any ReviewInsightsGenerating = DeterministicReviewInsightsGenerator(),
         cloudGenerator: (any ReviewInsightsGenerating)? = nil,
-        apiKey: String = ApiSecrets.cloudApiKey
+        apiKey: String = ApiSecrets.cloudApiKey,
+        userDefaults: UserDefaults = .standard
     ) {
         self.deterministicGenerator = deterministicGenerator
+        self.userDefaults = userDefaults
 
         if let cloudGenerator {
             self.cloudGenerator = cloudGenerator
-        } else if apiKey != Self.placeholderApiKey {
+        } else if ApiSecrets.isUsableCloudApiKey(apiKey) {
             self.cloudGenerator = CloudReviewInsightsGenerator(apiKey: apiKey)
         } else {
             self.cloudGenerator = nil
@@ -25,12 +28,12 @@ struct ReviewInsightsProvider: Sendable {
     }
 
     static func migrateLegacyAIFeaturesToggleIfNeeded(defaults: UserDefaults = .standard) {
-        guard let legacyValue = defaults.object(forKey: legacyUseAIReviewInsightsKey) as? Bool else {
+        guard let legacyValue = defaults.object(forKey: legacyAIFeaturesUserDefaultsKey) as? Bool else {
             return
         }
         let currentAIFeaturesValue = defaults.object(forKey: aiFeaturesEnabledKey) as? Bool ?? false
         defaults.set(currentAIFeaturesValue || legacyValue, forKey: aiFeaturesEnabledKey)
-        defaults.removeObject(forKey: legacyUseAIReviewInsightsKey)
+        defaults.removeObject(forKey: legacyAIFeaturesUserDefaultsKey)
     }
 
     func generateInsights(
@@ -38,9 +41,15 @@ struct ReviewInsightsProvider: Sendable {
         referenceDate: Date,
         calendar: Calendar = .current
     ) async -> ReviewInsights {
-        let useAI = UserDefaults.standard.object(forKey: Self.aiFeaturesEnabledKey) as? Bool ?? false
+        let useAI = userDefaults.object(forKey: Self.aiFeaturesEnabledKey) as? Bool ?? false
 
-        if useAI, let cloudGenerator {
+        let cloudAllowed = ReviewInsightsCloudEligibility.hasMinimumEvidenceForCloudAI(
+            entries: entries,
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        if useAI, cloudAllowed, let cloudGenerator {
             if let cloudInsights = try? await cloudGenerator.generateInsights(
                 from: entries,
                 referenceDate: referenceDate,
@@ -58,7 +67,7 @@ struct ReviewInsightsProvider: Sendable {
             return deterministicInsights
         }
 
-        let weekRange = weekDateRange(containing: referenceDate, calendar: calendar)
+        let weekRange = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
         let fallbackInsight = ReviewWeeklyInsight(
             pattern: .sparseFallback,
             observation: String(
@@ -86,13 +95,6 @@ struct ReviewInsightsProvider: Sendable {
             ),
             narrativeSummary: nil
         )
-    }
-
-    private func weekDateRange(containing date: Date, calendar: Calendar) -> Range<Date> {
-        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        let start = calendar.date(from: components) ?? calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 7, to: start) ?? start
-        return start..<end
     }
 
     nonisolated(unsafe) static let shared = ReviewInsightsProvider()

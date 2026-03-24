@@ -1,8 +1,8 @@
 ---
 initiative_id: 017-issue-40-80-insight-implementation
 role: Architect
-status: in_progress
-updated_at: 2026-03-24
+status: completed
+updated_at: 2026-03-25
 related_issue: 40
 related_pr: none
 ---
@@ -12,7 +12,7 @@ related_pr: none
 ## Inputs Reviewed
 
 - **Active UI spec:** [`design.md`](design.md) (Designer — three inset boxes, spacing, typography defaults, thin-week behavior)
-- **Archived planning:** [`016-issue-80-insight-direction`](../archive/016-issue-80-insight-direction/) — `brief.md`, `architecture.md`, `design.md`
+- **Archived planning:** [`016-issue-80-insight-direction`](../016-issue-80-insight-direction/) — `brief.md`, `architecture.md`, `design.md`
 - This folder: `brief.md`
 - `GraceNotes/docs/03-review-insight-quality-contract.md`
 - `GraceNotes/docs/04-review-insight-examples.md`
@@ -123,4 +123,4 @@ related_pr: none
 
 ## Next Owner
 
-**Release Manager** — Land **#40/#80** via PR to **`main`** (coordinate version lane with **[`018-release-0-5-2-patch`](../018-release-0-5-2-patch/)** if packaging together). **Human** still runs **`testing.md`** VoiceOver / Dynamic Type checks before App Store submission.
+**Repository** — Initiative **archived** after v1 insight work landed on **`main`**. **GitHub #80** tracks further engine work. Store submission: run **`testing.md`** VoiceOver / Dynamic Type checks before ship; package via standard **`release/<version>`** workflow and **`CHANGELOG`** (initiative **018** was **cancelled**).

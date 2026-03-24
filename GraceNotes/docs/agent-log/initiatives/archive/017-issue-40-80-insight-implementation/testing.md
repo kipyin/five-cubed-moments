@@ -1,8 +1,8 @@
 ---
 initiative_id: 017-issue-40-80-insight-implementation
 role: Test Lead
-status: in_progress
-updated_at: 2026-03-24
+status: completed
+updated_at: 2026-03-25
 related_issue: 40
 related_pr: none
 ---
@@ -11,9 +11,9 @@ related_pr: none
 
 ## Inputs Reviewed
 
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/brief.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/architecture.md` (Phase A / **#40**, Phase B / **#80** close criteria)
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/design.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/architecture.md` (Phase A / **#40**, Phase B / **#80** close criteria)
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/design.md`
 - `GraceNotes/GraceNotes/Features/Journal/Views/ReviewSummaryCard.swift`
 - `GraceNotes/GraceNotes/Features/Journal/Views/ReviewScreen.swift`
 - `GraceNotes/GraceNotes/Features/Journal/Services/WeeklyInsightCandidateBuilder.swift`
@@ -84,4 +84,4 @@ Engine behavior is validated primarily via **mocked** cloud responses and determ
 
 ## Next Owner
 
-**QA Reviewer** — Fill **`qa.md`** (Pass/Fail vs architecture **#40** + **#80**) after local `GraceNotesTests` run; then **Release Manager** for **`release.md`** and **018** lane alignment.
+**None** — initiative **archived**; run **`GraceNotesTests`** on macOS before any **0.5.2** ship; residual **VoiceOver** / Dynamic Type checks remain recommended pre–App Store.

@@ -1,8 +1,8 @@
 ---
 initiative_id: 017-issue-40-80-insight-implementation
 role: Designer
-status: in_progress
-updated_at: 2026-03-24
+status: completed
+updated_at: 2026-03-25
 related_issue: 40
 related_pr: none
 ---
@@ -11,7 +11,7 @@ related_pr: none
 
 ## Inputs Reviewed
 
-- [Archived `016` design spec](../archive/016-issue-80-insight-direction/design.md) (canonical mapping, caps, localization keys)
+- [Archived `016` design spec](../016-issue-80-insight-direction/design.md) (canonical mapping, caps, localization keys)
 - [017 `architecture.md`](architecture.md)
 - `.impeccable.md` (calm hierarchy, warm paper, low cognitive load)
 - Current implementation: `ReviewScreen.swift` — `ReviewSummaryCard`

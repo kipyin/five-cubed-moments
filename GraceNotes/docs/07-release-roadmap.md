@@ -172,7 +172,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 
 **Release status**
 - **Released (2026-03-24)** — marketing version **`0.5.1`**, bundle **`3`**; see `CHANGELOG.md` and git tag **`v0.5.1`**.
-- Branch/tag playbook: `GraceNotes/docs/agent-log/initiatives/015-release-0-5-1-patch/release.md`.
+- Branch/tag playbook: `GraceNotes/docs/agent-log/initiatives/archive/015-release-0-5-1-patch/release.md`.
 
 **Goal:** Users upgrading from `0.5.0` (or any build below `0.5.1`) into `0.5.1` get a **one-time** first-week orientation on the first launch of that version; later launches and later versions do not repeat it unless product adds a new rule.
 
@@ -199,10 +199,10 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - `#40` / `#80` review insight follow-through where remaining intent is still tracked toward 0.5.2 acceptance.
 - Agent-log initiative context for this lane:
   - Archived direction: `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/`
-  - Active implementation: `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/`
+  - Archived implementation (v1 landed on **`main`**): `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` — **GitHub #80** remains **open** for engine depth
 
 **Why now**
-- `0.5.1` shipped upgrade orientation; this patch keeps Settings copy and structure consistent while finishing insight-focused scope still being tracked in active implementation handoffs.
+- `0.5.1` shipped upgrade orientation; this patch keeps Settings copy and structure consistent while finishing insight-focused scope; v1 implementation is **archived** under **017** while **GitHub #80** may still carry engine follow-up.
 - This is a small, focused release window that improves clarity without opening broader Settings redesign or 0.6.0 trust expansion.
 
 **Acceptance intent**
@@ -282,6 +282,6 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/archive/2026-03-product-strategy-implementation.md` (iCloud foundation and runtime validation constraints)
 - `GraceNotes/docs/agent-log/initiatives/archive/006-issue-41-agents-workflow/brief.md`
 - `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` (insight direction for #80)
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/` (active implementation trail for #40 and #80)
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (archived implementation trail for #40 / #80 v1; **#80** may remain open)
 - `CHANGELOG.md`
 - GitHub milestones: https://github.com/kipyin/grace-notes/milestones

@@ -1,7 +1,7 @@
 ---
 initiative_id: 015-release-0-5-1-patch
 role: Test Lead
-status: in_progress
+status: completed
 updated_at: 2026-03-24
 related_issue: none
 related_pr: none

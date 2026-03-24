@@ -14,13 +14,13 @@ related_pr: none
 - `GraceNotes/docs/07-release-roadmap.md` (0.5.2 lane and milestone alignment)
 - `CHANGELOG.md` (new `[0.5.2] - Unreleased` section)
 - `README.md` (`What's new in 0.5.2 (Unreleased)`)
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/architecture.md` (latest active implementation scope)
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/pushback.md` (current constraints)
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/architecture.md` (archived v1 implementation scope)
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/pushback.md` (constraints at archive time)
 - `https://github.com/kipyin/grace-notes/issues/84`
 
 ## Problem
 
-Prepare a focused `0.5.2` patch lane that aligns release docs and handoff files for two goals: fix Settings section-title capitalization drift (`#84`) and package insight follow-through work tracked in #40/#80 handoffs (archived direction `016` plus active implementation `017`).
+Prepare a focused `0.5.2` patch lane that aligns release docs and handoff files for two goals: fix Settings section-title capitalization drift (`#84`) and package insight follow-through work tracked in #40/#80 handoffs (archived direction **`016`** plus archived implementation **`017`**).
 
 ## User Value
 
@@ -33,7 +33,7 @@ Prepare a focused `0.5.2` patch lane that aligns release docs and handoff files 
 - `#84` Settings section title case consistency (including nested settings screens that inherit list-header uppercase).
 - `#40` / `#80` insight follow-through as release-lane goals for `0.5.2`, with references to:
   - `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/`
-  - `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/`
+  - `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/`
 - Documentation setup and alignment for `0.5.2`: roadmap, changelog unreleased section, README "What's new", and release-manager checklist.
 
 ## Scope Out

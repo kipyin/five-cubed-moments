@@ -1,8 +1,8 @@
 ---
 initiative_id: 015-release-0-5-1-patch
 role: Strategist
-status: in_progress
-updated_at: 2026-03-24
+status: completed
+updated_at: 2026-03-25
 related_issue: none
 related_pr: none
 ---
@@ -12,7 +12,7 @@ related_pr: none
 ## Inputs Reviewed
 
 - `CHANGELOG.md` — `[0.5.1] - Unreleased` (upgrade orientation, copy, cloud/locale, fixes, packaging, scheme, concurrency settings).
-- `GraceNotes/docs/agent-log/initiatives/015-release-0-5-1-patch/release.md` — branch/tag workflow, marketing `0.5.1`, bundle **3**, doc sync.
+- `GraceNotes/docs/agent-log/initiatives/archive/015-release-0-5-1-patch/release.md` — branch/tag workflow, marketing `0.5.1`, bundle **3**, doc sync.
 - `GraceNotes/docs/07-release-roadmap.md` — 0.5.x line context (referenced from CHANGELOG).
 
 ## Problem

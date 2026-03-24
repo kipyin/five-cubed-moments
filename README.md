@@ -9,7 +9,7 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 ## What's new in 0.5.2 (Unreleased)
 
 - **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
-- **Review insights (#40 / #80)** — 0.5.2 includes insight follow-through tracked in initiative handoffs (`archive/016-issue-80-insight-direction` and `017-issue-40-80-insight-implementation`).
+- **Review insights (#40 / #80)** — 0.5.2 includes insight follow-through tracked in initiative handoffs (`GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/`; **GitHub #80** may remain open for engine depth).
 
 ## What's new in 0.5.1 (2026-03-24)
 

@@ -15,9 +15,9 @@ related_pr: none
 - `GraceNotes/docs/07-release-roadmap.md`
 - `CHANGELOG.md`
 - `README.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/architecture.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/testing.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/qa.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/architecture.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/testing.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/qa.md`
 
 ## Base and Version Check
 

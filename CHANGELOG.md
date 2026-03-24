@@ -6,7 +6,7 @@ Planned patch on the 0.5.x line: Settings title-case consistency plus insight fo
 
 ### Changed
 - Settings: section headers use authored title case instead of all-caps list header styling (#84).
-- Review insights: continue #40 / #80 follow-through in the 0.5.2 release lane, with handoff context in `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/`.
+- Review insights: continue #40 / #80 follow-through in the 0.5.2 release lane, with handoff context in `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (**#80** may remain open for engine depth).
 
 ## [0.5.1] - 2026-03-24
 

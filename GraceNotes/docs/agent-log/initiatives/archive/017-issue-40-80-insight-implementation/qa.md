@@ -1,8 +1,8 @@
 ---
 initiative_id: 017-issue-40-80-insight-implementation
 role: QA Reviewer
-status: in_progress
-updated_at: 2026-03-24
+status: completed
+updated_at: 2026-03-25
 related_issue: 40
 related_pr: none
 ---
@@ -11,10 +11,10 @@ related_pr: none
 
 ## Inputs Reviewed
 
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/brief.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/architecture.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/design.md`
-- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/testing.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/architecture.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/design.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/testing.md`
 - Archived `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/design.md`
 - Code: `ReviewSummaryCard.swift`, `WeeklyInsightCandidateBuilder.swift`, `CloudReviewInsightsSanitizer.swift`, `CloudReviewInsightsGenerator.swift`, `Localizable.xcstrings` (new **#80** strings)
 
@@ -64,4 +64,4 @@ Automated evidence covers **#80** regression targets; **#40** a11y row remains t
 
 ## Next Owner
 
-**Release Manager** — Branch/PR hygiene, **`release.md`**, `CHANGELOG` if user-visible copy/behavior ships, coordination with **018** patch lane.
+**None** — initiative **archived**; **GitHub #80** and **`release.md`** (this folder) carry forward for engine + ship hygiene.

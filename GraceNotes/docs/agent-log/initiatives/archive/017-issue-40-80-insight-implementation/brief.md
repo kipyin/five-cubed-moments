@@ -1,7 +1,7 @@
 ---
 initiative_id: 017-issue-40-80-insight-implementation
 role: Strategist
-status: in_progress
+status: completed
 updated_at: 2026-03-25
 related_issue: 40
 related_pr: none
@@ -11,7 +11,7 @@ related_pr: none
 
 ## Inputs Reviewed
 
-- Archived planning + design: [`016-issue-80-insight-direction`](../archive/016-issue-80-insight-direction/) — **`brief.md`**, **`architecture.md`**, **`design.md`** (canonical product + contract bridge + UI spec).
+- Archived planning + design: [`016-issue-80-insight-direction`](../016-issue-80-insight-direction/) — **`brief.md`**, **`architecture.md`**, **`design.md`** (canonical product + contract bridge + UI spec).
 - GitHub **#40** (presentation) then **#80** (engine), **serial**, per archived **016** **Product decisions**.
 - `GraceNotes/docs/03-review-insight-quality-contract.md`
 - `GraceNotes/docs/07-release-roadmap.md` (split **#40** vs **#80**)
@@ -34,4 +34,4 @@ Locking **information architecture and layout** (#40) before prompt/sanitizer wo
 
 ## Next Owner
 
-**Release Manager** — PR + version/docs per **`release.md`** and **018** lane. **Strategist** archives **017** after release.
+**Repository** — **GitHub #80** remains **open** for deeper engine follow-up (prompts, fixtures, contract conformance). Open a **new initiative** if that work needs a fresh handoff trail.

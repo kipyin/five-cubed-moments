@@ -2,7 +2,8 @@ import Foundation
 
 struct ReviewInsightsProvider: Sendable {
     static let aiFeaturesEnabledKey = SummarizerProvider.useCloudUserDefaultsKey
-    /// Legacy key removed by `migrateLegacyAIFeaturesToggleIfNeeded`; still consulted for install-continuity heuristics.
+    /// Legacy key removed by `migrateLegacyAIFeaturesToggleIfNeeded`;
+    /// still consulted for install-continuity heuristics.
     static let legacyAIFeaturesUserDefaultsKey = "useAIReviewInsights"
 
     private let deterministicGenerator: any ReviewInsightsGenerating
@@ -41,7 +42,7 @@ struct ReviewInsightsProvider: Sendable {
         referenceDate: Date,
         calendar: Calendar = .current
     ) async -> ReviewInsights {
-        let useAI = userDefaults.object(forKey: Self.aiFeaturesEnabledKey) as? Bool ?? false
+        let useAI = AIFeaturesSettings.isEnabled(using: userDefaults)
 
         let cloudAllowed = ReviewInsightsCloudEligibility.hasMinimumEvidenceForCloudAI(
             entries: entries,

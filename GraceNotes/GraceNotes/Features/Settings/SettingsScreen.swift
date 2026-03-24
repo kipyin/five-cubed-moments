@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 struct SettingsScreen: View {
-    /// Default false to align with SummarizerProvider; when cloud is off we use the on-device deterministic chip label summarizer.
-    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudSummarization = false
+    /// Default false keeps AI features on-device until explicitly enabled.
+    @AppStorage(AIFeaturesSettings.enabledUserDefaultsKey) private var useAIFeatures = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.openURL) private var openURL
@@ -112,6 +112,8 @@ struct SettingsScreen: View {
                 clampCloudAIFeaturesIfApiKeyMissing()
             }
             .task {
+                ReviewInsightsProvider.migrateLegacyAIFeaturesToggleIfNeeded()
+                useAIFeatures = AIFeaturesSettings.isEnabled()
                 clampCloudAIFeaturesIfApiKeyMissing()
                 await reminderState.refreshStatus()
                 syncReminderControlState(with: reminderState.liveStatus)
@@ -135,7 +137,7 @@ struct SettingsScreen: View {
                 aiCloudStatus.sceneDidBecomeActive()
                 syncAICloudStatusModel()
             }
-            .onChange(of: useCloudSummarization) { _, _ in
+            .onChange(of: useAIFeatures) { _, _ in
                 syncAICloudStatusModel()
             }
             .onChange(of: reminderState.selectedTime) { _, _ in
@@ -170,7 +172,7 @@ struct SettingsScreen: View {
 
 private extension SettingsScreen {
     var aiFeaturesOn: Bool {
-        useCloudSummarization
+        AIFeaturesSettings.isEnabled()
     }
 
     var canRunAIConnectivityCheck: Bool {
@@ -184,7 +186,7 @@ private extension SettingsScreen {
     /// Cloud AI toggles require a non-placeholder API key; keep AppStorage consistent with that constraint.
     func clampCloudAIFeaturesIfApiKeyMissing() {
         guard !ApiSecrets.isCloudApiKeyConfigured, aiFeaturesOn else { return }
-        useCloudSummarization = false
+        AIFeaturesSettings.setEnabled(false)
         syncAICloudStatusModel()
     }
 
@@ -243,7 +245,7 @@ private extension SettingsScreen {
         Binding(
             get: { aiFeaturesOn },
             set: { enabled in
-                useCloudSummarization = enabled
+                AIFeaturesSettings.setEnabled(enabled)
                 syncAICloudStatusModel()
             }
         )

@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct SettingsScreen: View {
-    /// Default false to align with SummarizerProvider; first launch uses on-device NL summarization.
+    /// Default false to align with SummarizerProvider; when cloud is off we use the on-device deterministic chip label summarizer.
     @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudSummarization = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @EnvironmentObject private var appNavigation: AppNavigationModel
@@ -109,11 +109,9 @@ struct SettingsScreen: View {
             }
             .navigationTitle(String(localized: "Settings"))
             .onAppear {
-                LegacyAIInsightsUserDefaultsMigration.migrateIfNeeded()
                 clampCloudAIFeaturesIfApiKeyMissing()
             }
             .task {
-                LegacyAIInsightsUserDefaultsMigration.migrateIfNeeded()
                 clampCloudAIFeaturesIfApiKeyMissing()
                 await reminderState.refreshStatus()
                 syncReminderControlState(with: reminderState.liveStatus)

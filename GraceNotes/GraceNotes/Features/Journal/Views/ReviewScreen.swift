@@ -30,7 +30,7 @@ struct ReviewScreen: View {
     @State private var selectedMode: ReviewMode
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
     @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
-    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudAI = false
+    @AppStorage(ReviewInsightsProvider.aiFeaturesEnabledKey) private var aiFeaturesEnabled = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let calendar = Calendar.current
@@ -39,13 +39,9 @@ struct ReviewScreen: View {
     private let isUiTestingExperience: Bool
 
     init() {
-        let testingFlag = ProcessInfo.processInfo.environment["FIVECUBED_UI_TESTING"]
-            .map { value in
-                let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                return normalizedValue == "1" || normalizedValue == "true" || normalizedValue == "yes"
-            } ?? false
-        isUiTestingExperience = testingFlag
-        _selectedMode = State(initialValue: testingFlag ? .timeline : .insights)
+        let isUiTesting = ProcessInfo.graceNotesIsRunningUITests
+        isUiTestingExperience = isUiTesting
+        _selectedMode = State(initialValue: isUiTesting ? .timeline : .insights)
     }
 
     private var timelineRefreshKey: TimelineRefreshKey {
@@ -58,7 +54,7 @@ struct ReviewScreen: View {
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
         ReviewInsightsRefreshKey(
             weekStart: currentReviewPeriod.lowerBound,
-            useCloudAI: useCloudAI,
+            aiFeaturesEnabled: aiFeaturesEnabled,
             entrySnapshots: weeklyEntriesForRefresh.map {
                 ReviewEntrySnapshot(id: $0.id, updatedAt: $0.updatedAt)
             }
@@ -272,7 +268,7 @@ struct ReviewScreen: View {
     }
 
     private func shouldCacheRefreshKey(for insights: ReviewInsights) -> Bool {
-        guard useCloudAI else { return true }
+        guard aiFeaturesEnabled else { return true }
         return insights.source == .cloudAI
     }
 

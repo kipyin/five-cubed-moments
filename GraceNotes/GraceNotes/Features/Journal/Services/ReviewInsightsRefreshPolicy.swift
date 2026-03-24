@@ -2,7 +2,7 @@ import Foundation
 
 struct ReviewInsightsRefreshKey: Hashable {
     let weekStart: Date
-    let useCloudAI: Bool
+    let aiFeaturesEnabled: Bool
     let entrySnapshots: [ReviewEntrySnapshot]
 }
 

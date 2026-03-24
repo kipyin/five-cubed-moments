@@ -11,8 +11,8 @@ related_issue: 31,33,32
 ## Inputs Reviewed
 
 - `GraceNotes/docs/07-release-roadmap.md` (0.3.2 scope: #31, #33)
-- `GraceNotes/docs/agent-log/initiatives/issue-36-37-input-pipeline-stabilization/architecture.md` (staged #31/#33 as follow-up)
-- `GraceNotes/docs/agent-log/initiatives/issue-31-33-launch-toggle-performance/architecture.md` (proposed technical approach)
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-36-37-input-pipeline-stabilization/architecture.md` (staged #31/#33 as follow-up)
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-31-33-launch-toggle-performance/architecture.md` (proposed technical approach)
 - Release acceptance: "First launch and common settings interactions feel responsive"
 
 ## Problem

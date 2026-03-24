@@ -25,4 +25,4 @@ Draft text in journal chip `TextField`s was only committed on Return. Users who 
 
 ## Verification
 
-Manual Simulator matrix: `GraceNotes/docs/agent-log/initiatives/issue-70-chip-draft-focus-loss/qa.md` (Test Lead).
+Manual Simulator matrix: `GraceNotes/docs/agent-log/initiatives/archive/issue-70-chip-draft-focus-loss/qa.md` (Test Lead).

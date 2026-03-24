@@ -11,8 +11,8 @@ related_issue: 31,33,32
 ## Inputs Reviewed
 
 - `[GraceNotes/docs/07-release-roadmap.md](../../07-release-roadmap.md)` (0.3.2 scope and acceptance intent)
-- `[GraceNotes/docs/agent-log/initiatives/issue-31-33-launch-toggle-performance/brief.md](./brief.md)`
-- `[GraceNotes/docs/agent-log/initiatives/issue-36-37-input-pipeline-stabilization/architecture.md](../issue-36-37-input-pipeline-stabilization/architecture.md)`
+- `[GraceNotes/docs/agent-log/initiatives/archive/issue-31-33-launch-toggle-performance/brief.md](./brief.md)`
+- `[GraceNotes/docs/agent-log/initiatives/archive/issue-36-37-input-pipeline-stabilization/architecture.md](../issue-36-37-input-pipeline-stabilization/architecture.md)`
 - `[GraceNotes/GraceNotes/Application/GraceNotesApp.swift](../../../GraceNotes/Application/GraceNotesApp.swift)`
 - `[GraceNotes/GraceNotes/Data/Persistence/SwiftData/PersistenceController.swift](../../../GraceNotes/Data/Persistence/SwiftData/PersistenceController.swift)`
 - `[GraceNotes/GraceNotes/Features/Settings/SettingsScreen.swift](../../../GraceNotes/Features/Settings/SettingsScreen.swift)`

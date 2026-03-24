@@ -10,7 +10,7 @@ related_issue: 51
 
 ## Inputs Reviewed
 
-- [GraceNotes/docs/agent-log/initiatives/issue-51-first-launch-chip-keyboard/brief.md](./brief.md)
+- [GraceNotes/docs/agent-log/initiatives/archive/issue-51-first-launch-chip-keyboard/brief.md](./brief.md)
 - [GraceNotes/docs/agent-log/SCHEMA.md](../../SCHEMA.md)
 - [.agents/skills/architect/SKILL.md](../../../../../.agents/skills/architect/SKILL.md)
 - [GraceNotes/GraceNotes/Features/Journal/Views/JournalScreen.swift](../../../GraceNotes/Features/Journal/Views/JournalScreen.swift)

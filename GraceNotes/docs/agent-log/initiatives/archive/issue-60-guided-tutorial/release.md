@@ -30,7 +30,7 @@ related_issue: 60
 ## PR Title and Description
 
 - **PR title:** `release: 0.5.0 — guided journal tutorial (#60)`
-- **PR description:** Summarize first-run Seed/Harvest hints, one-time unlock toasts, per-install persistence, UI-test reset argument, and app icon catalog flag; point to `CHANGELOG.md` and `GraceNotes/docs/agent-log/initiatives/issue-60-guided-tutorial/`.
+- **PR description:** Summarize first-run Seed/Harvest hints, one-time unlock toasts, per-install persistence, UI-test reset argument, and app icon catalog flag; point to `CHANGELOG.md` and `GraceNotes/docs/agent-log/initiatives/archive/issue-60-guided-tutorial/`.
 
 ## Documentation Check
 

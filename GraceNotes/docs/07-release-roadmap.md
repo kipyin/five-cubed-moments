@@ -123,7 +123,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 **Why now**
 - Strategy review ranks trust—and a visible sync story—as the second-biggest product gap after review value.
 - `0.3.4` shipped the sync toggle and privacy copy; users still need confidence that sync actually behaves.
-- UAT (`08-uat-review-notes-release-0.3.3.md`) called out hardening storage and reliable iCloud sync.
+- UAT (`archive/2026-03-uat-review-notes-release-0.3.3.md`) called out hardening storage and reliable iCloud sync.
 
 **Acceptance intent**
 - Users can infer whether their data is intended to be cloud-backed and what to do when something goes wrong.
@@ -254,9 +254,9 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/04-review-insight-examples.md`
 - `GraceNotes/docs/05-exploration-calendar-view.md`
 - `GraceNotes/docs/06-tech-debt-backlog.md`
-- `GraceNotes/docs/08-uat-review-notes-release-0.3.3.md` (storage / iCloud reliability signal)
-- `GraceNotes/docs/09-uat-review-notes-release-0.3.4.md`
+- `GraceNotes/docs/archive/2026-03-uat-review-notes-release-0.3.3.md` (storage / iCloud reliability signal)
+- `GraceNotes/docs/archive/2026-03-uat-review-notes-release-0.3.4.md`
 - `GraceNotes/docs/archive/2026-03-product-strategy-implementation.md` (iCloud foundation and runtime validation constraints)
-- `GraceNotes/docs/agent-log/initiatives/issue-41-agents-workflow/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-41-agents-workflow/brief.md`
 - `CHANGELOG.md`
 - GitHub milestones: https://github.com/kipyin/grace-notes/milestones

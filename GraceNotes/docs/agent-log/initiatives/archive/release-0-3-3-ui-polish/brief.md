@@ -14,8 +14,8 @@ related_release: 0.3.3
 - `GraceNotes/docs/07-release-roadmap.md` (`0.3.2` shipped; `0.4.0` reserved for insight quality)
 - `CHANGELOG.md` (`0.3.2` already addressed first-launch freeze, reminder trust, and input-loss regressions)
 - `GraceNotes/docs/01-strategy-review.md` (polish matters, but should not displace higher-leverage product work)
-- `GraceNotes/docs/agent-log/initiatives/issue-31-33-launch-toggle-performance/brief.md`
-- `GraceNotes/docs/agent-log/initiatives/issue-51-first-launch-chip-keyboard/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-31-33-launch-toggle-performance/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-51-first-launch-chip-keyboard/brief.md`
 
 ## Problem
 

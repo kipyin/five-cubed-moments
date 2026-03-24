@@ -56,7 +56,7 @@ Implementation matches stated product and technical scope on code review, but **
 ## Open questions
 
 - After Simulator runs, does a single `Task.yield` reliably pick up `isReadingNotesFocused` / `isReflectionsFocused` on older devices or with Reduce Motion / keyboard accessories?
-- Should `initiatives/issue-70-chip-draft-focus-loss/` gain a minimal `brief.md` / `testing.md` for continuity (optional hygiene)?
+- Should this archived folder gain a minimal `brief.md` / `testing.md` for continuity (optional hygiene)?
 
 ## Next owner
 

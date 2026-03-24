@@ -12,8 +12,8 @@ related_issue: 51
 
 - GitHub issue `#51`: "Upon first launch, after clicking on an existing chip, it takes ~4-5 seconds for the keyboard to show up."
 - `GraceNotes/docs/07-release-roadmap.md` (0.3.2 shipped #31, #33, #36, #37; #51 not yet in roadmap)
-- `GraceNotes/docs/agent-log/initiatives/issue-31-33-launch-toggle-performance/brief.md` (first-launch and toggle performance)
-- `GraceNotes/docs/agent-log/initiatives/issue-36-37-input-pipeline-stabilization/architecture.md` (keyboard/focus lifecycle, chip tap flow)
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-31-33-launch-toggle-performance/brief.md` (first-launch and toggle performance)
+- `GraceNotes/docs/agent-log/initiatives/archive/issue-36-37-input-pipeline-stabilization/architecture.md` (keyboard/focus lifecycle, chip tap flow)
 - Chip tap → `performChipTap` → `restoreInputFocus` flow in `JournalScreenChipHandling` and `JournalScreen`
 
 ## Problem

@@ -2,7 +2,7 @@
 
 ## Automated
 
-- `JournalCompletionLevelTests.test_completionStatusSystemImage_matchesCompletionIconDesign` — locks SF Symbol names for each `JournalCompletionLevel` and both `isEmphasized` values per `GraceNotes/docs/agent-log/initiatives/completion-icon-metaphor/design.md`.
+- `JournalCompletionLevelTests.test_completionStatusSystemImage_matchesCompletionIconDesign` — locks SF Symbol names for each `JournalCompletionLevel` and both `isEmphasized` values per `GraceNotes/docs/agent-log/initiatives/archive/completion-icon-metaphor/design.md`.
 
 ## Execution
 

@@ -1,7 +1,9 @@
 # Initiatives
 
-Create one folder per initiative, for example:
+Create one folder per **active** initiative under this directory, for example:
 
-- `issue-41-agents-workflow`
+- `issue-71-guided-onboarding`
 
-Inside each initiative folder, roles write handoffs and updates using the shared protocol.
+Shipped or abandoned handoffs belong in **`archive/`** (see [`archive/README.md`](archive/README.md)).
+
+Inside each initiative folder, roles write handoffs using the shared protocol in [`../index.md`](../index.md).

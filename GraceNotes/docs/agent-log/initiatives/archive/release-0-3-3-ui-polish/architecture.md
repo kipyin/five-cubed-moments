@@ -10,7 +10,7 @@ related_release: 0.3.3
 
 ## Inputs Reviewed
 
-- [GraceNotes/docs/agent-log/initiatives/release-0-3-3-ui-polish/brief.md](./brief.md)
+- [GraceNotes/docs/agent-log/initiatives/archive/release-0-3-3-ui-polish/brief.md](./brief.md)
 - [GraceNotes/docs/07-release-roadmap.md](../../07-release-roadmap.md)
 - [.impeccable.md](../../../../.impeccable.md)
 - [.agents/skills/audit/SKILL.md](../../../../.agents/skills/audit/SKILL.md)

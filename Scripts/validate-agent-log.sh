@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -u
+shopt -s nullglob
 
 ROOT_DIR="GraceNotes/docs/agent-log"
 INITIATIVES_DIR="${ROOT_DIR}/initiatives"
@@ -14,8 +15,8 @@ usage() {
   echo
   echo "Examples:"
   echo "  $0"
-  echo "  $0 GraceNotes/docs/agent-log/initiatives/issue-41-agents-workflow"
-  echo "  $0 --strict GraceNotes/docs/agent-log/initiatives/issue-41-agents-workflow/brief.md"
+  echo "  $0 GraceNotes/docs/agent-log/initiatives/issue-71-guided-onboarding"
+  echo "  $0 --strict GraceNotes/docs/agent-log/initiatives/issue-71-guided-onboarding/qa.md"
 }
 
 warn() {
@@ -108,7 +109,7 @@ collect_initiative_dirs() {
 
   if [[ "${#input_paths[@]}" -eq 0 ]]; then
     local file_path
-    for file_path in "${INITIATIVES_DIR}"/*/*.md; do
+    for file_path in "${INITIATIVES_DIR}"/*/*.md "${INITIATIVES_DIR}"/archive/*/*.md; do
       [[ -f "${file_path}" ]] || continue
       dirs+=("$(dirname "${file_path}")")
     done

@@ -20,12 +20,12 @@ Use when helpful:
 
 ```yaml
 ---
-initiative_id: issue-41-agents-workflow
+initiative_id: issue-71-guided-onboarding
 role: Strategist
 status: in_progress
-updated_at: 2026-03-18
-related_issue: 41
-related_pr: 49
+updated_at: 2026-03-24
+related_issue: 71
+related_pr: 79
 ---
 ```
 

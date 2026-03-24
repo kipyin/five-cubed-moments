@@ -1,5 +1,5 @@
 ---
-name: designer
+name: design
 description: Designer role — Impeccable-style UI/UX, SwiftUI performance, Strategist translation and feedback
 ---
 

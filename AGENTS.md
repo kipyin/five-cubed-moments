@@ -52,7 +52,7 @@ brew install swiftlint
 Keep role behavior in `.agents/skills/` as the single source of truth for role-specific instructions (same tree as Impeccable task skills). Use short role names and mapped files:
 
 - `Strategist` -> `.agents/skills/strategize/SKILL.md`
-- `Designer` -> `.agents/skills/designer/SKILL.md`
+- `Designer` -> `.agents/skills/design/SKILL.md`
 - `Architect` -> `.agents/skills/architect/SKILL.md`
 - `Translator` -> `.agents/skills/translate/SKILL.md`
 - `Marketing` -> `.agents/skills/promote/SKILL.md`

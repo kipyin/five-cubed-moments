@@ -1,6 +1,6 @@
 ---
 name: housekeep
-description: Start, maintain, close agent-log initiatives; master run orchestration (single or relay chats); numbering, templates, gh issue context
+description: Start, maintain, close agent-log initiatives; housekeep-run orchestration (single or relay chats); numbering, templates, gh issue context
 ---
 
 # Housekeep
@@ -26,15 +26,15 @@ The user should **not** need to spell out numbering rules, template paths, or va
 | “What’s next for init 003?” / “Status of 003” | Resolve `003-*` under `initiatives/` (or say if missing / only in archive). Summarize filled vs empty role files, latest **`Next Owner`** / **`Open Questions`** from the most relevant handoff files, and minimal files the next role should read. |
 | “Close off init 003” / “Archive 003” | Resolve `003-*`, move to `archive/`, update `index.md` + [archive README](GraceNotes/docs/agent-log/initiatives/archive/README.md), validate. |
 | “Add testing handoff for 003” | Resolve folder, copy `testing.template.md` → `testing.md` if missing (fix frontmatter); validate. |
-| “Master run, single chat, initiative …” / “Master run, relay, …” / “Master run from gh issue #N” | Open [GraceNotes/docs/agent-log/MASTER-RUN.md](GraceNotes/docs/agent-log/MASTER-RUN.md). **Single chat:** guide or run the phased pipeline in order (Strategist → Architect → optional review loop → optional Designer → Builder → Test Lead → QA Reviewer → Release Manager), obeying each role’s SKILL; only edit files that role owns. **Relay:** after **one** phase completes, stop and output the **Next session — handoff prompt** block (see MASTER-RUN) so the user can paste into a new chat with the next skill attached. If initiative missing, run **Start** first. |
+| “Housekeep run, single chat, initiative …” / “Housekeep run, relay, …” / “Housekeep run from gh issue #N” (or informal “Master run, …”) | Open [GraceNotes/docs/agent-log/housekeep-run.md](GraceNotes/docs/agent-log/housekeep-run.md). **Single chat:** guide or run the phased pipeline in order (Strategist → Architect → optional review loop → optional Designer → Builder → Test Lead → QA Reviewer → Release Manager), obeying each role’s SKILL; only edit files that role owns. **Relay:** after **one** phase completes, stop and output the **Next session — handoff prompt** block (see **housekeep-run**) so the user can paste into a new chat with the next skill attached. If initiative missing, run **Start** first. |
 
 If the intent is ambiguous (e.g. two `003-*` folders), ask **one** clarifying question; otherwise proceed without asking the user to restate mechanics.
 
-## Master run (orchestration)
+## Housekeep run (orchestration)
 
-Canonical playbook: [GraceNotes/docs/agent-log/MASTER-RUN.md](GraceNotes/docs/agent-log/MASTER-RUN.md).
+Canonical playbook: [GraceNotes/docs/agent-log/housekeep-run.md](GraceNotes/docs/agent-log/housekeep-run.md).
 
-**Your job when the user asks for a master run:**
+**Your job when the user asks for a housekeep run (or says “master run”):**
 
 1. Resolve initiative path (or create it via **Start**).
 2. Ask **only if needed:** single conversation vs **relay** (one phase per chat). Default to **relay** if they did not specify and the effort is large; default to **single** if they said “one chat” or similar.
@@ -45,11 +45,11 @@ Canonical playbook: [GraceNotes/docs/agent-log/MASTER-RUN.md](GraceNotes/docs/ag
    - **Read first** (minimal file list)
    - **Your job** / **Constraints** / **Done when**
 
-   Use the exact fenced format in MASTER-RUN so the user can open a new Agent chat, attach the skill, and paste.
+   Use the exact fenced format in **housekeep-run** so the user can open a new Agent chat, attach the skill, and paste.
 
 4. **Single-chat mode:** Run phases sequentially; between phases, briefly state completed **Next Owner** alignment; do not emit a full handoff block unless the user switches to relay.
 
-5. **Reviews:** Implement Strategist ↔ Architect review using `pushback.md` and SCHEMA; cap revision rounds (MASTER-RUN recommends **2**).
+5. **Reviews:** Implement Strategist ↔ Architect review using `pushback.md` and SCHEMA; cap revision rounds (**housekeep-run** recommends **2**).
 
 6. **Tests:** On macOS, run the repo’s `xcodebuild` / `make` test flow when Builder or Test Lead requires it; on Linux, document what the user must run and still update `testing.md` / `qa.md` as appropriate.
 

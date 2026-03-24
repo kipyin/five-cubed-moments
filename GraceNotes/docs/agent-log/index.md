@@ -6,6 +6,7 @@
 
 - [`011-issue-71-guided-onboarding`](initiatives/011-issue-71-guided-onboarding) — PR **#79** / epic **#71** (`qa.md`, `testing.md`)
 - [`015-release-0-5-1-patch`](initiatives/015-release-0-5-1-patch) — **0.5.1** **shipped 2026-03-24** / tag **`v0.5.1`** — consider [archive](initiatives/archive/README.md) when housekeeping (`release.md` **completed**)
+- [`017-issue-40-80-insight-implementation`](initiatives/017-issue-40-80-insight-implementation) — **#40** UI + **#80** engine (prompts, sanitizer, deterministic Thinking line) in code; **macOS** `GraceNotesTests` + VoiceOver UAT; **Release Manager** / **018** for ship lane ([`release.md`](initiatives/017-issue-40-80-insight-implementation/release.md))
 
 ## Archived initiatives
 

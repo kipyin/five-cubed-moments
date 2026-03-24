@@ -19,5 +19,7 @@ Ids follow `NNN-kebab-name` (see `.agents/skills/agent-log/SKILL.md`). Numbers *
 | `012-release-0-3-3-ui-polish` | **0.3.3** polish |
 | `013-release-0-4-0-icloud-sync-trust` | **0.4.0** iCloud / import trust |
 | `014-release-0-5-0-insight-quality` | **0.5.0** insight quality (**#40**, **#80**, etc.) |
+| `016-issue-80-insight-direction` | Planning + design for Observation / Thinking / Action insight IA; superseded by active **`017-issue-40-80-insight-implementation`** |
+| `018-release-0-5-2-patch` | **0.5.2** release scaffolding started then **cancelled**; use `CHANGELOG.md` / roadmap / **`017`** handoffs for 0.5.2 scope instead |
 
 **Active** initiatives remain at `../<initiative-id>/` (see [../README.md](../README.md) and [../../index.md](../../index.md)).

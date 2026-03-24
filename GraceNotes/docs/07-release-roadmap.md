@@ -4,7 +4,7 @@ Date: 2026-03-24
 
 This roadmap turns the strategic priority stack into a release sequence grounded in the current open issue set. For **shipped** scope detail, treat `CHANGELOG.md` as the source of truth and keep this document aligned when tagging releases.
 
-**GitHub milestones:** Open product issues on [kipyin/grace-notes](https://github.com/kipyin/grace-notes) use milestones that mirror the releases below: `0.5.0 - Insight quality and first-week guidance`, `0.6.0 - Trust and ownership`, `0.7.0 - Activation and flexible depth`, and `0.8.x+ - Streak and calendar refinement`. Internal workflow work stays off user-facing milestones. When you add or retarget issues, update this file and the milestone in the same change.
+**GitHub milestones:** Open product issues on [kipyin/grace-notes](https://github.com/kipyin/grace-notes) use milestones that mirror the releases below: `0.5.0 - Insight quality and first-week guidance`, `0.5.2 - Settings cohesion and insight follow-through`, `0.6.0 - Trust and ownership`, `0.7.0 - Activation and flexible depth`, and `0.8.x+ - Streak and calendar refinement`. Internal workflow work stays off user-facing milestones. When you add or retarget issues, update this file and the milestone in the same change.
 
 ## Roadmap principles
 
@@ -186,6 +186,29 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - Fresh install on `0.5.1` is unchanged relative to `0.5.0` onboarding behavior except as defined by the same first-week flows
 - Upgrade cohort sees orientation exactly once; second launch on `0.5.1` does not replay it
 
+## 0.5.2 — Settings cohesion and insight follow-through
+
+**Release status**
+- Unreleased patch on the `0.5.x` line.
+- Keep `CHANGELOG.md`, `README.md`, and this roadmap aligned at ship time (no dedicated release initiative for 0.5.2).
+
+**Goal:** Improve Settings readability consistency and close remaining insight follow-through work tracked for #40 and #80.
+
+**Scope in**
+- `#84` Settings section headers use authored title case instead of forced all-caps list header styling.
+- `#40` / `#80` review insight follow-through where remaining intent is still tracked toward 0.5.2 acceptance.
+- Agent-log initiative context for this lane:
+  - Archived direction: `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/`
+  - Active implementation: `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/`
+
+**Why now**
+- `0.5.1` shipped upgrade orientation; this patch keeps Settings copy and structure consistent while finishing insight-focused scope still being tracked in active implementation handoffs.
+- This is a small, focused release window that improves clarity without opening broader Settings redesign or 0.6.0 trust expansion.
+
+**Acceptance intent**
+- Settings section headings read in title case across Settings surfaces, including nested Settings lists where applicable.
+- #40 / #80 close criteria tracked in agent-log are reflected in shipped behavior and documentation for the 0.5.2 release window.
+
 ## 0.6.0 — Trust and ownership
 
 **Goal:** Make Grace Notes feel safe to adopt as a real grace note practice.
@@ -258,5 +281,7 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/archive/2026-03-uat-review-notes-release-0.3.4.md`
 - `GraceNotes/docs/archive/2026-03-product-strategy-implementation.md` (iCloud foundation and runtime validation constraints)
 - `GraceNotes/docs/agent-log/initiatives/archive/006-issue-41-agents-workflow/brief.md`
+- `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` (insight direction for #80)
+- `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/` (active implementation trail for #40 and #80)
 - `CHANGELOG.md`
 - GitHub milestones: https://github.com/kipyin/grace-notes/milestones

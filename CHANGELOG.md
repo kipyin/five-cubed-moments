@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2] - Unreleased
+
+Planned patch on the 0.5.x line: Settings title-case consistency plus insight follow-through tracked in the current release lane.
+
+### Changed
+- Settings: section headers use authored title case instead of all-caps list header styling (#84).
+- Review insights: continue #40 / #80 follow-through in the 0.5.2 release lane, with handoff context in `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/017-issue-40-80-insight-implementation/`.
+
 ## [0.5.1] - 2026-03-24
 
 Patch on the 0.5.x line: version and build bump plus Xcode packaging defaults carried from local workspace changes.

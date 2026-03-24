@@ -6,6 +6,11 @@ A journaling iOS app for daily gratitude, reflection, and people in mind.
 
 Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes, 5 needs, 5 people in mind, reading notes, and space for what you're thinking and learning. The app offers a quiet, low-friction place for gratitude and reflection, with a gentle framing that feels welcoming rather than pushy.
 
+## What's new in 0.5.2 (Unreleased)
+
+- **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
+- **Review insights (#40 / #80)** — 0.5.2 includes insight follow-through tracked in initiative handoffs (`archive/016-issue-80-insight-direction` and `017-issue-40-80-insight-implementation`).
+
 ## What's new in 0.5.1 (2026-03-24)
 
 - **Packaging** — Patch bump on the 0.5.x line: marketing version **0.5.1**, build **3**, Debug builds emit **dSYM** for richer crash logs, and the shared **GraceNotes** scheme’s Run action uses the **Release** configuration (verify this matches your day-to-day workflow in Xcode).

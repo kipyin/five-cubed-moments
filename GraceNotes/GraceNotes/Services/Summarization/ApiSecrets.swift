@@ -1,10 +1,11 @@
 import Foundation
 
-/// Cloud summarization API key resolution order:
-/// 1) Info.plist `CloudSummarizationAPIKey`
-/// 2) Placeholder (`YOUR_KEY_HERE`) which disables cloud use
+/// Cloud summarization API key from the app's merged Info.plist (`CloudSummarizationAPIKey`).
+/// Injected at build time: `Info.plist` contains `$(GRACE_NOTES_CLOUD_API_KEY)`, expanded using
+/// `DeveloperSettings.xcconfig` and optional gitignored `DeveloperSettings.local.xcconfig`.
+/// Value `YOUR_KEY_HERE` disables cloud use.
 ///
-/// Keep real credentials out of git. Prefer a local, untracked plist override.
+/// Keep real credentials out of git.
 enum ApiSecrets {
     private static let placeholderApiKey = "YOUR_KEY_HERE"
 

@@ -5,10 +5,12 @@ import XCTest
 ///
 /// **Skipped** when no usable key is available, or on CI (unless `GRACENOTES_LIVE_CLOUD_API_KEY` is set there).
 ///
-/// **Local + key in app Info.plist** (`CloudSummarizationAPIKey`): the test runs automatically. Simulator tests do not
-/// inherit shell environment variables from `xcodebuild`, so plist is the reliable path from Xcode.
+/// **Local + usable app key** (build-injected `CloudSummarizationAPIKey` via xcconfig): the test runs automatically.
+/// Simulator tests do not inherit shell environment variables from `xcodebuild`, so the app bundle plist is the
+/// reliable path from Xcode.
 ///
-/// **Opt-out** (local key present but you want offline tests): set `GRACENOTES_SKIP_LIVE_CLOUD_INSIGHTS=1` on the test scheme.
+/// **Opt-out** (local key present but you want offline tests): set `GRACENOTES_SKIP_LIVE_CLOUD_INSIGHTS=1` on the test
+/// scheme.
 ///
 /// **Override key**: `GRACENOTES_LIVE_CLOUD_API_KEY` (highest priority).
 ///
@@ -33,8 +35,9 @@ final class CloudReviewInsightsLiveAPITests: XCTestCase {
 
     private static func skipInstructions() -> String {
         """
-        Live cloud insights test skipped. Add CloudSummarizationAPIKey to the app Info.plist, \
-        or pass GRACENOTES_LIVE_CLOUD_API_KEY into the test process. On CI this test stays offline unless that env var is set.
+        Live cloud insights test skipped. Configure GRACE_NOTES_CLOUD_API_KEY \
+        (DeveloperSettings.local.xcconfig) or pass GRACENOTES_LIVE_CLOUD_API_KEY into the test process. \
+        On CI this test stays offline unless that env var is set.
         """
     }
 

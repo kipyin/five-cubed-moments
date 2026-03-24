@@ -26,6 +26,7 @@ Patch on the 0.5.x line: version and build bump plus Xcode packaging defaults ca
 - Unit tests: **`ApiSecrets.cloudApiKeyOverrideForTesting`** keeps hosted `SummarizerProvider` expectations stable when `Info.plist` carries a non-placeholder developer key.
 - UI tests: section **(+)** controls expose stable **`accessibilityIdentifier`** values (`JournalSectionAdd.*`) under `-ui-testing`; `addGratitude` waits for the first gratitude chip after submit.
 - New tests: `CloudSummarizerPromptAndGroundingTests` (+ `CloudSummarizerTestSupport`).
+- Cloud summarization: app `Info.plist` uses `$(GRACE_NOTES_CLOUD_API_KEY)`, expanded from committed `DeveloperSettings.xcconfig` and optional gitignored `DeveloperSettings.local.xcconfig` (see `DeveloperSettings.local.xcconfig.example`); `ITSAppUsesNonExemptEncryption` is `false` for export compliance.
 
 - App **marketing version** `0.5.1`; **bundle version** (`CURRENT_PROJECT_VERSION`) `2` for Grace Notes app configurations (Debug, Release, Demo).
 - Project-level **Debug** and **Demo** build settings use `DEBUG_INFORMATION_FORMAT = dwarf-with-dsym` so Debug-style builds still produce dSYM for symbolication.

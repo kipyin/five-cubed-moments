@@ -68,7 +68,7 @@ Release-window documentation and tag complete the agent-log pipeline; store subm
 
 ## Decision
 
-**Ship:** **`main`** at **`0759f61`** and annotated tag **`v0.5.1`** **pushed to `origin`** (all release work on `main`, no separate release branch for this tag).
+**Ship:** Annotated tag **`v0.5.1`** and branch **`main`** **pushed to `origin`**. The tag marks the `chore(release): ship Grace Notes 0.5.1` commit; `main` may include small follow-up commits (e.g. agent-log) after that tip. All work stayed on **`main`** (no `release/0.5.1` branch for this tag).
 
 ## Open Questions
 

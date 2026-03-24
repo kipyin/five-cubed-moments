@@ -16,12 +16,12 @@ final class JournalViewModelMutationTests: XCTestCase {
         calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         UserDefaults.standard.set(false, forKey: AIFeaturesSettings.enabledUserDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
     }
 
     override func tearDown() {
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.enabledUserDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
         super.tearDown()
     }
 

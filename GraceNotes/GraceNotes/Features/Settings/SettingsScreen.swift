@@ -112,7 +112,7 @@ struct SettingsScreen: View {
                 clampCloudAIFeaturesIfApiKeyMissing()
             }
             .task {
-                AIFeaturesSettings.migrateLegacyCloudFlagIfNeeded()
+                ReviewInsightsProvider.migrateLegacyAIFeaturesToggleIfNeeded()
                 useAIFeatures = AIFeaturesSettings.isEnabled()
                 clampCloudAIFeaturesIfApiKeyMissing()
                 await reminderState.refreshStatus()

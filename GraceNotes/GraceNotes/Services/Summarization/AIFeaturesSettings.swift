@@ -1,31 +1,18 @@
 import Foundation
 
+/// Central enablement for cloud AI (summarization + review insights). Persisted under `useCloudSummarization`.
+/// Older builds stored a duplicate toggle under `useAIReviewInsights`;
+/// `ReviewInsightsProvider.migrateLegacyAIFeaturesToggleIfNeeded()` merges that into the canonical key at launch.
 enum AIFeaturesSettings {
-    static let enabledUserDefaultsKey = "useAIReviewInsights"
-    static let legacyCloudSummarizationKey = "useCloudSummarization"
+    static let enabledUserDefaultsKey = "useCloudSummarization"
+    static let legacyAIReviewInsightsKey = "useAIReviewInsights"
 
     static func isEnabled(using defaults: UserDefaults = .standard) -> Bool {
-        let aiFeaturesEnabled = defaults.object(forKey: enabledUserDefaultsKey) as? Bool ?? false
-        let legacyCloudEnabled = defaults.object(forKey: legacyCloudSummarizationKey) as? Bool ?? false
-        return aiFeaturesEnabled || legacyCloudEnabled
+        defaults.object(forKey: enabledUserDefaultsKey) as? Bool ?? false
     }
 
     static func setEnabled(_ isEnabled: Bool, using defaults: UserDefaults = .standard) {
         defaults.set(isEnabled, forKey: enabledUserDefaultsKey)
-        defaults.removeObject(forKey: legacyCloudSummarizationKey)
-    }
-
-    static func migrateLegacyCloudFlagIfNeeded(using defaults: UserDefaults = .standard) {
-        guard defaults.object(forKey: enabledUserDefaultsKey) == nil else {
-            defaults.removeObject(forKey: legacyCloudSummarizationKey)
-            return
-        }
-
-        guard let legacyValue = defaults.object(forKey: legacyCloudSummarizationKey) as? Bool else {
-            return
-        }
-
-        defaults.set(legacyValue, forKey: enabledUserDefaultsKey)
-        defaults.removeObject(forKey: legacyCloudSummarizationKey)
+        defaults.removeObject(forKey: legacyAIReviewInsightsKey)
     }
 }

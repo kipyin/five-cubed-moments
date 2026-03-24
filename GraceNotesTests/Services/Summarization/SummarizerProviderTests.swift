@@ -11,7 +11,7 @@ final class SummarizerProviderTests: XCTestCase {
     override func tearDown() {
         ApiSecrets.cloudApiKeyOverrideForTesting = nil
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.enabledUserDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
         super.tearDown()
     }
 
@@ -26,7 +26,7 @@ final class SummarizerProviderTests: XCTestCase {
 
     func test_currentSummarizer_withoutFixedSummarizer_aiFeaturesKeyAbsent_returnsDeterministicSummarizer() {
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.enabledUserDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
@@ -36,7 +36,7 @@ final class SummarizerProviderTests: XCTestCase {
 
     func test_currentSummarizer_withoutFixedSummarizer_aiFeaturesDisabled_returnsDeterministicSummarizer() {
         UserDefaults.standard.set(false, forKey: AIFeaturesSettings.enabledUserDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+        UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
@@ -56,15 +56,15 @@ final class SummarizerProviderTests: XCTestCase {
         )
     }
 
-    func test_currentSummarizer_legacyCloudKeyTrue_placeholderKey_returnsDeterministicSummarizer() {
-        UserDefaults.standard.set(true, forKey: AIFeaturesSettings.legacyCloudSummarizationKey)
+    func test_currentSummarizer_legacyAIReviewInsightsKeyTrue_withoutMigration_returnsDeterministicSummarizer() {
+        UserDefaults.standard.set(true, forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
         let provider = SummarizerProvider()
 
         let result = provider.currentSummarizer()
 
         XCTAssertTrue(
             result is DeterministicChipLabelSummarizer,
-            "With placeholder API key, provider should use deterministic on-device summarizer"
+            "Legacy toggle alone does not enable summarization until migration runs"
         )
     }
 

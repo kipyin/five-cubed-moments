@@ -1,7 +1,7 @@
 ---
 initiative_id: 020-issue-84-settings-section-headers
 role: Architect
-status: ready_to_merge
+status: archived
 updated_at: 2026-03-24
 related_issue: 84
 related_pr: none

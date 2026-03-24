@@ -24,5 +24,7 @@ Ids follow `NNN-kebab-name` (see `.agents/skills/housekeep/SKILL.md`). Numbers *
 | `016-issue-80-insight-direction` | Planning + design for Observation / Thinking / Action insight IA; superseded by archived **`017-issue-40-80-insight-implementation`** |
 | `017-issue-40-80-insight-implementation` | **#40** (closed) presentation + **#80** v1 engine work on **`main`**; **GitHub #80** remains **open** for deeper engine follow-up; ship lane = `CHANGELOG` **0.5.2** / roadmap (initiative **018** cancelled) |
 | `018-release-0-5-2-patch` | **0.5.2** release scaffolding started then **cancelled**; use `CHANGELOG.md` / roadmap for **0.5.2** scope |
+| `019-repo-improvement-audit-roadmap` | Repo audit + roadmap sync **2026-03-24**: inventory, **#87**–**#90**, milestones **0.5.2** / **0.5.3** / **0.6.1**, retarget **#80** / **#83**–**#86** to **0.5.2** |
+| `020-issue-84-settings-section-headers` | Settings **List** section headers: **#84** closed **2026-03-24**; `.textCase(nil)` on AI, Reminders, Data & Privacy, Import/Export (lane **0.5.2**) |
 
 **Active** initiatives remain at `../<initiative-id>/` (see [../README.md](../README.md) and [../../index.md](../../index.md)).

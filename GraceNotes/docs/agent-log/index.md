@@ -4,7 +4,11 @@
 
 ## Active initiatives
 
-- *No active initiatives.* Shipped or superseded work: [`initiatives/archive/README.md`](initiatives/archive/README.md). New work uses the next id in [`initiatives/README.md`](initiatives/README.md) (**019**).
+- None indexed here. Start the next initiative under [`initiatives/`](initiatives/) (next id **021**, see [initiatives/README.md](initiatives/README.md)).
+
+Shipped or superseded work: [`initiatives/archive/README.md`](initiatives/archive/README.md).
+
+**Recently archived:** [#84](https://github.com/kipyin/grace-notes/issues/84) Settings section header title case → [`archive/020-issue-84-settings-section-headers`](initiatives/archive/020-issue-84-settings-section-headers/).
 
 ## Archived initiatives
 

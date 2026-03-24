@@ -21,6 +21,8 @@ Initiative directory names use the `NNN-` prefix; GitHub issue/PR numbers belong
 
 Lifecycle scaffolding (start, index/archive upkeep, validation) is described in `.agents/skills/agent-log/SKILL.md`.
 
+**End-to-end pipeline (Strategist → … → UAT handoff),** single chat or multi-chat relay with auto-generated next prompts: [MASTER-RUN.md](./MASTER-RUN.md).
+
 ## Fast path (small changes)
 
 For small changes, add one concise update with:

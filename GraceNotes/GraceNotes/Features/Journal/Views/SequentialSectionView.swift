@@ -627,6 +627,8 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
         private var lastSampleTime: CFTimeInterval?
         private var smoothedVelocity: CGFloat = 0
         private var isUserDraggingScroll = false
+        private var lastPublishedSnapshot: ChipRowScrollSnapshot?
+        private var pendingPublishWorkItem: DispatchWorkItem?
 
         init(reduceMotion: Bool, onChange: @escaping (ChipRowScrollSnapshot) -> Void) {
             self.reduceMotion = reduceMotion
@@ -652,6 +654,9 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
             lastSampleTime = nil
             smoothedVelocity = 0
             isUserDraggingScroll = false
+            lastPublishedSnapshot = nil
+            pendingPublishWorkItem?.cancel()
+            pendingPublishWorkItem = nil
 
             observedScrollView = scrollView
             scrollView.panGestureRecognizer.addTarget(self, action: #selector(handlePan(_:)))
@@ -672,6 +677,9 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
             contentSizeObservation = nil
             contentOffsetObservation = nil
             boundsObservation = nil
+            lastPublishedSnapshot = nil
+            pendingPublishWorkItem?.cancel()
+            pendingPublishWorkItem = nil
         }
 
         private func detachPanTarget() {
@@ -728,12 +736,17 @@ private struct HorizontalScrollMetricsReader: UIViewRepresentable {
                 elasticDeltaX: deltaX,
                 elasticDeltaY: deltaY
             )
+            guard snapshot != lastPublishedSnapshot else { return }
+            lastPublishedSnapshot = snapshot
             // KVO / layout can invoke this during SwiftUI view updates; async avoids
             // "Modifying state during view update" when the callback touches @State.
+            pendingPublishWorkItem?.cancel()
             let callback = onChange
-            DispatchQueue.main.async {
+            let workItem = DispatchWorkItem {
                 callback(snapshot)
             }
+            pendingPublishWorkItem = workItem
+            DispatchQueue.main.async(execute: workItem)
         }
 
         private func findAncestorScrollView(from view: UIView) -> UIScrollView? {

@@ -3,7 +3,7 @@ import Foundation
 /// Provides the current summarizer based on user settings.
 /// For testing, pass a fixed summarizer; otherwise reads UserDefaults.
 struct SummarizerProvider: Sendable {
-    /// UserDefaults key for cloud summarization setting. Exposed for tests to avoid key drift.
+    /// UserDefaults key for cloud AI features (summarization + review insights). Exposed for tests to avoid key drift.
     static let useCloudUserDefaultsKey = "useCloudSummarization"
 
     private static let useCloudKey = useCloudUserDefaultsKey
@@ -25,7 +25,7 @@ struct SummarizerProvider: Sendable {
         if let fixed = fixedSummarizer {
             return fixed
         }
-        let useCloud = UserDefaults.standard.object(forKey: Self.useCloudKey) as? Bool ?? false
+        let useCloud = AIFeaturesSettings.isEnabled()
         if useCloud, ApiSecrets.isCloudApiKeyConfigured {
             return CloudSummarizer(apiKey: ApiSecrets.cloudApiKey)
         }
@@ -42,7 +42,7 @@ struct SummarizerProvider: Sendable {
         if fixedSummarizer != nil {
             return false
         }
-        let useCloud = userDefaults.object(forKey: Self.useCloudKey) as? Bool ?? false
+        let useCloud = AIFeaturesSettings.isEnabled(using: userDefaults)
         return useCloud && ApiSecrets.isCloudApiKeyConfigured
     }
 

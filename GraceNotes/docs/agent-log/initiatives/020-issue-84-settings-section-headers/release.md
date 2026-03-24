@@ -1,7 +1,7 @@
 ---
 initiative_id: 020-issue-84-settings-section-headers
 role: Release Manager
-status: in_progress
+status: ready_to_merge
 updated_at: 2026-03-24
 related_issue: 84
 related_pr: none
@@ -11,13 +11,13 @@ related_pr: none
 
 ## Inputs Reviewed
 
-- `qa.md`, `testing.md`, `architecture.md`.
+- `qa.md`, `testing.md`, `architecture.md` — **UAT passed** (2026-03-24, author sign-off).
 - [CHANGELOG.md](../../../../../CHANGELOG.md) **[0.5.2] — Unreleased** already lists: “Settings: section headers use authored title case…” (#84). No CHANGELOG edit required for this implementation.
 - Default workflow: feature/fix commits to **`main`** per `.agents/skills/vc/SKILL.md`.
 
 ## Decision
 
-Release Readiness: **Ready to commit** to `main` after your **UAT** and optional local **`xcodebuild test`** confirmation (see `testing.md`).
+Release Readiness: **Ready to push / PR / merge** — UAT passed; code + agent-log 020 are committed (topic: Settings `.textCase(nil)` / #84).
 
 ## Rationale
 
@@ -34,7 +34,7 @@ Release Readiness: **Ready to commit** to `main` after your **UAT** and optional
 
 ## Next Owner
 
-**You (human)** — UAT, then commit and open PR (or push to `main` if that is your practice). Set `related_pr` in initiative frontmatter when the PR exists.
+**You (human)** — push `main` (or open PR if using branch flow), set `related_pr` when the PR exists, close **#84** when merged/released. Optional: archive initiative 020 after ship (housekeep).
 
 ### Base and Version Check
 
@@ -62,4 +62,4 @@ Release Readiness: **Ready to commit** to `main` after your **UAT** and optional
 
 ### Merge/Release Readiness
 
-- Merge when UAT + tests (as you define) are green; update initiative YAML `related_pr` and optionally `status` after PR open/merge.
+- UAT green; proceed with push/merge. Update initiative YAML `related_pr` and `status` after PR open/merge; consider **`ship_complete`** or archive when 0.5.2 ships.

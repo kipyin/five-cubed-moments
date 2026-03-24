@@ -1,7 +1,7 @@
 ---
 initiative_id: 020-issue-84-settings-section-headers
 role: QA Reviewer
-status: in_progress
+status: ready_to_merge
 updated_at: 2026-03-24
 related_issue: 84
 related_pr: none
@@ -17,7 +17,7 @@ related_pr: none
 
 ## Decision
 
-Pass/Fail: **Pass** (pending your **UAT** on simulator or device).
+Pass/Fail: **Pass** — human **UAT passed** (2026-03-24).
 
 ## Rationale
 
@@ -28,7 +28,7 @@ Pass/Fail: **Pass** (pending your **UAT** on simulator or device).
 
 ## Risks
 
-- **Visual:** Confirm at largest Dynamic Type that headers still look acceptable (same fonts as before).
+- **Visual:** UAT did not report Dynamic Type issues; regressions remain unlikely given unchanged fonts.
 
 ## Open Questions
 
@@ -36,4 +36,4 @@ Pass/Fail: **Pass** (pending your **UAT** on simulator or device).
 
 ## Next Owner
 
-**Release Manager** — branch/commit/PR against `main`, ensure [CHANGELOG.md](../../../../../CHANGELOG.md) **0.5.2** line for #84 stays accurate (already present).
+**Release Manager** — push / open PR / merge per your workflow; set `related_pr` in initiative frontmatter when applicable; close #84 when shipped.

@@ -1,7 +1,7 @@
 ---
 initiative_id: 020-issue-84-settings-section-headers
 role: Test Lead
-status: in_progress
+status: ready_to_merge
 updated_at: 2026-03-24
 related_issue: 84
 related_pr: none
@@ -16,7 +16,7 @@ related_pr: none
 
 ## Decision
 
-Go/No-Go: **Go** for merge from a **unit-test evidence** perspective, with **caveat**: full `xcodebuild test` returned **exit code 65** in this environment after `GraceNotesTests` logged **222 executed, 0 failures, 42 skipped** (see Rationale). **UITests** were skipped (`-skip-testing:GraceNotesUITests`); parallel testing disabled (`-parallel-testing-enabled NO`). **Re-run** the full scheme test locally before merge if your bar is a green `xcodebuild` exit.
+Go/No-Go: **Go** for merge — **human UAT passed** (2026-03-24). Automated run caveat remains: full `xcodebuild test` returned **exit code 65** in the agent environment while `GraceNotesTests` logged **222 executed, 0 failures, 42 skipped** (see Rationale). **UITests** were skipped (`-skip-testing:GraceNotesUITests`); parallel testing disabled (`-parallel-testing-enabled NO`).
 
 ## Rationale
 
@@ -50,4 +50,4 @@ Go/No-Go: **Go** for merge from a **unit-test evidence** perspective, with **cav
 
 ## Next Owner
 
-**QA Reviewer** — confirm requirement fit and recommend human UAT on device/simulator.
+**Release Manager** — push/merge; optional full `xcodebuild test` + UITests locally if you want a green CI-style gate.

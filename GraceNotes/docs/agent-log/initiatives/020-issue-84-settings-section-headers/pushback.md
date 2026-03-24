@@ -1,7 +1,7 @@
 ---
 initiative_id: 020-issue-84-settings-section-headers
 role: Strategist
-status: in_progress
+status: ready_to_merge
 updated_at: 2026-03-24
 related_issue: 84
 related_pr: none

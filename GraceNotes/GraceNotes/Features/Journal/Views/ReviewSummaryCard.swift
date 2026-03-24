@@ -6,16 +6,11 @@ private struct ReviewInsightPanelBodies {
     let action: String
 }
 
-// swiftlint:disable type_body_length
 struct ReviewSummaryCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let insights: ReviewInsights?
     let isLoading: Bool
-
-    private let observationCharacterCap = 360
-    private let thinkingCharacterCap = 480
-    private let actionCharacterCap = 180
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -63,12 +58,7 @@ struct ReviewSummaryCard: View {
     private func observationPanel(for insights: ReviewInsights, body: String) -> some View {
         ReviewInsightInsetPanel(title: String(localized: "This week")) {
             VStack(alignment: .leading, spacing: 12) {
-                panelParagraph(
-                    body,
-                    maxCharacters: observationCharacterCap,
-                    lineLimit: 4,
-                    lineSpacing: 4
-                )
+                panelParagraph(body, lineSpacing: 4)
 
                 let recurringGroups = recurringThemeGroups(for: insights)
                 if !recurringGroups.isEmpty {
@@ -84,38 +74,22 @@ struct ReviewSummaryCard: View {
 
     private func thinkingPanel(body: String) -> some View {
         ReviewInsightInsetPanel(title: String(localized: "A thread")) {
-            panelParagraph(
-                body,
-                maxCharacters: thinkingCharacterCap,
-                lineLimit: 5,
-                lineSpacing: 4
-            )
+            panelParagraph(body, lineSpacing: 4)
         }
     }
 
     private func actionPanel(body: String) -> some View {
         ReviewInsightInsetPanel(title: String(localized: "A next step")) {
-            panelParagraph(
-                body,
-                maxCharacters: actionCharacterCap,
-                lineLimit: 2,
-                lineSpacing: 4
-            )
+            panelParagraph(body, lineSpacing: 4)
         }
     }
 
-    private func panelParagraph(
-        _ text: String,
-        maxCharacters: Int,
-        lineLimit: Int,
-        lineSpacing: CGFloat
-    ) -> some View {
-        Text(truncated(text, maxCharacters: maxCharacters))
+    private func panelParagraph(_ text: String, lineSpacing: CGFloat) -> some View {
+        Text(trimmed(text))
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(AppTheme.reviewTextPrimary)
             .lineSpacing(lineSpacing)
-            .lineLimit(lineLimit)
-            .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder
@@ -292,15 +266,6 @@ struct ReviewSummaryCard: View {
             .first { !$0.isEmpty }
     }
 
-    private func truncated(_ text: String, maxCharacters: Int) -> String {
-        let cleaned = trimmed(text)
-        guard cleaned.count > maxCharacters else {
-            return cleaned
-        }
-        let cutIndex = cleaned.index(cleaned.startIndex, offsetBy: maxCharacters)
-        return String(cleaned[..<cutIndex]) + "..."
-    }
-
     private func trimmed(_ value: String?) -> String {
         guard let value else {
             return ""
@@ -322,7 +287,6 @@ struct ReviewSummaryCard: View {
         var id: String { title }
     }
 }
-// swiftlint:enable type_body_length
 
 private struct ReviewInsightInsetPanel<Content: View>: View {
     let title: String

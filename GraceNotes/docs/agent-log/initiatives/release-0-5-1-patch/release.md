@@ -23,7 +23,7 @@ related_pr: none
 
 - **CHANGELOG:** 0.5.1 **Unreleased** includes upgrade orientation, packaging, cloud/locale work, and post-Seed journey preview + onboarding welcome trim; bundle **3** documented in Developer section.
 - **README:** “What’s new in 0.5.1” matches scope above; build **3** called out under Packaging.
-- **Roadmap:** `GraceNotes/docs/07-release-roadmap.md` — confirm 0.5.1 bullets still accurate before tagging.
+- **Roadmap:** `GraceNotes/docs/07-release-roadmap.md` — **0.5.0** marked **Released (2026-03-21)**; **0.5.1** has release-status blurb (integrate from **`main`**).
 
 ## Merge / release readiness
 

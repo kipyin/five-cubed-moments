@@ -10,8 +10,8 @@ related_issue: 60
 
 ## Base and Version Check
 
-- **Target release branch:** `release/0.5.0`
-- **Version intent:** first-run Today tutorial (Seed/Harvest hints and one-time toasts) ships under the existing `0.5.0` line alongside roadmap insight-quality work.
+- **Shipped:** **0.5.0** (**2026-03-21**); work originally landed via `release/0.5.0` (branch may no longer exist locally).
+- **Version intent:** first-run Today tutorial (Seed/Harvest hints and one-time toasts) under the `0.5.0` line.
 
 ## Branch Plan
 
@@ -35,11 +35,11 @@ related_issue: 60
 ## Documentation Check
 
 - `README.md` “What’s new in 0.5.0” includes the first-run tutorial bullet.
-- `CHANGELOG.md` `[0.5.0] — Unreleased` **Added** includes the tutorial entry (`#60`).
+- `CHANGELOG.md` `[0.5.0] - 2026-03-21` **Added** includes the tutorial entry (`#60`).
 - Initiative `brief.md` / `architecture.md` / `design.md` present and linked from `docs/agent-log/index.md`.
 
 ## Merge/Release Readiness
 
-- **Decision:** Documentation matches committed behavior; branch is ready for PR and QA verification on Simulator/device.
-- **Open Questions:** None for release packaging; confirm zh copy polish with Translator if desired.
-- **Next Owner:** `QA Reviewer` — intent vs. implementation and UI test pass on macOS/Xcode.
+- **Decision:** **Shipped** in **0.5.0**; this file is a historical handoff record.
+- **Open Questions:** None for this release line.
+- **Next Owner:** None — use `CHANGELOG.md` and current roadmap for ongoing tutorial/onboarding work.

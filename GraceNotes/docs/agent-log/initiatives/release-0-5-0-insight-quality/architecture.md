@@ -1,13 +1,15 @@
 ---
 initiative_id: release-0-5-0-insight-quality
 role: Architect
-status: in_progress
-updated_at: 2026-03-23
+status: complete
+updated_at: 2026-03-24
 related_issue: 40,80
 related_pr: none
 ---
 
 # Architecture — Review insight quality (#40 presentation, #80 engine)
+
+**Release note:** Baseline below shipped in **0.5.0** (**2026-03-21**). Deeper **`#80`** iteration may continue under later roadmap items; treat this as the locked contract unless intentionally revised.
 
 ## Decision
 
@@ -21,5 +23,4 @@ related_pr: none
 
 ## Next owner
 
-- **QA Reviewer:** Simulator pass with AI on/off and review periods with 0–2 vs 3+ meaningful entries; confirm source chip matches path.
-- **Test Lead:** Run `GraceNotesTests` on macOS (`make test`); Linux agents cannot run XCTest.
+None for **0.5.0** closure — routine QA and **`#80`** follow-ups use current roadmap and test plans.

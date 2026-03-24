@@ -5,12 +5,14 @@
 ## Active Initiatives
 
 - [`issue-71-guided-onboarding`](initiatives/issue-71-guided-onboarding) — PR **#79** / epic **#71** (`qa.md`, `testing.md`)
-- [`release-0-5-1-patch`](initiatives/release-0-5-1-patch) — **0.5.1** patch line (`release.md`)
-- [`release-0-5-0-insight-quality`](initiatives/release-0-5-0-insight-quality) — **0.5.0** (in progress; `brief.md`)
-- [`issue-60-guided-tutorial`](initiatives/issue-60-guided-tutorial) — first-run Seed/Harvest hints and toasts (`brief.md`, `architecture.md`, `design.md`, `release.md`)
-- [`issue-41-agents-workflow`](initiatives/issue-41-agents-workflow)
-  - Latest: `release.md`
-  - Next Owner: `Strategist`
+- [`release-0-5-1-patch`](initiatives/release-0-5-1-patch) — **0.5.1** patch line, integrate from **`main`** (`release.md`)
+
+## Shipped reference (archived handoffs)
+
+- [`release-0-5-0-insight-quality`](initiatives/release-0-5-0-insight-quality) — **0.5.0** shipped **2026-03-21** (`brief.md`, `architecture.md`, `testing.md`)
+- [`issue-60-guided-tutorial`](initiatives/issue-60-guided-tutorial) — first-run Seed/Harvest hints (`#60`), shipped in **0.5.0** (`release.md` is historical)
+- [`issue-31-33-launch-toggle-performance`](initiatives/issue-31-33-launch-toggle-performance) — **0.3.2** startup/reminder/input (`release.md` is historical)
+- [`issue-41-agents-workflow`](initiatives/issue-41-agents-workflow) — agent-log workflow shipped via PR **#49** (`release.md`); **Strategist** may revisit adoption/blocking later
 
 ## Initiative Directory Convention
 

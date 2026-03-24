@@ -1,8 +1,8 @@
 ---
 initiative_id: issue-31-33-launch-toggle-performance
 role: Release Manager
-status: in_progress
-updated_at: 2026-03-18
+status: complete
+updated_at: 2026-03-24
 related_issue: 31,33,32
 ---
 
@@ -10,15 +10,12 @@ related_issue: 31,33,32
 
 ## Base and Version Check
 
-- **Target release branch:** `release/0.3.2`
-- **Branch state:** branch exists and is active; worktree contains in-progress Slice 2 files plus tests/docs.
-- **Version intent:** package current startup/reminder/input trust fixes under `0.3.2` scope already mapped in roadmap.
+- **Shipped:** **0.3.2** (see `CHANGELOG.md` and `07-release-roadmap.md` §0.3.2). Original integration used `release/0.3.2` (branch may no longer exist locally).
+- **Version intent:** Startup, reminder trust, and input stability fixes under the **0.3.2** scope.
 
 ## Branch Plan
 
-- Keep implementation on the existing `release/0.3.2` branch.
-- Land the remaining uncommitted reminder Slice 2 changes before packaging docs-only finalization.
-- Avoid mixing unrelated cleanup into this release branch.
+- Historical: work landed via **`release/0.3.2`**; no further release action on this initiative.
 
 ## Commit Plan and Message
 
@@ -71,15 +68,9 @@ related_issue: 31,33,32
 
 ## Merge/Release Readiness
 
-- **Decision:** Conditional Go for combined scope.
-- **Blocking checks before final release tag:** complete manual permission-path and startup retry/failure checklist items in `testing.md`.
-- **Risk posture:** automated coverage is strong; remaining risk is OS-level/manual reminder permission path validation.
-
-## Open Questions
-
-- Should final release sign-off require one physical-device permission-path pass in addition to simulator coverage?
-- Do we split Slice 1-only fallback packaging if manual reminder-path QA is not completed before freeze?
+- **Decision:** **Shipped**; this file is a historical handoff. Use `testing.md` only if regressing startup or reminder flows.
+- **Open Questions:** None for the **0.3.2** line.
 
 ## Next Owner
 
-`QA Reviewer` for final manual validation sign-off, then `Release Manager` for final publish decision.
+None.

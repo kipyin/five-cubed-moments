@@ -1,12 +1,14 @@
 ---
 initiative_id: release-0-5-0-insight-quality
 role: Builder
-status: in_progress
-updated_at: 2026-03-23
+status: complete
+updated_at: 2026-03-24
 related_issue: 40,80
 ---
 
 # Testing notes — Review insights (#40 presentation, #80 engine)
+
+**Release note:** Covers verification for insight work that shipped in **0.5.0** (**2026-03-21**). Re-run `make test` after material changes to Review cloud paths.
 
 ## Automated (macOS + Xcode)
 

@@ -1,6 +1,6 @@
 # Grace Notes Release Roadmap
 
-Date: 2026-03-23
+Date: 2026-03-24
 
 This roadmap turns the strategic priority stack into a release sequence grounded in the current open issue set. For **shipped** scope detail, treat `CHANGELOG.md` as the source of truth and keep this document aligned when tagging releases.
 
@@ -132,9 +132,11 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 
 **Versioning note:** If marketing needs the `0.4.0` label for insight work instead, ship sync reliability as a patch (e.g. `0.3.6`) first, then proceed with insight as `0.4.0`; document that swap in this file when chosen.
 
-## 0.5.0 — Insight quality and first-week guidance
+## 0.5.0 — Released (2026-03-21)
 
-Work tracked on branch `release/0.5.0`.
+**Release status**
+- Shipped as **`0.5.0`**. See `CHANGELOG.md` for final packaged scope.
+- Original integration used `release/0.5.0` (local branch may have been deleted).
 
 **Goal:** Make review feel specific, trustworthy, and grounded in the user’s own entries, while giving new and returning users calm first-week guidance that does not dilute the core ritual.
 
@@ -167,6 +169,10 @@ Work tracked on branch `release/0.5.0`.
 - First-week and return flows feel supportive rather than demanding; users understand how to progress without extra pressure.
 
 ## 0.5.1 — Upgrade orientation (installed base)
+
+**Release status**
+- **In progress** — marketing version **`0.5.1`**, bundle **`3`**, documented in `CHANGELOG.md` as **Unreleased** until tagged.
+- Integrate from **`main`** (use `release/0.5.1` only if your team still prefers a named release branch).
 
 **Goal:** Users upgrading from `0.5.0` (or any build below `0.5.1`) into `0.5.1` get a **one-time** first-week orientation on the first launch of that version; later launches and later versions do not repeat it unless product adds a new rule.
 

@@ -91,10 +91,9 @@ Note: `make test-demo` and `make test-all` intentionally reset simulators to red
 
 Cloud summarization is optional and defaults to off. To enable it safely:
 
-1. Set `CloudSummarizationAPIKey` in your local `Info.plist`.
+1. Put your key in **gitignored** `GraceNotes/DeveloperSettings.local.xcconfig` (see `DeveloperSettings.local.xcconfig.example`). Committed `DeveloperSettings.xcconfig` supplies `GRACE_NOTES_CLOUD_API_KEY`, which `Info.plist` passes through as `CloudSummarizationAPIKey`.
 
-Keep real keys out of git. The checked-in placeholder value (`YOUR_KEY_HERE`) causes automatic fallback to
-on-device summarization.
+Keep real keys out of git. A missing or placeholder key causes automatic fallback to on-device summarization.
 
 ## Project Structure
 

@@ -8,8 +8,8 @@ Grace Notes (`感恩记`) guides you through a simple daily rhythm: 5 gratitudes
 
 ## What's new in 0.5.1 (upcoming)
 
-- **Packaging** — Patch bump on the 0.5.x line: marketing version **0.5.1**, build **2**, Debug builds emit **dSYM** for richer crash logs, and the shared **GraceNotes** scheme’s Run action uses the **Release** configuration (verify this matches your day-to-day workflow in Xcode).
-- **Onboarding** — Milestone cards that jump to Settings share one eligibility rule with the UI and re-check it when you tap; onboarding/iCloud continuity keys use shared constants (see CHANGELOG **Developer** for detail).
+- **Packaging** — Patch bump on the 0.5.x line: marketing version **0.5.1**, build **3**, Debug builds emit **dSYM** for richer crash logs, and the shared **GraceNotes** scheme’s Run action uses the **Release** configuration (verify this matches your day-to-day workflow in Xcode).
+- **Onboarding** — Milestone cards that jump to Settings share one eligibility rule with the UI and re-check it when you tap; onboarding/iCloud continuity keys use shared constants (see CHANGELOG **Developer** for detail). Post-Seed orientation sample Review preview matches real insights layout; welcome copy is slightly tighter.
 - **Localization** — String Catalog **zh-Hans** polish (including onboarding and Abundance-related copy) and aligned **Save to Photos** permission wording for **感恩记**.
 - **Cloud chips (#39)** — Chip cloud summarization picks instruction language the same way as Review (`AppInstructionLocale`), tightens low-signal and ungrounded-output handling, and adds focused unit tests (see CHANGELOG).
 - **Product docs** — Review insight roadmap now separates **#40** (insight-first presentation) from **#80** (deeper insight engine work); see `GraceNotes/docs/07-release-roadmap.md`.

@@ -2,7 +2,7 @@
 initiative_id: release-0-5-1-patch
 role: Release Manager
 status: in_progress
-updated_at: 2026-03-23
+updated_at: 2026-03-24
 related_issue: none
 related_pr: none
 ---
@@ -11,45 +11,35 @@ related_pr: none
 
 ## Base and version check
 
-- **Branch:** `release/0.5.1` (tracks `origin/release/0.5.1`).
-- **Marketing version:** `0.5.1` per project settings (see `CHANGELOG` Developer section).
+- **Branch:** `main` (local release branch `release/0.5.1` was removed; integrate from `main`).
+- **Marketing version:** `0.5.1` in Xcode (`MARKETING_VERSION`).
+- **Bundle version:** `CURRENT_PROJECT_VERSION` **3** for Grace Notes app targets (Debug, Release, Demo)—CHANGELOG/README must stay in sync.
 
 ## Branch plan
 
-- Work continues on **`release/0.5.1`**; no second release branch for this patch line.
-
-## Commit plan (landed)
-
-- `134b236` — `feat: version-gated 0.5.1 upgrade orientation and Seed branch` (app launch version tracker, onboarding progress branch, PostSeed skip-congrats, tests, roadmap, issue-71 QA/testing).
-
-## Inputs reviewed
-
-- `README.md`, `CHANGELOG.md` (changelog updated for upgrade orientation)
-- `GraceNotes/docs/07-release-roadmap.md` (0.5.1 orientation note)
-- `GraceNotes/docs/agent-log/initiatives/issue-71-guided-onboarding/qa.md`, `testing.md`
-- Base history: `release/0.5.0` at branch creation (`origin/main` may lag)
+- Land 0.5.1 work via **`main`** (or recreate `release/0.5.1` from `main` only if the team still uses that PR flow).
 
 ## Documentation check
 
-- **CHANGELOG:** Added **Added** bullet for 0.5.1 upgrade orientation cohort behavior.
-- **Roadmap:** Present in tree with 0.5.1 orientation scope.
-- **README:** No app-facing README change required for this behavior-only patch.
+- **CHANGELOG:** 0.5.1 **Unreleased** includes upgrade orientation, packaging, cloud/locale work, and post-Seed journey preview + onboarding welcome trim; bundle **3** documented in Developer section.
+- **README:** “What’s new in 0.5.1” matches scope above; build **3** called out under Packaging.
+- **Roadmap:** `GraceNotes/docs/07-release-roadmap.md` — confirm 0.5.1 bullets still accurate before tagging.
 
 ## Merge / release readiness
 
-- **Code + docs:** Orientation feature committed; changelog aligned.
-- **Still open:** QA sign-off on scheme **Run = Release** (developer ergonomics); full manual cohort matrix per issue-71 `testing.md` / `qa.md` before calling the release “fully verified.”
+- **Docs:** Marketing/build copy aligned with `project.pbxproj` (2026-03-24 pass).
+- **Still open before “shipped”:** Set **Unreleased** to a date when tagging; run **QA Reviewer** matrix (issue-71 `qa.md` / `testing.md`); confirm team stance on **GraceNotes.xcscheme** Run = **Release**.
 
 ## Decision
 
-**Merge to main (or next integration branch):** Ready for **PR + CI** once team accepts scheme/Debug question; product verification follows issue-71 QA conditions.
+**Documentation:** Ready for tag planning once QA signs off; no remaining known drift between Xcode bundle **3** and CHANGELOG/README.
 
 ## Open questions
 
-- Revert or keep `GraceNotes.xcscheme` **Run** on **Release** for default ⌘R?
-- Strategist confirmation on **missing `lastLaunchedMarketingVersion`** (upgrade cohort edge case), if support sees missed orientations.
+- Keep or revert **GraceNotes.xcscheme** Run on **Release** for default ⌘R?
+- **`lastLaunchedMarketingVersion`** edge cases if support reports missed upgrade orientation.
 
 ## Next owner
 
-- **QA Reviewer** — final intent vs. implementation on 0.5.1 cohort matrix; scheme ergonomics.
-- **Test Lead** — tick manual rows in `issue-71-guided-onboarding/testing.md` after simulator/device runs.
+- **QA Reviewer** — cohort matrix and simulator/device pass for 0.5.1.
+- **Test Lead** — manual rows in `issue-71-guided-onboarding/testing.md`.

@@ -13,6 +13,7 @@ Patch on the 0.5.x line: version and build bump plus Xcode packaging defaults ca
 - String Catalog: additional **en** / **zh-Hans** entries for previously empty keys; Simplified Chinese copy refined for onboarding, Abundance meaning, and AI onboarding lines. Info.plist **Save to Photos** usage description uses **感恩记** and consistent 你/你的 tone (`zh-Hans`).
 - Cloud chip summarization uses shared **`AppInstructionLocale`** for instruction language (aligned with Review insights), with optional `ChipCloudPromptLanguage` for tests; skips obvious low-signal keyboard mash before the network call; drops model output that fails grounding or reads as unrelated generic filler (#39).
 - Review cloud insights `.automatic` prompt language now resolves through **`AppInstructionLocale`** instead of ad hoc bundle checks (#39).
+- Journal: post-Seed orientation journey sample **Review** preview uses the same observation + muted follow-up layout as weekly insights (new string catalog keys in **en** / **zh-Hans**); first-run onboarding welcome drops a redundant subtitle line.
 
 ### Fixed
 - iOS 17: startup no longer crashes when applying global UIKit appearance; `AppInterfaceAppearance.configure()` runs from `UIApplicationDelegate.application(_:didFinishLaunchingWithOptions:)` instead of `App` `init`.
@@ -28,7 +29,7 @@ Patch on the 0.5.x line: version and build bump plus Xcode packaging defaults ca
 - New tests: `CloudSummarizerPromptAndGroundingTests` (+ `CloudSummarizerTestSupport`).
 - Cloud summarization: app `Info.plist` uses `$(GRACE_NOTES_CLOUD_API_KEY)`, expanded from committed `DeveloperSettings.xcconfig` and optional gitignored `DeveloperSettings.local.xcconfig` (see `DeveloperSettings.local.xcconfig.example`); `ITSAppUsesNonExemptEncryption` is `false` for export compliance.
 
-- App **marketing version** `0.5.1`; **bundle version** (`CURRENT_PROJECT_VERSION`) `2` for Grace Notes app configurations (Debug, Release, Demo).
+- App **marketing version** `0.5.1`; **bundle version** (`CURRENT_PROJECT_VERSION`) `3` for Grace Notes app configurations (Debug, Release, Demo).
 - Project-level **Debug** and **Demo** build settings use `DEBUG_INFORMATION_FORMAT = dwarf-with-dsym` so Debug-style builds still produce dSYM for symbolication.
 - Shared `GraceNotes.xcscheme`: **Run** uses **Release** build configuration (revert locally if you prefer ⌘R to stay on Debug).
 - App target **Swift strict concurrency** set to **minimal**; removed `SWIFT_APPROACHABLE_CONCURRENCY`, `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, and `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY` from Grace Notes app build settings.

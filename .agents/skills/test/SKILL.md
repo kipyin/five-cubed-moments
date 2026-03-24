@@ -1,5 +1,5 @@
 ---
-name: test-lead
+name: test
 description: Risk-based test depth, execution, and coverage judgment
 ---
 

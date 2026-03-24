@@ -1,5 +1,5 @@
 ---
-name: builder
+name: build
 description: Deliver scoped, testable code changes that preserve intent
 ---
 

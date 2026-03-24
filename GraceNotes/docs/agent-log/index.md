@@ -18,7 +18,7 @@ Shipped or superseded handoffs: [`initiatives/archive/`](initiatives/archive/REA
 
 Initiative directory names use the `NNN-` prefix; GitHub issue/PR numbers belong in YAML frontmatter, not as the numeric prefix.
 
-Lifecycle scaffolding (start, index/archive upkeep, validation) is described in `.agents/skills/agent-log/SKILL.md`.
+Lifecycle scaffolding (start, index/archive upkeep, validation) is described in `.agents/skills/housekeep/SKILL.md`.
 
 **End-to-end pipeline (Strategist → … → UAT handoff),** single chat or multi-chat relay with auto-generated next prompts: [MASTER-RUN.md](./MASTER-RUN.md).
 

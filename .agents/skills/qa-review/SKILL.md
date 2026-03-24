@@ -1,5 +1,5 @@
 ---
-name: qa-reviewer
+name: qa-review
 description: Verify changes match intent and scope before merge
 ---
 

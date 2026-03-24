@@ -11,7 +11,7 @@ Cursor does **not** natively spawn sub-agents or auto-open chats; “master” h
 
 ## Before you start
 
-1. Create the initiative (short command is enough): see [.agents/skills/agent-log/SKILL.md](../../../.agents/skills/agent-log/SKILL.md) — e.g. “Start on gh issue #50”.
+1. Create the initiative (short command is enough): see [.agents/skills/housekeep/SKILL.md](../../../.agents/skills/housekeep/SKILL.md) — e.g. “Start on gh issue #50”.
 2. Note the folder path: `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`.
 3. Confirm **where tests run**: iOS builds/tests need **macOS + Xcode** (see repo `AGENTS.md`). Linux-only agents can still edit Swift and docs but cannot run `xcodebuild`.
 
@@ -44,9 +44,9 @@ Paste or adapt:
 ```text
 You are running a Master run for initiative GraceNotes/docs/agent-log/initiatives/<initiative-id>/.
 
-Execute phases in order. For each phase, adopt ONLY that role’s skill from .agents/skills/<role>/SKILL.md and edit ONLY the files that role owns (see roles-index). After each phase, write handoff fields: Decision, Open Questions, Next Owner.
+Execute phases in order. For each phase, adopt ONLY that role’s skill from `.agents/skills/<skill-slug>/SKILL.md` (e.g. `strategize`, `architect`, `designer`, `build`, `test`, `qa-review`, `git`) and edit ONLY the files that role owns (see roles-index). After each phase, write handoff fields: Decision, Open Questions, Next Owner.
 
-Phases: (1) Strategist → brief.md (2) Architect → architecture.md (3) Optional: Strategist reviews architecture; if misaligned, append pushback.md and Architect revises — max 2 rounds (4) Designer only if UI-heavy → design.md (5) Builder → code + tests (6) Test Lead → testing.md (7) QA Reviewer → qa.md (8) Release Manager → release.md
+Phases: (1) Strategist (`strategize`) → brief.md (2) Architect → architecture.md (3) Optional: Strategist reviews architecture; if misaligned, append pushback.md and Architect revises — max 2 rounds (4) Designer only if UI-heavy → design.md (5) Builder (`build`) → code + tests (6) Test Lead (`test`) → testing.md (7) QA Reviewer (`qa-review`) → qa.md (8) Release Manager (`git`) → release.md
 
 If the user chose multi-session mode, STOP after each phase and output the “Next session prompt” block instead of continuing.
 
@@ -88,7 +88,7 @@ Example **Next Owner** after Strategist finishes `brief.md`:
 
 - “**Master run, single chat, initiative `<path>`**” — run all phases in one conversation until blocked or done.
 - “**Master run, relay, initiative `<path>`**” — run **one** phase, then emit the handoff prompt only.
-- “**Master run from gh issue #N**” — agent-log start (if needed), then Strategist phase or full pipeline per mode.
+- “**Master run from gh issue #N**” — housekeep initiative start (if needed), then Strategist phase or full pipeline per mode.
 
 ## Multi-agent auto-scheduling — implementation options
 

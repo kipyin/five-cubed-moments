@@ -29,7 +29,7 @@ related_pr: 79
 ---
 ```
 
-`initiative_id` must match the initiative directory name. Use `related_issue` / `related_pr` for GitHub numbers; the `NNN-` prefix is only the next free sequence id (see `.agents/skills/agent-log/SKILL.md`).
+`initiative_id` must match the initiative directory name. Use `related_issue` / `related_pr` for GitHub numbers; the `NNN-` prefix is only the next free sequence id (see `.agents/skills/housekeep/SKILL.md`).
 
 ## Pushback Entry Schema
 

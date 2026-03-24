@@ -56,7 +56,7 @@ Planning is **done enough** for Architect/Designer when: (1) the three beats are
    **v1** keeps the **existing payload** (`narrativeSummary`, `resurfacingMessage`, `continuityPrompt`, recurring lists). **Thinking** stays expressed through **copy mapping** (primarily `narrativeSummary`), not a new required string field. A **future v2** that adds a dedicated Thinking field is an **explicit** contract + sanitizer + test change.
 
 3. **Marketing**  
-   After **Designer** has a stable layout (section order, optional helper line), run the normal pipeline: **Translator** for natural `zh-Hans` where new strings appear, then **Marketing** for final **en** + **zh-Hans** parity on **section labels** and any short helper microcopy (see `.agents/skills/marketing/SKILL.md`). Marketing should flag if a label **promises** behavior the engine cannot yet support.
+   After **Designer** has a stable layout (section order, optional helper line), run the normal pipeline: **Translator** for natural `zh-Hans` where new strings appear, then **Marketing** for final **en** + **zh-Hans** parity on **section labels** and any short helper microcopy (see `.agents/skills/market/SKILL.md`). Marketing should flag if a label **promises** behavior the engine cannot yet support.
 
 4. **Delivery — serial (no parallel conflicting tracks)**  
    **Order:** (a) this brief + `architecture.md` aligned, (b) **Designer** output for one-insight / three-section layout (**#40**), (c) **Translator → Marketing** on user-visible names, (d) **Builder**: **#40** UI first so structure is real, then **#80** prompts/sanitizer/fixtures to match the layout and tone bar.

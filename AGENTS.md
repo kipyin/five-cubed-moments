@@ -51,16 +51,16 @@ brew install swiftlint
 
 Keep role behavior in `.agents/skills/` as the single source of truth for role-specific instructions (same tree as Impeccable task skills). Use short role names and mapped files:
 
-- `Strategist` -> `.agents/skills/strategist/SKILL.md`
+- `Strategist` -> `.agents/skills/strategize/SKILL.md`
 - `Designer` -> `.agents/skills/designer/SKILL.md`
 - `Architect` -> `.agents/skills/architect/SKILL.md`
-- `Translator` -> `.agents/skills/translator/SKILL.md`
-- `Marketing` -> `.agents/skills/marketing/SKILL.md`
-- `Builder` -> `.agents/skills/builder/SKILL.md`
-- `Release Manager` -> `.agents/skills/release-manager/SKILL.md`
-- `QA Reviewer` -> `.agents/skills/qa-reviewer/SKILL.md`
-- `Test Lead` -> `.agents/skills/test-lead/SKILL.md`
-- `agent-log` -> `.agents/skills/agent-log/SKILL.md` (initiative folder lifecycle: start, maintain, archive)
+- `Translator` -> `.agents/skills/translate/SKILL.md`
+- `Marketing` -> `.agents/skills/market/SKILL.md`
+- `Builder` -> `.agents/skills/build/SKILL.md`
+- `Release Manager` -> `.agents/skills/git/SKILL.md`
+- `QA Reviewer` -> `.agents/skills/qa-review/SKILL.md`
+- `Test Lead` -> `.agents/skills/test/SKILL.md`
+- `housekeep` -> `.agents/skills/housekeep/SKILL.md` (initiative folder lifecycle: start, maintain, archive; `GraceNotes/docs/agent-log/` remains the doc tree)
 - Role index and shared contract -> `.agents/skills/roles-index/SKILL.md`
 
 Use `GraceNotes/docs/agent-log/` as the canonical source for role-to-role interaction, handoffs, and deferred pushback context.

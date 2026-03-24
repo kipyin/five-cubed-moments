@@ -2,7 +2,7 @@
 
 Shipped or superseded handoffs live here so **`initiatives/`** stays limited to **active** work.
 
-Ids follow `NNN-kebab-name` (see `.agents/skills/agent-log/SKILL.md`). Numbers **001–015** were assigned by **alphabetical order** of the pre-migration folder names (one-time migration).
+Ids follow `NNN-kebab-name` (see `.agents/skills/housekeep/SKILL.md`). Numbers **001–015** were assigned by **alphabetical order** of the pre-migration folder names (one-time migration).
 
 | Slug | Notes |
 |------|--------|

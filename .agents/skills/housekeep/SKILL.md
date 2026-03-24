@@ -1,9 +1,9 @@
 ---
-name: agent-log
+name: housekeep
 description: Start, maintain, close agent-log initiatives; master run orchestration (single or relay chats); numbering, templates, gh issue context
 ---
 
-# Agent-log
+# Housekeep
 
 ## Purpose
 

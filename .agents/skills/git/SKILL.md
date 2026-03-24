@@ -1,5 +1,5 @@
 ---
-name: release-manager
+name: git
 description: Branch, PR, and release hygiene — version and documentation accuracy
 ---
 

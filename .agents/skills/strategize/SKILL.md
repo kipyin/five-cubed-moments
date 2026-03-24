@@ -1,5 +1,5 @@
 ---
-name: strategist
+name: strategize
 description: Decide what to build next and why — user value, priority, acceptance intent
 ---
 

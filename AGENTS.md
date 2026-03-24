@@ -37,7 +37,7 @@ xcodebuild \
 swiftlint lint
 ```
 
-Runs from the repo root; lints all `.swift` files recursively. Currently reports 10 violations (9 warnings, 1 error) across 59 files. The `statement_position` rule is skipped because it requires SourceKit (unavailable in the static binary). Exit code 2 is expected when there are error-level violations; this does **not** mean the tool failed.
+Runs from the repo root; lints all `.swift` files recursively. As of 2026-03-24, reports 16 violations (warnings, 0 serious) across 141 files. The `statement_position` rule is skipped because it requires SourceKit (unavailable in the static binary). Exit code 2 is expected when there are error-level violations; this does **not** mean the tool failed.
 
 On macOS, install SwiftLint via Homebrew if needed:
 

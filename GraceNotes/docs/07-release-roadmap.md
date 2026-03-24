@@ -4,7 +4,7 @@ Date: 2026-03-24
 
 This roadmap turns the strategic priority stack into a release sequence grounded in the current open issue set. For **shipped** scope detail, treat `CHANGELOG.md` as the source of truth and keep this document aligned when tagging releases.
 
-**GitHub milestones:** Open product issues on [kipyin/grace-notes](https://github.com/kipyin/grace-notes) use milestones that mirror the releases below: `0.5.0 - Insight quality and first-week guidance`, `0.5.2 - Settings cohesion and insight follow-through`, `0.6.0 - Trust and ownership`, `0.7.0 - Activation and flexible depth`, and `0.8.x+ - Streak and calendar refinement`. Internal workflow work stays off user-facing milestones. When you add or retarget issues, update this file and the milestone in the same change.
+**GitHub milestones:** Open issues on [kipyin/grace-notes](https://github.com/kipyin/grace-notes) use milestones that mirror the releases below, including patch lanes for engineering hygiene: `0.5.0 - Insight quality and first-week guidance`, `0.5.2 - Settings cohesion and insight follow-through`, `0.5.3 - Swift hygiene and lint baseline`, `0.6.0 - Trust and ownership`, `0.6.1 - Test coverage and maintainability`, `0.7.0 - Activation and flexible depth`, and `0.8.x+ - Streak and calendar refinement`. Internal workflow-only work may stay untracked on these milestones per team preference; when you add or retarget issues, update this file and the milestone in the same change.
 
 ## Roadmap principles
 
@@ -196,6 +196,10 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 
 **Scope in**
 - `#84` Settings section headers use authored title case instead of forced all-caps list header styling.
+- `#83` Optional placement for AI / on-device source label on review insights.
+- `#85` Design critique: Review Insights screen follow-through and hierarchy polish.
+- `#86` Surface Cloud AI insight / summarization status to users.
+- `#80` Review deep insight engine (prompts, fixtures, contract conformance) — remaining open work toward this patch lane.
 - `#40` / `#80` review insight follow-through where remaining intent is still tracked toward 0.5.2 acceptance.
 - Agent-log initiative context for this lane:
   - Archived direction: `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/`
@@ -208,6 +212,38 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 **Acceptance intent**
 - Settings section headings read in title case across Settings surfaces, including nested Settings lists where applicable.
 - #40 / #80 close criteria tracked in agent-log are reflected in shipped behavior and documentation for the 0.5.2 release window.
+- Open issues `#83`, `#85`, `#86`, and `#80` carry milestone **0.5.2**; ship or retarget explicitly if scope slips.
+
+## 0.5.3 — Swift hygiene and lint baseline
+
+**Release status**
+- Unreleased patch on the `0.5.x` line after **0.5.1** / **0.5.2** planning.
+
+**Goal:** Bring production and test Swift sources back in line with SwiftLint and [AGENTS.md](../../AGENTS.md) file-size guidance without changing product behavior.
+
+**Scope in**
+- `#87` Swift hygiene (production): resolve app-target SwiftLint violations; split or extract `JournalScreen`, `SequentialSectionView`, `CloudReviewInsightsSanitizer`; fix `WeeklyInsightCandidateBuilder` disable directive; naming and optional-binding cleanups listed in agent-log **019** inventory.
+- `#88` Swift hygiene (tests): split oversized test types and fix test-target lint noise.
+
+**Why now**
+- Lint debt compounds across refactors; a bounded patch keeps CI and contributor friction predictable before larger **0.6.x** trust work.
+
+**Acceptance intent**
+- `swiftlint lint` reports no violations for the agreed scope (or documented exceptions).
+- No user-visible behavior change unless a fix exposes a latent bug (then document in `CHANGELOG`).
+
+## 0.6.1 — Test coverage and maintainability
+
+**Release status**
+- Unreleased patch on the `0.6.x` line (scheduled after **0.6.0** baseline trust ship unless intentionally reordered).
+
+**Goal:** Close high-value automated test gaps called out in `06-tech-debt-backlog.md` and agent-log **019** without a feature expansion.
+
+**Scope in**
+- `#89` Share / save-to-photos, Settings navigation, and `JournalScreenChipHandling` coverage improvements.
+
+**Acceptance intent**
+- New tests fail when regressions occur in the covered flows; `xcodebuild test` remains green on macOS.
 
 ## 0.6.0 — Trust and ownership
 
@@ -218,6 +254,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - Clear privacy messaging for local versus cloud behavior (extends, does not replace, `0.4.0` sync truthfulness)
 - `zh-Hant` localization if release capacity allows
 - `#50` Add a show orientation again toggle in Settings
+- `#90` Architecture: thin `JournalViewModel` responsibilities and align `readingNotes` naming with UI (maintainability supports trust and ownership)
 
 **Why now**
 - Users need confidence that their reflections are portable and recoverable.
@@ -283,5 +320,6 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/agent-log/initiatives/archive/006-issue-41-agents-workflow/brief.md`
 - `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` (insight direction for #80)
 - `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (archived implementation trail for #40 / #80 v1; **#80** may remain open)
+- `GraceNotes/docs/agent-log/initiatives/archive/019-repo-improvement-audit-roadmap/` (repo audit inventory; GitHub **#87**–**#90**; milestones **0.5.2** / **0.5.3** / **0.6.1**)
 - `CHANGELOG.md`
 - GitHub milestones: https://github.com/kipyin/grace-notes/milestones

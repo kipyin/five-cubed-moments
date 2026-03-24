@@ -31,17 +31,17 @@ Manage branch, commit, PR, and release hygiene so work lands on the correct vers
 - `Documentation Check`
 - `Merge/Release Readiness`
 
-## Branch Workflow (Required)
+## Branch Workflow (Grace Notes default)
 
-- For any release execution task, create or switch to a dedicated release branch before editing files.
-- Default branch naming: `release/<version>` (example: `release/0.3.2`).
-- If a release branch already exists, continue on that branch instead of creating a second one.
-- Only work directly on `main` when the user explicitly requests it.
+- **Daily work:** Commit features, fixes, and tests to **`main`**.
+- **Cut for publish:** When executing a release, create **`release/<version>`** from **`main`** (example: `release/0.5.1`). Perform **release-window** edits only on that branch (version finalization, `CHANGELOG` ship date, last doc alignment).
+- **Finish:** **Squash merge** the release branch into **`main`**, then tag **`v<version>`** on `main` (example: `v0.5.1`). Reuse an existing `release/<version>` branch if it is already open for the same version; do not create a second branch for the same release.
+- Escalate if the user asks for a different strategy (for example, long-lived release branches for all integration).
 
 ## Decision Checklist
 
 - Is the base branch correct for this feature/fix and release target?
-- Was a dedicated release branch created/used before release edits began?
+- For release execution, was **`release/<version>`** cut from `main` and used for release-window edits before squash merge and tag?
 - Is there one clean branch per unit of work?
 - Are daily commits grouped sensibly with succinct, consistent messages?
 - Does PR title/body explain why and impact, not only what changed?
@@ -64,7 +64,7 @@ Stop and escalate to `Architect` or `QA Reviewer` when:
 - Conflict resolution changes behavior in uncertain ways.
 - PR lacks clarity to validate impact.
 - Documentation disagrees with implemented behavior.
-- Release execution is requested but branch strategy is ambiguous (for example, unclear whether `main` is allowed).
+- Release execution is requested but branch strategy is ambiguous (for example, conflicts with the default main + ephemeral `release/<version>` + squash + tag flow).
 
 ## Handoff Contract
 

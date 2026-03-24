@@ -535,17 +535,14 @@ private extension JournalScreen {
     private func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
         guard !ProcessInfo.graceNotesIsRunningUITests else { return }
         guard entryDate == nil else { return }
-        guard !hasSeenPostSeedJourney else { return }
+        guard let outcome = PostSeedJourneyTrigger.evaluate(
+            hasSeenPostSeedJourney: hasSeenPostSeedJourney,
+            pending051UpgradeOrientation: pending051UpgradeOrientation,
+            hasCompletedGuidedJournal: hasCompletedGuidedJournal,
+            todayCompletionLevel: level
+        ) else { return }
 
-        let seedRank = JournalCompletionLevel.seed.tutorialCompletionRank
-        let atOrAboveSeed = level.tutorialCompletionRank >= seedRank
-
-        let standardPath = level == .seed && !hasCompletedGuidedJournal
-        let upgradePath = pending051UpgradeOrientation && atOrAboveSeed
-
-        guard standardPath || upgradePath else { return }
-
-        postSeedJourneySkipsCongratulations = upgradePath && hasCompletedGuidedJournal
+        postSeedJourneySkipsCongratulations = outcome.skipsCongratulationsPage
         showPostSeedJourney = true
     }
 

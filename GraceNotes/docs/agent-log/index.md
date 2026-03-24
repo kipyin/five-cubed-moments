@@ -5,7 +5,7 @@
 ## Active initiatives
 
 - [`011-issue-71-guided-onboarding`](initiatives/011-issue-71-guided-onboarding) — PR **#79** / epic **#71** (`qa.md`, `testing.md`)
-- [`015-release-0-5-1-patch`](initiatives/015-release-0-5-1-patch) — **0.5.1** patch line, integrate from **`main`** (`release.md`)
+- [`015-release-0-5-1-patch`](initiatives/015-release-0-5-1-patch) — **0.5.1** **shipped 2026-03-24** / tag **`v0.5.1`** — consider [archive](initiatives/archive/README.md) when housekeeping (`release.md` **completed**)
 
 ## Archived initiatives
 

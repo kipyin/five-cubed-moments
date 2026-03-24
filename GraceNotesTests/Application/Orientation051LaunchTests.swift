@@ -27,18 +27,11 @@ final class Orientation051LaunchTests: XCTestCase {
     }
 
     func test_applyLaunch_upgradeFrom050_setsPendingAndClearsGuidedKey() {
-        let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set("0.5.0", forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
-        defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: "0.5.0")
+    }
 
-        AppLaunchVersionTracker.applyLaunch(defaults: defaults, currentMarketingVersionOverride: "0.5.1")
-
-        XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation))
-        XCTAssertNil(defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
-        XCTAssertEqual(
-            defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion),
-            "0.5.1"
-        )
+    func test_applyLaunch_upgradeFrom040_setsPendingAndClearsGuidedKey() {
+        assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: "0.4.0")
     }
 
     func test_applyLaunch_secondLaunch051_doesNotReflagPending() {
@@ -77,11 +70,34 @@ final class Orientation051LaunchTests: XCTestCase {
     }
 
     func test_resolveBranch_atSeed_setsGuidedComplete() {
+        assertResolveBranchAtOrAboveSeedSetsGuidedComplete(level: .seed)
+    }
+
+    func test_resolveBranch_atRipening_setsGuidedComplete() {
+        assertResolveBranchAtOrAboveSeedSetsGuidedComplete(level: .ripening)
+    }
+
+    private func assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: String) {
+        let defaults = UserDefaults(suiteName: suiteName!)!
+        defaults.set(previousMarketing, forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+
+        AppLaunchVersionTracker.applyLaunch(defaults: defaults, currentMarketingVersionOverride: "0.5.1")
+
+        XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation))
+        XCTAssertNil(defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
+        XCTAssertEqual(
+            defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion),
+            "0.5.1"
+        )
+    }
+
+    private func assertResolveBranchAtOrAboveSeedSetsGuidedComplete(level: JournalCompletionLevel) {
         let defaults = UserDefaults(suiteName: suiteName!)!
         defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
 
         JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
-            todayCompletionLevel: .seed,
+            todayCompletionLevel: level,
             using: defaults
         )
 

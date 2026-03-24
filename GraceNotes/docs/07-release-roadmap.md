@@ -171,8 +171,8 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 ## 0.5.1 — Upgrade orientation (installed base)
 
 **Release status**
-- **In progress** — marketing version **`0.5.1`**, bundle **`3`**, documented in `CHANGELOG.md` as **Unreleased** until tagged.
-- Integrate from **`main`** (use `release/0.5.1` only if your team still prefers a named release branch).
+- **Released (2026-03-24)** — marketing version **`0.5.1`**, bundle **`3`**; see `CHANGELOG.md` and git tag **`v0.5.1`**.
+- Branch/tag playbook: `GraceNotes/docs/agent-log/initiatives/015-release-0-5-1-patch/release.md`.
 
 **Goal:** Users upgrading from `0.5.0` (or any build below `0.5.1`) into `0.5.1` get a **one-time** first-week orientation on the first launch of that version; later launches and later versions do not repeat it unless product adds a new rule.
 

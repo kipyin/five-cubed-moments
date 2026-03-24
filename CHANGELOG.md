@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1] - Unreleased
+## [0.5.1] - 2026-03-24
 
 Patch on the 0.5.x line: version and build bump plus Xcode packaging defaults carried from local workspace changes.
 

@@ -1,6 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private enum SequentialSectionPrimaryColumnLayout {
+    static let sectionProgressDotsTrailingInset: CGFloat = 8
+}
+
 /// Main column of `SequentialSectionView` (guidance, chip scroller, text field) split out for type-size limits.
 struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let reduceMotion: Bool
@@ -32,8 +36,6 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     @Binding var chipReorderHoverTargetItemID: UUID?
 
     let progressDots: ProgressDots
-
-    private static let sectionProgressDotsTrailingInset: CGFloat = 8
 
     private var showInput: Bool {
         items.count < slotCount || editingIndex != nil
@@ -108,7 +110,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                         .foregroundStyle(onboardingState.titleColor)
                     Spacer(minLength: AppTheme.spacingTight)
                     progressDots
-                        .padding(.trailing, Self.sectionProgressDotsTrailingInset)
+                        .padding(.trailing, SequentialSectionPrimaryColumnLayout.sectionProgressDotsTrailingInset)
                 }
             }
 

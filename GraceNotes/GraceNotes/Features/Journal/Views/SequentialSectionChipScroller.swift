@@ -1,5 +1,9 @@
 import SwiftUI
 
+private enum SequentialSectionChipScrollerLayout {
+    static let edgeFeatherWidth: CGFloat = 28
+}
+
 /// Horizontal chip row with scroll metrics, masks, and optional add control.
 struct SequentialSectionChipScroller<ChipRow: View>: View {
     let reduceMotion: Bool
@@ -14,8 +18,6 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
     @Binding var chipScrollSnapshot: ChipRowScrollSnapshot
 
     @ViewBuilder var chipRow: () -> ChipRow
-
-    private static let edgeFeatherWidth: CGFloat = 28
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -80,7 +82,7 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
             startPoint: .leading,
             endPoint: .trailing
         )
-        .frame(width: Self.edgeFeatherWidth)
+        .frame(width: SequentialSectionChipScrollerLayout.edgeFeatherWidth)
     }
 
     private func edgeMask(_ edge: HorizontalEdge) -> some View {
@@ -90,14 +92,14 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
                 startPoint: .leading,
                 endPoint: .trailing
             )
-            .frame(width: Self.edgeFeatherWidth)
+            .frame(width: SequentialSectionChipScrollerLayout.edgeFeatherWidth)
         } else {
             LinearGradient(
                 colors: canScrollChipsRight ? [.black, .clear] : [.black, .black],
                 startPoint: .leading,
                 endPoint: .trailing
             )
-            .frame(width: Self.edgeFeatherWidth)
+            .frame(width: SequentialSectionChipScrollerLayout.edgeFeatherWidth)
         }
     }
 }

@@ -3,9 +3,9 @@ import XCTest
 /// UI tests use `-ui-testing`. To reset journal tutorial flags (issue #60), add
 /// `-reset-journal-tutorial` to `launchArguments` before `launch()`.
 final class JournalUITests: XCTestCase {
-    /// `JournalViewModel` debounces SwiftData saves; allow persistence to finish before relaunch.
+    /// `JournalViewModel` debounces SwiftData saves (`-grace-notes-uitest-short-autosave` → 50ms in UI tests).
     private func waitForDebouncedJournalSave() {
-        Thread.sleep(forTimeInterval: 1.0)
+        Thread.sleep(forTimeInterval: 0.25)
     }
 
     @MainActor

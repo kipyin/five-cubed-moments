@@ -44,7 +44,8 @@ final class JournalViewModel {
         nowProvider: @escaping () -> Date = Date.init,
         repository: JournalRepository? = nil,
         summarizerProvider: SummarizerProvider = .shared,
-        streakCalculator: StreakCalculator? = nil
+        streakCalculator: StreakCalculator? = nil,
+        autosaveDebounceMilliseconds: Int? = nil
     ) {
         self.calendar = calendar
         self.nowProvider = nowProvider
@@ -52,8 +53,17 @@ final class JournalViewModel {
         self.summarizerProvider = summarizerProvider
         self.streakCalculator = streakCalculator ?? StreakCalculator(calendar: calendar)
 
+        let debounceMs: Int
+        if let autosaveDebounceMilliseconds {
+            debounceMs = autosaveDebounceMilliseconds
+        } else if ProcessInfo.processInfo.arguments.contains("-grace-notes-uitest-short-autosave") {
+            debounceMs = 50
+        } else {
+            debounceMs = 400
+        }
+
         autosaveTrigger
-            .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+            .debounce(for: .milliseconds(debounceMs), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 self?.persistChanges()
             }

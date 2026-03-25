@@ -3,28 +3,23 @@ import SwiftData
 @testable import GraceNotes
 
 // Keeps mutation-path assertions in one place until test extraction is completed.
-// swiftlint:disable type_body_length
 @MainActor
 final class JournalViewModelMutationTests: XCTestCase {
     private var calendar: Calendar!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        try skipIfKnownHostedSwiftDataCrash()
-    }
-
-    override func setUp() {
-        super.setUp()
-        calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar = cal
         UserDefaults.standard.set(false, forKey: AIFeaturesSettings.enabledUserDefaultsKey)
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.enabledUserDefaultsKey)
         UserDefaults.standard.removeObject(forKey: AIFeaturesSettings.legacyAIReviewInsightsKey)
-        super.tearDown()
+        try super.tearDownWithError()
     }
 
     func test_updateGratitudeRejectsEmptyString_leavesOriginalUnchanged() async throws {
@@ -89,7 +84,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_updateGratitudeImmediate_updatesWithInterimLabel() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
@@ -107,7 +101,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_updatePersonImmediate_mixedLanguage_preservesLatinNameInChipLabel() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
@@ -124,7 +117,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_addGratitudeImmediate_appendsWithInterimLabel() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
@@ -157,7 +149,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_renameNeedLabel_shortLabelClearsTruncation() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = makeViewModel(now: now)
@@ -188,7 +179,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_updateGratitudeImmediate_aiFeaturesEnabled_keepsFullLabelWithoutEllipsis() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         UserDefaults.standard.set(true, forKey: AIFeaturesSettings.enabledUserDefaultsKey)
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
@@ -253,7 +243,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     func test_removeGratitude_invalidIndex_returnsFalse() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
@@ -338,17 +327,6 @@ final class JournalViewModelMutationTests: XCTestCase {
     }
 
     private func makeInMemoryContext() throws -> ModelContext {
-        let schema = Schema([JournalEntry.self])
-        let storeURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GraceNotesTests-\(UUID().uuidString).store")
-        let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        let container = try ModelContainer(for: schema, configurations: configuration)
-        return ModelContext(container)
-    }
-
-    private func skipIfKnownHostedSwiftDataCrash() throws {
-        guard ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil else { return }
-        throw XCTSkip("Skipping due to known hosted SwiftData malloc crash on current iOS simulator runtime.")
+        try SwiftDataTestIsolation.makeModelContext()
     }
 }
-// swiftlint:enable type_body_length

@@ -21,7 +21,7 @@ Pass/Fail: **Pass** (conditional on macOS test run green and manual UAT below).
 
 - Thin-week CTA: shown when pre-insight empty copy **or** `weekJournalEntryCount < 4` with loaded insights; switches to **Today** tab.
 - Hierarchy: **This week** title larger than panels 2–3; softer borders on 2–3.
-- Mode control: custom segments; `ReviewModePicker` id preserved; selected trait on segment.
+- Mode control: system segmented `Picker`; `ReviewModePicker` id preserved; selected trait on segment.
 - Copy: **A pattern**, **On your device**, CTA string + **zh-Hans** parity in catalog.
 
 ## Risks

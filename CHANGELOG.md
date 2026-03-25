@@ -8,6 +8,12 @@ Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Sto
 
 Work tracked toward milestone **0.5.2** (Settings cohesion and insight follow-through); ships as marketing **0.5.0**, next **bundle** increment at cut time (tag e.g. **`v0.5.0+8`**).
 
+### Developer
+
+- Journal: `JournalTodayOrientationPolicy` centralizes Today-only post-Seed presentation (delegating to `PostSeedJourneyTrigger`) and Seed unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion rule documented in `GraceNotes/docs/agent-log/initiatives/023-onboarding-first-entry-policy/architecture.md`. Tests: `JournalTodayOrientationPolicyTests`.
+- Journal: post-Seed journey (**C**) is **version-free**—eligibility uses `hasSeenPostSeedJourney`, Today completion **≥ Seed**, and `completedGuidedJournal` (skip congratulations only). Removed `OrientationReleaseGate` and launch-time cohort flags; `JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded` normalizes legacy `pending051UpgradeOrientation` into guided/branch state, clears the upgrade key, and keeps `legacy051GuidedBranchResolution` until Today runs `resolvePending051GuidedJournalBranch`. Settings **App tour** sets `hasSeenPostSeedJourney` on finish without completing guided journal and skips the Seed congratulations page when guided journal is already complete. `AppLaunchVersionTracker` still records last marketing/bundle only.
+- Versioning: Grace Notes app **marketing version** stays **0.5.0** for this lane; **bundle** (`CURRENT_PROJECT_VERSION`) **8** (increment build under the minor for faster TestFlight review; build **7** was the previous ship).
+
 ### Changed
 - Settings: section headers use authored title case instead of all-caps list header styling (#84).
 - Review > Insights: thin-week **Write today's reflection** control switches to **Today**; flatter insights column (inset panels only, no outer summary shell); **This week** title row shows the week date range; read-only **On your device** / **AI** source pills; unified semibold panel titles; system **Insights** / **Timeline** segmented control (Liquid Glass on iOS 26+) with `ReviewModePicker` id preserved (#85).

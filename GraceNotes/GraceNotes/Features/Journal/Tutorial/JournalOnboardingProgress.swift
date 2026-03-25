@@ -8,10 +8,8 @@ enum JournalOnboardingSuggestion: CaseIterable {
 
 enum JournalOnboardingStorageKeys {
     static let completedGuidedJournal = "journalOnboarding.completedGuidedJournal"
-    /// True until the user finishes or skips the one-time upgrade orientation (0.5.1+ cohort).
-    static let pending051UpgradeOrientation = "journalOnboarding.pending051UpgradeOrientation"
-    /// Upgrade cohort: defer writing `completedGuidedJournal` until Today’s completion level is known.
-    static let pending051GuidedJournalBranchResolution = "journalOnboarding.pending051GuidedJournalBranchResolution"
+    /// Legacy upgrade cohort: Today clears this after one branch resolution. Listed for iCloud continuity.
+    static let legacy051GuidedBranchResolution = "journalOnboarding.pending051GuidedJournalBranchResolution"
     static let hasSeenPostSeedJourney = "journalOnboarding.hasSeenPostSeedJourney"
     static let dismissedRemindersSuggestion = "journalOnboarding.dismissedRemindersSuggestion"
     static let dismissedAISuggestion = "journalOnboarding.dismissedAISuggestion"
@@ -19,6 +17,10 @@ enum JournalOnboardingStorageKeys {
     static let openedRemindersSuggestion = "journalOnboarding.openedRemindersSuggestion"
     static let openedAISuggestion = "journalOnboarding.openedAISuggestion"
     static let openedICloudSuggestion = "journalOnboarding.openedICloudSuggestion"
+}
+
+private enum LegacyJournalOnboardingStorageKeys {
+    static let pending051UpgradeOrientation = "journalOnboarding.pending051UpgradeOrientation"
 }
 
 /// Per-install onboarding flags for the behavior-first journal path and optional feature suggestions.
@@ -62,24 +64,36 @@ final class JournalOnboardingProgress {
             return storedValue
         }
 
-        if defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation) {
-            defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
-            defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
-            return false
-        }
-
         let migratedValue = shouldTreatInstallAsPreviouslyOnboarded(using: defaults)
         defaults.set(migratedValue, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
         return migratedValue
     }
 
-    /// After Today’s entry loads, finalize the 0.5.1 upgrade cohort branch for `completedGuidedJournal`.
-    /// At or above Seed on first load → skip chip coaching (`true`). Below Seed → keep full guided path (`false`).
+    /// Normalizes legacy `pending051*` state from older builds. Drops the upgrade flag; keeps branch
+    /// resolution until Today runs `resolvePending051GuidedJournalBranch`.
+    static func migrateLegacyPostSeedOrientationFlagsIfNeeded(using defaults: UserDefaults = .standard) {
+        let upgradeKey = LegacyJournalOnboardingStorageKeys.pending051UpgradeOrientation
+        let branchKey = JournalOnboardingStorageKeys.legacy051GuidedBranchResolution
+
+        if defaults.bool(forKey: upgradeKey) {
+            defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+            defaults.set(true, forKey: branchKey)
+        }
+
+        if defaults.bool(forKey: branchKey),
+           defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) as? Bool == nil {
+            defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        }
+
+        defaults.removeObject(forKey: upgradeKey)
+    }
+
+    /// After Today’s entry loads, finalize legacy upgrade cohort branch for `completedGuidedJournal`.
     static func resolvePending051GuidedJournalBranch(
         todayCompletionLevel: JournalCompletionLevel,
         using defaults: UserDefaults = .standard
     ) {
-        guard defaults.bool(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution) else {
+        guard defaults.bool(forKey: JournalOnboardingStorageKeys.legacy051GuidedBranchResolution) else {
             return
         }
 
@@ -88,14 +102,14 @@ final class JournalOnboardingProgress {
             defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
         }
 
-        defaults.removeObject(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
+        defaults.removeObject(forKey: JournalOnboardingStorageKeys.legacy051GuidedBranchResolution)
     }
 
     static func resetAll(in defaults: UserDefaults = .standard) {
         let keys = [
             JournalOnboardingStorageKeys.completedGuidedJournal,
-            JournalOnboardingStorageKeys.pending051UpgradeOrientation,
-            JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution,
+            LegacyJournalOnboardingStorageKeys.pending051UpgradeOrientation,
+            JournalOnboardingStorageKeys.legacy051GuidedBranchResolution,
             JournalOnboardingStorageKeys.hasSeenPostSeedJourney,
             JournalOnboardingStorageKeys.dismissedRemindersSuggestion,
             JournalOnboardingStorageKeys.dismissedAISuggestion,

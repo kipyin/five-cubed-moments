@@ -2,9 +2,6 @@ import Foundation
 
 /// Compares dotted marketing versions (e.g. `CFBundleShortVersionString`).
 enum MarketingVersion {
-    /// Release that introduced version-gated upgrade orientation (see onboarding roadmap).
-    static let orientationReleaseAnchor = "0.5.1"
-
     /// `.orderedAscending` if `lhs` is strictly less than `rhs`.
     static func compare(_ lhs: String, _ rhs: String) -> ComparisonResult {
         let partsLeft = lhs.split(separator: ".").map { Int($0) ?? 0 }
@@ -23,5 +20,16 @@ enum MarketingVersion {
 extension Bundle {
     var graceNotesMarketingVersion: String? {
         infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    var graceNotesBundleVersion: Int? {
+        if let str = infoDictionary?["CFBundleVersion"] as? String {
+            let head = str.split(separator: ".").first.map(String.init) ?? str
+            return Int(head)
+        }
+        if let num = infoDictionary?["CFBundleVersion"] as? Int {
+            return num
+        }
+        return nil
     }
 }

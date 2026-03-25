@@ -2,34 +2,34 @@ import Foundation
 
 enum GraceNotesLaunchStorageKeys {
     static let lastLaunchedMarketingVersion = "graceNotes.lastLaunchedMarketingVersion"
+    static let lastLaunchedBundleVersion = "graceNotes.lastLaunchedBundleVersion"
 }
 
-/// Persists last launched marketing version. Flags one-time 0.5.1+ upgrade orientation when crossing from older builds.
+/// Persists last launched marketing and bundle (support / continuity; not used for tutorial gating).
 enum AppLaunchVersionTracker {
     /// Call once per process launch before resolving guided-journal migration.
-    /// - Parameter currentMarketingVersionOverride: Tests inject a version string instead of reading the host bundle.
+    /// - Parameters:
+    ///   - currentMarketingVersionOverride: Tests inject a version string instead of reading the host bundle.
+    ///   - currentBundleVersionOverride: Tests inject a build number instead of reading the host bundle.
     static func applyLaunch(
         bundle: Bundle = .main,
         defaults: UserDefaults = .standard,
-        currentMarketingVersionOverride: String? = nil
+        currentMarketingVersionOverride: String? = nil,
+        currentBundleVersionOverride: Int? = nil
     ) {
-        let current = currentMarketingVersionOverride ?? bundle.graceNotesMarketingVersion ?? "0"
-        let previous = defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
+        let currentMarketing = currentMarketingVersionOverride ?? bundle.graceNotesMarketingVersion ?? "0"
+        let currentBundle = currentBundleVersionOverride ?? bundle.graceNotesBundleVersion
 
-        if !ProcessInfo.graceNotesIsRunningUITests,
-           let previous,
-           MarketingVersion.compare(previous, MarketingVersion.orientationReleaseAnchor) == .orderedAscending,
-           MarketingVersion.compare(current, MarketingVersion.orientationReleaseAnchor) != .orderedAscending {
-            defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation)
-            defaults.removeObject(forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        defaults.set(currentMarketing, forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
+        if let currentBundle {
+            defaults.set(currentBundle, forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion)
+        } else {
+            defaults.removeObject(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion)
         }
-
-        defaults.set(current, forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
     }
 
     static func resetLaunchTracking(in defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
-        defaults.removeObject(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation)
-        defaults.removeObject(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
+        defaults.removeObject(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion)
     }
 }

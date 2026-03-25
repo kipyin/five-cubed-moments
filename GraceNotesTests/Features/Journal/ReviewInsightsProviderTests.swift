@@ -353,11 +353,11 @@ extension ReviewInsightsProviderTests {
     }
 }
 
-private enum StubError: Error {
+enum StubError: Error {
     case failed
 }
 
-private struct StubReviewInsightsGenerator: ReviewInsightsGenerating {
+struct StubReviewInsightsGenerator: ReviewInsightsGenerating {
     let result: Result<ReviewInsights, Error>
 
     func generateInsights(

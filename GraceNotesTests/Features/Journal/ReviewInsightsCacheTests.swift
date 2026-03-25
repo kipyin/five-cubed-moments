@@ -82,6 +82,14 @@ final class ReviewInsightsCacheTests: XCTestCase {
         XCTAssertEqual(decoded, insights)
     }
 
+    func test_JSONEncoder_roundTrip_preservesGranularCloudSkippedReason() throws {
+        let insights = sampleInsights(weekStart: date(year: 2026, month: 3, day: 12))
+            .withCloudSkippedReason(.cloudInsightQualityCheckFailed)
+        let data = try JSONEncoder().encode(insights)
+        let decoded = try JSONDecoder().decode(ReviewInsights.self, from: data)
+        XCTAssertEqual(decoded.cloudSkippedReason, .cloudInsightQualityCheckFailed)
+    }
+
     func test_corruptedPayload_clearsAndAllowsStore() async {
         // Must stay aligned with `ReviewInsightsCache.payloadKey`.
         let payloadKey = "GraceNotes.reviewInsightsByWeek.v1"

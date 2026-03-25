@@ -11,7 +11,19 @@ enum ReviewCloudInsightSkipReason: String, Equatable, Sendable, Codable {
     case insufficientEvidenceThisWeek
     /// No cloud generator (for example, missing API key in this build).
     case cloudMisconfigured
-    /// Cloud generation was attempted but did not return a usable digest.
+    /// Device offline, DNS failure, or connection lost before a response.
+    case cloudNetworkUnavailable
+    /// Request timed out (client or HTTP 408).
+    case cloudRequestTimedOut
+    /// HTTP 401 / 403 / 429 or equivalent access or rate limiting.
+    case cloudServiceAuthOrQuota
+    /// HTTP 5xx or service temporarily unavailable.
+    case cloudServiceTemporarilyUnavailable
+    /// Unreadable HTTP response, empty model content, or JSON that could not be parsed.
+    case cloudResponseNotUsable
+    /// Model output failed the grounded-quality gate after sanitization.
+    case cloudInsightQualityCheckFailed
+    /// Unknown error or legacy cached value.
     case cloudGenerationFailed
 }
 
@@ -29,9 +41,33 @@ extension ReviewCloudInsightSkipReason {
             String(
                 localized: "Cloud AI isn't available in this build (for example, no API key). This digest stayed on your device."
             )
+        case .cloudNetworkUnavailable:
+            String(
+                localized: "Grace Notes couldn't reach Cloud AI. Check your connection and try again when you're online."
+            )
+        case .cloudRequestTimedOut:
+            String(
+                localized: "The Cloud AI request timed out. Grace Notes used your on-device summary; try again in a moment."
+            )
+        case .cloudServiceAuthOrQuota:
+            String(
+                localized: "Cloud AI couldn't complete this request (access or rate limiting). Check your Cloud AI setup in Settings, or try again later."
+            )
+        case .cloudServiceTemporarilyUnavailable:
+            String(
+                localized: "Cloud AI is temporarily unavailable. Grace Notes used your on-device summary for now; try again later."
+            )
+        case .cloudResponseNotUsable:
+            String(
+                localized: "Cloud AI sent a response Grace Notes couldn't turn into a weekly digest. Your on-device summary is shown instead."
+            )
+        case .cloudInsightQualityCheckFailed:
+            String(
+                localized: "To keep this digest close to what you wrote, Grace Notes skipped Cloud AI's draft and showed your on-device summary instead."
+            )
         case .cloudGenerationFailed:
             String(
-                localized: "Cloud AI couldn't finish this digest (network or quality checks). Grace Notes used your on-device summary instead."
+                localized: "Something went wrong with Cloud AI. Grace Notes used your on-device summary instead."
             )
         }
     }

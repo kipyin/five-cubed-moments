@@ -66,7 +66,7 @@ struct ReviewInsightsProvider: Sendable {
                     from: entries,
                     referenceDate: referenceDate,
                     calendar: calendar,
-                    cloudSkippedReason: .cloudGenerationFailed
+                    cloudSkippedReason: ReviewCloudInsightSkipReason.fromCloudFailure(error)
                 )
             }
         }

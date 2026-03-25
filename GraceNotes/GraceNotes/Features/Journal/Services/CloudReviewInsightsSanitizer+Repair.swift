@@ -52,7 +52,7 @@ extension CloudReviewInsightsSanitizer {
         return sanitizeMessage(line, fallback: fallback)
     }
 
-    func repairContinuityWhenChainWeak(_ input: CloudReviewContinuityRepairInput) -> String {
+    func repairContinuityWhenChainWeak(_ input: CloudReviewInsightsSanitizer.ContinuityRepairInput) -> String {
         let allThemes = input.recurringNeeds + input.recurringPeople + input.recurringGratitudes
         guard !allThemes.isEmpty else {
             return sanitizeMessage(input.continuity, fallback: input.fallback)
@@ -163,7 +163,7 @@ extension CloudReviewInsightsSanitizer {
 
     func seemsInterpretiveFiller(_ message: String) -> Bool {
         let normalized = normalizeForMatching(message)
-        return interpretivePhrases.contains { normalized.contains($0) }
+        return CloudReviewInsightsSanitizer.interpretivePhrases.contains { normalized.contains($0) }
     }
 
     func narrativeParrotsResurfacing(_ narrative: String, _ resurfacing: String) -> Bool {
@@ -181,13 +181,13 @@ extension CloudReviewInsightsSanitizer {
     func sanitizeMessage(_ message: String, fallback: String) -> String {
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
         let source = trimmed.isEmpty ? fallback : trimmed
-        return String(source.prefix(maxMessageLength))
+        return String(source.prefix(CloudReviewInsightsSanitizer.maxMessageLength))
     }
 
     func sanitizeThemes(_ themes: [CloudReviewTheme]) -> [CloudReviewTheme] {
         themes
             .compactMap(sanitizeTheme)
-            .prefix(maxThemesPerList)
+            .prefix(CloudReviewInsightsSanitizer.maxThemesPerList)
             .map { $0 }
     }
 
@@ -195,7 +195,10 @@ extension CloudReviewInsightsSanitizer {
         let trimmedLabel = theme.label.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedLabel.isEmpty else { return nil }
         guard theme.count > 0 else { return nil }
-        return CloudReviewTheme(label: String(trimmedLabel.prefix(maxMessageLength)), count: theme.count)
+        return CloudReviewTheme(
+            label: String(trimmedLabel.prefix(CloudReviewInsightsSanitizer.maxMessageLength)),
+            count: theme.count
+        )
     }
 
     func sanitizeNarrativeSummary(
@@ -446,7 +449,7 @@ extension CloudReviewInsightsSanitizer {
 
     func seemsGeneric(_ message: String) -> Bool {
         let normalizedMessage = normalizeForMatching(message)
-        return genericPhrases.contains { normalizedMessage.contains($0) }
+        return CloudReviewInsightsSanitizer.genericPhrases.contains { normalizedMessage.contains($0) }
     }
 
     func normalizeForMatching(_ value: String) -> String {

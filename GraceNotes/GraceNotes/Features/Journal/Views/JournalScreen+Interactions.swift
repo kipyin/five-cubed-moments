@@ -3,8 +3,8 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-private extension JournalScreen {
-    private var onboardingPresentation: JournalOnboardingPresentation {
+extension JournalScreen {
+    var onboardingPresentation: JournalOnboardingPresentation {
         JournalOnboardingFlowEvaluator.presentation(
             for: JournalOnboardingContext(
                 entryDate: entryDate,
@@ -18,7 +18,7 @@ private extension JournalScreen {
         )
     }
 
-    private var isAnyJournalFieldFocused: Bool {
+    var isAnyJournalFieldFocused: Bool {
         isGratitudeInputFocused ||
             isNeedInputFocused ||
             isPersonInputFocused ||
@@ -26,7 +26,7 @@ private extension JournalScreen {
             isReflectionsFocused
     }
 
-    private var onboardingSuggestionContext: JournalOnboardingSuggestionContext {
+    var onboardingSuggestionContext: JournalOnboardingSuggestionContext {
         JournalOnboardingSuggestionContext(
             entryDate: entryDate,
             hasCelebratedFirstSeed: tutorialProgress.hasCelebratedFirstSeed,
@@ -45,28 +45,28 @@ private extension JournalScreen {
         )
     }
 
-    private var onboardingSuggestion: JournalOnboardingSuggestion? {
+    var onboardingSuggestion: JournalOnboardingSuggestion? {
         JournalOnboardingSuggestionEvaluator.currentSuggestion(context: onboardingSuggestionContext)
     }
 
-    private var aiFeaturesEnabled: Bool {
+    var aiFeaturesEnabled: Bool {
         useCloudSummarization
     }
 
-    private var hasConfiguredReminderTime: Bool {
+    var hasConfiguredReminderTime: Bool {
         UserDefaults.standard.object(forKey: ReminderSettings.timeIntervalKey) != nil
     }
 
-    private func submitGratitude() {
+    func submitGratitude() {
         submit(section: .gratitude)
     }
-    private func submitNeed() {
+    func submitNeed() {
         submit(section: .need)
     }
-    private func submitPerson() {
+    func submitPerson() {
         submit(section: .person)
     }
-    private func shareTapped() {
+    func shareTapped() {
         let payload = viewModel.exportSnapshot()
         if let image = JournalShareRenderer.renderImage(from: payload) {
             shareableImage = ShareableImage(image: image)
@@ -75,7 +75,7 @@ private extension JournalScreen {
         }
     }
 
-    private func syncGuidedJournalCompletionIfNeeded(for level: JournalCompletionLevel) {
+    func syncGuidedJournalCompletionIfNeeded(for level: JournalCompletionLevel) {
         guard entryDate == nil else { return }
         guard level == .abundance else { return }
         guard !hasCompletedGuidedJournal else { return }
@@ -83,7 +83,7 @@ private extension JournalScreen {
     }
 
     /// One-time post-Seed journey on Today when at or above Seed and journey C not yet seen.
-    private func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
+    func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
         guard let outcome = JournalTodayOrientationPolicy.postSeedJourneyOutcome(
             for: todayOrientationInputs(completionLevel: level)
         ) else { return }
@@ -92,7 +92,7 @@ private extension JournalScreen {
         showPostSeedJourney = true
     }
 
-    private func todayOrientationInputs(
+    func todayOrientationInputs(
         completionLevel: JournalCompletionLevel
     ) -> JournalTodayOrientationPolicy.Inputs {
         JournalTodayOrientationPolicy.Inputs(
@@ -104,13 +104,13 @@ private extension JournalScreen {
         )
     }
 
-    private func completePostSeedJourney() {
+    func completePostSeedJourney() {
         hasSeenPostSeedJourney = true
         hasCompletedGuidedJournal = true
         showPostSeedJourney = false
     }
 
-    private func focusOnboardingStepIfNeeded(_ step: JournalOnboardingStep?) {
+    func focusOnboardingStepIfNeeded(_ step: JournalOnboardingStep?) {
         guard entryDate == nil else { return }
         guard !hasCompletedGuidedJournal else { return }
         guard !showPostSeedJourney else { return }
@@ -119,7 +119,7 @@ private extension JournalScreen {
     }
 
     /// Applies onboarding keyboard focus even when another field still claims focus (e.g. after first-chip submit).
-    private func focusOnboardingStepForced(_ step: JournalOnboardingStep?) {
+    func focusOnboardingStepForced(_ step: JournalOnboardingStep?) {
         guard entryDate == nil else { return }
         guard !hasCompletedGuidedJournal else { return }
         guard !showPostSeedJourney else { return }
@@ -142,7 +142,7 @@ private extension JournalScreen {
         }
     }
 
-    private func shouldAdvanceGuidedFocusAfterChipSubmit(section: ChipSection) -> Bool {
+    func shouldAdvanceGuidedFocusAfterChipSubmit(section: ChipSection) -> Bool {
         guard entryDate == nil, !hasCompletedGuidedJournal else { return false }
         switch onboardingPresentation.step {
         case .need where section == .gratitude:
@@ -156,13 +156,13 @@ private extension JournalScreen {
         }
     }
 
-    private func clearChipInputFocus() {
+    func clearChipInputFocus() {
         isGratitudeInputFocused = false
         isNeedInputFocused = false
         isPersonInputFocused = false
     }
 
-    private func focusOnboardingChipStep(_ step: JournalOnboardingStep) {
+    func focusOnboardingChipStep(_ step: JournalOnboardingStep) {
         switch step {
         case .ripening:
             focusFirstIncompleteChipSection(targetCount: 3)
@@ -173,7 +173,7 @@ private extension JournalScreen {
         }
     }
 
-    private func focusAbundanceInputsIfNeeded() {
+    func focusAbundanceInputsIfNeeded() {
         let notesTrimmed = viewModel.readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let reflectionsTrimmed = viewModel.reflections.trimmingCharacters(in: .whitespacesAndNewlines)
         if notesTrimmed.isEmpty {
@@ -183,7 +183,7 @@ private extension JournalScreen {
         }
     }
 
-    private func focusFirstIncompleteChipSection(targetCount: Int) {
+    func focusFirstIncompleteChipSection(targetCount: Int) {
         if viewModel.gratitudes.count < targetCount {
             restoreInputFocus($isGratitudeInputFocused)
             return
@@ -197,7 +197,7 @@ private extension JournalScreen {
         }
     }
 
-    private func suggestionTitle(for suggestion: JournalOnboardingSuggestion) -> String {
+    func suggestionTitle(for suggestion: JournalOnboardingSuggestion) -> String {
         switch suggestion {
         case .reminders:
             return String(localized: "Keep the rhythm close")
@@ -208,7 +208,7 @@ private extension JournalScreen {
         }
     }
 
-    private func suggestionMessage(for suggestion: JournalOnboardingSuggestion) -> String {
+    func suggestionMessage(for suggestion: JournalOnboardingSuggestion) -> String {
         switch suggestion {
         case .reminders:
             return String(localized: "If you'd like, you can turn on a daily reminder in Settings.")
@@ -222,7 +222,7 @@ private extension JournalScreen {
         }
     }
 
-    private func openSettings(for suggestion: JournalOnboardingSuggestion) {
+    func openSettings(for suggestion: JournalOnboardingSuggestion) {
         let authorized = JournalOnboardingSuggestionEvaluator.currentSuggestion(
             context: onboardingSuggestionContext
         )
@@ -231,7 +231,7 @@ private extension JournalScreen {
         appNavigation.openSettings(target: settingsTarget(for: suggestion))
     }
 
-    private func dismissSuggestion(_ suggestion: JournalOnboardingSuggestion) {
+    func dismissSuggestion(_ suggestion: JournalOnboardingSuggestion) {
         switch suggestion {
         case .reminders:
             dismissedRemindersSuggestion = true
@@ -242,7 +242,7 @@ private extension JournalScreen {
         }
     }
 
-    private func markSuggestionOpened(_ suggestion: JournalOnboardingSuggestion) {
+    func markSuggestionOpened(_ suggestion: JournalOnboardingSuggestion) {
         switch suggestion {
         case .reminders:
             openedRemindersSuggestion = true
@@ -253,7 +253,7 @@ private extension JournalScreen {
         }
     }
 
-    private func settingsTarget(for suggestion: JournalOnboardingSuggestion) -> SettingsScrollTarget {
+    func settingsTarget(for suggestion: JournalOnboardingSuggestion) -> SettingsScrollTarget {
         switch suggestion {
         case .reminders:
             return .reminders
@@ -264,10 +264,10 @@ private extension JournalScreen {
         }
     }
 
-    private enum ChipSection {
+    enum ChipSection {
         case gratitude, need, person
     }
-    private struct ChipSectionAdapter {
+    struct ChipSectionAdapter {
         let input: Binding<String>
         let editingIndex: Binding<Int?>
         let isTransitioning: Binding<Bool>
@@ -277,7 +277,7 @@ private extension JournalScreen {
         let remove: (Int) -> Bool
         let operations: ChipSectionOperations
     }
-    private func chipSectionAdapter(for section: ChipSection) -> ChipSectionAdapter {
+    func chipSectionAdapter(for section: ChipSection) -> ChipSectionAdapter {
         switch section {
         case .gratitude:
             return makeGratitudeAdapter()
@@ -287,7 +287,7 @@ private extension JournalScreen {
             return makePersonAdapter()
         }
     }
-    private func makeGratitudeAdapter() -> ChipSectionAdapter {
+    func makeGratitudeAdapter() -> ChipSectionAdapter {
         ChipSectionAdapter(
             input: $gratitudeInput,
             editingIndex: $editingGratitudeIndex,
@@ -309,7 +309,7 @@ private extension JournalScreen {
             )
         )
     }
-    private func makeNeedAdapter() -> ChipSectionAdapter {
+    func makeNeedAdapter() -> ChipSectionAdapter {
         ChipSectionAdapter(
             input: $needInput,
             editingIndex: $editingNeedIndex,
@@ -331,7 +331,7 @@ private extension JournalScreen {
             )
         )
     }
-    private func makePersonAdapter() -> ChipSectionAdapter {
+    func makePersonAdapter() -> ChipSectionAdapter {
         ChipSectionAdapter(
             input: $personInput,
             editingIndex: $editingPersonIndex,
@@ -353,7 +353,7 @@ private extension JournalScreen {
             )
         )
     }
-    private func addNewTapped(section: ChipSection) {
+    func addNewTapped(section: ChipSection) {
         let adapter = chipSectionAdapter(for: section)
         let handled = JournalScreenChipHandling.handleAddChipTap(
             input: adapter.input,
@@ -366,7 +366,7 @@ private extension JournalScreen {
         }
     }
 
-    private func deleteChip(section: ChipSection, index: Int) {
+    func deleteChip(section: ChipSection, index: Int) {
         let adapter = chipSectionAdapter(for: section)
         JournalScreenChipHandling.performDelete(
             index: index,
@@ -376,12 +376,12 @@ private extension JournalScreen {
         )
     }
 
-    private func renameChip(section: ChipSection, index: Int, label: String) {
+    func renameChip(section: ChipSection, index: Int, label: String) {
         let adapter = chipSectionAdapter(for: section)
         _ = adapter.renameLabel(index, label)
     }
 
-    private func moveChip(section: ChipSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
+    func moveChip(section: ChipSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
         let adapter = chipSectionAdapter(for: section)
         JournalScreenChipHandling.performMove(
             from: sourceIndex,
@@ -391,7 +391,7 @@ private extension JournalScreen {
         )
     }
 
-    private func chipTapped(section: ChipSection, index: Int) {
+    func chipTapped(section: ChipSection, index: Int) {
         let adapter = chipSectionAdapter(for: section)
         let handled = JournalScreenChipHandling.performChipTap(
             tapIndex: index,
@@ -405,7 +405,7 @@ private extension JournalScreen {
         }
     }
 
-    private func scheduleSummarization(for section: ChipSection, index: Int) {
+    func scheduleSummarization(for section: ChipSection, index: Int) {
         switch section {
         case .gratitude:
             gratitudeSummarizationTask?.cancel()
@@ -425,7 +425,7 @@ private extension JournalScreen {
         }
     }
 
-    private func submit(section: ChipSection) {
+    func submit(section: ChipSection) {
         let adapter = chipSectionAdapter(for: section)
         let didSubmit = JournalScreenChipHandling.submitChipSection(
             editingIndex: adapter.editingIndex,
@@ -445,7 +445,7 @@ private extension JournalScreen {
         }
     }
 
-    private func commitChipDraftOnInputFocusLost(section: ChipSection) {
+    func commitChipDraftOnInputFocusLost(section: ChipSection) {
         let adapter = chipSectionAdapter(for: section)
         let didSubmit = JournalScreenChipHandling.submitChipSection(
             editingIndex: adapter.editingIndex,
@@ -476,7 +476,7 @@ private extension JournalScreen {
     /// Re-asserts focus on whichever journal text field already has SwiftUI focus (chips, Reading Notes, Reflections).
     /// Single source of truth for the list—add new focused editors here only.
     @discardableResult
-    private func restoreKeyboardFocusIfAnotherJournalTextFieldIsActive() -> Bool {
+    func restoreKeyboardFocusIfAnotherJournalTextFieldIsActive() -> Bool {
         guard !showPostSeedJourney else { return false }
         let candidates: [(Bool, FocusState<Bool>.Binding)] = [
             (isGratitudeInputFocused, $isGratitudeInputFocused),
@@ -492,7 +492,7 @@ private extension JournalScreen {
         return false
     }
 
-    private func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
+    func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
         guard !showPostSeedJourney else { return }
         // Apply focus immediately so keyboard spin-up starts without waiting a turn.
         focus.wrappedValue = true
@@ -506,7 +506,7 @@ private extension JournalScreen {
         }
     }
 
-    private func presentUnlockToast(
+    func presentUnlockToast(
         for level: JournalCompletionLevel,
         milestoneHighlight: JournalUnlockMilestoneHighlight
     ) {
@@ -518,12 +518,12 @@ private extension JournalScreen {
         }
     }
 
-    private func dismissUnlockToastIfNeeded() {
+    func dismissUnlockToastIfNeeded() {
         guard unlockToastLevel != nil else { return }
         dismissUnlockToast()
     }
 
-    private func dismissUnlockToast() {
+    func dismissUnlockToast() {
         guard let level = unlockToastLevel else { return }
         let exit = reduceMotion ? nil : AppTheme.unlockToastExitAnimation(for: level)
         withAnimation(exit) {
@@ -533,7 +533,7 @@ private extension JournalScreen {
         }
     }
 
-    private var journalScrollOffsetReader: some View {
+    var journalScrollOffsetReader: some View {
         GeometryReader { proxy in
             Color.clear.preference(
                 key: JournalScrollOffsetPreferenceKey.self,

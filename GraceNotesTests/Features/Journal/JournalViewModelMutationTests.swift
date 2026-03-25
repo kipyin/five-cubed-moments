@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor
 final class JournalViewModelMutationTests: XCTestCase {
-    private var calendar: Calendar!
+    var calendar: Calendar!
 
     override func setUpWithError() throws {
         try super.setUpWithError()

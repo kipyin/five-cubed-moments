@@ -1,6 +1,13 @@
 import SwiftUI
 
 struct SequentialSectionView: View {
+    /// Progress-dot slot state for the section header.
+    enum SlotStatus {
+        case edited
+        case editing
+        case pending
+    }
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let title: String
@@ -98,7 +105,7 @@ struct SequentialSectionView: View {
         isInputFocused && !reduceMotion
     }
 
-    private var slotStatuses: [SequentialSectionSlotStatus] {
+    private var slotStatuses: [SlotStatus] {
         (0..<slotCount).map { index in
             if editingIndex == index {
                 return .editing
@@ -194,7 +201,7 @@ struct SequentialSectionView: View {
         .accessibilityLabel(progressAccessibilityLabel)
     }
 
-    private func dotFill(for status: SequentialSectionSlotStatus) -> Color {
+    private func dotFill(for status: SlotStatus) -> Color {
         switch status {
         case .edited:
             return AppTheme.journalComplete
@@ -205,7 +212,7 @@ struct SequentialSectionView: View {
         }
     }
 
-    private func dotBorder(for status: SequentialSectionSlotStatus) -> Color {
+    private func dotBorder(for status: SlotStatus) -> Color {
         switch status {
         case .edited:
             return .clear
@@ -216,7 +223,7 @@ struct SequentialSectionView: View {
         }
     }
 
-    private func dotBorderWidth(for status: SequentialSectionSlotStatus) -> CGFloat {
+    private func dotBorderWidth(for status: SlotStatus) -> CGFloat {
         switch status {
         case .edited:
             return 0
@@ -227,7 +234,7 @@ struct SequentialSectionView: View {
         }
     }
 
-    private func dotDiameter(for status: SequentialSectionSlotStatus) -> CGFloat {
+    private func dotDiameter(for status: SlotStatus) -> CGFloat {
         status == .editing ? 11.5 : 10
     }
 

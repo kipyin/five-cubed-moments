@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-private extension JournalScreen {
+extension JournalScreen {
     func unlockToastTransition(for level: JournalCompletionLevel) -> AnyTransition {
         if reduceMotion {
             return .opacity

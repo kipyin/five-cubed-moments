@@ -6,21 +6,21 @@ struct CloudSanitizedRecurringThemeLists: Sendable {
     let people: [CloudReviewTheme]
 }
 
-/// Bundles inputs for continuity-chain repair so the sanitizer stays within parameter-count limits.
-struct CloudReviewContinuityRepairInput: Sendable {
-    let continuity: String
-    let narrative: String
-    let resurfacing: String
-    let recurringGratitudes: [CloudReviewTheme]
-    let recurringNeeds: [CloudReviewTheme]
-    let recurringPeople: [CloudReviewTheme]
-    let fallback: String
-}
-
 struct CloudReviewInsightsSanitizer {
-    let maxThemesPerList = 3
-    let maxMessageLength = 160
-    let genericPhrases = [
+    /// Bundles inputs for continuity-chain repair so the sanitizer stays within parameter-count limits.
+    struct ContinuityRepairInput: Sendable {
+        let continuity: String
+        let narrative: String
+        let resurfacing: String
+        let recurringGratitudes: [CloudReviewTheme]
+        let recurringNeeds: [CloudReviewTheme]
+        let recurringPeople: [CloudReviewTheme]
+        let fallback: String
+    }
+
+    static let maxThemesPerList = 3
+    static let maxMessageLength = 160
+    static let genericPhrases = [
         "take it one day at a time",
         "be kind to yourself",
         "you are doing great",
@@ -36,7 +36,7 @@ struct CloudReviewInsightsSanitizer {
     ]
 
     /// High-precision substrings: generic personality / wellness gloss, not user theme text.
-    let interpretivePhrases = [
+    static let interpretivePhrases = [
         "shows that you",
         "suggests you",
         "indicates you",
@@ -89,7 +89,7 @@ struct CloudReviewInsightsSanitizer {
             fallback: fallbackContinuity
         )
         continuityPrompt = repairContinuityWhenChainWeak(
-            CloudReviewContinuityRepairInput(
+            ContinuityRepairInput(
                 continuity: continuityPrompt,
                 narrative: narrativeSummary,
                 resurfacing: resurfacingMessage,
@@ -157,7 +157,7 @@ struct CloudReviewInsightsSanitizer {
         let resurfacingMessage = sanitizeMessage(payload.resurfacingMessage, fallback: fallbackResurfacing)
         var continuityPrompt = sanitizeMessage(payload.continuityPrompt, fallback: fallbackContinuity)
         continuityPrompt = repairContinuityWhenChainWeak(
-            CloudReviewContinuityRepairInput(
+            ContinuityRepairInput(
                 continuity: continuityPrompt,
                 narrative: narrativeSummary,
                 resurfacing: resurfacingMessage,
@@ -250,3 +250,6 @@ struct CloudReviewInsightsSanitizer {
         return String(trimmed[startIndex...endIndex])
     }
 }
+
+/// Backwards-compatible name for ``CloudReviewInsightsSanitizer.ContinuityRepairInput``.
+typealias CloudReviewContinuityRepairInput = CloudReviewInsightsSanitizer.ContinuityRepairInput

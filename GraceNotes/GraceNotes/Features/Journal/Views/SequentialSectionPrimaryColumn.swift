@@ -1,12 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-enum SequentialSectionSlotStatus {
-    case edited
-    case editing
-    case pending
-}
-
 /// Main column of `SequentialSectionView` (guidance, chip scroller, text field) split out for type-size limits.
 struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let reduceMotion: Bool

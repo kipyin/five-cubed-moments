@@ -2,8 +2,8 @@ import XCTest
 @testable import GraceNotes
 
 final class CloudReviewInsightsGeneratorTests: XCTestCase {
-    private var urlSession: URLSession!
-    private var calendar: Calendar!
+    var urlSession: URLSession!
+    var calendar: Calendar!
 
     override func setUp() {
         super.setUp()
@@ -252,7 +252,7 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
     }
 }
 
-private extension CloudReviewInsightsGeneratorTests {
+extension CloudReviewInsightsGeneratorTests {
     static func sampleTypedCooccurrencePayload() -> [String: Any] {
         [
             "insightType": "cooccurrence",

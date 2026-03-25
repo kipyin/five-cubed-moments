@@ -2,8 +2,8 @@ import XCTest
 @testable import GraceNotes
 
 final class DeterministicReviewInsightsTests: XCTestCase {
-    private var calendar: Calendar!
-    private var generator: DeterministicReviewInsightsGenerator!
+    var calendar: Calendar!
+    var generator: DeterministicReviewInsightsGenerator!
 
     override func setUp() {
         super.setUp()

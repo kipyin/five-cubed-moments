@@ -4,19 +4,19 @@ import UIKit
 
 // This screen still hosts multiple interaction surfaces while the UI refresh is in progress.
 
-private enum JournalScreenLayout {
+enum JournalScreenLayout {
     static let journalScrollCoordinateSpaceName = "journalMainScroll"
     static let unlockToastScrollDismissThreshold: CGFloat = 20
 }
 
-private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
+struct JournalScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
     func journalDismissUnlockToastOnTapOutside(_ isPresented: Bool, dismiss: @escaping () -> Void) -> some View {
         if isPresented {
@@ -30,63 +30,63 @@ private extension View {
 // Chip sections and modifiers keep this type large; further extraction would split `body` across files.
 // swiftlint:disable type_body_length
 struct JournalScreen: View {
-    @EnvironmentObject private var appNavigation: AppNavigationModel
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var viewModel = JournalViewModel()
-    @State private var shareableImage: ShareableImage?
-    @State private var showShareError = false
-    @State private var showSavedToPhotosToast = false
-    @State private var savedToPhotosDismissTask: Task<Void, Never>?
-    @State private var hasTrackedInitialLoad = false
-    @State private var gratitudeSummarizationTask: Task<Void, Never>?
-    @State private var needSummarizationTask: Task<Void, Never>?
-    @State private var personSummarizationTask: Task<Void, Never>?
-    @State private var statusCelebrationDismissTask: Task<Void, Never>?
-    @State private var celebratingLevel: JournalCompletionLevel?
-    @State private var hasInitializedCompletionTracking = false
-    @State private var previousCompletionLevel: JournalCompletionLevel = .soil
-    @State private var unlockToastLevel: JournalCompletionLevel?
-    @State private var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
-    @State private var journalScrollOffsetY: CGFloat = 0
-    @State private var unlockToastScrollBaseline: CGFloat?
-    @State private var tutorialProgress = JournalTutorialProgress()
-    @State private var showPostSeedJourney = false
-    @State private var postSeedJourneySkipsCongratulations = false
-    @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
-    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
+    @EnvironmentObject var appNavigation: AppNavigationModel
+    @Environment(\.modelContext) var modelContext
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @State var viewModel = JournalViewModel()
+    @State var shareableImage: ShareableImage?
+    @State var showShareError = false
+    @State var showSavedToPhotosToast = false
+    @State var savedToPhotosDismissTask: Task<Void, Never>?
+    @State var hasTrackedInitialLoad = false
+    @State var gratitudeSummarizationTask: Task<Void, Never>?
+    @State var needSummarizationTask: Task<Void, Never>?
+    @State var personSummarizationTask: Task<Void, Never>?
+    @State var statusCelebrationDismissTask: Task<Void, Never>?
+    @State var celebratingLevel: JournalCompletionLevel?
+    @State var hasInitializedCompletionTracking = false
+    @State var previousCompletionLevel: JournalCompletionLevel = .soil
+    @State var unlockToastLevel: JournalCompletionLevel?
+    @State var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
+    @State var journalScrollOffsetY: CGFloat = 0
+    @State var unlockToastScrollBaseline: CGFloat?
+    @State var tutorialProgress = JournalTutorialProgress()
+    @State var showPostSeedJourney = false
+    @State var postSeedJourneySkipsCongratulations = false
+    @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) var hasCompletedGuidedJournal = false
+    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedRemindersSuggestion)
-    private var dismissedRemindersSuggestion = false
+    var dismissedRemindersSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedAISuggestion)
-    private var dismissedAISuggestion = false
+    var dismissedAISuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedICloudSuggestion)
-    private var dismissedICloudSuggestion = false
+    var dismissedICloudSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedRemindersSuggestion)
-    private var openedRemindersSuggestion = false
+    var openedRemindersSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedAISuggestion)
-    private var openedAISuggestion = false
+    var openedAISuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedICloudSuggestion)
-    private var openedICloudSuggestion = false
-    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudSummarization = false
-    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
+    var openedICloudSuggestion = false
+    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) var useCloudSummarization = false
+    @AppStorage(PersistenceController.iCloudSyncEnabledKey) var isICloudSyncEnabled = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) var dismissedSeedGuidance = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) var dismissedHarvestGuidance = false
 
-    @State private var gratitudeInput = ""
-    @State private var needInput = ""
-    @State private var personInput = ""
+    @State var gratitudeInput = ""
+    @State var needInput = ""
+    @State var personInput = ""
 
-    @State private var editingGratitudeIndex: Int?
-    @State private var editingNeedIndex: Int?
-    @State private var editingPersonIndex: Int?
-    @State private var isGratitudeTransitioning = false
-    @State private var isNeedTransitioning = false
-    @State private var isPersonTransitioning = false
-    @FocusState private var isGratitudeInputFocused: Bool
-    @FocusState private var isNeedInputFocused: Bool
-    @FocusState private var isPersonInputFocused: Bool
-    @FocusState private var isReadingNotesFocused: Bool
-    @FocusState private var isReflectionsFocused: Bool
+    @State var editingGratitudeIndex: Int?
+    @State var editingNeedIndex: Int?
+    @State var editingPersonIndex: Int?
+    @State var isGratitudeTransitioning = false
+    @State var isNeedTransitioning = false
+    @State var isPersonTransitioning = false
+    @FocusState var isGratitudeInputFocused: Bool
+    @FocusState var isNeedInputFocused: Bool
+    @FocusState var isPersonInputFocused: Bool
+    @FocusState var isReadingNotesFocused: Bool
+    @FocusState var isReflectionsFocused: Bool
 
     var entryDate: Date?
     var body: some View {

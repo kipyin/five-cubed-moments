@@ -4,8 +4,8 @@ import XCTest
 final class ReviewInsightsProviderTests: XCTestCase {
     private static let legacyAIReviewInsightsKey = "useAIReviewInsights"
     private static let testSuiteName = "ReviewInsightsProviderTests"
-    private var calendar: Calendar!
-    private var testDefaults: UserDefaults!
+    var calendar: Calendar!
+    var testDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()

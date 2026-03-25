@@ -81,6 +81,21 @@ final class ReviewInsightsCacheTests: XCTestCase {
         XCTAssertEqual(decoded, insights)
     }
 
+    func test_corruptedPayload_clearsAndAllowsStore() async {
+        // Must stay aligned with `ReviewInsightsCache.payloadKey`.
+        let payloadKey = "GraceNotes.reviewInsightsByWeek.v1"
+        userDefaults.set(Data([0xFF, 0xFE, 0xFD]), forKey: payloadKey)
+
+        let weekStart = date(year: 2026, month: 3, day: 12)
+        let beforeHeal = await cache.insights(forWeekStart: weekStart, calendar: calendar)
+        XCTAssertNil(beforeHeal)
+
+        let insights = sampleInsights(weekStart: weekStart)
+        await cache.storeIfEligible(insights, calendar: calendar)
+        let afterStore = await cache.insights(forWeekStart: weekStart, calendar: calendar)
+        XCTAssertEqual(afterStore, insights)
+    }
+
     // MARK: - Helpers
 
     private func date(year: Int, month: Int, day: Int) -> Date {

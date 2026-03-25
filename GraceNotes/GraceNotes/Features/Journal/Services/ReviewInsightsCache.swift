@@ -47,7 +47,12 @@ actor ReviewInsightsCache {
         guard let data = userDefaults.data(forKey: Self.payloadKey) else {
             return nil
         }
-        return try? decoder.decode(Payload.self, from: data)
+        do {
+            return try decoder.decode(Payload.self, from: data)
+        } catch {
+            userDefaults.removeObject(forKey: Self.payloadKey)
+            return nil
+        }
     }
 
     private func savePayload(_ payload: Payload) {

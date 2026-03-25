@@ -8,6 +8,10 @@ private struct ReviewInsightPanelBodies {
 
 // swiftlint:disable type_body_length
 struct ReviewSummaryCard: View {
+    /// Hide the “Write today’s reflection” nudge under loaded insights when the review week has at least this
+    /// many journal entries. UI-only; not cloud eligibility.
+    private static let minWeekEntriesToOmitContinueNudge = 4
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -58,7 +62,7 @@ struct ReviewSummaryCard: View {
                 observationPanel(for: insights, body: bodies.observation)
                 thinkingPanel(body: bodies.thread)
                 actionPanel(body: bodies.action)
-                if weekJournalEntryCount < 4 {
+                if weekJournalEntryCount < Self.minWeekEntriesToOmitContinueNudge {
                     continueJournalCallToAction()
                 }
             }

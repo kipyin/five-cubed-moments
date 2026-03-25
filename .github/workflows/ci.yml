@@ -32,20 +32,12 @@ jobs:
         with:
           xcode-version: '26.3'
 
-      - name: Ensure SwiftLint on PATH
+      - name: Ensure SwiftLint
         run: |
           if ! command -v swiftlint >/dev/null 2>&1; then
-            for p in /usr/local/bin /opt/homebrew/bin; do
-              if [ -x "$p/swiftlint" ]; then
-                echo "$p" >> "$GITHUB_PATH"
-                break
-              fi
-            done
+            brew install swiftlint
           fi
-          command -v swiftlint >/dev/null 2>&1 || {
-            echo "SwiftLint is not installed on this runner image." >&2
-            exit 1
-          }
+          swiftlint version
 
       - name: Lint
         run: make lint
@@ -64,20 +56,12 @@ jobs:
         with:
           xcode-version: '26.3'
 
-      - name: Ensure SwiftLint on PATH
+      - name: Ensure SwiftLint
         run: |
           if ! command -v swiftlint >/dev/null 2>&1; then
-            for p in /usr/local/bin /opt/homebrew/bin; do
-              if [ -x "$p/swiftlint" ]; then
-                echo "$p" >> "$GITHUB_PATH"
-                break
-              fi
-            done
+            brew install swiftlint
           fi
-          command -v swiftlint >/dev/null 2>&1 || {
-            echo "SwiftLint is not installed on this runner image." >&2
-            exit 1
-          }
+          swiftlint version
 
       - name: Full CI (make)
         run: make ci-merge-queue
@@ -93,20 +77,12 @@ jobs:
         with:
           xcode-version: '26.3'
 
-      - name: Ensure SwiftLint on PATH
+      - name: Ensure SwiftLint
         run: |
           if ! command -v swiftlint >/dev/null 2>&1; then
-            for p in /usr/local/bin /opt/homebrew/bin; do
-              if [ -x "$p/swiftlint" ]; then
-                echo "$p" >> "$GITHUB_PATH"
-                break
-              fi
-            done
+            brew install swiftlint
           fi
-          command -v swiftlint >/dev/null 2>&1 || {
-            echo "SwiftLint is not installed on this runner image." >&2
-            exit 1
-          }
+          swiftlint version
 
       - name: Full CI (make)
         run: make ci-merge-queue
@@ -124,20 +100,12 @@ jobs:
         with:
           xcode-version: '26.3'
 
-      - name: Ensure SwiftLint on PATH
+      - name: Ensure SwiftLint
         run: |
           if ! command -v swiftlint >/dev/null 2>&1; then
-            for p in /usr/local/bin /opt/homebrew/bin; do
-              if [ -x "$p/swiftlint" ]; then
-                echo "$p" >> "$GITHUB_PATH"
-                break
-              fi
-            done
+            brew install swiftlint
           fi
-          command -v swiftlint >/dev/null 2>&1 || {
-            echo "SwiftLint is not installed on this runner image." >&2
-            exit 1
-          }
+          swiftlint version
 
       - name: Full CI (make)
         run: make ci-pr-full-ci

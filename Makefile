@@ -8,7 +8,7 @@ UI_TEST_BUNDLE := GraceNotesUITests
 XCODE_TEST_FLAGS := -parallel-testing-enabled NO
 SIMULATOR_NAME := iPhone 17
 
-.PHONY: help lint lint-preflight build test test-unit test-ui test-isolated test-demo test-demo-preflight test-demo-run test-all ci reset-simulators warmup-simulator verify-agent-log verify-agent-log-strict
+.PHONY: help lint lint-preflight build test test-unit test-ui test-isolated test-demo test-demo-preflight test-demo-run test-all ci reset-simulators warmup-simulator
 
 help:
 	@echo "Available targets:"
@@ -21,8 +21,6 @@ help:
 	@echo "  make test-demo - Reset/warm simulators, then run tests for demo scheme"
 	@echo "  make test-all  - Reset simulators between default/demo test runs"
 	@echo "  make reset-simulators - Shutdown and erase all simulators"
-	@echo "  make verify-agent-log - Run warning-mode agent-log validation"
-	@echo "  make verify-agent-log-strict - Run strict agent-log validation"
 	@echo "  make ci     - Run lint and full-suite tests with simulator resets"
 
 lint:
@@ -76,12 +74,6 @@ test-all:
 	$(MAKE) reset-simulators
 	$(MAKE) warmup-simulator
 	$(MAKE) test-demo-run
-
-verify-agent-log:
-	./Scripts/validate-agent-log.sh
-
-verify-agent-log-strict:
-	./Scripts/validate-agent-log.sh --strict
 
 ci:
 	$(MAKE) lint

@@ -49,25 +49,35 @@ brew install swiftlint
 
 ---
 
-## Role governance
+## How agents work here
 
-Keep role behavior in `.agents/skills/` as the single source of truth for role-specific instructions (same tree as Impeccable task skills). Use short role names and mapped files:
+**Small change (default):** Implement and open a PR. Say in a short paragraph what changed and how you verified it. No extra repo docs, no fixed “role relay,” and no issue required if the change is obvious.
 
-- `Strategist` -> `.agents/skills/strategize/SKILL.md`
-- `Designer` -> `.agents/skills/design/SKILL.md`
-- `Architect` -> `.agents/skills/architect/SKILL.md`
-- `Translator` -> `.agents/skills/translate/SKILL.md`
-- `Marketing` -> `.agents/skills/promote/SKILL.md`
-- `Builder` -> `.agents/skills/build/SKILL.md`
-- `Release Manager` -> `.agents/skills/vc/SKILL.md`
-- `QA Reviewer` -> `.agents/skills/qa-review/SKILL.md`
-- `Test Lead` -> `.agents/skills/test/SKILL.md`
-- `housekeep` -> `.agents/skills/housekeep/SKILL.md` (initiative folder lifecycle: start, maintain, archive; `GraceNotes/docs/agent-log/` remains the doc tree)
-- Role index and shared contract -> `.agents/skills/roles-index/SKILL.md`
+**GitHub issue:** Use one when product intent or acceptance should outlive the chat — write in plain language, not forms or required section headers.
 
-Use `GraceNotes/docs/agent-log/` as the canonical source for role-to-role interaction, handoffs, and deferred pushback context.
+**Specialist skills:** `.agents/skills/` holds optional roles (Strategist, Architect, Builder, and others). Attach or follow them **only** when work is ambiguous, high-risk, or you explicitly want that lens — not as a default pipeline.
 
-Keep `AGENTS.md` focused on global constraints that apply to every role, while `.agents/skills/` defines role behavior for the mapped roles above.
+**Handoffs:** Put anything the next person needs in the **PR** or **linked issue** (description or comments). This repo does not use a separate handoff folder.
+
+## Role index (optional specialists)
+
+Behavior for each role lives in `.agents/skills/`. Shared vocabulary and quality expectations: `.agents/skills/roles-index/SKILL.md`.
+
+| Role | Skill file |
+|------|------------|
+| Strategist | `.agents/skills/strategize/SKILL.md` |
+| Architect | `.agents/skills/architect/SKILL.md` |
+| Designer | `.agents/skills/design/SKILL.md` |
+| Translator | `.agents/skills/translate/SKILL.md` |
+| Marketing | `.agents/skills/promote/SKILL.md` |
+| Builder | `.agents/skills/build/SKILL.md` |
+| Release Manager | `.agents/skills/vc/SKILL.md` |
+| QA Reviewer | `.agents/skills/qa-review/SKILL.md` |
+| Test Lead | `.agents/skills/test/SKILL.md` |
+
+`housekeep` is **deprecated** (see `.agents/skills/housekeep/SKILL.md`).
+
+Keep `AGENTS.md` focused on global constraints; use skills when they help, not by default.
 
 ## Code style
 

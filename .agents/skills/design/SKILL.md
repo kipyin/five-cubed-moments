@@ -29,13 +29,13 @@ Complement web-oriented advice in `.agents/skills/optimize/SKILL.md` with a nati
 - Cost of `body`, layout, and animations; prefer narrow updates; be cautious with `drawingGroup` and expensive effects.
 - Lists, lazy stacks, and large conditional trees — measure impact.
 - When diagnosing, prefer **Instruments** and reproducible steps on device/simulator.
-- State acceptance in **user-perceivable** terms (immediate feedback, no unexplained freezes, toggles feel responsive on first tap) aligned with the initiative brief.
+- State acceptance in **user-perceivable** terms (immediate feedback, no unexplained freezes, toggles feel responsive on first tap) aligned with the stated product intent.
 
 Linux agents cannot run the app; still specify what to verify on macOS.
 
 ## Strategist bridge — inputs
 
-From **`brief.md`** and documents the brief references (roadmap, prior initiatives):
+From the **GitHub issue**, **PR description**, or strategist notes (plus roadmap / product docs as needed):
 
 Produce **implementable front-end language**:
 
@@ -44,17 +44,16 @@ Produce **implementable front-end language**:
 - Visual hierarchy, spacing rhythm, and typography intent (consistent with `.impeccable.md`).
 - Motion principles (calm, purposeful; respect reduce motion).
 - Copy tone checks against `.impeccable.md`.
-- **Performance acceptance hints**: what “fast enough” means for that initiative.
+- **Performance acceptance hints**: what “fast enough” means for this change.
 
-Record this in `GraceNotes/docs/agent-log/initiatives/<slug>/` as **`design.md`** (preferred) or a dedicated **`## Designer spec`** section agreed with the Architect, so **Architect** and **Builder** can execute without chat context.
+Post the spec on the **PR** or **issue** (or an agreed doc link) so **Architect** and **Builder** can execute without chat context.
 
 ## Strategist bridge — feedback
 
 When strategy, scope, or tone conflicts with design feasibility, calm UX, accessibility, or performance:
 
-- Add **`design.md`** or a **`## Designer feedback`** section in **`architecture.md`** for that initiative.
-- Include **`Decision`**, **`Open Questions`**, and **`Next Owner: Strategist`** when strategy must change (see `GraceNotes/docs/agent-log/SCHEMA.md`).
-- Be specific: constraint, user impact, and what would resolve the tension.
+- Say so on the **issue** or **PR**: constraint, user impact, and what would resolve the tension.
+- Flag when **Strategist** must revisit product intent before build continues.
 
 ## Handoff to build
 

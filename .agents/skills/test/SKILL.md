@@ -21,7 +21,7 @@ Set risk-based test depth, run the right level of testing, debug and fix issues 
 - QA Reviewer findings and open gaps
 - Changed files, affected flows, and historical bug patterns
 - Available test suites and execution constraints
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Test execution (macOS)
 
@@ -37,7 +37,7 @@ Run tests via **`make`** from the **repository root** unless a narrow `xcodebuil
 | `make test-all` | Default scheme, then reset simulators, then demo scheme (see `Makefile`). |
 | `make ci` | Lint + `test-all` — broadest local gate before merge. |
 
-Requires **macOS + Xcode + iOS Simulator** (see repo `AGENTS.md`). On Linux, record in `testing.md` what must be run on a Mac and with which `make` target.
+Requires **macOS + Xcode + iOS Simulator** (see repo `AGENTS.md`). On Linux, state on the **PR** what must be run on a Mac and which `make` target to use.
 
 ## Output Format
 
@@ -71,8 +71,6 @@ Stop and escalate to `Architect` or `Strategist` when:
 - `Open Questions`: unresolved defects, blind spots, or deferrals
 - `Next Owner`: `Builder` for fixes, then `QA Reviewer` for final requirement-fit verification, or `Release Manager` for release decision support
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: `architecture.md` and `qa.md` to target high-risk test depth.
-- Write: `testing.md`; add or update `pushback.md` when testing reveals design-level constraints.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- Base risk focus on the **PR** diff, linked **issue**, and close criteria discussed there. Put test strategy and results in **PR comments** or the description when this role is used explicitly.

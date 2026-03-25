@@ -20,7 +20,7 @@ Translate business intent into an executable technical scope with goals, non-goa
 - Existing architecture and code constraints
 - `AGENTS.md` boundaries and style constraints
 - Relevant issues and historical implementation context
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Output Format
 
@@ -55,8 +55,6 @@ Stop and escalate to `Strategist` when:
 - `Open Questions`: unresolved technical or product ambiguities
 - `Next Owner`: `Builder` and `Test Lead` with expected output = implementation plus test strategy
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: `brief.md` and prior `pushback.md` entries before technical scoping.
-- Write: `architecture.md`; add `pushback.md` entries when deferring hard features.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- When this role is used, record technical scope, risks, and close criteria on the **GitHub issue** or **PR** (or a comment thread). Call out deferred work explicitly there instead of a separate pushback file.

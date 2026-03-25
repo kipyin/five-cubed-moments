@@ -568,7 +568,7 @@
         }
       }
     },
-    "Choose insights or timeline" : {
+    "Switch between Insights and Timeline." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2122,7 +2122,7 @@
         }
       }
     },
-    "Updated results will appear when ready." : {
+    "Updated insights appear when ready." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {

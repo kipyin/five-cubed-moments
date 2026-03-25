@@ -16,24 +16,62 @@ final class ReviewInsightsCacheTests: XCTestCase {
         cache = ReviewInsightsCache(userDefaults: userDefaults)
     }
 
-    func test_storeAndLoad_roundTripsForMatchingWeek() {
+    func test_storeAndLoad_roundTripsForMatchingWeek() async {
         let weekStart = date(year: 2026, month: 3, day: 12)
         let insights = sampleInsights(weekStart: weekStart)
 
-        cache.storeIfEligible(insights, calendar: calendar)
-        let loaded = cache.insights(forWeekStart: weekStart, calendar: calendar)
+        await cache.storeIfEligible(insights, calendar: calendar)
+        let loaded = await cache.insights(forWeekStart: weekStart, calendar: calendar)
 
         XCTAssertEqual(loaded, insights)
     }
 
-    func test_store_skipsSparseProviderFallback() {
+    func test_store_skipsSparseProviderFallback() async {
         let weekStart = date(year: 2026, month: 3, day: 12)
         let sparse = sparseFallbackInsights(weekStart: weekStart)
 
-        cache.storeIfEligible(sparse, calendar: calendar)
-        let loaded = cache.insights(forWeekStart: weekStart, calendar: calendar)
+        await cache.storeIfEligible(sparse, calendar: calendar)
+        let loaded = await cache.insights(forWeekStart: weekStart, calendar: calendar)
 
         XCTAssertNil(loaded)
+    }
+
+    func test_prune_dropsOldestWeeksBeyondLimit() async {
+        // Cache keeps 8 weeks; the 9th store should evict the earliest weekStart by key, not by generatedAt.
+        var weekStarts: [Date] = []
+        for offset in 0..<9 {
+            let start = date(year: 2026, month: 1, day: 5)
+            let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: start)!
+            weekStarts.append(weekStart)
+        }
+
+        for (index, weekStart) in weekStarts.enumerated() {
+            var insights = sampleInsights(weekStart: weekStart)
+            insights = ReviewInsights(
+                source: insights.source,
+                generatedAt: calendar.date(byAdding: .hour, value: index, to: weekStart)!,
+                weekStart: insights.weekStart,
+                weekEnd: insights.weekEnd,
+                weeklyInsights: insights.weeklyInsights,
+                recurringGratitudes: insights.recurringGratitudes,
+                recurringNeeds: insights.recurringNeeds,
+                recurringPeople: insights.recurringPeople,
+                resurfacingMessage: insights.resurfacingMessage,
+                continuityPrompt: insights.continuityPrompt,
+                narrativeSummary: insights.narrativeSummary
+            )
+            await cache.storeIfEligible(insights, calendar: calendar)
+        }
+
+        let oldest = weekStarts[0]
+        let newestEight = Array(weekStarts.suffix(8))
+
+        let oldestLoaded = await cache.insights(forWeekStart: oldest, calendar: calendar)
+        XCTAssertNil(oldestLoaded)
+        for weekStart in newestEight {
+            let loaded = await cache.insights(forWeekStart: weekStart, calendar: calendar)
+            XCTAssertNotNil(loaded)
+        }
     }
 
     func test_JSONEncoder_roundTripReviewInsights() throws {

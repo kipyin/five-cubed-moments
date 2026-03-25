@@ -41,7 +41,7 @@ struct ReviewSummaryCard: View {
     private func insightsContentWithLoadingAccessibility(for insights: ReviewInsights) -> some View {
         if isLoading {
             insightsContent(for: insights)
-                .accessibilityHint(String(localized: "Updated results will appear when ready."))
+                .accessibilityHint(String(localized: "Updated insights appear when ready."))
                 .accessibilityAddTraits(.updatesFrequently)
         } else {
             insightsContent(for: insights)

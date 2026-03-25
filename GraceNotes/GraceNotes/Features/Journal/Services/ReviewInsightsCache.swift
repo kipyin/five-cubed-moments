@@ -2,7 +2,7 @@ import Foundation
 
 /// Persists the last successful weekly `ReviewInsights` per week start (local calendar day) so a cold launch
 /// can show stale content while regeneration runs.
-struct ReviewInsightsCache: Sendable {
+actor ReviewInsightsCache {
     private static let payloadKey = "GraceNotes.reviewInsightsByWeek.v1"
     private static let maxWeekEntries = 8
 
@@ -35,11 +35,7 @@ struct ReviewInsightsCache: Sendable {
         let key = Self.normalizedWeekStartInterval(insights.weekStart, calendar: calendar)
         var payload = loadPayload() ?? Payload(weeks: [:])
         payload.weeks[key] = insights
-        payload.weeks = Self.prune(
-            weeks: payload.weeks,
-            keepingMostRecent: Self.maxWeekEntries,
-            calendar: calendar
-        )
+        payload.weeks = Self.prune(weeks: payload.weeks, keepingMostRecent: Self.maxWeekEntries)
         savePayload(payload)
     }
 
@@ -67,16 +63,12 @@ struct ReviewInsightsCache: Sendable {
 
     private static func prune(
         weeks: [Double: ReviewInsights],
-        keepingMostRecent: Int,
-        calendar: Calendar
+        keepingMostRecent: Int
     ) -> [Double: ReviewInsights] {
         guard weeks.count > keepingMostRecent else {
             return weeks
         }
-        let sortedKeys = weeks.values
-            .sorted { $0.generatedAt > $1.generatedAt }
-            .prefix(keepingMostRecent)
-            .map { normalizedWeekStartInterval($0.weekStart, calendar: calendar) }
+        let sortedKeys = weeks.keys.sorted(by: >).prefix(keepingMostRecent)
         let keysToKeep = Set(sortedKeys)
         return weeks.filter { keysToKeep.contains($0.key) }
     }

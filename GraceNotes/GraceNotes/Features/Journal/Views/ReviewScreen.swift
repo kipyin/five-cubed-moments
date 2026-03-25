@@ -86,13 +86,13 @@ struct ReviewScreen: View {
         }
         .task(id: currentInsightsRefreshKey) {
             guard selectedMode == .insights else { return }
-            hydrateReviewInsightsFromCacheIfNeeded()
+            await hydrateReviewInsightsFromCacheIfNeeded()
             await refreshReviewInsights()
         }
         .onChange(of: selectedMode) { _, newMode in
             guard newMode == .insights else { return }
             Task {
-                hydrateReviewInsightsFromCacheIfNeeded()
+                await hydrateReviewInsightsFromCacheIfNeeded()
                 await refreshReviewInsights()
             }
         }
@@ -150,7 +150,7 @@ struct ReviewScreen: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .tint(AppTheme.reviewAccent)
-            .accessibilityHint(String(localized: "Choose insights or timeline"))
+            .accessibilityHint(String(localized: "Switch between Insights and Timeline."))
             .accessibilityIdentifier("ReviewModePicker")
             .listRowBackground(AppTheme.reviewBackground)
         }
@@ -247,18 +247,18 @@ struct ReviewScreen: View {
         )
 
         reviewInsights = outcome.insights
-        reviewInsightsCache.storeIfEligible(outcome.insights, calendar: calendar)
+        await reviewInsightsCache.storeIfEligible(outcome.insights, calendar: calendar)
         if outcome.shouldUpdateCachedRefreshKey {
             lastInsightsRefreshKey = shouldCacheRefreshKey(for: generatedInsights) ? refreshKey : nil
         }
         isLoadingInsights = false
     }
 
-    private func hydrateReviewInsightsFromCacheIfNeeded() {
+    private func hydrateReviewInsightsFromCacheIfNeeded() async {
         guard selectedMode == .insights else { return }
         guard !entries.isEmpty else { return }
         guard reviewInsights == nil else { return }
-        reviewInsights = reviewInsightsCache.insights(
+        reviewInsights = await reviewInsightsCache.insights(
             forWeekStart: currentReviewPeriod.lowerBound,
             calendar: calendar
         )

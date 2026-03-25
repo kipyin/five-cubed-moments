@@ -95,7 +95,7 @@ Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (job names belo
 
 | When | What runs |
 |------|-----------|
-| **Push** | **Build** only, one simulator at a time (`strategy.max-parallel: 1`): **iPhone 17**, **iPhone 17 Pro**, **iPhone XR** (`xcodebuild build`, `OS=latest`). |
+| **Push** | **Build** only, one simulator at a time (`strategy.max-parallel: 1`): **iPhone 17 Pro** and **iPhone XR** (`xcodebuild build`, `OS=latest`) — same devices as merge-queue test and UI smoke. |
 | **Merge queue** | **Merge queue — tests (iPhone 17 Pro):** `make lint` and `make test` with destination **iPhone 17 Pro**. **Merge queue — UI smoke (iPhone XR):** single UI test `GraceNotesSmokeUITests.testSmokeLaunch` (`GraceNotesUITests` target). |
 | **Pull request** (optional) | If the PR has the **`full-ci`** label: **PR full-ci — tests (iPhone 17 Pro)** — same lint + test as the merge-queue test job. Re-runs on new commits while the label stays on the PR. |
 

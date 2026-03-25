@@ -25,7 +25,6 @@ jobs:
       max-parallel: 1
       matrix:
         simulator:
-          - iPhone 17
           - iPhone 17 Pro
           - iPhone XR
     steps:

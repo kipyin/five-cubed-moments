@@ -3766,6 +3766,134 @@
         }
       }
     },
+    "Cloud AI couldn't finish this digest (network or quality checks). Grace Notes used your on-device summary instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud AI couldn't finish this digest (network or quality checks). Grace Notes used your on-device summary instead."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "云端 AI 未能完成本周摘要（网络未通或未通过质量校验）。已改用本机摘要。"
+          }
+        }
+      }
+    },
+    "Cloud AI isn't available in this build (for example, no API key). This digest stayed on your device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud AI isn't available in this build (for example, no API key). This digest stayed on your device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前构建未配置可用的云端 AI（例如缺少 API 密钥）。本周摘要保留在本机生成。"
+          }
+        }
+      }
+    },
+    "Cloud insights need at least three meaningful reflections in this review week. With lighter weeks, Grace Notes keeps this digest on your device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud insights need at least three meaningful reflections in this review week. With lighter weeks, Grace Notes keeps this digest on your device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "云端洞察需要本周至少三条有意义的记录。记录较少时，Grace Notes 会只在本机生成本周摘要。"
+          }
+        }
+      }
+    },
+    "On your device this week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On your device this week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本周为本机生成"
+          }
+        }
+      }
+    },
+    "Shows why Cloud AI wasn't used for this weekly digest." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows why Cloud AI wasn't used for this weekly digest."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说明为何本周未使用云端 AI 生成本周回顾摘要。"
+          }
+        }
+      }
+    },
+    "Source: Cloud AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source: Cloud AI"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源：云端 AI"
+          }
+        }
+      }
+    },
+    "Source: On your device" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source: On your device"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源：本机"
+          }
+        }
+      }
+    },
+    "Why on-device insights this week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Why on-device insights this week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为何本周是设备端洞察"
+          }
+        }
+      }
+    },
     "Start with one gratitude, and the rest will follow." : {
       "localizations" : {
         "en" : {

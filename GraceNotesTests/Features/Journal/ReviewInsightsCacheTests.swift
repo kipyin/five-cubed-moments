@@ -58,7 +58,8 @@ final class ReviewInsightsCacheTests: XCTestCase {
                 recurringPeople: insights.recurringPeople,
                 resurfacingMessage: insights.resurfacingMessage,
                 continuityPrompt: insights.continuityPrompt,
-                narrativeSummary: insights.narrativeSummary
+                narrativeSummary: insights.narrativeSummary,
+                cloudSkippedReason: insights.cloudSkippedReason
             )
             await cache.storeIfEligible(insights, calendar: calendar)
         }
@@ -128,7 +129,8 @@ final class ReviewInsightsCacheTests: XCTestCase {
             recurringPeople: [],
             resurfacingMessage: "A thread from your week.",
             continuityPrompt: "One small next step.",
-            narrativeSummary: "A gentle arc."
+            narrativeSummary: "A gentle arc.",
+            cloudSkippedReason: nil
         )
     }
 
@@ -154,7 +156,8 @@ final class ReviewInsightsCacheTests: XCTestCase {
             recurringPeople: [],
             resurfacingMessage: "",
             continuityPrompt: "",
-            narrativeSummary: nil
+            narrativeSummary: nil,
+            cloudSkippedReason: nil
         )
     }
 }

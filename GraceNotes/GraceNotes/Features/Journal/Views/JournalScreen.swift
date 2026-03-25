@@ -1015,6 +1015,13 @@ private extension JournalScreen {
         }
     }
 
+    fileprivate var navigationTitle: String {
+        if let date = entryDate {
+            return date.formatted(date: .abbreviated, time: .omitted)
+        }
+        return String(localized: "Today's entry")
+    }
+
     func unlockToastTransition(for level: JournalCompletionLevel) -> AnyTransition {
         if reduceMotion {
             return .opacity
@@ -1104,19 +1111,6 @@ private extension JournalScreen {
                 emphasis.impactOccurred(intensity: self.reduceMotion ? 0.55 : 0.8)
             }
         }
-    }
-}
-
-extension JournalScreen {
-    init(entryDate: Date? = nil) {
-        self.entryDate = entryDate
-    }
-
-    fileprivate var navigationTitle: String {
-        if let date = entryDate {
-            return date.formatted(date: .abbreviated, time: .omitted)
-        }
-        return String(localized: "Today's entry")
     }
 }
 // swiftlint:enable file_length

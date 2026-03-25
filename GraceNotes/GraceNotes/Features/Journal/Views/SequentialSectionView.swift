@@ -42,8 +42,8 @@ struct SequentialSectionView: View {
     /// Chip UUID that last triggered a live reorder during this drag.
     /// Skips redundant `dropUpdated` work when indices shift but the finger stays on the same chip.
     @State private var chipReorderHoverTargetItemID: UUID?
-    @State private var chipScrollSnapshot = ChipRowScrollSnapshot(
-        metrics: HorizontalScrollMetrics(),
+    @State private var chipScrollSnapshot = SequentialSectionChipRow.ChipRowScrollSnapshot(
+        metrics: SequentialSectionChipRow.HorizontalScrollMetrics(),
         elasticDeltaX: 0,
         elasticDeltaY: 0
     )

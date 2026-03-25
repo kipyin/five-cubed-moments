@@ -31,7 +31,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let onAddNew: (() -> Void)?
 
     @Binding var inputText: String
-    @Binding var chipScrollSnapshot: ChipRowScrollSnapshot
+    @Binding var chipScrollSnapshot: SequentialSectionChipRow.ChipRowScrollSnapshot
     @Binding var draggingItemID: UUID?
     @Binding var chipReorderHoverTargetItemID: UUID?
 
@@ -147,7 +147,11 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                         .onSubmit { onSubmit() }
                         .focused(inputFocus)
                         .warmPaperInputStyle()
-                        .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
+                        .modifier(
+                            SequentialSectionChipRow.ConditionalAccessibilityIdentifier(
+                                identifier: inputAccessibilityIdentifier
+                            )
+                        )
                         .accessibilityLabel(inputAccessibilityLabel)
                         .accessibilityHint(placeholder)
                         .disabled(!isInteractionEnabled)
@@ -164,7 +168,11 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                         .textInputAutocapitalization(.sentences)
                         .onSubmit { onSubmit() }
                         .warmPaperInputStyle()
-                        .modifier(ConditionalAccessibilityIdentifier(identifier: inputAccessibilityIdentifier))
+                        .modifier(
+                            SequentialSectionChipRow.ConditionalAccessibilityIdentifier(
+                                identifier: inputAccessibilityIdentifier
+                            )
+                        )
                         .accessibilityLabel(inputAccessibilityLabel)
                         .accessibilityHint(placeholder)
                         .disabled(!isInteractionEnabled)
@@ -221,7 +229,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
 
         if let onMoveChip {
             chip
-                .modifier(ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
+                .modifier(SequentialSectionChipRow.ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
                 .onDrag {
                     chipReorderHoverTargetItemID = nil
                     draggingItemID = item.id
@@ -233,7 +241,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 }
                 .onDrop(
                     of: [UTType.text],
-                    delegate: ChipReorderDropDelegate(
+                    delegate: SequentialSectionChipRow.ChipReorderDropDelegate(
                         targetIndex: index,
                         items: items,
                         draggingItemID: $draggingItemID,
@@ -244,15 +252,15 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 )
         } else {
             chip
-                .modifier(ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
+                .modifier(SequentialSectionChipRow.ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
         }
     }
 
-    private func canScrollLeft(for metrics: HorizontalScrollMetrics) -> Bool {
+    private func canScrollLeft(for metrics: SequentialSectionChipRow.HorizontalScrollMetrics) -> Bool {
         metrics.contentOffsetX > 1
     }
 
-    private func canScrollRight(for metrics: HorizontalScrollMetrics) -> Bool {
+    private func canScrollRight(for metrics: SequentialSectionChipRow.HorizontalScrollMetrics) -> Bool {
         let remaining = metrics.contentWidth - (metrics.contentOffsetX + metrics.viewportWidth)
         return remaining > 1
     }

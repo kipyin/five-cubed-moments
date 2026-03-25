@@ -382,12 +382,3 @@ enum SequentialSectionChipRow {
     }
 }
 // swiftlint:enable type_body_length nesting
-
-typealias HorizontalScrollMetrics = SequentialSectionChipRow.HorizontalScrollMetrics
-typealias ChipRowScrollSnapshot = SequentialSectionChipRow.ChipRowScrollSnapshot
-typealias ChipRowElasticAnimationKey = SequentialSectionChipRow.ChipRowElasticAnimationKey
-typealias ChipRowScrollElasticity = SequentialSectionChipRow.ChipRowScrollElasticity
-typealias AddChipView = SequentialSectionChipRow.AddChipView
-typealias ConditionalAccessibilityIdentifier = SequentialSectionChipRow.ConditionalAccessibilityIdentifier
-typealias HorizontalScrollMetricsReader = SequentialSectionChipRow.HorizontalScrollMetricsReader
-typealias ChipReorderDropDelegate = SequentialSectionChipRow.ChipReorderDropDelegate

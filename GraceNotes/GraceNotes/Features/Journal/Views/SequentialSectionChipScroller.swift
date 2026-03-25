@@ -15,7 +15,7 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
     let canScrollChipsRight: Bool
     let onAddNew: (() -> Void)?
 
-    @Binding var chipScrollSnapshot: ChipRowScrollSnapshot
+    @Binding var chipScrollSnapshot: SequentialSectionChipRow.ChipRowScrollSnapshot
 
     @ViewBuilder var chipRow: () -> ChipRow
 
@@ -24,7 +24,7 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
             HStack(spacing: AppTheme.spacingTight) {
                 chipRow()
                 if showAddChip, let addNew = onAddNew {
-                    AddChipView(
+                    SequentialSectionChipRow.AddChipView(
                         sectionTitle: title,
                         accessibilityIdentifier: addChipAccessibilityIdentifier,
                         onTap: addNew
@@ -39,13 +39,13 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
             )
             .animation(
                 nil,
-                value: ChipRowElasticAnimationKey(
+                value: SequentialSectionChipRow.ChipRowElasticAnimationKey(
                     deltaX: chipScrollSnapshot.elasticDeltaX,
                     deltaY: chipScrollSnapshot.elasticDeltaY
                 )
             )
             .background {
-                HorizontalScrollMetricsReader(reduceMotion: reduceMotion) { snapshot in
+                SequentialSectionChipRow.HorizontalScrollMetricsReader(reduceMotion: reduceMotion) { snapshot in
                     if chipScrollSnapshot != snapshot {
                         chipScrollSnapshot = snapshot
                     }

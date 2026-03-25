@@ -1,22 +1,27 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import Combine
+
+// swiftlint:disable file_length
+// Keeping interaction helpers in this file preserves `private` on `@State` / `@AppStorage` / `@FocusState`;
+// Swift does not allow another file's `extension` to see those members.
 
 // This screen still hosts multiple interaction surfaces while the UI refresh is in progress.
 
-enum JournalScreenLayout {
+private enum JournalScreenLayout {
     static let journalScrollCoordinateSpaceName = "journalMainScroll"
     static let unlockToastScrollDismissThreshold: CGFloat = 20
 }
 
-struct JournalScrollOffsetPreferenceKey: PreferenceKey {
+private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
 }
 
-extension View {
+private extension View {
     @ViewBuilder
     func journalDismissUnlockToastOnTapOutside(_ isPresented: Bool, dismiss: @escaping () -> Void) -> some View {
         if isPresented {
@@ -27,66 +32,64 @@ extension View {
     }
 }
 
-// Chip sections and modifiers keep this type large; further extraction would split `body` across files.
-// swiftlint:disable type_body_length
 struct JournalScreen: View {
-    @EnvironmentObject var appNavigation: AppNavigationModel
-    @Environment(\.modelContext) var modelContext
-    @Environment(\.accessibilityReduceMotion) var reduceMotion
-    @State var viewModel = JournalViewModel()
-    @State var shareableImage: ShareableImage?
-    @State var showShareError = false
-    @State var showSavedToPhotosToast = false
-    @State var savedToPhotosDismissTask: Task<Void, Never>?
-    @State var hasTrackedInitialLoad = false
-    @State var gratitudeSummarizationTask: Task<Void, Never>?
-    @State var needSummarizationTask: Task<Void, Never>?
-    @State var personSummarizationTask: Task<Void, Never>?
-    @State var statusCelebrationDismissTask: Task<Void, Never>?
-    @State var celebratingLevel: JournalCompletionLevel?
-    @State var hasInitializedCompletionTracking = false
-    @State var previousCompletionLevel: JournalCompletionLevel = .soil
-    @State var unlockToastLevel: JournalCompletionLevel?
-    @State var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
-    @State var journalScrollOffsetY: CGFloat = 0
-    @State var unlockToastScrollBaseline: CGFloat?
-    @State var tutorialProgress = JournalTutorialProgress()
-    @State var showPostSeedJourney = false
-    @State var postSeedJourneySkipsCongratulations = false
-    @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) var hasCompletedGuidedJournal = false
-    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) var hasSeenPostSeedJourney = false
+    @EnvironmentObject private var appNavigation: AppNavigationModel
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var viewModel = JournalViewModel()
+    @State private var shareableImage: ShareableImage?
+    @State private var showShareError = false
+    @State private var showSavedToPhotosToast = false
+    @State private var savedToPhotosDismissTask: Task<Void, Never>?
+    @State private var hasTrackedInitialLoad = false
+    @State private var gratitudeSummarizationTask: Task<Void, Never>?
+    @State private var needSummarizationTask: Task<Void, Never>?
+    @State private var personSummarizationTask: Task<Void, Never>?
+    @State private var statusCelebrationDismissTask: Task<Void, Never>?
+    @State private var celebratingLevel: JournalCompletionLevel?
+    @State private var hasInitializedCompletionTracking = false
+    @State private var previousCompletionLevel: JournalCompletionLevel = .soil
+    @State private var unlockToastLevel: JournalCompletionLevel?
+    @State private var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
+    @State private var journalScrollOffsetY: CGFloat = 0
+    @State private var unlockToastScrollBaseline: CGFloat?
+    @State private var tutorialProgress = JournalTutorialProgress()
+    @State private var showPostSeedJourney = false
+    @State private var postSeedJourneySkipsCongratulations = false
+    @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
+    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedRemindersSuggestion)
-    var dismissedRemindersSuggestion = false
+    private var dismissedRemindersSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedAISuggestion)
-    var dismissedAISuggestion = false
+    private var dismissedAISuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedICloudSuggestion)
-    var dismissedICloudSuggestion = false
+    private var dismissedICloudSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedRemindersSuggestion)
-    var openedRemindersSuggestion = false
+    private var openedRemindersSuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedAISuggestion)
-    var openedAISuggestion = false
+    private var openedAISuggestion = false
     @AppStorage(JournalOnboardingStorageKeys.openedICloudSuggestion)
-    var openedICloudSuggestion = false
-    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) var useCloudSummarization = false
-    @AppStorage(PersistenceController.iCloudSyncEnabledKey) var isICloudSyncEnabled = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) var dismissedSeedGuidance = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) var dismissedHarvestGuidance = false
+    private var openedICloudSuggestion = false
+    @AppStorage(SummarizerProvider.useCloudUserDefaultsKey) private var useCloudSummarization = false
+    @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
 
-    @State var gratitudeInput = ""
-    @State var needInput = ""
-    @State var personInput = ""
+    @State private var gratitudeInput = ""
+    @State private var needInput = ""
+    @State private var personInput = ""
 
-    @State var editingGratitudeIndex: Int?
-    @State var editingNeedIndex: Int?
-    @State var editingPersonIndex: Int?
-    @State var isGratitudeTransitioning = false
-    @State var isNeedTransitioning = false
-    @State var isPersonTransitioning = false
-    @FocusState var isGratitudeInputFocused: Bool
-    @FocusState var isNeedInputFocused: Bool
-    @FocusState var isPersonInputFocused: Bool
-    @FocusState var isReadingNotesFocused: Bool
-    @FocusState var isReflectionsFocused: Bool
+    @State private var editingGratitudeIndex: Int?
+    @State private var editingNeedIndex: Int?
+    @State private var editingPersonIndex: Int?
+    @State private var isGratitudeTransitioning = false
+    @State private var isNeedTransitioning = false
+    @State private var isPersonTransitioning = false
+    @FocusState private var isGratitudeInputFocused: Bool
+    @FocusState private var isNeedInputFocused: Bool
+    @FocusState private var isPersonInputFocused: Bool
+    @FocusState private var isReadingNotesFocused: Bool
+    @FocusState private var isReflectionsFocused: Bool
 
     var entryDate: Date?
     var body: some View {
@@ -97,143 +100,10 @@ struct JournalScreen: View {
                     celebratingLevel: celebratingLevel
                 )
 
-                if !onboardingPresentation.isGuidanceActive,
-                   let hintKind = JournalTutorialHintPresentation.hintKind(
-                    entryDate: entryDate,
-                    completionLevel: viewModel.completionLevel,
-                    chipsFilledCount: viewModel.chipsFilledCount,
-                    dismissedSeedGuidance: dismissedSeedGuidance,
-                    dismissedHarvestGuidance: dismissedHarvestGuidance
-                ) {
-                    JournalTutorialHintView(kind: hintKind) {
-                        switch hintKind {
-                        case .seed:
-                            dismissedSeedGuidance = true
-                        case .harvest:
-                            dismissedHarvestGuidance = true
-                        }
-                    }
-                }
-
-                if let onboardingSuggestion {
-                    JournalOnboardingSuggestionView(
-                        title: suggestionTitle(for: onboardingSuggestion),
-                        message: suggestionMessage(for: onboardingSuggestion),
-                        primaryActionTitle: String(localized: "Open Settings"),
-                        secondaryActionTitle: String(localized: "Not now"),
-                        onPrimaryAction: { openSettings(for: onboardingSuggestion) },
-                        onSecondaryAction: { dismissSuggestion(onboardingSuggestion) }
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
-                    SequentialSectionView(
-                        title: String(localized: "Gratitudes"),
-                        guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
-                        guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
-                        guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .gratitude)?
-                            .messageSecondary,
-                        items: viewModel.gratitudes,
-                        placeholder: String(localized: "What's one thing you're grateful for?"),
-                        slotCount: JournalViewModel.slotCount,
-                        inputAccessibilityIdentifier: "Gratitude 1",
-                        chipAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                            ? "JournalGratitudeChip"
-                            : nil,
-                        addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                            ? "JournalSectionAdd.gratitude"
-                            : nil,
-                        onboardingState: onboardingPresentation.state(for: .gratitude),
-                        isTransitioning: isGratitudeTransitioning,
-                        inputText: $gratitudeInput,
-                        editingIndex: editingGratitudeIndex,
-                        inputFocus: $isGratitudeInputFocused,
-                        onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .gratitude) },
-                        onSubmit: submitGratitude,
-                        onChipTap: { index in chipTapped(section: .gratitude, index: index) },
-                        onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
-                        onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
-                        onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
-                        onAddNew: { addNewTapped(section: .gratitude) }
-                    )
-
-                    SequentialSectionView(
-                        title: String(localized: "Needs"),
-                        guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
-                        guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
-                        items: viewModel.needs,
-                        placeholder: String(localized: "What do you need today?"),
-                        slotCount: JournalViewModel.slotCount,
-                        inputAccessibilityIdentifier: "Need 1",
-                        addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                            ? "JournalSectionAdd.need"
-                            : nil,
-                        onboardingState: onboardingPresentation.state(for: .need),
-                        isTransitioning: isNeedTransitioning,
-                        inputText: $needInput,
-                        editingIndex: editingNeedIndex,
-                        inputFocus: $isNeedInputFocused,
-                        onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .need) },
-                        onSubmit: submitNeed,
-                        onChipTap: { index in chipTapped(section: .need, index: index) },
-                        onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
-                        onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
-                        onDeleteChip: { index in deleteChip(section: .need, index: index) },
-                        onAddNew: { addNewTapped(section: .need) }
-                    )
-
-                    SequentialSectionView(
-                        title: String(localized: "People in Mind"),
-                        guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
-                        guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
-                        items: viewModel.people,
-                        placeholder: String(localized: "Who are you thinking of today?"),
-                        slotCount: JournalViewModel.slotCount,
-                        inputAccessibilityIdentifier: "Person 1",
-                        addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                            ? "JournalSectionAdd.person"
-                            : nil,
-                        onboardingState: onboardingPresentation.state(for: .person),
-                        isTransitioning: isPersonTransitioning,
-                        inputText: $personInput,
-                        editingIndex: editingPersonIndex,
-                        inputFocus: $isPersonInputFocused,
-                        onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .person) },
-                        onSubmit: submitPerson,
-                        onChipTap: { index in chipTapped(section: .person, index: index) },
-                        onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
-                        onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
-                        onDeleteChip: { index in deleteChip(section: .person, index: index) },
-                        onAddNew: { addNewTapped(section: .person) }
-                    )
-                }
-                .padding(.top, AppTheme.spacingTight)
-
-                VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
-                    EditableTextSection(
-                        title: String(localized: "Reading Notes"),
-                        guidanceTitle: onboardingPresentation.sectionGuidance(for: .readingNotes)?.title,
-                        guidanceMessage: onboardingPresentation.sectionGuidance(for: .readingNotes)?.message,
-                        guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .readingNotes)?
-                            .messageSecondary,
-                        text: Binding(
-                            get: { viewModel.readingNotes },
-                            set: { viewModel.updateReadingNotes($0) }
-                        ),
-                        onboardingState: onboardingPresentation.state(for: .readingNotes),
-                        inputFocus: $isReadingNotesFocused
-                    )
-                    EditableTextSection(
-                        title: String(localized: "Reflections"),
-                        text: Binding(
-                            get: { viewModel.reflections },
-                            set: { viewModel.updateReflections($0) }
-                        ),
-                        onboardingState: onboardingPresentation.state(for: .reflections),
-                        inputFocus: $isReflectionsFocused
-                    )
-                }
-                .padding(.top, AppTheme.spacingTight)
+                journalTutorialHintIfNeeded
+                journalOnboardingSuggestionIfNeeded
+                journalChipSections
+                journalNotesSections
 
                 if let saveErrorMessage = viewModel.saveErrorMessage {
                     Text(saveErrorMessage)
@@ -294,59 +164,14 @@ struct JournalScreen: View {
             )
         }
         .onChange(of: showPostSeedJourney) { _, isPresented in
-            guard isPresented else { return }
-            isGratitudeInputFocused = false
-            isNeedInputFocused = false
-            isPersonInputFocused = false
-            isReadingNotesFocused = false
-            isReflectionsFocused = false
-            UIApplication.shared.sendAction(
-                #selector(UIResponder.resignFirstResponder),
-                to: nil,
-                from: nil,
-                for: nil
-            )
+            dismissAllJournalFocusIfPostSeedJourneyPresented(isPresented)
         }
-        .overlay {
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                VStack(spacing: AppTheme.spacingTight) {
-                    if let toastLevel = unlockToastLevel {
-                        HStack {
-                            Spacer(minLength: 0)
-                            Button {
-                                dismissUnlockToastIfNeeded()
-                            } label: {
-                                JournalUnlockToastView(level: toastLevel, milestoneHighlight: unlockToastMilestone)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint(String(localized: "Dismiss"))
-                            .transition(unlockToastTransition(for: toastLevel))
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, AppTheme.todayHorizontalPadding)
-                    }
-                    if showSavedToPhotosToast {
-                        SavedToPhotosToastView()
-                    }
-                }
-                .padding(.bottom, AppTheme.spacingSection)
-            }
-        }
+        .overlay { journalToastOverlay }
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection)
         }
         .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
-            savedToPhotosDismissTask?.cancel()
-            withAnimation(.easeInOut(duration: 0.2)) {
-                showSavedToPhotosToast = true
-            }
-            savedToPhotosDismissTask = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(2.5))
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showSavedToPhotosToast = false
-                }
-            }
+            scheduleSavedToPhotosToast()
         }
         .onDisappear {
             gratitudeSummarizationTask?.cancel()
@@ -358,87 +183,929 @@ struct JournalScreen: View {
             focusOnboardingStepIfNeeded(newStep)
         }
         .onChange(of: viewModel.completionLevel) { _, newLevel in
-            if !hasInitializedCompletionTracking {
-                previousCompletionLevel = newLevel
-                hasInitializedCompletionTracking = true
-                syncGuidedJournalCompletionIfNeeded(for: newLevel)
-                evaluatePostSeedJourneyIfNeeded(for: newLevel)
-                return
-            }
-
-            let previousRank = previousCompletionLevel.tutorialCompletionRank
-            let newRank = newLevel.tutorialCompletionRank
-
-            if newRank > previousRank, newLevel != .soil {
-                let unlockOutcome = JournalTutorialUnlockEvaluator.outcome(
-                    previousRank: previousRank,
-                    newRank: newRank,
-                    newLevel: newLevel,
-                    hasCelebratedFirstSeed: tutorialProgress.hasCelebratedFirstSeed,
-                    hasCelebratedFirstHarvest: tutorialProgress.hasCelebratedFirstHarvest
-                )
-                triggerStatusCelebration(for: newLevel)
-                let suppressSeedUnlockToast = JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
-                    isTodayEntry: entryDate == nil,
-                    newLevel: newLevel,
-                    hasSeenPostSeedJourney: hasSeenPostSeedJourney
-                )
-                if !suppressSeedUnlockToast {
-                    presentUnlockToast(for: newLevel, milestoneHighlight: unlockOutcome.milestoneHighlight)
-                }
-                tutorialProgress.applyRecording(from: unlockOutcome)
-            } else if newRank < previousRank {
-                statusCelebrationDismissTask?.cancel()
-                celebratingLevel = nil
-                let dismissingLevel = unlockToastLevel
-                let fallbackExit = Animation.easeOut(duration: 0.16)
-                let toastExit = reduceMotion
-                    ? nil
-                    : dismissingLevel.map { AppTheme.unlockToastExitAnimation(for: $0) } ?? fallbackExit
-                withAnimation(toastExit) {
-                    unlockToastLevel = nil
-                    unlockToastMilestone = .none
-                    unlockToastScrollBaseline = nil
-                }
-            }
-
-            previousCompletionLevel = newLevel
-            syncGuidedJournalCompletionIfNeeded(for: newLevel)
-            evaluatePostSeedJourneyIfNeeded(for: newLevel)
+            handleCompletionLevelChange(to: newLevel)
         }
         .task {
-            if !hasTrackedInitialLoad {
-                hasTrackedInitialLoad = true
-                PerformanceTrace.instant("JournalScreen.firstTaskStarted")
-            }
-            let loadTrace = PerformanceTrace.begin("JournalScreen.loadTask")
-            if let date = entryDate {
-                viewModel.loadEntry(for: date, using: modelContext)
-            } else {
-                viewModel.loadTodayIfNeeded(using: modelContext)
-                let hadPending051GuidedBranch = UserDefaults.standard.bool(
-                    forKey: JournalOnboardingStorageKeys.legacy051GuidedBranchResolution
-                )
-                JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
-                    todayCompletionLevel: viewModel.completionLevel,
-                    using: .standard
-                )
-                if hadPending051GuidedBranch {
-                    hasCompletedGuidedJournal = UserDefaults.standard.bool(
-                        forKey: JournalOnboardingStorageKeys.completedGuidedJournal
-                    )
-                }
-            }
-            previousCompletionLevel = viewModel.completionLevel
-            hasInitializedCompletionTracking = true
-            syncGuidedJournalCompletionIfNeeded(for: viewModel.completionLevel)
-            focusOnboardingStepIfNeeded(onboardingPresentation.step)
-            evaluatePostSeedJourneyIfNeeded(for: viewModel.completionLevel)
-            PerformanceTrace.end("JournalScreen.loadTask", startedAt: loadTrace)
+            await runJournalScreenLoadTask()
         }
     }
 }
-// swiftlint:enable type_body_length
+
+private extension JournalScreen {
+
+    @ViewBuilder
+    var journalTutorialHintIfNeeded: some View {
+        if !onboardingPresentation.isGuidanceActive,
+           let hintKind = JournalTutorialHintPresentation.hintKind(
+            entryDate: entryDate,
+            completionLevel: viewModel.completionLevel,
+            chipsFilledCount: viewModel.chipsFilledCount,
+            dismissedSeedGuidance: dismissedSeedGuidance,
+            dismissedHarvestGuidance: dismissedHarvestGuidance
+        ) {
+            JournalTutorialHintView(kind: hintKind) {
+                switch hintKind {
+                case .seed:
+                    dismissedSeedGuidance = true
+                case .harvest:
+                    dismissedHarvestGuidance = true
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    var journalOnboardingSuggestionIfNeeded: some View {
+        if let onboardingSuggestion {
+            JournalOnboardingSuggestionView(
+                title: suggestionTitle(for: onboardingSuggestion),
+                message: suggestionMessage(for: onboardingSuggestion),
+                primaryActionTitle: String(localized: "Open Settings"),
+                secondaryActionTitle: String(localized: "Not now"),
+                onPrimaryAction: { openSettings(for: onboardingSuggestion) },
+                onSecondaryAction: { dismissSuggestion(onboardingSuggestion) }
+            )
+        }
+    }
+
+    var journalChipSections: some View {
+        VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
+            SequentialSectionView(
+                title: String(localized: "Gratitudes"),
+                guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
+                guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
+                guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .gratitude)?
+                    .messageSecondary,
+                items: viewModel.gratitudes,
+                placeholder: String(localized: "What's one thing you're grateful for?"),
+                slotCount: JournalViewModel.slotCount,
+                inputAccessibilityIdentifier: "Gratitude 1",
+                chipAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalGratitudeChip"
+                    : nil,
+                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalSectionAdd.gratitude"
+                    : nil,
+                onboardingState: onboardingPresentation.state(for: .gratitude),
+                isTransitioning: isGratitudeTransitioning,
+                inputText: $gratitudeInput,
+                editingIndex: editingGratitudeIndex,
+                inputFocus: $isGratitudeInputFocused,
+                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .gratitude) },
+                onSubmit: submitGratitude,
+                onChipTap: { index in chipTapped(section: .gratitude, index: index) },
+                onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
+                onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
+                onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
+                onAddNew: { addNewTapped(section: .gratitude) }
+            )
+
+            SequentialSectionView(
+                title: String(localized: "Needs"),
+                guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
+                guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
+                items: viewModel.needs,
+                placeholder: String(localized: "What do you need today?"),
+                slotCount: JournalViewModel.slotCount,
+                inputAccessibilityIdentifier: "Need 1",
+                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalSectionAdd.need"
+                    : nil,
+                onboardingState: onboardingPresentation.state(for: .need),
+                isTransitioning: isNeedTransitioning,
+                inputText: $needInput,
+                editingIndex: editingNeedIndex,
+                inputFocus: $isNeedInputFocused,
+                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .need) },
+                onSubmit: submitNeed,
+                onChipTap: { index in chipTapped(section: .need, index: index) },
+                onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
+                onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
+                onDeleteChip: { index in deleteChip(section: .need, index: index) },
+                onAddNew: { addNewTapped(section: .need) }
+            )
+
+            SequentialSectionView(
+                title: String(localized: "People in Mind"),
+                guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
+                guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
+                items: viewModel.people,
+                placeholder: String(localized: "Who are you thinking of today?"),
+                slotCount: JournalViewModel.slotCount,
+                inputAccessibilityIdentifier: "Person 1",
+                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalSectionAdd.person"
+                    : nil,
+                onboardingState: onboardingPresentation.state(for: .person),
+                isTransitioning: isPersonTransitioning,
+                inputText: $personInput,
+                editingIndex: editingPersonIndex,
+                inputFocus: $isPersonInputFocused,
+                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .person) },
+                onSubmit: submitPerson,
+                onChipTap: { index in chipTapped(section: .person, index: index) },
+                onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
+                onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
+                onDeleteChip: { index in deleteChip(section: .person, index: index) },
+                onAddNew: { addNewTapped(section: .person) }
+            )
+        }
+        .padding(.top, AppTheme.spacingTight)
+    }
+
+    var journalNotesSections: some View {
+        VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
+            EditableTextSection(
+                title: String(localized: "Reading Notes"),
+                guidanceTitle: onboardingPresentation.sectionGuidance(for: .readingNotes)?.title,
+                guidanceMessage: onboardingPresentation.sectionGuidance(for: .readingNotes)?.message,
+                guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .readingNotes)?
+                    .messageSecondary,
+                text: Binding(
+                    get: { viewModel.readingNotes },
+                    set: { viewModel.updateReadingNotes($0) }
+                ),
+                onboardingState: onboardingPresentation.state(for: .readingNotes),
+                inputFocus: $isReadingNotesFocused
+            )
+            EditableTextSection(
+                title: String(localized: "Reflections"),
+                text: Binding(
+                    get: { viewModel.reflections },
+                    set: { viewModel.updateReflections($0) }
+                ),
+                onboardingState: onboardingPresentation.state(for: .reflections),
+                inputFocus: $isReflectionsFocused
+            )
+        }
+        .padding(.top, AppTheme.spacingTight)
+    }
+
+    var journalToastOverlay: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            VStack(spacing: AppTheme.spacingTight) {
+                if let toastLevel = unlockToastLevel {
+                    HStack {
+                        Spacer(minLength: 0)
+                        Button {
+                            dismissUnlockToastIfNeeded()
+                        } label: {
+                            JournalUnlockToastView(level: toastLevel, milestoneHighlight: unlockToastMilestone)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(String(localized: "Dismiss"))
+                        .transition(unlockToastTransition(for: toastLevel))
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, AppTheme.todayHorizontalPadding)
+                }
+                if showSavedToPhotosToast {
+                    SavedToPhotosToastView()
+                }
+            }
+            .padding(.bottom, AppTheme.spacingSection)
+        }
+    }
+
+    func dismissAllJournalFocusIfPostSeedJourneyPresented(_ isPresented: Bool) {
+        guard isPresented else { return }
+        isGratitudeInputFocused = false
+        isNeedInputFocused = false
+        isPersonInputFocused = false
+        isReadingNotesFocused = false
+        isReflectionsFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
+    func scheduleSavedToPhotosToast() {
+        savedToPhotosDismissTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showSavedToPhotosToast = true
+        }
+        savedToPhotosDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.5))
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showSavedToPhotosToast = false
+            }
+        }
+    }
+
+    func handleCompletionLevelChange(to newLevel: JournalCompletionLevel) {
+        if !hasInitializedCompletionTracking {
+            previousCompletionLevel = newLevel
+            hasInitializedCompletionTracking = true
+            syncGuidedJournalCompletionIfNeeded(for: newLevel)
+            evaluatePostSeedJourneyIfNeeded(for: newLevel)
+            return
+        }
+
+        let previousRank = previousCompletionLevel.tutorialCompletionRank
+        let newRank = newLevel.tutorialCompletionRank
+
+        if newRank > previousRank, newLevel != .soil {
+            let unlockOutcome = JournalTutorialUnlockEvaluator.outcome(
+                previousRank: previousRank,
+                newRank: newRank,
+                newLevel: newLevel,
+                hasCelebratedFirstSeed: tutorialProgress.hasCelebratedFirstSeed,
+                hasCelebratedFirstHarvest: tutorialProgress.hasCelebratedFirstHarvest
+            )
+            triggerStatusCelebration(for: newLevel)
+            let suppressSeedUnlockToast = JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+                isTodayEntry: entryDate == nil,
+                newLevel: newLevel,
+                hasSeenPostSeedJourney: hasSeenPostSeedJourney
+            )
+            if !suppressSeedUnlockToast {
+                presentUnlockToast(for: newLevel, milestoneHighlight: unlockOutcome.milestoneHighlight)
+            }
+            tutorialProgress.applyRecording(from: unlockOutcome)
+        } else if newRank < previousRank {
+            statusCelebrationDismissTask?.cancel()
+            celebratingLevel = nil
+            let dismissingLevel = unlockToastLevel
+            let fallbackExit = Animation.easeOut(duration: 0.16)
+            let toastExit = reduceMotion
+                ? nil
+                : dismissingLevel.map { AppTheme.unlockToastExitAnimation(for: $0) } ?? fallbackExit
+            withAnimation(toastExit) {
+                unlockToastLevel = nil
+                unlockToastMilestone = .none
+                unlockToastScrollBaseline = nil
+            }
+        }
+
+        previousCompletionLevel = newLevel
+        syncGuidedJournalCompletionIfNeeded(for: newLevel)
+        evaluatePostSeedJourneyIfNeeded(for: newLevel)
+    }
+
+    func runJournalScreenLoadTask() async {
+        if !hasTrackedInitialLoad {
+            hasTrackedInitialLoad = true
+            PerformanceTrace.instant("JournalScreen.firstTaskStarted")
+        }
+        let loadTrace = PerformanceTrace.begin("JournalScreen.loadTask")
+        if let date = entryDate {
+            viewModel.loadEntry(for: date, using: modelContext)
+        } else {
+            viewModel.loadTodayIfNeeded(using: modelContext)
+            let hadPending051GuidedBranch = UserDefaults.standard.bool(
+                forKey: JournalOnboardingStorageKeys.legacy051GuidedBranchResolution
+            )
+            JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
+                todayCompletionLevel: viewModel.completionLevel,
+                using: .standard
+            )
+            if hadPending051GuidedBranch {
+                hasCompletedGuidedJournal = UserDefaults.standard.bool(
+                    forKey: JournalOnboardingStorageKeys.completedGuidedJournal
+                )
+            }
+        }
+        previousCompletionLevel = viewModel.completionLevel
+        hasInitializedCompletionTracking = true
+        syncGuidedJournalCompletionIfNeeded(for: viewModel.completionLevel)
+        focusOnboardingStepIfNeeded(onboardingPresentation.step)
+        evaluatePostSeedJourneyIfNeeded(for: viewModel.completionLevel)
+        PerformanceTrace.end("JournalScreen.loadTask", startedAt: loadTrace)
+    }
+
+    var onboardingPresentation: JournalOnboardingPresentation {
+        JournalOnboardingFlowEvaluator.presentation(
+            for: JournalOnboardingContext(
+                entryDate: entryDate,
+                gratitudesCount: viewModel.gratitudes.count,
+                needsCount: viewModel.needs.count,
+                peopleCount: viewModel.people.count,
+                readingNotes: viewModel.readingNotes,
+                reflections: viewModel.reflections,
+                hasCompletedGuidedJournal: hasCompletedGuidedJournal
+            )
+        )
+    }
+
+    var isAnyJournalFieldFocused: Bool {
+        isGratitudeInputFocused ||
+            isNeedInputFocused ||
+            isPersonInputFocused ||
+            isReadingNotesFocused ||
+            isReflectionsFocused
+    }
+
+    var onboardingSuggestionContext: JournalOnboardingSuggestionContext {
+        JournalOnboardingSuggestionContext(
+            entryDate: entryDate,
+            hasCelebratedFirstSeed: tutorialProgress.hasCelebratedFirstSeed,
+            hasCelebratedFirstHarvest: tutorialProgress.hasCelebratedFirstHarvest,
+            dismissedRemindersSuggestion: dismissedRemindersSuggestion,
+            openedRemindersSuggestion: openedRemindersSuggestion,
+            hasConfiguredReminderTime: hasConfiguredReminderTime,
+            dismissedAISuggestion: dismissedAISuggestion,
+            openedAISuggestion: openedAISuggestion,
+            aiFeaturesEnabled: aiFeaturesEnabled,
+            isCloudApiKeyConfigured: ApiSecrets.isCloudApiKeyConfigured,
+            hasCompletedGuidedJournal: hasCompletedGuidedJournal,
+            dismissedICloudSuggestion: dismissedICloudSuggestion,
+            openedICloudSuggestion: openedICloudSuggestion,
+            isICloudSyncEnabled: isICloudSyncEnabled
+        )
+    }
+
+    var onboardingSuggestion: JournalOnboardingSuggestion? {
+        JournalOnboardingSuggestionEvaluator.currentSuggestion(context: onboardingSuggestionContext)
+    }
+
+    var aiFeaturesEnabled: Bool {
+        useCloudSummarization
+    }
+
+    var hasConfiguredReminderTime: Bool {
+        UserDefaults.standard.object(forKey: ReminderSettings.timeIntervalKey) != nil
+    }
+
+    func submitGratitude() {
+        submit(section: .gratitude)
+    }
+    func submitNeed() {
+        submit(section: .need)
+    }
+    func submitPerson() {
+        submit(section: .person)
+    }
+    func shareTapped() {
+        let payload = viewModel.exportSnapshot()
+        if let image = JournalShareRenderer.renderImage(from: payload) {
+            shareableImage = ShareableImage(image: image)
+        } else {
+            showShareError = true
+        }
+    }
+
+    func syncGuidedJournalCompletionIfNeeded(for level: JournalCompletionLevel) {
+        guard entryDate == nil else { return }
+        guard level == .abundance else { return }
+        guard !hasCompletedGuidedJournal else { return }
+        hasCompletedGuidedJournal = true
+    }
+
+    /// One-time post-Seed journey on Today when at or above Seed and journey C not yet seen.
+    func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
+        guard let outcome = JournalTodayOrientationPolicy.postSeedJourneyOutcome(
+            for: todayOrientationInputs(completionLevel: level)
+        ) else { return }
+
+        postSeedJourneySkipsCongratulations = outcome.skipsCongratulationsPage
+        showPostSeedJourney = true
+    }
+
+    func todayOrientationInputs(
+        completionLevel: JournalCompletionLevel
+    ) -> JournalTodayOrientationPolicy.Inputs {
+        JournalTodayOrientationPolicy.Inputs(
+            isTodayEntry: entryDate == nil,
+            isRunningUITests: ProcessInfo.graceNotesIsRunningUITests,
+            hasSeenPostSeedJourney: hasSeenPostSeedJourney,
+            hasCompletedGuidedJournal: hasCompletedGuidedJournal,
+            completionLevel: completionLevel
+        )
+    }
+
+    func completePostSeedJourney() {
+        hasSeenPostSeedJourney = true
+        hasCompletedGuidedJournal = true
+        showPostSeedJourney = false
+    }
+
+    func focusOnboardingStepIfNeeded(_ step: JournalOnboardingStep?) {
+        guard entryDate == nil else { return }
+        guard !hasCompletedGuidedJournal else { return }
+        guard !showPostSeedJourney else { return }
+        guard !isAnyJournalFieldFocused else { return }
+        focusOnboardingStepForced(step)
+    }
+
+    /// Applies onboarding keyboard focus even when another field still claims focus (e.g. after first-chip submit).
+    func focusOnboardingStepForced(_ step: JournalOnboardingStep?) {
+        guard entryDate == nil else { return }
+        guard !hasCompletedGuidedJournal else { return }
+        guard !showPostSeedJourney else { return }
+
+        switch step {
+        case .gratitude:
+            restoreInputFocus($isGratitudeInputFocused)
+        case .need:
+            restoreInputFocus($isNeedInputFocused)
+        case .person:
+            restoreInputFocus($isPersonInputFocused)
+        case .ripening:
+            focusOnboardingChipStep(.ripening)
+        case .harvest:
+            focusOnboardingChipStep(.harvest)
+        case .abundance:
+            focusAbundanceInputsIfNeeded()
+        case .none:
+            break
+        }
+    }
+
+    func shouldAdvanceGuidedFocusAfterChipSubmit(section: ChipSection) -> Bool {
+        guard entryDate == nil, !hasCompletedGuidedJournal else { return false }
+        switch onboardingPresentation.step {
+        case .need where section == .gratitude:
+            return viewModel.gratitudes.count == 1
+        case .person where section == .need:
+            return viewModel.needs.count == 1
+        case .ripening where section == .person:
+            return viewModel.people.count == 1
+        default:
+            return false
+        }
+    }
+
+    func clearChipInputFocus() {
+        isGratitudeInputFocused = false
+        isNeedInputFocused = false
+        isPersonInputFocused = false
+    }
+
+    func focusOnboardingChipStep(_ step: JournalOnboardingStep) {
+        switch step {
+        case .ripening:
+            focusFirstIncompleteChipSection(targetCount: 3)
+        case .harvest:
+            focusFirstIncompleteChipSection(targetCount: JournalViewModel.slotCount)
+        case .gratitude, .need, .person, .abundance:
+            break
+        }
+    }
+
+    func focusAbundanceInputsIfNeeded() {
+        let notesTrimmed = viewModel.readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reflectionsTrimmed = viewModel.reflections.trimmingCharacters(in: .whitespacesAndNewlines)
+        if notesTrimmed.isEmpty {
+            restoreInputFocus($isReadingNotesFocused)
+        } else if reflectionsTrimmed.isEmpty {
+            restoreInputFocus($isReflectionsFocused)
+        }
+    }
+
+    func focusFirstIncompleteChipSection(targetCount: Int) {
+        if viewModel.gratitudes.count < targetCount {
+            restoreInputFocus($isGratitudeInputFocused)
+            return
+        }
+        if viewModel.needs.count < targetCount {
+            restoreInputFocus($isNeedInputFocused)
+            return
+        }
+        if viewModel.people.count < targetCount {
+            restoreInputFocus($isPersonInputFocused)
+        }
+    }
+
+    func suggestionTitle(for suggestion: JournalOnboardingSuggestion) -> String {
+        switch suggestion {
+        case .reminders:
+            return String(localized: "Keep the rhythm close")
+        case .aiFeatures:
+            return String(localized: "Make Review more specific")
+        case .iCloudSync:
+            return String(localized: "Keep Grace Notes with you")
+        }
+    }
+
+    func suggestionMessage(for suggestion: JournalOnboardingSuggestion) -> String {
+        switch suggestion {
+        case .reminders:
+            return String(localized: "If you'd like, you can turn on a daily reminder in Settings.")
+        case .aiFeatures:
+            return String(
+                // swiftlint:disable:next line_length
+                localized: "AI features can help with short labels and Review insights when you want a little more support."
+            )
+        case .iCloudSync:
+            return String(localized: "You can turn on iCloud sync in Settings whenever you're ready.")
+        }
+    }
+
+    func openSettings(for suggestion: JournalOnboardingSuggestion) {
+        let authorized = JournalOnboardingSuggestionEvaluator.currentSuggestion(
+            context: onboardingSuggestionContext
+        )
+        guard authorized == suggestion else { return }
+        markSuggestionOpened(suggestion)
+        appNavigation.openSettings(target: settingsTarget(for: suggestion))
+    }
+
+    func dismissSuggestion(_ suggestion: JournalOnboardingSuggestion) {
+        switch suggestion {
+        case .reminders:
+            dismissedRemindersSuggestion = true
+        case .aiFeatures:
+            dismissedAISuggestion = true
+        case .iCloudSync:
+            dismissedICloudSuggestion = true
+        }
+    }
+
+    func markSuggestionOpened(_ suggestion: JournalOnboardingSuggestion) {
+        switch suggestion {
+        case .reminders:
+            openedRemindersSuggestion = true
+        case .aiFeatures:
+            openedAISuggestion = true
+        case .iCloudSync:
+            openedICloudSuggestion = true
+        }
+    }
+
+    func settingsTarget(for suggestion: JournalOnboardingSuggestion) -> SettingsScrollTarget {
+        switch suggestion {
+        case .reminders:
+            return .reminders
+        case .aiFeatures:
+            return .aiFeatures
+        case .iCloudSync:
+            return .dataPrivacy
+        }
+    }
+
+    enum ChipSection {
+        case gratitude, need, person
+    }
+    struct ChipSectionAdapter {
+        let input: Binding<String>
+        let editingIndex: Binding<Int?>
+        let isTransitioning: Binding<Bool>
+        let inputFocus: FocusState<Bool>.Binding
+        let renameLabel: (Int, String) -> Bool
+        let move: (Int, Int) -> Bool
+        let remove: (Int) -> Bool
+        let operations: ChipSectionOperations
+    }
+    func chipSectionAdapter(for section: ChipSection) -> ChipSectionAdapter {
+        switch section {
+        case .gratitude:
+            return makeGratitudeAdapter()
+        case .need:
+            return makeNeedAdapter()
+        case .person:
+            return makePersonAdapter()
+        }
+    }
+    func makeGratitudeAdapter() -> ChipSectionAdapter {
+        ChipSectionAdapter(
+            input: $gratitudeInput,
+            editingIndex: $editingGratitudeIndex,
+            isTransitioning: $isGratitudeTransitioning,
+            inputFocus: $isGratitudeInputFocused,
+            renameLabel: { index, label in viewModel.renameGratitudeLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.moveGratitude(from: from, to: toOffset) },
+            remove: { index in viewModel.removeGratitude(at: index) },
+            operations: ChipSectionOperations(
+                updateImmediate: { index, text in
+                    viewModel.updateGratitudeImmediate(at: index, fullText: text)
+                },
+                addImmediate: viewModel.addGratitudeImmediate,
+                fullText: { index in viewModel.fullTextForGratitude(at: index) },
+                count: viewModel.gratitudes.count,
+                summarizeAndUpdateChip: { index in
+                    scheduleSummarization(for: .gratitude, index: index)
+                }
+            )
+        )
+    }
+    func makeNeedAdapter() -> ChipSectionAdapter {
+        ChipSectionAdapter(
+            input: $needInput,
+            editingIndex: $editingNeedIndex,
+            isTransitioning: $isNeedTransitioning,
+            inputFocus: $isNeedInputFocused,
+            renameLabel: { index, label in viewModel.renameNeedLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.moveNeed(from: from, to: toOffset) },
+            remove: { index in viewModel.removeNeed(at: index) },
+            operations: ChipSectionOperations(
+                updateImmediate: { index, text in
+                    viewModel.updateNeedImmediate(at: index, fullText: text)
+                },
+                addImmediate: viewModel.addNeedImmediate,
+                fullText: { index in viewModel.fullTextForNeed(at: index) },
+                count: viewModel.needs.count,
+                summarizeAndUpdateChip: { index in
+                    scheduleSummarization(for: .need, index: index)
+                }
+            )
+        )
+    }
+    func makePersonAdapter() -> ChipSectionAdapter {
+        ChipSectionAdapter(
+            input: $personInput,
+            editingIndex: $editingPersonIndex,
+            isTransitioning: $isPersonTransitioning,
+            inputFocus: $isPersonInputFocused,
+            renameLabel: { index, label in viewModel.renamePersonLabel(at: index, to: label) },
+            move: { from, toOffset in viewModel.movePerson(from: from, to: toOffset) },
+            remove: { index in viewModel.removePerson(at: index) },
+            operations: ChipSectionOperations(
+                updateImmediate: { index, text in
+                    viewModel.updatePersonImmediate(at: index, fullText: text)
+                },
+                addImmediate: viewModel.addPersonImmediate,
+                fullText: { index in viewModel.fullTextForPerson(at: index) },
+                count: viewModel.people.count,
+                summarizeAndUpdateChip: { index in
+                    scheduleSummarization(for: .person, index: index)
+                }
+            )
+        )
+    }
+    func addNewTapped(section: ChipSection) {
+        let adapter = chipSectionAdapter(for: section)
+        let handled = JournalScreenChipHandling.handleAddChipTap(
+            input: adapter.input,
+            editingIndex: adapter.editingIndex,
+            operations: adapter.operations,
+            isTransitioning: adapter.isTransitioning
+        )
+        if handled {
+            restoreInputFocus(adapter.inputFocus)
+        }
+    }
+
+    func deleteChip(section: ChipSection, index: Int) {
+        let adapter = chipSectionAdapter(for: section)
+        JournalScreenChipHandling.performDelete(
+            index: index,
+            remove: adapter.remove,
+            input: adapter.input,
+            editingIndex: adapter.editingIndex
+        )
+    }
+
+    func renameChip(section: ChipSection, index: Int, label: String) {
+        let adapter = chipSectionAdapter(for: section)
+        _ = adapter.renameLabel(index, label)
+    }
+
+    func moveChip(section: ChipSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
+        let adapter = chipSectionAdapter(for: section)
+        JournalScreenChipHandling.performMove(
+            from: sourceIndex,
+            to: destinationOffset,
+            move: adapter.move,
+            editingIndex: adapter.editingIndex
+        )
+    }
+
+    func chipTapped(section: ChipSection, index: Int) {
+        let adapter = chipSectionAdapter(for: section)
+        let handled = JournalScreenChipHandling.performChipTap(
+            tapIndex: index,
+            input: adapter.input,
+            editingIndex: adapter.editingIndex,
+            operations: adapter.operations,
+            isTransitioning: adapter.isTransitioning
+        )
+        if handled {
+            restoreInputFocus(adapter.inputFocus)
+        }
+    }
+
+    func scheduleSummarization(for section: ChipSection, index: Int) {
+        switch section {
+        case .gratitude:
+            gratitudeSummarizationTask?.cancel()
+            gratitudeSummarizationTask = Task {
+                await viewModel.summarizeAndUpdateChip(section: .gratitude, index: index)
+            }
+        case .need:
+            needSummarizationTask?.cancel()
+            needSummarizationTask = Task {
+                await viewModel.summarizeAndUpdateChip(section: .need, index: index)
+            }
+        case .person:
+            personSummarizationTask?.cancel()
+            personSummarizationTask = Task {
+                await viewModel.summarizeAndUpdateChip(section: .person, index: index)
+            }
+        }
+    }
+
+    func submit(section: ChipSection) {
+        let adapter = chipSectionAdapter(for: section)
+        let didSubmit = JournalScreenChipHandling.submitChipSection(
+            editingIndex: adapter.editingIndex,
+            input: adapter.input,
+            operations: adapter.operations,
+            isTransitioning: adapter.isTransitioning
+        )
+        guard didSubmit else { return }
+        if shouldAdvanceGuidedFocusAfterChipSubmit(section: section) {
+            clearChipInputFocus()
+            Task { @MainActor in
+                await Task.yield()
+                focusOnboardingStepForced(onboardingPresentation.step)
+            }
+        } else {
+            restoreInputFocus(adapter.inputFocus)
+        }
+    }
+
+    func commitChipDraftOnInputFocusLost(section: ChipSection) {
+        let adapter = chipSectionAdapter(for: section)
+        let didSubmit = JournalScreenChipHandling.submitChipSection(
+            editingIndex: adapter.editingIndex,
+            input: adapter.input,
+            operations: adapter.operations,
+            isTransitioning: adapter.isTransitioning
+        )
+        guard didSubmit else { return }
+        if shouldAdvanceGuidedFocusAfterChipSubmit(section: section) {
+            clearChipInputFocus()
+            Task { @MainActor in
+                await Task.yield()
+                focusOnboardingStepForced(onboardingPresentation.step)
+            }
+            return
+        }
+        Task { @MainActor in
+            await Task.yield()
+            if restoreKeyboardFocusIfAnotherJournalTextFieldIsActive() {
+                return
+            }
+            // TextEditor focus can trail TextField by a frame; one extra yield before giving up.
+            await Task.yield()
+            _ = restoreKeyboardFocusIfAnotherJournalTextFieldIsActive()
+        }
+    }
+
+    /// Re-asserts focus on whichever journal text field already has SwiftUI focus (chips, Reading Notes, Reflections).
+    /// Single source of truth for the list—add new focused editors here only.
+    @discardableResult
+    func restoreKeyboardFocusIfAnotherJournalTextFieldIsActive() -> Bool {
+        guard !showPostSeedJourney else { return false }
+        let candidates: [(Bool, FocusState<Bool>.Binding)] = [
+            (isGratitudeInputFocused, $isGratitudeInputFocused),
+            (isNeedInputFocused, $isNeedInputFocused),
+            (isPersonInputFocused, $isPersonInputFocused),
+            (isReadingNotesFocused, $isReadingNotesFocused),
+            (isReflectionsFocused, $isReflectionsFocused)
+        ]
+        for (isFocused, binding) in candidates where isFocused {
+            restoreInputFocus(binding)
+            return true
+        }
+        return false
+    }
+
+    func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
+        guard !showPostSeedJourney else { return }
+        // Apply focus immediately so keyboard spin-up starts without waiting a turn.
+        focus.wrappedValue = true
+
+        Task { @MainActor in
+            await Task.yield()
+            guard !showPostSeedJourney else { return }
+            if !focus.wrappedValue {
+                focus.wrappedValue = true
+            }
+        }
+    }
+
+    func presentUnlockToast(
+        for level: JournalCompletionLevel,
+        milestoneHighlight: JournalUnlockMilestoneHighlight
+    ) {
+        let entrance = reduceMotion ? nil : AppTheme.unlockToastEntranceAnimation(for: level)
+        withAnimation(entrance) {
+            unlockToastLevel = level
+            unlockToastMilestone = milestoneHighlight
+            unlockToastScrollBaseline = journalScrollOffsetY
+        }
+    }
+
+    func dismissUnlockToastIfNeeded() {
+        guard unlockToastLevel != nil else { return }
+        dismissUnlockToast()
+    }
+
+    func dismissUnlockToast() {
+        guard let level = unlockToastLevel else { return }
+        let exit = reduceMotion ? nil : AppTheme.unlockToastExitAnimation(for: level)
+        withAnimation(exit) {
+            unlockToastLevel = nil
+            unlockToastMilestone = .none
+            unlockToastScrollBaseline = nil
+        }
+    }
+
+    var journalScrollOffsetReader: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(
+                key: JournalScrollOffsetPreferenceKey.self,
+                value: proxy.frame(in: .named(JournalScreenLayout.journalScrollCoordinateSpaceName)).minY
+            )
+        }
+    }
+
+    func unlockToastTransition(for level: JournalCompletionLevel) -> AnyTransition {
+        if reduceMotion {
+            return .opacity
+        }
+        switch level {
+        case .soil:
+            return .opacity
+        case .seed:
+            return .move(edge: .bottom).combined(with: .opacity)
+        case .ripening:
+            return .asymmetric(
+                insertion: .move(edge: .bottom)
+                    .combined(with: .opacity)
+                    .combined(with: .scale(scale: 0.97, anchor: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .bottom))
+            )
+        case .harvest:
+            return .asymmetric(
+                insertion: .move(edge: .bottom)
+                    .combined(with: .opacity)
+                    .combined(with: .scale(scale: 0.96, anchor: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .bottom))
+            )
+        case .abundance:
+            return .asymmetric(
+                insertion: .move(edge: .bottom)
+                    .combined(with: .opacity)
+                    .combined(with: .scale(scale: 0.93, anchor: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .bottom))
+            )
+        }
+    }
+
+    func triggerStatusCelebration(for level: JournalCompletionLevel) {
+        statusCelebrationDismissTask?.cancel()
+        triggerStatusHaptics(for: level)
+
+        let entranceAnimation = reduceMotion ? nil : AppTheme.celebrationEntranceAnimation(for: level)
+        withAnimation(entranceAnimation) {
+            celebratingLevel = level
+        }
+
+        statusCelebrationDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AppTheme.celebrationVisibleSeconds(for: level)))
+            let exitAnimation = reduceMotion ? nil : AppTheme.celebrationExitAnimation(for: level)
+            withAnimation(exitAnimation) {
+                celebratingLevel = nil
+            }
+        }
+    }
+
+    func triggerStatusHaptics(for level: JournalCompletionLevel) {
+        switch level {
+        case .soil:
+            break
+        case .seed:
+            let light = UIImpactFeedbackGenerator(style: .light)
+            light.prepare()
+            light.impactOccurred(intensity: reduceMotion ? 0.45 : 0.65)
+        case .ripening:
+            let light = UIImpactFeedbackGenerator(style: .light)
+            light.prepare()
+            light.impactOccurred(intensity: reduceMotion ? 0.5 : 0.72)
+        case .harvest:
+            let notification = UINotificationFeedbackGenerator()
+            notification.prepare()
+            notification.notificationOccurred(.success)
+
+            let medium = UIImpactFeedbackGenerator(style: .medium)
+            medium.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                medium.impactOccurred(intensity: self.reduceMotion ? 0.6 : 0.85)
+            }
+        case .abundance:
+            let notification = UINotificationFeedbackGenerator()
+            notification.prepare()
+            notification.notificationOccurred(.success)
+
+            let emphasis = UIImpactFeedbackGenerator(style: .rigid)
+            emphasis.prepare()
+            let firstDelay = reduceMotion ? 0.0 : 0.08
+            let secondDelay = reduceMotion ? 0.1 : 0.18
+            DispatchQueue.main.asyncAfter(deadline: .now() + firstDelay) {
+                emphasis.impactOccurred(intensity: self.reduceMotion ? 0.75 : 1.0)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + secondDelay) {
+                emphasis.impactOccurred(intensity: self.reduceMotion ? 0.55 : 0.8)
+            }
+        }
+    }
+}
 
 extension JournalScreen {
     init(entryDate: Date? = nil) {
@@ -452,3 +1119,4 @@ extension JournalScreen {
         return String(localized: "Today's entry")
     }
 }
+// swiftlint:enable file_length

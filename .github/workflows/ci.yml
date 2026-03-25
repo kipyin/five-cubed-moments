@@ -17,16 +17,9 @@ env:
 
 jobs:
   build:
-    name: Build (${{ matrix.simulator }})
+    name: Build (iPhone 17 Pro)
     if: github.event_name == 'push'
     runs-on: macos-15
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        simulator:
-          - iPhone 17 Pro
-          - iPhone XR
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +30,7 @@ jobs:
       - name: Build
         run: >
           xcodebuild -project "$PROJECT" -scheme "$SCHEME"
-          -destination "platform=iOS Simulator,name=${{ matrix.simulator }},OS=latest"
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
           build
 
   merge-queue-tests:

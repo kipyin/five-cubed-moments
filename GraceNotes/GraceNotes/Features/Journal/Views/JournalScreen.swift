@@ -52,8 +52,6 @@ struct JournalScreen: View {
     @State private var showPostSeedJourney = false
     @State private var postSeedJourneySkipsCongratulations = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
-    @AppStorage(JournalOnboardingStorageKeys.pending051UpgradeOrientation)
-    private var pending051UpgradeOrientation = false
     @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.dismissedRemindersSuggestion)
     private var dismissedRemindersSuggestion = false
@@ -390,11 +388,11 @@ struct JournalScreen: View {
                     hasCelebratedFirstHarvest: tutorialProgress.hasCelebratedFirstHarvest
                 )
                 triggerStatusCelebration(for: newLevel)
-                // Skip Seed unlock toast when the post-seed journey will show (no stacked celebrations).
-                let suppressSeedUnlockToast = entryDate == nil
-                    && newLevel == .seed
-                    && !hasSeenPostSeedJourney
-                    && (!hasCompletedGuidedJournal || pending051UpgradeOrientation)
+                let suppressSeedUnlockToast = JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+                    isTodayEntry: entryDate == nil,
+                    newLevel: newLevel,
+                    hasSeenPostSeedJourney: hasSeenPostSeedJourney
+                )
                 if !suppressSeedUnlockToast {
                     presentUnlockToast(for: newLevel, milestoneHighlight: unlockOutcome.milestoneHighlight)
                 }
@@ -428,18 +426,6 @@ struct JournalScreen: View {
                 viewModel.loadEntry(for: date, using: modelContext)
             } else {
                 viewModel.loadTodayIfNeeded(using: modelContext)
-            }
-            let hadPending051GuidedBranch = UserDefaults.standard.bool(
-                forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution
-            )
-            JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
-                todayCompletionLevel: viewModel.completionLevel,
-                using: .standard
-            )
-            if hadPending051GuidedBranch {
-                hasCompletedGuidedJournal = UserDefaults.standard.bool(
-                    forKey: JournalOnboardingStorageKeys.completedGuidedJournal
-                )
             }
             previousCompletionLevel = viewModel.completionLevel
             hasInitializedCompletionTracking = true
@@ -531,23 +517,29 @@ private extension JournalScreen {
         hasCompletedGuidedJournal = true
     }
 
-    /// One-time post-Seed journey: new users at Seed, or 0.5.0 build 7+ upgraders from Seed upward.
+    /// One-time post-Seed journey on Today when at or above Seed and journey C not yet seen.
     private func evaluatePostSeedJourneyIfNeeded(for level: JournalCompletionLevel) {
-        guard !ProcessInfo.graceNotesIsRunningUITests else { return }
-        guard entryDate == nil else { return }
-        guard let outcome = PostSeedJourneyTrigger.evaluate(
-            hasSeenPostSeedJourney: hasSeenPostSeedJourney,
-            pending051UpgradeOrientation: pending051UpgradeOrientation,
-            hasCompletedGuidedJournal: hasCompletedGuidedJournal,
-            todayCompletionLevel: level
+        guard let outcome = JournalTodayOrientationPolicy.postSeedJourneyOutcome(
+            for: todayOrientationInputs(completionLevel: level)
         ) else { return }
 
         postSeedJourneySkipsCongratulations = outcome.skipsCongratulationsPage
         showPostSeedJourney = true
     }
 
+    private func todayOrientationInputs(
+        completionLevel: JournalCompletionLevel
+    ) -> JournalTodayOrientationPolicy.Inputs {
+        JournalTodayOrientationPolicy.Inputs(
+            isTodayEntry: entryDate == nil,
+            isRunningUITests: ProcessInfo.graceNotesIsRunningUITests,
+            hasSeenPostSeedJourney: hasSeenPostSeedJourney,
+            hasCompletedGuidedJournal: hasCompletedGuidedJournal,
+            completionLevel: completionLevel
+        )
+    }
+
     private func completePostSeedJourney() {
-        pending051UpgradeOrientation = false
         hasSeenPostSeedJourney = true
         hasCompletedGuidedJournal = true
         showPostSeedJourney = false
@@ -556,6 +548,7 @@ private extension JournalScreen {
     private func focusOnboardingStepIfNeeded(_ step: JournalOnboardingStep?) {
         guard entryDate == nil else { return }
         guard !hasCompletedGuidedJournal else { return }
+        guard !showPostSeedJourney else { return }
         guard !isAnyJournalFieldFocused else { return }
         focusOnboardingStepForced(step)
     }
@@ -564,6 +557,7 @@ private extension JournalScreen {
     private func focusOnboardingStepForced(_ step: JournalOnboardingStep?) {
         guard entryDate == nil else { return }
         guard !hasCompletedGuidedJournal else { return }
+        guard !showPostSeedJourney else { return }
 
         switch step {
         case .gratitude:
@@ -918,6 +912,7 @@ private extension JournalScreen {
     /// Single source of truth for the list—add new focused editors here only.
     @discardableResult
     private func restoreKeyboardFocusIfAnotherJournalTextFieldIsActive() -> Bool {
+        guard !showPostSeedJourney else { return false }
         let candidates: [(Bool, FocusState<Bool>.Binding)] = [
             (isGratitudeInputFocused, $isGratitudeInputFocused),
             (isNeedInputFocused, $isNeedInputFocused),
@@ -933,11 +928,13 @@ private extension JournalScreen {
     }
 
     private func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
+        guard !showPostSeedJourney else { return }
         // Apply focus immediately so keyboard spin-up starts without waiting a turn.
         focus.wrappedValue = true
 
         Task { @MainActor in
             await Task.yield()
+            guard !showPostSeedJourney else { return }
             if !focus.wrappedValue {
                 focus.wrappedValue = true
             }

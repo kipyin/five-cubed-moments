@@ -9,21 +9,15 @@ enum PostSeedJourneyTrigger {
     /// - Returns: `nil` when the journey should not be presented.
     static func evaluate(
         hasSeenPostSeedJourney: Bool,
-        pending051UpgradeOrientation: Bool,
         hasCompletedGuidedJournal: Bool,
         todayCompletionLevel: JournalCompletionLevel
     ) -> Outcome? {
         guard !hasSeenPostSeedJourney else { return nil }
 
         let seedRank = JournalCompletionLevel.seed.tutorialCompletionRank
-        let atOrAboveSeed = todayCompletionLevel.tutorialCompletionRank >= seedRank
+        guard todayCompletionLevel.tutorialCompletionRank >= seedRank else { return nil }
 
-        let standardPath = todayCompletionLevel == .seed && !hasCompletedGuidedJournal
-        let upgradePath = pending051UpgradeOrientation && atOrAboveSeed
-
-        guard standardPath || upgradePath else { return nil }
-
-        let skipsCongratulationsPage = upgradePath && hasCompletedGuidedJournal
+        let skipsCongratulationsPage = hasCompletedGuidedJournal
         return Outcome(skipsCongratulationsPage: skipsCongratulationsPage)
     }
 }

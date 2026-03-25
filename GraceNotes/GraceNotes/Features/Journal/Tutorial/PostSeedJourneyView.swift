@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// One-time full-screen flow after the user first reaches **Seed** on Today’s guided entry.
-/// Styled like app onboarding; **Done** (last page) or **Skip** (earlier pages) ends the flow and the guided tutorial.
+/// One-time full-screen post-Seed journey from Today or Settings (**App tour**).
+/// Styled like app onboarding; **Done** (last page) or **Skip** (earlier pages) ends the flow.
 struct PostSeedJourneyView: View {
     let onFinish: () -> Void
-    /// When true, hides the Seed congratulations page (0.5.0 build 7+ upgraders already at or above Seed).
+    /// When true, hides the Seed congratulations page (user already completed guided journal before this journey).
     let skipsCongratulationsPage: Bool
 
     @Environment(\.openURL) var openURL

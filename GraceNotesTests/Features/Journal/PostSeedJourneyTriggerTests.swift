@@ -5,17 +5,15 @@ final class PostSeedJourneyTriggerTests: XCTestCase {
     func test_evaluate_whenAlreadySeen_returnsNil() {
         let outcome = PostSeedJourneyTrigger.evaluate(
             hasSeenPostSeedJourney: true,
-            pending051UpgradeOrientation: true,
             hasCompletedGuidedJournal: true,
             todayCompletionLevel: .seed
         )
         XCTAssertNil(outcome)
     }
 
-    func test_evaluate_standardNewUserAtSeed_showsWithCongratulations() {
+    func test_evaluate_atSeed_guidedIncomplete_showsWithCongratulations() {
         let outcome = PostSeedJourneyTrigger.evaluate(
             hasSeenPostSeedJourney: false,
-            pending051UpgradeOrientation: false,
             hasCompletedGuidedJournal: false,
             todayCompletionLevel: .seed
         )
@@ -23,50 +21,41 @@ final class PostSeedJourneyTriggerTests: XCTestCase {
     }
 
     func test_evaluate_belowSeed_neverShows() {
-        for pending in [false, true] {
-            let outcome = PostSeedJourneyTrigger.evaluate(
-                hasSeenPostSeedJourney: false,
-                pending051UpgradeOrientation: pending,
-                hasCompletedGuidedJournal: false,
-                todayCompletionLevel: .soil
-            )
-            XCTAssertNil(outcome, "expected nil for soil pending=\(pending)")
-        }
-    }
-
-    func test_evaluate_upgradeAtSeed_beforeGuidedResolved_showsWithCongratulations() {
         let outcome = PostSeedJourneyTrigger.evaluate(
             hasSeenPostSeedJourney: false,
-            pending051UpgradeOrientation: true,
             hasCompletedGuidedJournal: false,
-            todayCompletionLevel: .seed
+            todayCompletionLevel: .soil
         )
-        XCTAssertEqual(outcome?.skipsCongratulationsPage, false)
+        XCTAssertNil(outcome)
     }
 
-    func test_evaluate_upgradeAtOrAboveSeed_afterGuidedResolved_skipsCongratulations() {
+    func test_evaluate_atOrAboveSeed_guidedIncomplete_showsWithCongratulations() {
         for level in [JournalCompletionLevel.seed, .ripening, .harvest, .abundance] {
             let outcome = PostSeedJourneyTrigger.evaluate(
                 hasSeenPostSeedJourney: false,
-                pending051UpgradeOrientation: true,
+                hasCompletedGuidedJournal: false,
+                todayCompletionLevel: level
+            )
+            XCTAssertEqual(
+                outcome?.skipsCongratulationsPage,
+                false,
+                "level \(level) should show congrats when guided incomplete"
+            )
+        }
+    }
+
+    func test_evaluate_atOrAboveSeed_guidedComplete_skipsCongratulations() {
+        for level in [JournalCompletionLevel.seed, .ripening, .harvest, .abundance] {
+            let outcome = PostSeedJourneyTrigger.evaluate(
+                hasSeenPostSeedJourney: false,
                 hasCompletedGuidedJournal: true,
                 todayCompletionLevel: level
             )
             XCTAssertEqual(
                 outcome?.skipsCongratulationsPage,
                 true,
-                "level \(level) should skip congrats for upgrade + guided complete"
+                "level \(level) should skip congrats when guided complete"
             )
         }
-    }
-
-    func test_evaluate_notUpgrade_aboveSeed_butGuidedIncomplete_doesNotShow() {
-        let outcome = PostSeedJourneyTrigger.evaluate(
-            hasSeenPostSeedJourney: false,
-            pending051UpgradeOrientation: false,
-            hasCompletedGuidedJournal: false,
-            todayCompletionLevel: .harvest
-        )
-        XCTAssertNil(outcome)
     }
 }

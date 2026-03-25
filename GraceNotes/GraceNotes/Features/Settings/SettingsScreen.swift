@@ -20,6 +20,7 @@ struct SettingsScreen: View {
     @State private var highlightedTarget: SettingsScrollTarget?
     @State private var settingsHighlightDismissTask: Task<Void, Never>?
     @State private var showAppTourFromSettings = false
+    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -154,7 +155,10 @@ struct SettingsScreen: View {
             }
             .fullScreenCover(isPresented: $showAppTourFromSettings) {
                 PostSeedJourneyView(
-                    onFinish: { showAppTourFromSettings = false },
+                    onFinish: {
+                        hasSeenPostSeedJourney = true
+                        showAppTourFromSettings = false
+                    },
                     skipsCongratulationsPage: false
                 )
             }

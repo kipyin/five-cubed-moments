@@ -4,6 +4,12 @@
 
 Planned patch on the 0.5.x line: Settings title-case consistency plus insight follow-through tracked in the current release lane.
 
+### Developer
+
+- Journal: `JournalTodayOrientationPolicy` centralizes Today-only post-Seed presentation (delegating to `PostSeedJourneyTrigger`) and Seed unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion rule documented in `GraceNotes/docs/agent-log/initiatives/023-onboarding-first-entry-policy/architecture.md`. Tests: `JournalTodayOrientationPolicyTests`.
+- Journal: post-Seed journey (**C**) is **version-free**—eligibility uses `hasSeenPostSeedJourney`, Today completion **≥ Seed**, and `completedGuidedJournal` (skip congratulations only). Removed `OrientationReleaseGate` and launch-time cohort flags; `JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded` normalizes legacy `pending051UpgradeOrientation` into guided/branch state, clears the upgrade key, and keeps `legacy051GuidedBranchResolution` until Today runs `resolvePending051GuidedJournalBranch`. Settings **App tour** sets `hasSeenPostSeedJourney` on finish without completing guided journal and skips the Seed congratulations page when guided journal is already complete. `AppLaunchVersionTracker` still records last marketing/bundle only.
+- Versioning: Grace Notes app **marketing version** stays **0.5.0** for this lane; **bundle** (`CURRENT_PROJECT_VERSION`) **8** (increment build under the minor for faster TestFlight review; build **7** was the previous ship).
+
 ### Changed
 - Settings: section headers use authored title case instead of all-caps list header styling (#84).
 - Review insights: continue #40 / #80 follow-through in the 0.5.2 release lane, with handoff context in `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (**#80** may remain open for engine depth).

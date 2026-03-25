@@ -1,8 +1,14 @@
 import XCTest
 @testable import GraceNotes
 
+/// Launch tracking and legacy `pending051*` migration (version-free post-Seed orientation).
 final class Orientation051LaunchTests: XCTestCase {
     private var suiteName: String!
+
+    private let legacyPendingUpgrade = "journalOnboarding.pending051UpgradeOrientation"
+    private var legacyPendingBranch: String {
+        JournalOnboardingStorageKeys.legacy051GuidedBranchResolution
+    }
 
     override func setUp() {
         super.setUp()
@@ -16,48 +22,61 @@ final class Orientation051LaunchTests: XCTestCase {
         super.tearDown()
     }
 
-    func test_applyLaunch_firstInstall_doesNotFlagUpgradeOrientation() {
+    func test_applyLaunch_firstInstall_persistsVersion_only() {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        AppLaunchVersionTracker.applyLaunch(defaults: defaults, currentMarketingVersionOverride: "0.5.1")
-        XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation))
-        XCTAssertEqual(
-            defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion),
-            "0.5.1"
+        AppLaunchVersionTracker.applyLaunch(
+            defaults: defaults,
+            currentMarketingVersionOverride: "0.5.0",
+            currentBundleVersionOverride: 8
         )
+        XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
+        XCTAssertNil(defaults.object(forKey: legacyPendingBranch))
+        XCTAssertEqual(defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion), "0.5.0")
+        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 8)
     }
 
-    func test_applyLaunch_upgradeFrom050_setsPendingAndClearsGuidedKey() {
-        assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: "0.5.0")
-    }
-
-    func test_applyLaunch_upgradeFrom040_setsPendingAndClearsGuidedKey() {
-        assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: "0.4.0")
-    }
-
-    func test_applyLaunch_secondLaunch051_doesNotReflagPending() {
+    func test_applyLaunch_upgradeFromOlderVersion_doesNotClearGuidedOrSetPending051() {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set("0.5.1", forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
-        defaults.set(false, forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation)
+        defaults.set("0.4.0", forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
 
-        AppLaunchVersionTracker.applyLaunch(defaults: defaults, currentMarketingVersionOverride: "0.5.1")
+        AppLaunchVersionTracker.applyLaunch(
+            defaults: defaults,
+            currentMarketingVersionOverride: "0.5.0",
+            currentBundleVersionOverride: 8
+        )
 
-        XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation))
+        XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
+        XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
+        XCTAssertEqual(defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion), "0.5.0")
+        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 8)
     }
 
-    func test_resolvedGuidedJournal_whenPending051_writesFalseAndBranchPending() {
+    func test_migrateLegacy_whenUpgradePending_normalizesGuidedAndBranch_thenRemovesUpgradeOnly() {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation)
+        defaults.set(true, forKey: legacyPendingUpgrade)
 
-        let resolved = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: defaults)
+        JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: defaults)
 
-        XCTAssertFalse(resolved)
+        XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
+        XCTAssertTrue(defaults.bool(forKey: legacyPendingBranch))
         XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
-        XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution))
+    }
+
+    func test_migrateLegacy_preservesBranchFlagUntilResolveRuns() {
+        let defaults = UserDefaults(suiteName: suiteName!)!
+        defaults.set(true, forKey: legacyPendingBranch)
+        defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+
+        JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: defaults)
+
+        XCTAssertTrue(defaults.bool(forKey: legacyPendingBranch))
+        XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
     }
 
     func test_resolveBranch_atSoil_clearsFlagWithoutForcingGuidedComplete() {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
+        defaults.set(true, forKey: legacyPendingBranch)
         defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
 
         JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
@@ -65,7 +84,7 @@ final class Orientation051LaunchTests: XCTestCase {
             using: defaults
         )
 
-        XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution))
+        XCTAssertNil(defaults.object(forKey: legacyPendingBranch))
         XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
     }
 
@@ -77,31 +96,28 @@ final class Orientation051LaunchTests: XCTestCase {
         assertResolveBranchAtOrAboveSeedSetsGuidedComplete(level: .ripening)
     }
 
-    private func assertUpgradeFromOlderMarketingVersionSetsPending(previousMarketing: String) {
+    func test_resolvedHasCompletedGuidedJournal_afterMigrateFromUpgrade_returnsFalse() {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set(previousMarketing, forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
-        defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        defaults.set(true, forKey: legacyPendingUpgrade)
 
-        AppLaunchVersionTracker.applyLaunch(defaults: defaults, currentMarketingVersionOverride: "0.5.1")
+        JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: defaults)
+        let resolved = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: defaults)
 
-        XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051UpgradeOrientation))
-        XCTAssertNil(defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
-        XCTAssertEqual(
-            defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion),
-            "0.5.1"
-        )
+        XCTAssertFalse(resolved)
+        XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
+        XCTAssertTrue(defaults.bool(forKey: legacyPendingBranch))
     }
 
     private func assertResolveBranchAtOrAboveSeedSetsGuidedComplete(level: JournalCompletionLevel) {
         let defaults = UserDefaults(suiteName: suiteName!)!
-        defaults.set(true, forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution)
+        defaults.set(true, forKey: legacyPendingBranch)
 
         JournalOnboardingProgress.resolvePending051GuidedJournalBranch(
             todayCompletionLevel: level,
             using: defaults
         )
 
-        XCTAssertFalse(defaults.bool(forKey: JournalOnboardingStorageKeys.pending051GuidedJournalBranchResolution))
+        XCTAssertNil(defaults.object(forKey: legacyPendingBranch))
         XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
     }
 }

@@ -1,7 +1,7 @@
 import XCTest
 @testable import GraceNotes
 
-// swiftlint:disable type_body_length
+// swiftlint:disable type_body_length file_length
 final class CloudReviewInsightsGeneratorTests: XCTestCase {
     private var urlSession: URLSession!
     private var calendar: Calendar!
@@ -368,10 +368,11 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
             return XCTFail("Expected prompt content in request")
         }
 
-        XCTAssertTrue(prompt.contains("Ground messages in the provided seven-day context"))
-        XCTAssertTrue(prompt.contains("continuityPrompt must be a specific follow-up question"))
-        XCTAssertTrue(prompt.contains("resurfacingMessage is Observation"))
-        XCTAssertTrue(prompt.contains("narrativeSummary is Thinking"))
+        XCTAssertTrue(prompt.contains("Compose mentally in this order"))
+        XCTAssertTrue(prompt.contains("Hard bans"))
+        XCTAssertTrue(prompt.contains("Bad example"))
+        XCTAssertTrue(prompt.contains("resurfacingMessage"))
+        XCTAssertTrue(prompt.contains("narrativeSummary"))
     }
 
     func test_generateInsights_requestPrompt_usesSimplifiedChineseWhenPromptLanguageZhHans() async throws {
@@ -403,6 +404,8 @@ final class CloudReviewInsightsGeneratorTests: XCTestCase {
 
         XCTAssertTrue(prompt.contains("下方是最近七天的记录"))
         XCTAssertTrue(prompt.contains("只输出合法 JSON"))
+        XCTAssertTrue(prompt.contains("心里按此顺序写"))
+        XCTAssertTrue(prompt.contains("硬性禁止"))
     }
 
     func test_generateInsights_withoutMeaningfulCurrentWeekEntries_throwsBeforeAPICall() async {
@@ -617,4 +620,4 @@ private extension CloudReviewInsightsGeneratorTests {
         return (requestCaptured, { capturedRequestBody })
     }
 }
-// swiftlint:enable type_body_length
+// swiftlint:enable type_body_length file_length

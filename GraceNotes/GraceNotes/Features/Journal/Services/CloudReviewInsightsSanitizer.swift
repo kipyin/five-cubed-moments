@@ -1,5 +1,7 @@
 import Foundation
 
+// Coherence repair helpers add length; keep logic in one type.
+// swiftlint:disable type_body_length function_body_length
 struct CloudReviewInsightsSanitizer {
     private let maxThemesPerList = 3
     private let maxMessageLength = 160
@@ -16,6 +18,27 @@ struct CloudReviewInsightsSanitizer {
         "继续加油",
         "保持积极",
         "小步骤"
+    ]
+
+    /// High-precision substrings: generic personality / wellness gloss, not user theme text.
+    private let interpretivePhrases = [
+        "shows that you",
+        "suggests you",
+        "indicates you",
+        "demonstrates that you",
+        "you are the kind of person",
+        "work-life balance",
+        "work life balance",
+        "cherish the little things",
+        "value the small things",
+        "显示出",
+        "表明你在",
+        "说明你在",
+        "这意味着你",
+        "珍惜日常小事",
+        "工作生活平衡",
+        "说明你重视",
+        "看得出你很"
     ]
 
     func sanitizePayload(_ payload: CloudReviewInsightsPayload) -> CloudReviewInsightsPayload {
@@ -47,17 +70,34 @@ struct CloudReviewInsightsSanitizer {
             allThemes: allThemes,
             fallback: fallbackNarrative
         )
+        narrativeSummary = repairNarrativeWhenInterpretiveOrObservationWeak(
+            narrative: narrativeSummary,
+            resurfacing: resurfacingMessage,
+            allThemes: allThemes,
+            fallback: fallbackNarrative
+        )
+
+        var continuityPrompt = sanitizeContinuityPrompt(
+            payload.continuityPrompt,
+            recurringGratitudes: recurringGratitudes,
+            recurringNeeds: recurringNeeds,
+            recurringPeople: recurringPeople,
+            fallback: fallbackContinuity
+        )
+        continuityPrompt = repairContinuityWhenChainWeak(
+            continuity: continuityPrompt,
+            narrative: narrativeSummary,
+            resurfacing: resurfacingMessage,
+            recurringGratitudes: recurringGratitudes,
+            recurringNeeds: recurringNeeds,
+            recurringPeople: recurringPeople,
+            fallback: fallbackContinuity
+        )
 
         return CloudReviewInsightsPayload(
             narrativeSummary: narrativeSummary,
             resurfacingMessage: resurfacingMessage,
-            continuityPrompt: sanitizeContinuityPrompt(
-                payload.continuityPrompt,
-                recurringGratitudes: recurringGratitudes,
-                recurringNeeds: recurringNeeds,
-                recurringPeople: recurringPeople,
-                fallback: fallbackContinuity
-            ),
+            continuityPrompt: continuityPrompt,
             recurringGratitudes: recurringGratitudes,
             recurringNeeds: recurringNeeds,
             recurringPeople: recurringPeople
@@ -80,8 +120,25 @@ struct CloudReviewInsightsSanitizer {
         guard mentionsAnyTheme(payload.continuityPrompt, themes: allThemes) else {
             throw CloudReviewInsightsError.failedQualityGate
         }
-        // `sanitizeContinuityPrompt` already substitutes generic copy; substring checks here false-positive when a
-        // theme label overlaps a generic-phrase token (e.g. localized fallbacks embedding user themes).
+        let narrative = payload.narrativeSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !narrative.isEmpty, !seemsInterpretiveFiller(narrative) else {
+            throw CloudReviewInsightsError.failedQualityGate
+        }
+        guard narrativeGroundsObservation(
+            narrative: narrative,
+            resurfacing: payload.resurfacingMessage,
+            allThemes: allThemes
+        ) else {
+            throw CloudReviewInsightsError.failedQualityGate
+        }
+        guard continuityGroundsChain(
+            continuity: payload.continuityPrompt,
+            narrative: narrative,
+            resurfacing: payload.resurfacingMessage,
+            allThemes: allThemes
+        ) else {
+            throw CloudReviewInsightsError.failedQualityGate
+        }
     }
 
     func extractJSONPayload(from content: String) -> String {
@@ -118,25 +175,163 @@ struct CloudReviewInsightsSanitizer {
         guard narrativeParrotsResurfacing(narrative, resurfacing) else {
             return narrative
         }
+        return synthesizedJuxtapositionNarrative(allThemes: allThemes, fallback: fallback)
+    }
+
+    private func repairNarrativeWhenInterpretiveOrObservationWeak(
+        narrative: String,
+        resurfacing: String,
+        allThemes: [CloudReviewTheme],
+        fallback: String
+    ) -> String {
+        let trimmed = narrative.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty,
+           !seemsInterpretiveFiller(trimmed),
+           narrativeGroundsObservation(narrative: trimmed, resurfacing: resurfacing, allThemes: allThemes) {
+            return sanitizeMessage(trimmed, fallback: fallback)
+        }
+        return synthesizedJuxtapositionNarrative(allThemes: allThemes, fallback: fallback)
+    }
+
+    private func synthesizedJuxtapositionNarrative(
+        allThemes: [CloudReviewTheme],
+        fallback: String
+    ) -> String {
         guard !allThemes.isEmpty else {
             return sanitizeMessage(fallback, fallback: fallback)
         }
         if allThemes.count >= 2 {
-            let firstLabel = allThemes[0].label
-            let secondLabel = allThemes[1].label
             let line = String(
                 format: String(localized: "%1$@ kept showing up alongside %2$@ in what you wrote this week."),
-                firstLabel,
-                secondLabel
+                allThemes[0].label,
+                allThemes[1].label
             )
             return sanitizeMessage(line, fallback: fallback)
         }
-        let theme = allThemes[0].label
         let line = String(
             format: String(localized: "Across several entries, %@ was a thread you returned to often."),
-            theme
+            allThemes[0].label
         )
         return sanitizeMessage(line, fallback: fallback)
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    private func repairContinuityWhenChainWeak(
+        continuity: String,
+        narrative: String,
+        resurfacing: String,
+        recurringGratitudes: [CloudReviewTheme],
+        recurringNeeds: [CloudReviewTheme],
+        recurringPeople: [CloudReviewTheme],
+        fallback: String
+    ) -> String {
+        let allThemes = recurringNeeds + recurringPeople + recurringGratitudes
+        guard !allThemes.isEmpty else {
+            return sanitizeMessage(continuity, fallback: fallback)
+        }
+        let trimmed = continuity.trimmingCharacters(in: .whitespacesAndNewlines)
+        if continuityGroundsChain(
+            continuity: trimmed,
+            narrative: narrative,
+            resurfacing: resurfacing,
+            allThemes: allThemes
+        ) {
+            return sanitizeMessage(trimmed, fallback: fallback)
+        }
+        let union = chainThemeUnion(narrative: narrative, resurfacing: resurfacing, themes: allThemes)
+        let pool = union.isEmpty ? allThemes : union
+        let replacement = continuityReplacement(
+            for: pool,
+            recurringNeeds: recurringNeeds,
+            recurringPeople: recurringPeople,
+            recurringGratitudes: recurringGratitudes,
+            fallback: fallback
+        )
+        return sanitizeMessage(replacement, fallback: fallback)
+    }
+
+    private func continuityReplacement(
+        for pool: [CloudReviewTheme],
+        recurringNeeds: [CloudReviewTheme],
+        recurringPeople: [CloudReviewTheme],
+        recurringGratitudes: [CloudReviewTheme],
+        fallback: String
+    ) -> String {
+        for theme in pool where recurringNeeds.contains(where: { labelsMatch($0.label, theme.label) }) {
+            return String(
+                format: String(localized: "What is one small step you can take to support %@ tomorrow?"),
+                theme.label
+            )
+        }
+        for theme in pool where recurringPeople.contains(where: { labelsMatch($0.label, theme.label) }) {
+            return String(
+                format: String(localized: "How could you connect with %@ in a meaningful way this week?"),
+                theme.label
+            )
+        }
+        if let theme = pool.first {
+            return String(
+                format: String(localized: "How can you carry %@ into tomorrow?"),
+                theme.label
+            )
+        }
+        return fallback
+    }
+
+    private func labelsMatch(_ lhs: String, _ rhs: String) -> Bool {
+        normalizeForMatching(lhs) == normalizeForMatching(rhs)
+    }
+
+    private func themesReferencedInMessage(_ message: String, themes: [CloudReviewTheme]) -> [CloudReviewTheme] {
+        let normalizedMessage = normalizeForMatching(message)
+        return themes.filter { labelReferencedInMessage($0.label, normalizedMessage: normalizedMessage) }
+    }
+
+    private func chainThemeUnion(
+        narrative: String,
+        resurfacing: String,
+        themes: [CloudReviewTheme]
+    ) -> [CloudReviewTheme] {
+        let fromResurfacing = themesReferencedInMessage(resurfacing, themes: themes)
+        let fromNarrative = themesReferencedInMessage(narrative, themes: themes)
+        var seen = Set<String>()
+        var result: [CloudReviewTheme] = []
+        for theme in fromResurfacing + fromNarrative {
+            let key = normalizeForMatching(theme.label)
+            guard !key.isEmpty else { continue }
+            if seen.insert(key).inserted {
+                result.append(theme)
+            }
+        }
+        return result
+    }
+
+    private func narrativeGroundsObservation(
+        narrative: String,
+        resurfacing: String,
+        allThemes: [CloudReviewTheme]
+    ) -> Bool {
+        let inResurfacing = themesReferencedInMessage(resurfacing, themes: allThemes)
+        if inResurfacing.isEmpty {
+            return mentionsAnyTheme(narrative, themes: allThemes)
+        }
+        return mentionsAnyTheme(narrative, themes: inResurfacing)
+    }
+
+    private func continuityGroundsChain(
+        continuity: String,
+        narrative: String,
+        resurfacing: String,
+        allThemes: [CloudReviewTheme]
+    ) -> Bool {
+        let union = chainThemeUnion(narrative: narrative, resurfacing: resurfacing, themes: allThemes)
+        let pool = union.isEmpty ? allThemes : union
+        return mentionsAnyTheme(continuity, themes: pool)
+    }
+
+    private func seemsInterpretiveFiller(_ message: String) -> Bool {
+        let normalized = normalizeForMatching(message)
+        return interpretivePhrases.contains { normalized.contains($0) }
     }
 
     private func narrativeParrotsResurfacing(_ narrative: String, _ resurfacing: String) -> Bool {
@@ -190,7 +385,6 @@ struct CloudReviewInsightsSanitizer {
         return message
     }
 
-    // swiftlint:disable function_body_length
     private func sanitizeResurfacingMessage(
         _ message: String,
         recurringGratitudes: [CloudReviewTheme],
@@ -253,8 +447,6 @@ struct CloudReviewInsightsSanitizer {
         )
         return sanitizeMessage(replacement, fallback: fallback)
     }
-
-    // swiftlint:enable function_body_length
 
     private func sanitizeContinuityPrompt(
         _ prompt: String,
@@ -395,3 +587,4 @@ struct CloudReviewInsightsSanitizer {
             .lowercased()
     }
 }
+// swiftlint:enable type_body_length function_body_length

@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor
 enum DemoDataSeeder {
-    private static let seedVersion = 1
+    private static let seedVersion = 2
     private static let seedVersionKey = "demoDataSeedVersion"
 
     static func seedIfNeeded(context: ModelContext, calendar: Calendar = .current) {
@@ -83,13 +83,17 @@ enum DemoDataSeeder {
         let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today) ?? today
         let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today) ?? today
         let fourDaysAgo = calendar.date(byAdding: .day, value: -4, to: today) ?? today
+        let fiveDaysAgo = calendar.date(byAdding: .day, value: -5, to: today) ?? today
+        let sixDaysAgo = calendar.date(byAdding: .day, value: -6, to: today) ?? today
 
         return [
             makeTodayPayload(entryDate: today, completedAt: now),
             makeYesterdayPayload(entryDate: yesterday),
             makeBlankPayload(entryDate: twoDaysAgo),
             makeThreeDaysAgoPayload(entryDate: threeDaysAgo, completedAt: now),
-            makeFourDaysAgoPayload(entryDate: fourDaysAgo)
+            makeFourDaysAgoPayload(entryDate: fourDaysAgo),
+            makeFiveDaysAgoPayload(entryDate: fiveDaysAgo),
+            makeSixDaysAgoPayload(entryDate: sixDaysAgo)
         ]
     }
 
@@ -211,6 +215,53 @@ enum DemoDataSeeder {
             ],
             readingNotes: "A short note on practicing patience during interruptions.",
             reflections: "I handled less than planned but stayed calm.",
+            completedAt: nil
+        )
+    }
+
+    /// Repeats labels used on other demo days so cloud review sees stronger recurrence counts across seven days.
+    private static func makeFiveDaysAgoPayload(entryDate: Date) -> DemoEntryPayload {
+        DemoEntryPayload(
+            entryDate: entryDate,
+            gratitudes: [
+                item("Grateful for morning prayer time", "Morning prayer"),
+                item("Smooth commute again today", "Smooth commute"),
+                item("感謝同事幫忙收尾", "同事幫忙")
+            ],
+            needs: [
+                item("需要多休息", "多休息"),
+                item("想找時間運動", "找時間運動"),
+                item("Want a quiet hour tonight", "安靜專注")
+            ],
+            people: [
+                item("和媽媽通話", "媽媽 weekly call"),
+                item("Pray for brother", "Brother travel")
+            ],
+            readingNotes: "",
+            reflections: "Tired but grateful for small wins.",
+            completedAt: nil
+        )
+    }
+
+    private static func makeSixDaysAgoPayload(entryDate: Date) -> DemoEntryPayload {
+        DemoEntryPayload(
+            entryDate: entryDate,
+            gratitudes: [
+                item("Morning prayer before work", "Morning prayer"),
+                item("Commute was smooth", "Smooth commute"),
+                item("Quiet morning at home", "Quiet morning")
+            ],
+            needs: [
+                item("需要多休息", "多休息"),
+                item("Need to move my body", "找時間運動"),
+                item("More sleep tonight", "More sleep 規律")
+            ],
+            people: [
+                item("Thinking of mom", "媽媽 weekly call"),
+                item("Check on mentor", "Mentor check-in")
+            ],
+            readingNotes: "",
+            reflections: "",
             completedAt: nil
         )
     }

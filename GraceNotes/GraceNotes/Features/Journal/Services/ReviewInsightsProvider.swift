@@ -7,7 +7,7 @@ struct ReviewInsightsProvider: Sendable {
     /// still consulted for install-continuity heuristics.
     static let legacyAIFeaturesUserDefaultsKey = "useAIReviewInsights"
 
-    private static let logger = Logger(subsystem: "GraceNotes", category: "ReviewInsights")
+    private static let logger = Logger(subsystem: "com.gracenotes.GraceNotes", category: "ReviewInsights")
 
     private let deterministicGenerator: any ReviewInsightsGenerating
     private let cloudGenerator: (any ReviewInsightsGenerating)?
@@ -61,7 +61,7 @@ struct ReviewInsightsProvider: Sendable {
                     calendar: calendar
                 )
             } catch {
-                Self.logger.debug("Cloud review insights failed: \(String(describing: error), privacy: .public)")
+                Self.logger.debug("Cloud review insights failed: \(String(describing: error), privacy: .private)")
                 return await deterministicOrSparseInsights(
                     from: entries,
                     referenceDate: referenceDate,

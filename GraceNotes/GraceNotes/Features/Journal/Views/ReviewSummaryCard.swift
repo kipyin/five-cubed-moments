@@ -170,7 +170,7 @@ struct ReviewSummaryCard: View {
                         .font(AppTheme.warmPaperMeta.weight(.semibold))
                         .foregroundStyle(AppTheme.reviewAccent)
                         .imageScale(.small)
-                        .padding(10)
+                        .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

@@ -87,8 +87,8 @@ Use the root `Makefile` for common local workflows (tests use the **GraceNotes**
 Examples:
 
 ```bash
-make test DESTINATION='platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3'
-make test-matrix TEST_DESTINATION_MATRIX='iPhone XR@17.5;iPhone 17 Pro@26.3'
+make test DESTINATION='platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2'
+make test-matrix TEST_DESTINATION_MATRIX='iPhone XR@17.5;iPhone 17 Pro@26.2'
 ```
 
 On iOS 17 simulators, `make` applies targeted `-skip-testing` flags for a few hosted SwiftData suites that crash before assertions; see `Makefile` (`LEGACY_RUNTIME_SKIP_FLAGS`).
@@ -109,12 +109,12 @@ Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml). All simulator 
 
 | When | What runs |
 |------|-----------|
-| **Pull request → `main`** | **Lint & build (iPhone 17 Pro)** — `make lint` then `make ci-build` (pinned **iOS 26.3** on **iPhone 17 Pro** via `CI_SIMULATOR_PRO` in the workflow). |
+| **Pull request → `main`** | **Lint & build (iPhone 17 Pro)** — `make lint` then `make ci-build`. Workflow sets **`CI_SIMULATOR_PRO`** to **iOS 26.2** (GitHub images expose simulator runtimes **26.0 / 26.1 / 26.2**, not an `OS=26.3` label). |
 | **Push → `main`** | **Push main — lint, test, UI smoke** — `make ci-merge-queue` (same as merge queue). Use this path when `main` moves outside a normal PR/merge-queue flow (rare). Routine merges via merge queue are validated by **`merge_group`**, not by this job. |
-| **Merge queue** | **Merge queue — lint, test, UI smoke** — `make ci-merge-queue`: `make lint`, `make test` on **iPhone 17 Pro** (`CI_SIMULATOR_PRO`), then `make test-ui-smoke` on **iPhone XR** (`CI_SIMULATOR_XR`, **iOS 17.5**). Smoke: `GraceNotesSmokeUITests.testSmokeLaunch`. |
-| **Pull request + label `full-ci`** | **PR full-ci — lint, test, UI smoke** — `make ci-pr-full-ci` (same steps as merge queue, including **XR** smoke). Re-runs on new commits while the label is present. |
+| **Merge queue** | **Merge queue — lint, test, UI smoke** — `make ci-merge-queue`: `make lint`, `make test` on **iPhone 17 Pro** (`CI_SIMULATOR_PRO`), then `make test-ui-smoke` on **`CI_SIMULATOR_SMOKE`**. On GitHub that is **iPhone SE (3rd generation)** @ **26.2** (default images omit **iPhone XR**). Locally, **`CI_SIMULATOR_SMOKE`** defaults to **iPhone XR** @ **17.5**. Smoke test: `GraceNotesSmokeUITests.testSmokeLaunch`. |
+| **Pull request + label `full-ci`** | **PR full-ci — lint, test, UI smoke** — `make ci-pr-full-ci` (same as merge queue). Re-runs on new commits while the label is present. |
 
-The **`full-ci`** label must exist in the GitHub repo (Issues → Labels). Xcode on runners is **latest-stable** via `maxim-lobanov/setup-xcode`. If hosted runners drop a pinned runtime, update **`CI_SIMULATOR_PRO`** / **`CI_SIMULATOR_XR`** in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and the **`CI_SIMULATOR_*`** defaults in the [`Makefile`](Makefile).
+The **`full-ci`** label must exist in the GitHub repo (Issues → Labels). The workflow pins **`xcode-version: '26.3'`** via `maxim-lobanov/setup-xcode` so **iPhone 17** simulators match the project SDK. If hosted images change, update **`CI_SIMULATOR_PRO`** / **`CI_SIMULATOR_SMOKE`** in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`Makefile`](Makefile) defaults (see [actions/runner-images](https://github.com/actions/runner-images) macOS-15 **Installed Simulators**).
 
 ## Tech Stack
 

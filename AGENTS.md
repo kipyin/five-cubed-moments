@@ -27,7 +27,7 @@ This project **requires macOS + Xcode 26+** to build, run, and test with the **d
 
 Prefer **`make`** from the repo root so destinations and flags stay aligned with `Makefile` (`make ci`, `make test`, `make test-matrix`). Destinations are validated/resolved by `Scripts/simulator_destination.py` (Python 3). For copy-paste `platform=…` strings, run `make list-simulator-destinations`.
 
-CI uses **GitHub Actions** with **`make lint`** + **`make ci-build`** on PRs to **`main`**, **`make ci-merge-queue`** on **`merge_group`**, **`full-ci`** PRs (**`make ci-pr-full-ci`**), and **`make ci-merge-queue`** again on direct **`push`** to **`main`** (rare). See **CI (GitHub Actions)** in [`README.md`](README.md).
+CI uses **GitHub Actions** with **`make lint`** + **`make ci-build`** on PRs to **`main`**, **`make ci-merge-queue`** on **`merge_group`** / **`full-ci`** / rare **`main`** pushes. Runners use **Xcode 26.3** with **iOS 26.2** simulator labels for **iPhone 17 Pro**; UI smoke uses **`CI_SIMULATOR_SMOKE`** (**iPhone SE (3rd generation)** on GitHub, **iPhone XR** locally). See **CI (GitHub Actions)** in [`README.md`](README.md).
 
 ```bash
 make ci

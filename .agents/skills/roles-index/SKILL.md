@@ -9,7 +9,7 @@ description: Index of role names, shared contract, and how role files are struct
 
 ## Role Names
 
-Use short, clear role names (1-2 words, noun title):
+Use short, clear role names (1–2 words, noun title):
 
 - `Strategist`
 - `Architect`
@@ -34,12 +34,14 @@ Every role file follows the same sections:
 
 ## Handoff Contract
 
-Each role handoff must include:
+When work spans sessions, end with a **short** summary: what you concluded, what is still uncertain, and what should happen next. The structured bullets below are guidance for thinking, not a form you must paste verbatim.
 
-- `Context`: what was reviewed and why it matters
-- `Decision`: recommendation and confidence
-- `Open Questions`: unresolved items that block certainty
-- `Next Owner`: who acts next and what they must produce
+- **Context:** what was reviewed and why it matters
+- **Decision:** recommendation and confidence
+- **Open Questions:** unresolved items that block certainty (`None` if clear)
+- **Next Owner:** who should act next
+
+Prefer capturing anything load-bearing in the **GitHub PR or linked issue** so the next contributor does not depend on chat history.
 
 ## Release Quality Gates
 
@@ -47,16 +49,9 @@ Each role handoff must include:
 - Update `README.md` and `CHANGELOG.md` when product behavior changes.
 - Confirm base branch and release/version intent before starting branch work (default: fixed marketing version + incrementing build; see `vc` skill **Versioning**).
 - Evaluate testing by critical behavior and risk paths, not raw coverage percentages.
-- Require `QA Reviewer` to verify requirement fit and `Test Lead` to verify test adequacy before final merge recommendation.
+- For release-critical work, have `QA Reviewer` check requirement fit and `Test Lead` check test adequacy before a final merge recommendation.
 
-## Agent-Log Protocol
+## Coordination
 
-Treat `GraceNotes/docs/agent-log/` as canonical for role-to-role interaction.
-
-- Read the initiative's latest role outputs before making decisions.
-- Write updates to your role-owned file in `initiatives/<initiative-id>/`.
-- Keep continuity fields present: `Decision`, `Open Questions`, `Next Owner`.
-- Use `pushback.md` for deferrals and include a clear revisit trigger.
-- Prefer substance over formatting; do not block progress on cosmetic structure.
-- For **new** initiative folders, ids use `NNN-kebab-name` (monotonic three-digit prefix). Use `.agents/skills/housekeep/SKILL.md` to start, maintain index/archive, and validate — without replacing Strategist/Architect/Builder judgments.
-- **Skill folders** use verb slugs (`strategize`, `architect`, `design`, `build`, `promote`, `test`, `vc`, …) while **handoff role titles** in docs may stay noun-style (**Strategist**, **Architect**, **Designer**, **Builder**, **Marketing**, **Test Lead**, **Release Manager**, …).
+- **Skill folders** use verb slugs (`strategize`, `architect`, `design`, `build`, `promote`, `test`, `vc`, …) while **handoff role titles** in conversation may stay noun-style (**Strategist**, **Architect**, **Designer**, **Builder**, …).
+- Repo workflow defaults are in [AGENTS.md](../../../AGENTS.md); there is no separate initiative or agent-log directory.

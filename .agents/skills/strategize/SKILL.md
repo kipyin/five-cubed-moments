@@ -20,7 +20,7 @@ Decide what to build next and why, with clear user value, priority, and acceptan
 - Existing project docs in `README.md` and `CHANGELOG.md`
 - GitHub issues (`gh issue list`, `gh issue view`)
 - Current known constraints from `AGENTS.md`
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Output Format
 
@@ -58,8 +58,6 @@ Stop and escalate to issue author when:
 - `Open Questions`: unresolved assumptions
 - `Next Owner`: `Architect` with expected output = technical scope and close criteria
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: latest `architecture.md` and `pushback.md` before setting new scope.
-- Write: `brief.md` in the initiative folder.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- When this role is used, update the **GitHub issue** or **PR description** with acceptance intent and scope so **Architect** / **Builder** can continue without chat context.

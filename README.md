@@ -14,7 +14,7 @@ Marketing version stays **0.5.0** across several TestFlight / App Store drops; e
 
 - **Journal onboarding** — Post-Seed journey (**C**) is driven by user state (completion level, `hasSeenPostSeedJourney`, guided journal), not app version gates; legacy `pending051*` keys migrate safely for installs mid-upgrade.
 - **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
-- **Review insights (#40 / #80)** — Insight follow-through from initiative handoffs (`GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/`; **GitHub #80** may remain open for engine depth). See CHANGELOG for full bullets.
+- **Review insights (#40 / #80)** — Tracked on GitHub and in `GraceNotes/docs/07-release-roadmap.md` (**#80** may remain open for engine depth). See CHANGELOG for full bullets.
 
 ### Build 7 (2026-03-24)
 

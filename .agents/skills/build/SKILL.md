@@ -21,7 +21,7 @@ Deliver scoped changes safely and clearly, preserving intent while keeping code 
 - Architect scope, sequencing, and close criteria
 - QA Reviewer and Test Lead findings when present
 - Existing codebase constraints from `AGENTS.md`
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Output Format
 
@@ -56,8 +56,6 @@ Escalate release readiness concerns to `Release Manager`, and requirement-fit co
 - `Open Questions`: unresolved technical or behavior concerns
 - `Next Owner`: `QA Reviewer` for requirement fit, `Test Lead` for additional depth, or `Release Manager` for release readiness
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: `brief.md` and `architecture.md` before implementation; read latest `qa.md` and `testing.md` when iterating on findings.
-- Write: update `testing.md` with execution evidence when adding/fixing tests; add `pushback.md` when blocking constraints force scope pushback.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- Follow scope from the **PR** and linked **issue**. Note test commands you ran and any scope concerns in **PR comments** or the description.

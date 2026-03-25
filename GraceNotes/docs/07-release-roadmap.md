@@ -174,7 +174,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 
 **Release status**
 - **Ships as marketing `0.5.0`, build `7`** (2026-03-24); git tag **`v0.5.0+7`**. Interim docs may say **0.5.1** / bundle **3**; **CHANGELOG.md** is source of truth.
-- Historical playbook: `GraceNotes/docs/agent-log/initiatives/archive/015-release-0-5-1-patch/release.md`.
+- Historical playbook: see **CHANGELOG** (build **7** / tag **`v0.5.0+7`**) and upgrade-orientation notes there.
 
 **Goal:** Users crossing onto **`0.5.0` build `7` or later** from an older marketing version or an older **`0.5.0` build** get a **one-time** first-week orientation on that transition; later cold launches do not repeat it unless product adds a new rule.
 
@@ -204,18 +204,16 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 - `#91` Today journal: horizontally scrollable draft `TextField` in sequential sections (Gratitudes / Needs / People) so long lines stay visible while editing.
 - `#80` Review deep insight engine (prompts, fixtures, contract conformance) — remaining open work toward this patch lane.
 - `#40` / `#80` review insight follow-through where remaining intent is still tracked toward 0.5.2 acceptance.
-- Agent-log initiative context for this lane:
-  - Archived direction: `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/`
-  - Archived implementation (v1 landed on **`main`**): `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` — **GitHub #80** remains **open** for engine depth
+- Insight direction and implementation history: GitHub **#40**, **#80** (and linked PRs); **#80** may remain **open** for engine depth.
 
 **Why now**
-- **0.5.0 build 7** shipped upgrade orientation; this build keeps Settings copy and structure consistent while finishing insight-focused scope; v1 implementation is **archived** under **017** while **GitHub #80** may still carry engine follow-up.
+- **0.5.0 build 7** shipped upgrade orientation; this build keeps Settings copy and structure consistent while finishing insight-focused scope; **GitHub #80** may still carry engine follow-up.
 - `#91` tightens the core Today input loop (draft visibility) without expanding surface area; it pairs naturally with other small **0.5.0**-line polish before **0.5.3** (milestone) lint refactors that may touch `SequentialSectionView`.
 - This is a small, focused release window that improves clarity without opening broader Settings redesign or 0.6.0 trust expansion.
 
 **Acceptance intent**
 - Settings section headings read in title case across Settings surfaces, including nested Settings lists where applicable.
-- #40 / #80 close criteria tracked in agent-log are reflected in shipped behavior and documentation for the 0.5.2 release window.
+- #40 / #80 close criteria tracked on GitHub are reflected in shipped behavior and documentation for the 0.5.2 release window.
 - **#91:** Long draft text in Gratitudes, Needs, and People remains reachable via horizontal pan or caret movement while focused; chip row scroll and onboarding locks behave as today.
 - Open issues `#83`, `#85`, `#86`, `#91`, and `#80` carry milestone **0.5.2**; ship or retarget explicitly if scope slips.
 
@@ -227,7 +225,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 **Goal:** Bring production and test Swift sources back in line with SwiftLint and [AGENTS.md](../../AGENTS.md) file-size guidance without changing product behavior.
 
 **Scope in**
-- `#87` Swift hygiene (production): resolve app-target SwiftLint violations; split or extract `JournalScreen`, `SequentialSectionView`, `CloudReviewInsightsSanitizer`; fix `WeeklyInsightCandidateBuilder` disable directive; naming and optional-binding cleanups listed in agent-log **019** inventory.
+- `#87` Swift hygiene (production): resolve app-target SwiftLint violations; split or extract `JournalScreen`, `SequentialSectionView`, `CloudReviewInsightsSanitizer`; fix `WeeklyInsightCandidateBuilder` disable directive; naming and optional-binding cleanups (see `06-tech-debt-backlog.md` and GitHub **#87**).
 - `#88` Swift hygiene (tests): split oversized test types and fix test-target lint noise.
 
 **Why now**
@@ -242,7 +240,7 @@ This roadmap turns the strategic priority stack into a release sequence grounded
 **Release status**
 - Unreleased patch on the `0.6.x` line (scheduled after **0.6.0** baseline trust ship unless intentionally reordered).
 
-**Goal:** Close high-value automated test gaps called out in `06-tech-debt-backlog.md` and agent-log **019** without a feature expansion.
+**Goal:** Close high-value automated test gaps called out in `06-tech-debt-backlog.md` and GitHub **#89** without a feature expansion.
 
 **Scope in**
 - `#89` Share / save-to-photos, Settings navigation, and `JournalScreenChipHandling` coverage improvements.
@@ -322,9 +320,5 @@ This is internal workflow enablement. Track it outside user-facing release packa
 - `GraceNotes/docs/archive/2026-03-uat-review-notes-release-0.3.3.md` (storage / iCloud reliability signal)
 - `GraceNotes/docs/archive/2026-03-uat-review-notes-release-0.3.4.md`
 - `GraceNotes/docs/archive/2026-03-product-strategy-implementation.md` (iCloud foundation and runtime validation constraints)
-- `GraceNotes/docs/agent-log/initiatives/archive/006-issue-41-agents-workflow/brief.md`
-- `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` (insight direction for #80)
-- `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (archived implementation trail for #40 / #80 v1; **#80** may remain open)
-- `GraceNotes/docs/agent-log/initiatives/archive/019-repo-improvement-audit-roadmap/` (repo audit inventory; GitHub **#87**–**#90**; milestones **0.5.2** / **0.5.3** / **0.6.1**)
 - `CHANGELOG.md`
 - GitHub milestones: https://github.com/kipyin/grace-notes/milestones

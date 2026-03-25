@@ -2,7 +2,7 @@
 
 ## [0.5.0]
 
-Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Store); git tags **`v0.5.0+{build}`**. GitHub milestones **0.5.2**, **0.5.3**, etc. name **scope lanes**, not separate marketing versions — see `GraceNotes/docs/07-release-roadmap.md`. Archived agent-log entries may still mention interim labels (**0.5.1**, **0.5.2**); **ship truth** is **0.5.0 + build** below.
+Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Store); git tags **`v0.5.0+{build}`**. GitHub milestones **0.5.2**, **0.5.3**, etc. name **scope lanes**, not separate marketing versions — see `GraceNotes/docs/07-release-roadmap.md`. Older docs or issues may still mention interim labels (**0.5.1**, **0.5.2**); **ship truth** is **0.5.0 + build** below.
 
 ### Build 8 — Unreleased
 
@@ -10,15 +10,16 @@ Work tracked toward milestone **0.5.2** (Settings cohesion and insight follow-th
 
 ### Developer
 
-- Journal: `JournalTodayOrientationPolicy` centralizes Today-only post-Seed presentation (delegating to `PostSeedJourneyTrigger`) and Seed unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion rule documented in `GraceNotes/docs/agent-log/initiatives/023-onboarding-first-entry-policy/architecture.md`. Tests: `JournalTodayOrientationPolicyTests`.
+- Journal: `JournalTodayOrientationPolicy` centralizes Today-only post-Seed presentation (delegating to `PostSeedJourneyTrigger`) and Seed unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion behavior live in code and tests (`JournalTodayOrientationPolicy`, `JournalTodayOrientationPolicyTests`).
 - Journal: post-Seed journey (**C**) is **version-free**—eligibility uses `hasSeenPostSeedJourney`, Today completion **≥ Seed**, and `completedGuidedJournal` (skip congratulations only). Removed `OrientationReleaseGate` and launch-time cohort flags; `JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded` normalizes legacy `pending051UpgradeOrientation` into guided/branch state, clears the upgrade key, and keeps `legacy051GuidedBranchResolution` until Today runs `resolvePending051GuidedJournalBranch`. Settings **App tour** sets `hasSeenPostSeedJourney` on finish without completing guided journal and skips the Seed congratulations page when guided journal is already complete. `AppLaunchVersionTracker` still records last marketing/bundle only.
 - Versioning: Grace Notes app **marketing version** stays **0.5.0** for this lane; **bundle** (`CURRENT_PROJECT_VERSION`) **8** (increment build under the minor for faster TestFlight review; build **7** was the previous ship).
+- Contributor workflow: removed `GraceNotes/docs/agent-log/`, `Scripts/validate-agent-log.sh`, and `make verify-agent-log*`; use GitHub issues/PRs and `AGENTS.md` for coordination.
 
 ### Changed
 - Settings: section headers use authored title case instead of all-caps list header styling (#84).
 - Review > Insights: thin-week **Write today's reflection** control switches to **Today**; flatter insights column (inset panels only, no outer summary shell); **This week** title row shows the week date range; read-only **On your device** / **AI** source pills; unified semibold panel titles; system **Insights** / **Timeline** segmented control (Liquid Glass on iOS 26+) with `ReviewModePicker` id preserved (#85).
 - Review insights engine: weekly **reflection day count** and **narrative summary** now treat non-empty reading notes or reflections as signal (even when the entry is still at **Soil** chip-wise), so sparse-week and narrative behavior match long-form journaling (#85).
-- Review insights: continue #40 / #80 follow-through in the **0.5.2** milestone lane, with handoff context in `GraceNotes/docs/agent-log/initiatives/archive/016-issue-80-insight-direction/` and `GraceNotes/docs/agent-log/initiatives/archive/017-issue-40-80-insight-implementation/` (**#80** may remain open for engine depth).
+- Review insights: continue #40 / #80 follow-through in the **0.5.2** milestone lane on GitHub (**#80** may remain open for engine depth).
 
 ### Build 7 — 2026-03-24
 

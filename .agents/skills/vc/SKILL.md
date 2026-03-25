@@ -20,7 +20,7 @@ Manage branch, commit, PR, and release hygiene so work lands on the correct vers
 - Current git branch state and base branch intent
 - Commit history and PR diff
 - `README.md` and `CHANGELOG.md`
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Output Format
 
@@ -83,8 +83,6 @@ Stop and escalate to `Architect` or `QA Reviewer` when:
 - `Open Questions`: unresolved release/documentation concerns
 - `Next Owner`: `QA Reviewer` for final intent-vs-implementation verification
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: `architecture.md`, `testing.md`, and `qa.md` before final release readiness.
-- Write: `release.md` with branch/version checks and docs readiness.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- Confirm branch, version, and doc updates from the **PR** and discussion thread; note release readiness in **PR comments** when this role is used.

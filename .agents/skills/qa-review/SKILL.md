@@ -21,7 +21,7 @@ Verify the delivered change matches product intent and technical scope, and iden
 - Architect output (goals, non-goals, close criteria)
 - PR diff, tests, and CI signal
 - Release Manager readiness context
-- Existing initiative context in `GraceNotes/docs/agent-log/initiatives/<initiative-id>/`
+- Linked GitHub issue and PR (if any) for this effort
 
 ## Output Format
 
@@ -56,8 +56,6 @@ Escalate test-strategy questions to `Test Lead`; keep QA ownership on requiremen
 - `Open Questions`: unresolved blockers for approval
 - `Next Owner`: `Test Lead` or `Builder` for fixes and targeted validation
 
-## Agent-Log Responsibilities
+## Coordination
 
-- Read: `brief.md`, `architecture.md`, and latest `testing.md` before QA decision.
-- Write: `qa.md` with requirement-fit and risk findings.
-- Required continuity fields: `Decision`, `Open Questions`, `Next Owner`.
+- Review the **PR** against intent in the linked **issue** (or PR description). Post pass/fail and findings as a **PR review** or comment.

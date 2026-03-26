@@ -6,6 +6,7 @@ extension XCUIApplication {
     func configureGraceNotesUITestLaunch(resetUITestStore: Bool = true) {
         var args = [
             "-ui-testing",
+            "-grace-notes-uitest-short-autosave",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US"
         ]

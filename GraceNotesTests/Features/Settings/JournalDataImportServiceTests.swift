@@ -100,11 +100,9 @@ final class JournalDataImportServiceTests: XCTestCase {
         XCTAssertEqual(lengths.people, 0)
     }
 
-    // MARK: - SwiftData integration (skipped on Simulator — known malloc crash with in-memory SwiftData)
+    // MARK: - SwiftData integration
 
     func test_import_insertsNewEntry_preservingExportId() throws {
-        try skipSwiftDataTestsOnSimulator()
-
         let controller = try PersistenceController.makeInMemoryForTesting()
         let context = ModelContext(controller.container)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -136,8 +134,6 @@ final class JournalDataImportServiceTests: XCTestCase {
     }
 
     func test_import_updatesExisting_keepsExistingId() throws {
-        try skipSwiftDataTestsOnSimulator()
-
         let controller = try PersistenceController.makeInMemoryForTesting()
         let context = ModelContext(controller.container)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -184,8 +180,6 @@ final class JournalDataImportServiceTests: XCTestCase {
     }
 
     func test_import_persistsClampedItems() throws {
-        try skipSwiftDataTestsOnSimulator()
-
         let controller = try PersistenceController.makeInMemoryForTesting()
         let context = ModelContext(controller.container)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -238,8 +232,4 @@ final class JournalDataImportServiceTests: XCTestCase {
         JournalDataExportItem(id: UUID(), fullText: fullText, chipLabel: nil, isTruncated: false)
     }
 
-    private func skipSwiftDataTestsOnSimulator() throws {
-        guard ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil else { return }
-        throw XCTSkip("SwiftData in-memory tests crash on current iOS Simulator (malloc); run on device.")
-    }
 }

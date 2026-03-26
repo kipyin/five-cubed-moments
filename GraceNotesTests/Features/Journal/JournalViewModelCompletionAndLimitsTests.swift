@@ -8,13 +8,9 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        try skipIfKnownHostedSwiftDataCrash()
-    }
-
-    override func setUp() {
-        super.setUp()
-        calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar = cal
     }
 
     func test_completedToday_withFullEntry_returnsTrue() async throws {
@@ -169,16 +165,6 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
     }
 
     private func makeInMemoryContext() throws -> ModelContext {
-        let schema = Schema([JournalEntry.self])
-        let storeURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GraceNotesTests-\(UUID().uuidString).store")
-        let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        let container = try ModelContainer(for: schema, configurations: configuration)
-        return ModelContext(container)
-    }
-
-    private func skipIfKnownHostedSwiftDataCrash() throws {
-        guard ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil else { return }
-        throw XCTSkip("Skipping due to known hosted SwiftData malloc crash on current iOS simulator runtime.")
+        try SwiftDataTestIsolation.makeModelContext()
     }
 }

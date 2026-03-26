@@ -8,17 +8,12 @@ final class JournalViewModelTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        try skipIfKnownHostedSwiftDataCrash()
-    }
-
-    override func setUp() {
-        super.setUp()
-        calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar = cal
     }
 
     func test_loadTodayIfNeeded_createsSingleNormalizedEntry() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200) // 2025-03-15 12:00:00 UTC
         let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
@@ -40,7 +35,6 @@ final class JournalViewModelTests: XCTestCase {
     }
 
     func test_loadEntry_usesExistingEntryForSameDay() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let startOfDay = calendar.startOfDay(for: now)
@@ -68,7 +62,6 @@ final class JournalViewModelTests: XCTestCase {
     }
 
     func test_loadEntry_forPastDate_loadsExistingPastEntry() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200) // 2025-03-15
         let pastDate = Date(timeIntervalSince1970: 1_742_056_800) // 2025-03-04
@@ -97,7 +90,6 @@ final class JournalViewModelTests: XCTestCase {
     }
 
     func test_loadEntry_switchingDates_hydratesCorrectly() throws {
-        try skipIfKnownHostedSwiftDataCrash()
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let pastDate = Date(timeIntervalSince1970: 1_742_056_800)
@@ -146,11 +138,11 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        await viewModel.addGratitude("  Family  ")
-        await viewModel.addNeed("Peace")
-        await viewModel.addPerson("Alice")
-        await viewModel.addGratitude("   ") // whitespace-only should be rejected
-        await viewModel.addNeed("") // empty should be rejected
+        _ = await viewModel.addGratitude("  Family  ")
+        _ = await viewModel.addNeed("Peace")
+        _ = await viewModel.addPerson("Alice")
+        _ = await viewModel.addGratitude("   ") // whitespace-only should be rejected
+        _ = await viewModel.addNeed("") // empty should be rejected
         viewModel.updateReadingNotes("  Matthew 5  ")
         viewModel.updateReflections("  Be patient today  ")
 
@@ -173,7 +165,7 @@ final class JournalViewModelTests: XCTestCase {
         )
 
         viewModel.loadEntry(for: now, using: context)
-        await viewModel.addGratitude("One gratitude")
+        _ = await viewModel.addGratitude("One gratitude")
 
         let payload = viewModel.exportSnapshot()
 
@@ -191,17 +183,18 @@ final class JournalViewModelTests: XCTestCase {
         let viewModel = JournalViewModel(
             calendar: calendar,
             nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer()),
+            autosaveDebounceMilliseconds: 50
         )
 
         viewModel.loadEntry(for: now, using: context)
-        await viewModel.addGratitude("  Family  ")
-        await viewModel.addNeed("Peace")
-        await viewModel.addPerson("Alice")
+        _ = await viewModel.addGratitude("  Family  ")
+        _ = await viewModel.addNeed("Peace")
+        _ = await viewModel.addPerson("Alice")
         viewModel.updateReadingNotes("  Matthew 5  ")
         viewModel.updateReflections("  Be patient today  ")
 
-        try await Task.sleep(nanoseconds: 800_000_000)
+        try await Task.sleep(nanoseconds: 120_000_000)
 
         let descriptor = FetchDescriptor<JournalEntry>()
         let entries = try context.fetch(descriptor)
@@ -214,16 +207,6 @@ final class JournalViewModelTests: XCTestCase {
     }
 
     private func makeInMemoryContext() throws -> ModelContext {
-        let schema = Schema([JournalEntry.self])
-        let storeURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GraceNotesTests-\(UUID().uuidString).store")
-        let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        let container = try ModelContainer(for: schema, configurations: configuration)
-        return ModelContext(container)
-    }
-
-    private func skipIfKnownHostedSwiftDataCrash() throws {
-        guard ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil else { return }
-        throw XCTSkip("Skipping due to known hosted SwiftData malloc crash on current iOS simulator runtime.")
+        try SwiftDataTestIsolation.makeModelContext()
     }
 }

@@ -77,7 +77,7 @@ jobs:
         run: make ci-build
 
   main-push-full-ci:
-    name: Push main — lint, test, UI smoke
+    name: Main push — lint, test, UI smoke
     needs: main-push-gate
     if: >
       always() &&

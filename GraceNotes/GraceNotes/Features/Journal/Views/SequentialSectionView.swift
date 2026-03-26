@@ -11,6 +11,8 @@ struct SequentialSectionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let title: String
+    let addButtonTitle: String
+    let addButtonAccessibilityHint: String
     /// Guided onboarding title shown above the section header (optional; omitted when empty).
     let guidanceTitle: String?
     /// Guided onboarding message shown under `guidanceTitle`.
@@ -21,36 +23,39 @@ struct SequentialSectionView: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    /// When set (e.g. UI tests), chips use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
-    let chipAccessibilityIdentifierPrefix: String?
+    /// When set (e.g. UI tests), strips use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
+    let stripAccessibilityIdentifierPrefix: String?
     /// When set (e.g. UI tests), the section (+) control exposes this `accessibilityIdentifier`.
-    let addChipAccessibilityIdentifier: String?
+    let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
     @Binding var inputText: String
     let editingIndex: Int?
     let inputFocus: FocusState<Bool>.Binding?
-    /// Fires when the chip field loses focus; handler ignores empty drafts.
+    /// Fires when the section input field loses focus; handler ignores empty drafts.
     let onInputFocusLost: (() -> Void)?
     let onSubmit: () -> Void
-    let onChipTap: (Int) -> Void
-    let onRenameChip: ((Int, String) -> Void)?
-    let onMoveChip: ((Int, Int) -> Void)?
-    let onDeleteChip: ((Int) -> Void)?
+    let onItemTap: (Int) -> Void
+    let onMoveItem: ((Int, Int) -> Void)?
+    let onDeleteItem: ((Int) -> Void)?
     let onAddNew: (() -> Void)?
+    /// When true, another sentence strip or add morph in this journal is focused; fades non-focused rows.
+    let ambientInlineEditingActive: Bool
+    /// This section contains the focused inline editor or add morph composer.
+    let sectionHostsInlineFocus: Bool
+    /// Commits inline editing when the user taps outside the active field (e.g. dimmed section overlay).
+    let onRequestDismissInlineEditing: (() -> Void)?
+    @Binding var isAddMorphComposerVisible: Bool
     @State private var draggingItemID: UUID?
-    /// Chip UUID that last triggered a live reorder during this drag.
-    /// Skips redundant `dropUpdated` work when indices shift but the finger stays on the same chip.
-    @State private var chipReorderHoverTargetItemID: UUID?
-    @State private var chipScrollSnapshot = SequentialSectionChipRow.ChipRowScrollSnapshot(
-        metrics: SequentialSectionChipRow.HorizontalScrollMetrics(),
-        elasticDeltaX: 0,
-        elasticDeltaY: 0
-    )
+    /// Item UUID that last triggered a live reorder during this drag.
+    /// Skips redundant `dropUpdated` work when indices shift but the finger stays on the same item.
+    @State private var itemReorderHoverTargetItemID: UUID?
     @State private var isEditingPulseExpanded = false
 
     init(
         title: String,
+        addButtonTitle: String,
+        addButtonAccessibilityHint: String,
         guidanceTitle: String? = nil,
         guidanceMessage: String? = nil,
         guidanceMessageSecondary: String? = nil,
@@ -58,8 +63,8 @@ struct SequentialSectionView: View {
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
-        chipAccessibilityIdentifierPrefix: String? = nil,
-        addChipAccessibilityIdentifier: String? = nil,
+        stripAccessibilityIdentifierPrefix: String? = nil,
+        addItemAccessibilityIdentifier: String? = nil,
         onboardingState: JournalOnboardingSectionState = .standard,
         isTransitioning: Bool = false,
         inputText: Binding<String>,
@@ -67,13 +72,18 @@ struct SequentialSectionView: View {
         inputFocus: FocusState<Bool>.Binding? = nil,
         onInputFocusLost: (() -> Void)? = nil,
         onSubmit: @escaping () -> Void,
-        onChipTap: @escaping (Int) -> Void,
-        onRenameChip: ((Int, String) -> Void)? = nil,
-        onMoveChip: ((Int, Int) -> Void)? = nil,
-        onDeleteChip: ((Int) -> Void)? = nil,
-        onAddNew: (() -> Void)? = nil
+        onItemTap: @escaping (Int) -> Void,
+        onMoveItem: ((Int, Int) -> Void)? = nil,
+        onDeleteItem: ((Int) -> Void)? = nil,
+        onAddNew: (() -> Void)? = nil,
+        isAddMorphComposerVisible: Binding<Bool> = .constant(false),
+        ambientInlineEditingActive: Bool = false,
+        sectionHostsInlineFocus: Bool = false,
+        onRequestDismissInlineEditing: (() -> Void)? = nil
     ) {
         self.title = title
+        self.addButtonTitle = addButtonTitle
+        self.addButtonAccessibilityHint = addButtonAccessibilityHint
         self.guidanceTitle = guidanceTitle
         self.guidanceMessage = guidanceMessage
         self.guidanceMessageSecondary = guidanceMessageSecondary
@@ -81,8 +91,8 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
-        self.chipAccessibilityIdentifierPrefix = chipAccessibilityIdentifierPrefix
-        self.addChipAccessibilityIdentifier = addChipAccessibilityIdentifier
+        self.stripAccessibilityIdentifierPrefix = stripAccessibilityIdentifierPrefix
+        self.addItemAccessibilityIdentifier = addItemAccessibilityIdentifier
         self.onboardingState = onboardingState
         self.isTransitioning = isTransitioning
         self._inputText = inputText
@@ -90,11 +100,14 @@ struct SequentialSectionView: View {
         self.inputFocus = inputFocus
         self.onInputFocusLost = onInputFocusLost
         self.onSubmit = onSubmit
-        self.onChipTap = onChipTap
-        self.onRenameChip = onRenameChip
-        self.onMoveChip = onMoveChip
-        self.onDeleteChip = onDeleteChip
+        self.onItemTap = onItemTap
+        self.onMoveItem = onMoveItem
+        self.onDeleteItem = onDeleteItem
         self.onAddNew = onAddNew
+        self._isAddMorphComposerVisible = isAddMorphComposerVisible
+        self.ambientInlineEditingActive = ambientInlineEditingActive
+        self.sectionHostsInlineFocus = sectionHostsInlineFocus
+        self.onRequestDismissInlineEditing = onRequestDismissInlineEditing
     }
 
     private var isInputFocused: Bool {
@@ -112,6 +125,9 @@ struct SequentialSectionView: View {
             }
             if index < items.count {
                 return .edited
+            }
+            if index == items.count, isAddMorphComposerVisible {
+                return .editing
             }
             return .pending
         }
@@ -135,6 +151,8 @@ struct SequentialSectionView: View {
         SequentialSectionPrimaryColumn(
             reduceMotion: reduceMotion,
             title: title,
+            addButtonTitle: addButtonTitle,
+            addButtonAccessibilityHint: addButtonAccessibilityHint,
             guidanceTitle: guidanceTitle,
             guidanceMessage: guidanceMessage,
             guidanceMessageSecondary: guidanceMessageSecondary,
@@ -142,23 +160,25 @@ struct SequentialSectionView: View {
             placeholder: placeholder,
             slotCount: slotCount,
             inputAccessibilityIdentifier: inputAccessibilityIdentifier,
-            chipAccessibilityIdentifierPrefix: chipAccessibilityIdentifierPrefix,
-            addChipAccessibilityIdentifier: addChipAccessibilityIdentifier,
+            stripAccessibilityIdentifierPrefix: stripAccessibilityIdentifierPrefix,
+            addItemAccessibilityIdentifier: addItemAccessibilityIdentifier,
             onboardingState: onboardingState,
             isTransitioning: isTransitioning,
             editingIndex: editingIndex,
             inputFocus: inputFocus,
             onInputFocusLost: onInputFocusLost,
             onSubmit: onSubmit,
-            onChipTap: onChipTap,
-            onRenameChip: onRenameChip,
-            onMoveChip: onMoveChip,
-            onDeleteChip: onDeleteChip,
+            onItemTap: onItemTap,
+            onMoveItem: onMoveItem,
+            onDeleteItem: onDeleteItem,
             onAddNew: onAddNew,
+            ambientInlineEditingActive: ambientInlineEditingActive,
+            sectionHostsInlineFocus: sectionHostsInlineFocus,
+            onRequestDismissInlineEditing: onRequestDismissInlineEditing,
             inputText: $inputText,
-            chipScrollSnapshot: $chipScrollSnapshot,
             draggingItemID: $draggingItemID,
-            chipReorderHoverTargetItemID: $chipReorderHoverTargetItemID,
+            itemReorderHoverTargetItemID: $itemReorderHoverTargetItemID,
+            isAddMorphComposerVisible: $isAddMorphComposerVisible,
             progressDots: sectionProgressDots
         )
         .onAppear {

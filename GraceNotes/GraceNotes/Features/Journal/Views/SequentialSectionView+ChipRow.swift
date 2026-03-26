@@ -2,6 +2,22 @@ import SwiftUI
 import QuartzCore
 import UIKit
 
+private extension View {
+    /// Browse-state chrome for the add control (matches `SentenceStripView` row styling).
+    func journalAddSentenceBrowseRowChrome() -> some View {
+        self
+            .padding(.horizontal, AppTheme.spacingRegular)
+            .padding(.vertical, AppTheme.spacingRegular)
+            .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+            .background(AppTheme.journalPaper.opacity(0.72))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
+                    .stroke(AppTheme.journalInputBorder.opacity(0.76), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
+    }
+}
+
 // UIViewRepresentable coordinator nests deeply; keeping related types together avoids generic module-level names.
 // swiftlint:disable type_body_length nesting
 
@@ -39,39 +55,114 @@ enum SequentialSectionChipRow {
         }
     }
 
+    /// Label row used by the add control and by the morph composer slot (same chrome).
+    struct AddSentenceRowLabel: View {
+        let title: String
+
+        var body: some View {
+            HStack(spacing: AppTheme.spacingTight) {
+                Image(systemName: "plus.circle.fill")
+                    .font(AppTheme.outfitRegularTitle3)
+                    .foregroundStyle(AppTheme.accentText)
+                Text(title)
+                .font(AppTheme.warmPaperMetaEmphasis)
+                .foregroundStyle(AppTheme.journalTextPrimary)
+                Image(systemName: "chevron.right")
+                    .font(AppTheme.outfitSemiboldCaption)
+                    .foregroundStyle(AppTheme.journalTextMuted)
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
     struct AddChipView: View {
-        let sectionTitle: String
+        let buttonTitle: String
+        let accessibilityHint: String
         /// Stable query for UI tests (`XCUIApplication` matches this as the element identifier).
         let accessibilityIdentifier: String?
         let onTap: () -> Void
 
         var body: some View {
             Button(action: onTap) {
-                Image(systemName: "plus.circle.fill")
-                    .font(AppTheme.outfitRegularTitle3)
-                    .foregroundStyle(AppTheme.journalTextMuted)
-                    .padding(.horizontal, AppTheme.spacingRegular)
-                    .padding(.vertical, AppTheme.spacingTight)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .background(AppTheme.journalComplete.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusLarge))
+                AddSentenceRowLabel(title: buttonTitle)
+                    .journalAddSentenceBrowseRowChrome()
             }
             .buttonStyle(WarmPaperPressStyle())
-            .accessibilityLabel(
-                String(
-                    format: String(localized: "Add new item in %@"),
-                    locale: Locale.current,
-                    sectionTitle
-                )
-            )
-            .accessibilityHint(
-                String(
-                    format: String(localized: "Adds another item in %@"),
-                    locale: Locale.current,
-                    sectionTitle
-                )
-            )
+            .accessibilityLabel(buttonTitle)
+            .accessibilityHint(accessibilityHint)
             .modifier(ConditionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
+        }
+    }
+
+    /// Single slot that morphs between the add control and the composer field (matches strip inline editor layout).
+    struct AddSentenceMorphSlot: View {
+        let sectionTitle: String
+        let addButtonTitle: String
+        let addButtonAccessibilityHint: String
+        let accessibilityIdentifier: String?
+        let isComposing: Bool
+        let placeholder: String
+        @Binding var text: String
+        let reduceMotion: Bool
+        let inputFocus: FocusState<Bool>.Binding?
+        let inputAccessibilityIdentifier: String?
+        let onAddTap: () -> Void
+        let onComposerSubmit: () -> Void
+        let isInteractionEnabled: Bool
+
+        @State private var morphingFromAddTap = false
+
+        var body: some View {
+            Group {
+                if isComposing {
+                    VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+                        InlineSentenceEditorField(
+                            sectionTitle: sectionTitle,
+                            placeholder: placeholder,
+                            text: $text,
+                            editorIdentifier: inputAccessibilityIdentifier,
+                            inputFocus: inputFocus,
+                            onSubmit: onComposerSubmit,
+                            isInteractionEnabled: isInteractionEnabled
+                        )
+                    }
+                    .padding(.horizontal, SequentialSectionInlineLayout.editorMorphHorizontalInset)
+                    .offset(
+                        y: morphingFromAddTap
+                            ? 2
+                            : SequentialSectionInlineLayout.editorMorphVerticalOffset
+                    )
+                    .scaleEffect(
+                        x: reduceMotion ? 1 : (morphingFromAddTap ? 1 : 1.02),
+                        y: 1,
+                        anchor: .center
+                    )
+                    .animation(
+                        reduceMotion ? nil : .snappy(duration: 0.22),
+                        value: morphingFromAddTap
+                    )
+                    .padding(.bottom, SequentialSectionInlineLayout.editorBottomSpacing)
+                    .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 4)
+                } else {
+                    Button(action: onAddTap) {
+                        AddSentenceRowLabel(title: addButtonTitle)
+                            .journalAddSentenceBrowseRowChrome()
+                    }
+                    .buttonStyle(WarmPaperPressStyle())
+                    .accessibilityLabel(addButtonTitle)
+                    .accessibilityHint(addButtonAccessibilityHint)
+                    .modifier(ConditionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
+                }
+            }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: isComposing)
+            .onChange(of: isComposing) { wasComposing, isComposing in
+                guard !wasComposing, isComposing else { return }
+                morphingFromAddTap = true
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 220_000_000)
+                    morphingFromAddTap = false
+                }
+            }
         }
     }
 

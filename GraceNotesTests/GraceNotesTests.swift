@@ -21,6 +21,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
                 didAdd = true
                 return 1
             },
+            remove: { _ in false },
             fullText: { index in
                 index == 0 ? "Current full text" : "Tapped full text"
             },
@@ -55,6 +56,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in 0 },
             addImmediate: { _ in nil },
+            remove: { _ in false },
             fullText: { index in
                 index == 0 ? "Original" : "Target full text"
             },
@@ -87,6 +89,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in 0 },
             addImmediate: { _ in 1 },
+            remove: { _ in false },
             fullText: { _ in "Target full text" },
             count: 1,
             summarizeAndUpdateChip: { _ in
@@ -131,6 +134,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in nil },
             addImmediate: { _ in 2 },
+            remove: { _ in false },
             fullText: { _ in nil },
             count: 2,
             summarizeAndUpdateChip: { summarizedIndex = $0 }
@@ -160,6 +164,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
                 didAdd = true
                 return 0
             },
+            remove: { _ in false },
             fullText: { _ in nil },
             count: 0,
             summarizeAndUpdateChip: { _ in }
@@ -185,6 +190,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in 1 },
             addImmediate: { _ in nil },
+            remove: { _ in false },
             fullText: { _ in nil },
             count: 2,
             summarizeAndUpdateChip: { summarizedIndex = $0 }
@@ -207,9 +213,14 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         var input = "   "
         var editingIndex: Int? = 2
         var isTransitioning = false
+        var didRemove = false
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in nil },
             addImmediate: { _ in nil },
+            remove: { index in
+                didRemove = index == 2
+                return index == 2
+            },
             fullText: { _ in nil },
             count: 2,
             summarizeAndUpdateChip: { _ in }
@@ -223,8 +234,75 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         )
 
         XCTAssertTrue(handled)
+        XCTAssertTrue(didRemove)
         XCTAssertEqual(input, "")
         XCTAssertNil(editingIndex)
+    }
+
+    func test_performChipTap_withEmptyInlineEdit_opensTappedStripAfterDelete() {
+        var input = "  \n"
+        var editingIndex: Int? = 0
+        var isTransitioning = false
+        var removedIndex: Int?
+        let operations = ChipSectionOperations(
+            updateImmediate: { _, _ in nil },
+            addImmediate: { _ in nil },
+            remove: { index in
+                removedIndex = index
+                return index == 0
+            },
+            fullText: { index in
+                index == 0 ? "First" : "Second"
+            },
+            count: 2,
+            summarizeAndUpdateChip: { _ in }
+        )
+
+        let handled = JournalScreenChipHandling.performChipTap(
+            tapIndex: 1,
+            input: Binding(get: { input }, set: { input = $0 }),
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 }),
+            operations: operations,
+            isTransitioning: Binding(get: { isTransitioning }, set: { isTransitioning = $0 })
+        )
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(removedIndex, 0)
+        XCTAssertEqual(editingIndex, 0)
+        XCTAssertEqual(input, "Second")
+    }
+
+    func test_performChipTap_withEmptyInlineEdit_tappingSameStrip_clearsEditing() {
+        var input = ""
+        var editingIndex: Int? = 1
+        var isTransitioning = false
+        var removedIndex: Int?
+        let operations = ChipSectionOperations(
+            updateImmediate: { _, _ in nil },
+            addImmediate: { _ in nil },
+            remove: { index in
+                removedIndex = index
+                return index == 1
+            },
+            fullText: { index in
+                index == 1 ? "Only" : "Other"
+            },
+            count: 2,
+            summarizeAndUpdateChip: { _ in }
+        )
+
+        let handled = JournalScreenChipHandling.performChipTap(
+            tapIndex: 1,
+            input: Binding(get: { input }, set: { input = $0 }),
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 }),
+            operations: operations,
+            isTransitioning: Binding(get: { isTransitioning }, set: { isTransitioning = $0 })
+        )
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(removedIndex, 1)
+        XCTAssertNil(editingIndex)
+        XCTAssertEqual(input, "")
     }
 
     func test_handleAddChipTap_whenNotEditingWithDraft_addsDraftAndStartsFreshInput() {
@@ -235,6 +313,7 @@ final class JournalScreenChipHandlingTests: XCTestCase {
         let operations = ChipSectionOperations(
             updateImmediate: { _, _ in nil },
             addImmediate: { _ in 2 },
+            remove: { _ in false },
             fullText: { _ in nil },
             count: 2,
             summarizeAndUpdateChip: { summarizedIndex = $0 }

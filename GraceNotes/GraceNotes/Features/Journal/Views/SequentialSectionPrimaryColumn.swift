@@ -5,10 +5,12 @@ private enum SequentialSectionPrimaryColumnLayout {
     static let sectionProgressDotsTrailingInset: CGFloat = 8
 }
 
-/// Main column of `SequentialSectionView` (guidance, chip scroller, text field) split out for type-size limits.
+/// Main column of `SequentialSectionView` (guidance, sentence strips, text field) split out for type-size limits.
 struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let reduceMotion: Bool
     let title: String
+    let addButtonTitle: String
+    let addButtonAccessibilityHint: String
     let guidanceTitle: String?
     let guidanceMessage: String?
     let guidanceMessageSecondary: String?
@@ -16,38 +18,47 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    let chipAccessibilityIdentifierPrefix: String?
-    let addChipAccessibilityIdentifier: String?
+    let stripAccessibilityIdentifierPrefix: String?
+    let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
     let editingIndex: Int?
     let inputFocus: FocusState<Bool>.Binding?
     let onInputFocusLost: (() -> Void)?
     let onSubmit: () -> Void
-    let onChipTap: (Int) -> Void
-    let onRenameChip: ((Int, String) -> Void)?
-    let onMoveChip: ((Int, Int) -> Void)?
-    let onDeleteChip: ((Int) -> Void)?
+    let onItemTap: (Int) -> Void
+    let onMoveItem: ((Int, Int) -> Void)?
+    let onDeleteItem: ((Int) -> Void)?
     let onAddNew: (() -> Void)?
+    let ambientInlineEditingActive: Bool
+    let sectionHostsInlineFocus: Bool
+    let onRequestDismissInlineEditing: (() -> Void)?
 
     @Binding var inputText: String
-    @Binding var chipScrollSnapshot: SequentialSectionChipRow.ChipRowScrollSnapshot
     @Binding var draggingItemID: UUID?
-    @Binding var chipReorderHoverTargetItemID: UUID?
+    @Binding var itemReorderHoverTargetItemID: UUID?
+    @Binding var isAddMorphComposerVisible: Bool
+    @State private var expandedItemIDs: Set<UUID> = []
+    @State private var morphingItemID: UUID?
 
     let progressDots: ProgressDots
 
-    private var showInput: Bool {
-        items.count < slotCount || editingIndex != nil
+    private var activeEditingIndex: Int? {
+        guard let editingIndex, items.indices.contains(editingIndex) else { return nil }
+        return editingIndex
+    }
+
+    private var isInlineEditingActive: Bool {
+        activeEditingIndex != nil
     }
 
     private var isInputFocused: Bool {
         inputFocus?.wrappedValue ?? false
     }
 
-    private var showAddChip: Bool {
-        guard onAddNew != nil, !items.isEmpty else { return false }
-        return items.count < slotCount
+    /// Add control morphs into the composer (same for empty sections and “add another” slots).
+    private var showMorphAddSlot: Bool {
+        items.count < slotCount
     }
 
     private var isLockedByGuidance: Bool {
@@ -58,14 +69,6 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
         !isTransitioning && !isLockedByGuidance
     }
 
-    private var canScrollChipsLeft: Bool {
-        canScrollLeft(for: chipScrollSnapshot.metrics)
-    }
-
-    private var canScrollChipsRight: Bool {
-        canScrollRight(for: chipScrollSnapshot.metrics)
-    }
-
     private var inputAccessibilityLabel: String {
         String(
             format: String(localized: "%@ input"),
@@ -74,35 +77,91 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
         )
     }
 
+    private var ambientGuidanceOpacity: CGFloat {
+        ambientInlineEditingActive ? SequentialSectionInlineLayout.ambientUnfocusedOpacity : 1
+    }
+
+    private func stripOpacityWhenStripEditing(at index: Int) -> CGFloat {
+        guard ambientInlineEditingActive, sectionHostsInlineFocus else { return 1 }
+        guard activeEditingIndex != index else { return 1 }
+        return SequentialSectionInlineLayout.ambientUnfocusedOpacity
+    }
+
+    private var morphSlotAmbientOpacity: CGFloat {
+        guard ambientInlineEditingActive else { return 1 }
+        guard sectionHostsInlineFocus else { return 1 }
+        return isAddMorphComposerVisible ? 1 : SequentialSectionInlineLayout.ambientUnfocusedOpacity
+    }
+
+    @ViewBuilder
+    private var sentenceListAndMorph: some View {
+        VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
+            if !items.isEmpty {
+                VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        itemRow(for: item, at: index)
+                    }
+                }
+                .animation(
+                    reduceMotion ? nil : .snappy(duration: 0.24),
+                    value: editingIndex
+                )
+            }
+            if showMorphAddSlot, let addNew = onAddNew {
+                SequentialSectionChipRow.AddSentenceMorphSlot(
+                    sectionTitle: title,
+                    addButtonTitle: addButtonTitle,
+                    addButtonAccessibilityHint: addButtonAccessibilityHint,
+                    accessibilityIdentifier: addItemAccessibilityIdentifier,
+                    isComposing: isAddMorphComposerVisible,
+                    placeholder: placeholder,
+                    text: $inputText,
+                    reduceMotion: reduceMotion,
+                    inputFocus: inputFocus,
+                    inputAccessibilityIdentifier: inputAccessibilityIdentifier,
+                    onAddTap: { handleAddTap(addNew) },
+                    onComposerSubmit: onSubmit,
+                    isInteractionEnabled: isInteractionEnabled
+                )
+                .opacity(morphSlotAmbientOpacity)
+            }
+        }
+        .allowsHitTesting(isInteractionEnabled)
+        .padding(.bottom, showMorphAddSlot ? AppTheme.spacingTight : 0)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
             VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
-                if let guidanceMessage, !guidanceMessage.isEmpty {
-                    VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
-                        if let guidanceTitle, !guidanceTitle.isEmpty {
-                            Text(guidanceTitle)
-                                .font(AppTheme.warmPaperMetaEmphasis)
-                                .foregroundStyle(AppTheme.accentText)
-                        }
-                        Text(guidanceMessage)
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.journalTextPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if let guidanceMessageSecondary {
-                            Text(guidanceMessageSecondary)
+                Group {
+                    if let guidanceMessage, !guidanceMessage.isEmpty {
+                        VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+                            if let guidanceTitle, !guidanceTitle.isEmpty {
+                                Text(guidanceTitle)
+                                    .font(AppTheme.warmPaperMetaEmphasis)
+                                    .foregroundStyle(AppTheme.accentText)
+                            }
+                            Text(guidanceMessage)
                                 .font(AppTheme.warmPaperBody)
                                 .foregroundStyle(AppTheme.journalTextPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
+                            if let guidanceMessageSecondary {
+                                Text(guidanceMessageSecondary)
+                                    .font(AppTheme.warmPaperBody)
+                                    .foregroundStyle(AppTheme.journalTextPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                     }
-                }
 
-                if let guidanceNote = onboardingState.guidanceNote {
-                    Text(guidanceNote)
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.journalTextMuted)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let guidanceNote = onboardingState.guidanceNote {
+                        Text(guidanceNote)
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.journalTextMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
+                .opacity(ambientGuidanceOpacity)
 
                 HStack {
                     Text(title)
@@ -112,74 +171,42 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                     progressDots
                         .padding(.trailing, SequentialSectionPrimaryColumnLayout.sectionProgressDotsTrailingInset)
                 }
-            }
-
-            if !items.isEmpty || showAddChip {
-                SequentialSectionChipScroller(
-                    reduceMotion: reduceMotion,
-                    title: title,
-                    showAddChip: showAddChip,
-                    addChipAccessibilityIdentifier: addChipAccessibilityIdentifier,
-                    isInteractionEnabled: isInteractionEnabled,
-                    canScrollChipsLeft: canScrollChipsLeft,
-                    canScrollChipsRight: canScrollChipsRight,
-                    onAddNew: onAddNew,
-                    chipScrollSnapshot: $chipScrollSnapshot
-                ) {
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        chipView(for: item, at: index)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if isInlineEditingActive {
+                        commitInlineEditIfNeeded()
+                    } else if isAddMorphComposerVisible {
+                        commitAddMorphFromHeaderTap()
                     }
                 }
             }
 
-            if showInput {
-                if let inputFocus {
-                    TextField(
-                        "",
-                        text: $inputText,
-                        prompt: Text(placeholder)
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.journalInputPlaceholder)
-                    )
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.journalTextPrimary)
-                        .textInputAutocapitalization(.sentences)
-                        .onSubmit { onSubmit() }
-                        .focused(inputFocus)
-                        .warmPaperInputStyle()
-                        .modifier(
-                            SequentialSectionChipRow.ConditionalAccessibilityIdentifier(
-                                identifier: inputAccessibilityIdentifier
-                            )
-                        )
-                        .accessibilityLabel(inputAccessibilityLabel)
-                        .accessibilityHint(placeholder)
-                        .disabled(!isInteractionEnabled)
-                } else {
-                    TextField(
-                        "",
-                        text: $inputText,
-                        prompt: Text(placeholder)
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.journalInputPlaceholder)
-                    )
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.journalTextPrimary)
-                        .textInputAutocapitalization(.sentences)
-                        .onSubmit { onSubmit() }
-                        .warmPaperInputStyle()
-                        .modifier(
-                            SequentialSectionChipRow.ConditionalAccessibilityIdentifier(
-                                identifier: inputAccessibilityIdentifier
-                            )
-                        )
-                        .accessibilityLabel(inputAccessibilityLabel)
-                        .accessibilityHint(placeholder)
-                        .disabled(!isInteractionEnabled)
+            if !items.isEmpty || showMorphAddSlot {
+                Group {
+                    if ambientInlineEditingActive, !sectionHostsInlineFocus {
+                        sentenceListAndMorph
+                            .opacity(SequentialSectionInlineLayout.ambientUnfocusedOpacity)
+                    } else {
+                        sentenceListAndMorph
+                    }
                 }
+            }
+
+            if isInlineEditingActive && !showMorphAddSlot {
+                Color.clear
+                    .frame(height: AppTheme.spacingSection)
             }
         }
         .journalOnboardingSectionStyle(onboardingState, isTransitioning: isTransitioning)
+        .overlay {
+            if ambientInlineEditingActive, !sectionHostsInlineFocus {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onRequestDismissInlineEditing?()
+                    }
+            }
+        }
         .overlay(alignment: .topTrailing) {
             if isTransitioning {
                 HStack(spacing: 6) {
@@ -208,34 +235,58 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
             }
         }
         .onChange(of: isInputFocused) { wasFocused, isFocused in
-            guard let onInputFocusLost else { return }
-            if wasFocused, !isFocused {
-                onInputFocusLost()
+            guard wasFocused, !isFocused else { return }
+            onInputFocusLost?()
+            if isAddMorphComposerVisible {
+                Task { @MainActor in
+                    await Task.yield()
+                    let trimmedInput = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !isInputFocused, trimmedInput.isEmpty, !isInlineEditingActive {
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+                            isAddMorphComposerVisible = false
+                        }
+                    }
+                }
+            }
+        }
+        .onChange(of: items.map(\.id)) { _, itemIDs in
+            expandedItemIDs.formIntersection(Set(itemIDs))
+            if let morphingItemID, !itemIDs.contains(morphingItemID) {
+                self.morphingItemID = nil
+            }
+            if itemIDs.isEmpty {
+                isAddMorphComposerVisible = false
             }
         }
     }
 
     @ViewBuilder
-    private func chipView(for item: JournalItem, at index: Int) -> some View {
-        let chipIdentifier = chipAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
-        let chip = ChipView(
-            label: item.displayLabel,
-            isTruncated: item.isTruncated,
-            isSelected: editingIndex == index,
-            onTap: { onChipTap(index) },
-            onRenameLabel: onRenameChip.map { handler in { handler(index, $0) } },
-            onDelete: onDeleteChip.map { handler in { handler(index) } }
-        )
+    private func itemRow(for item: JournalItem, at index: Int) -> some View {
+        if activeEditingIndex == index {
+            inlineEditorRow(for: item, at: index)
+                .zIndex(2)
+                .transition(.identity)
+        } else {
+            stripView(for: item, at: index)
+                .opacity(stripOpacityWhenStripEditing(at: index))
+                .zIndex(1)
+                .transition(.identity)
+        }
+    }
 
-        if let onMoveChip {
-            chip
-                .modifier(SequentialSectionChipRow.ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
+    @ViewBuilder
+    private func stripView(for item: JournalItem, at index: Int) -> some View {
+        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let strip = makeSentenceStrip(for: item, index: index, stripIdentifierPrefix: stripIdentifierPrefix)
+
+        if let onMoveItem, !isInlineEditingActive {
+            strip
                 .onDrag {
-                    chipReorderHoverTargetItemID = nil
+                    itemReorderHoverTargetItemID = nil
                     draggingItemID = item.id
                     return NSItemProvider(object: item.id.uuidString as NSString)
                 } preview: {
-                    chip
+                    strip
                         .scaleEffect(reduceMotion ? 1 : 1.07)
                         .shadow(color: .black.opacity(0.14), radius: 8, x: 0, y: 4)
                 }
@@ -245,23 +296,124 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                         targetIndex: index,
                         items: items,
                         draggingItemID: $draggingItemID,
-                        hoverTargetItemID: $chipReorderHoverTargetItemID,
+                        hoverTargetItemID: $itemReorderHoverTargetItemID,
                         reduceMotion: reduceMotion,
-                        onMoveChip: onMoveChip
+                        onMoveChip: onMoveItem
                     )
                 )
         } else {
-            chip
-                .modifier(SequentialSectionChipRow.ConditionalAccessibilityIdentifier(identifier: chipIdentifier))
+            strip
         }
     }
 
-    private func canScrollLeft(for metrics: SequentialSectionChipRow.HorizontalScrollMetrics) -> Bool {
-        metrics.contentOffsetX > 1
+    @ViewBuilder
+    private func inlineEditorRow(for item: JournalItem, at index: Int) -> some View {
+        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let editorIdentifier = stripIdentifierPrefix.map { "\($0).editor" }
+        let isMorphing = morphingItemID == item.id
+
+        VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
+            InlineSentenceEditorField(
+                sectionTitle: title,
+                placeholder: placeholder,
+                text: $inputText,
+                editorIdentifier: editorIdentifier,
+                inputFocus: inputFocus,
+                onSubmit: { commitInlineEditIfNeeded() },
+                isInteractionEnabled: isInteractionEnabled
+            )
+        }
+        .padding(.horizontal, SequentialSectionInlineLayout.editorMorphHorizontalInset)
+        .offset(
+            y: isMorphing
+                ? 2
+                : SequentialSectionInlineLayout.editorMorphVerticalOffset
+        )
+        .scaleEffect(
+            x: reduceMotion ? 1 : (isMorphing ? 1 : 1.02),
+            y: 1,
+            anchor: .center
+        )
+        .animation(
+            reduceMotion ? nil : .snappy(duration: 0.22),
+            value: morphingItemID
+        )
+        .padding(.bottom, SequentialSectionInlineLayout.editorBottomSpacing)
+        .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 4)
     }
 
-    private func canScrollRight(for metrics: SequentialSectionChipRow.HorizontalScrollMetrics) -> Bool {
-        let remaining = metrics.contentWidth - (metrics.contentOffsetX + metrics.viewportWidth)
-        return remaining > 1
+    private func commitInlineEditIfNeeded() {
+        guard isInlineEditingActive else { return }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+            onSubmit()
+        }
+    }
+
+    private func handleAddTap(_ addNew: () -> Void) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+            isAddMorphComposerVisible = true
+        }
+        addNew()
+    }
+
+    private func commitAddMorphFromHeaderTap() {
+        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+                isAddMorphComposerVisible = false
+            }
+            inputFocus?.wrappedValue = false
+        } else {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+                onSubmit()
+            }
+        }
+    }
+
+}
+
+private extension SequentialSectionPrimaryColumn {
+    func makeSentenceStrip(
+        for item: JournalItem,
+        index: Int,
+        stripIdentifierPrefix: String?
+    ) -> SentenceStripView {
+        let isExpandable = SentenceStripView.requiresExpandedPreview(item.fullText)
+        return SentenceStripView(
+            sectionTitle: title,
+            itemPosition: index + 1,
+            itemCount: items.count,
+            sentence: item.fullText,
+            accessibilityIdentifier: stripIdentifierPrefix,
+            isSelected: editingIndex == index,
+            isExpanded: expandedItemIDs.contains(item.id),
+            isExpandable: isExpandable,
+            expansionAccessibilityIdentifier: stripIdentifierPrefix.map { "\($0).more" },
+            onTap: { handleItemTap(index: index, itemID: item.id) },
+            onToggleExpanded: isExpandable ? {
+                if expandedItemIDs.contains(item.id) {
+                    expandedItemIDs.remove(item.id)
+                } else {
+                    expandedItemIDs.insert(item.id)
+                }
+            } : nil,
+            onDelete: onDeleteItem.map { handler in { handler(index) } }
+        )
+    }
+
+    func handleItemTap(index: Int, itemID: UUID) {
+        morphingItemID = itemID
+        if isAddMorphComposerVisible {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+                isAddMorphComposerVisible = false
+            }
+        }
+        onItemTap(index)
+        Task { @MainActor in
+            await Task.yield()
+            if morphingItemID == itemID {
+                morphingItemID = nil
+            }
+        }
     }
 }

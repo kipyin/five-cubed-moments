@@ -6,6 +6,7 @@ import SwiftUI
 struct ChipSectionOperations {
     let updateImmediate: (Int, String) -> Int?
     let addImmediate: (String) -> Int?
+    let remove: (Int) -> Bool
     let fullText: (Int) -> String?
     let count: Int
     let summarizeAndUpdateChip: (Int) -> Void
@@ -23,6 +24,17 @@ enum JournalScreenChipHandling {
         isTransitioning: Binding<Bool>
     ) -> Bool {
         let trimmed = input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let index = editingIndex.wrappedValue, trimmed.isEmpty {
+            guard beginTransition(isTransitioning) else { return false }
+            defer { endTransition(isTransitioning) }
+
+            guard operations.remove(index) else { return false }
+            editingIndex.wrappedValue = nil
+            input.wrappedValue = ""
+            return true
+        }
+
         guard !trimmed.isEmpty else { return false }
 
         guard beginTransition(isTransitioning) else { return false }
@@ -54,6 +66,14 @@ enum JournalScreenChipHandling {
         defer { endTransition(isTransitioning) }
 
         let trimmed = input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let currentIndex = editingIndex.wrappedValue, trimmed.isEmpty {
+            guard operations.remove(currentIndex) else { return false }
+            input.wrappedValue = ""
+            editingIndex.wrappedValue = nil
+            return true
+        }
+
         if let currentIndex = editingIndex.wrappedValue, !trimmed.isEmpty {
             guard let updatedIndex = operations.updateImmediate(currentIndex, input.wrappedValue) else { return false }
             operations.summarizeAndUpdateChip(updatedIndex)
@@ -117,15 +137,26 @@ enum JournalScreenChipHandling {
 
         let trimmed = input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if let currentIndex = editingIndex.wrappedValue, !trimmed.isEmpty {
-            let stored = operations.fullText(currentIndex) ?? ""
-            if trimmed == stored {
-                if let full = operations.fullText(tapIndex) {
-                    input.wrappedValue = full
-                    editingIndex.wrappedValue = tapIndex
-                }
-                return true
-            }
+        if let currentIndex = editingIndex.wrappedValue, trimmed.isEmpty {
+            guard operations.remove(currentIndex) else { return false }
+            applyChipTapAfterRemovingEmptyEdit(
+                tapIndex: tapIndex,
+                removedIndex: currentIndex,
+                input: input,
+                editingIndex: editingIndex,
+                operations: operations
+            )
+            return true
+        }
+
+        if switchChipTapWhenTextUnchangedFromStored(
+            trimmed: trimmed,
+            tapIndex: tapIndex,
+            input: input,
+            editingIndex: editingIndex,
+            operations: operations
+        ) {
+            return true
         }
 
         var canSwitch = true
@@ -146,6 +177,47 @@ enum JournalScreenChipHandling {
         }
 
         if canSwitch, let full = operations.fullText(tapIndex) {
+            input.wrappedValue = full
+            editingIndex.wrappedValue = tapIndex
+        }
+        return true
+    }
+
+    /// After deleting the edited row because input was whitespace-only, either exit editing or open
+    /// another strip (indices shift when the removed row was above the tap).
+    private static func applyChipTapAfterRemovingEmptyEdit(
+        tapIndex: Int,
+        removedIndex: Int,
+        input: Binding<String>,
+        editingIndex: Binding<Int?>,
+        operations: ChipSectionOperations
+    ) {
+        input.wrappedValue = ""
+        if tapIndex == removedIndex {
+            editingIndex.wrappedValue = nil
+            return
+        }
+        let effectiveTapIndex = tapIndex > removedIndex ? tapIndex - 1 : tapIndex
+        if let full = operations.fullText(effectiveTapIndex) {
+            input.wrappedValue = full
+            editingIndex.wrappedValue = effectiveTapIndex
+        } else {
+            editingIndex.wrappedValue = nil
+        }
+    }
+
+    /// When the draft matches the stored full text, switch to the tapped strip without persisting again.
+    private static func switchChipTapWhenTextUnchangedFromStored(
+        trimmed: String,
+        tapIndex: Int,
+        input: Binding<String>,
+        editingIndex: Binding<Int?>,
+        operations: ChipSectionOperations
+    ) -> Bool {
+        guard let currentIndex = editingIndex.wrappedValue, !trimmed.isEmpty else { return false }
+        let stored = operations.fullText(currentIndex) ?? ""
+        guard trimmed == stored else { return false }
+        if let full = operations.fullText(tapIndex) {
             input.wrappedValue = full
             editingIndex.wrappedValue = tapIndex
         }

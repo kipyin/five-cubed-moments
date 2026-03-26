@@ -8,6 +8,8 @@ private enum SequentialSectionChipScrollerLayout {
 struct SequentialSectionChipScroller<ChipRow: View>: View {
     let reduceMotion: Bool
     let title: String
+    let addButtonTitle: String
+    let addButtonAccessibilityHint: String
     let showAddChip: Bool
     let addChipAccessibilityIdentifier: String?
     let isInteractionEnabled: Bool
@@ -25,7 +27,8 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
                 chipRow()
                 if showAddChip, let addNew = onAddNew {
                     SequentialSectionChipRow.AddChipView(
-                        sectionTitle: title,
+                        buttonTitle: addButtonTitle,
+                        accessibilityHint: addButtonAccessibilityHint,
                         accessibilityIdentifier: addChipAccessibilityIdentifier,
                         onTap: addNew
                     )

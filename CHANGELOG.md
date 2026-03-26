@@ -16,11 +16,14 @@ Work tracked toward milestone **0.5.2** (Settings cohesion and insight follow-th
 - Versioning: Grace Notes app **marketing version** stays **0.5.0** for this lane; **bundle** (`CURRENT_PROJECT_VERSION`) **8** (increment build under the minor for faster TestFlight review; build **7** was the previous ship).
 - Contributor workflow: removed `GraceNotes/docs/agent-log/`, `Scripts/validate-agent-log.sh`, and `make verify-agent-log*`; use GitHub issues/PRs and `AGENTS.md` for coordination.
 - Journal architecture: `JournalExportPayload` / `JournalExportSnapshotSource`, `JournalStreakSummaryRefresher`, and `JournalChipLabelSummarizationCoordinator` split from `JournalViewModel` responsibilities; behavior unchanged (#90).
+- UI tests: Today journal inputs use `UITextView` (`InlineSentenceEditorField`); `JournalUITests` query **TextView** for composer and strip editor identifiers. `test_todayScreen_submitKeepsKeyboardAvailableForNextEntry` expects the keyboard after the strip appears and the user opens the composer for the next line (#102).
+- Xcode: shared **GraceNotes** scheme **Run** (**LaunchAction**) uses **Debug** so ⌘R matches typical local debugging; bundle **7** notes still describe **Run** on **Release** at that ship cut (#102 review).
 
 ### Fixed
 - Review: weekly **cloud** insights could fall back to on-device digest with the unreadable-response explanation when the model reply was cut off mid-JSON; raised completion **max_tokens** so the full structured payload can finish (#99).
 
 ### Changed
+- Journal: **Today** sequential sections (**Gratitudes**, **Needs**, **People in mind**) show submitted lines as **sentence strips** with inline edit (full sentence first; chip labels stay secondary for aggregation). Inline empty-space dismiss uses a clearer scroll backdrop; navigation-bar taps use bar-frame hit testing. Chip add/tap orchestration goes through `JournalChipInteractionCoordinator` (#102).
 - Review > Insights: single read-only **Source** badge (replacing twin pills that read like a control); when Cloud AI is on but the digest is still on-device, an info button explains why (weekly evidence threshold, missing cloud setup, or a failed cloud attempt) (#83).
 - Review > Insights: on-device cloud skip explanations are **more specific** (connection, timeout, service or access limits, unreadable response, quality gate, or generic fallback), mapped from `CloudReviewInsightsError`, HTTP status, and `URLError`, with matching **en** / **zh-Hans** catalog strings.
 - Settings: section headers use authored title case instead of all-caps list header styling (#84).
@@ -59,7 +62,7 @@ Packaging, upgrade orientation, localization, and stability under marketing **0.
 
 - App **marketing version** `0.5.0`; **bundle version** (`CURRENT_PROJECT_VERSION`) `7` for Grace Notes app configurations (Debug, Release, Demo); git tag **`v0.5.0+7`**. `OrientationReleaseGate` + `lastLaunchedBundleVersion` gate upgrade orientation across **0.5.0** build bumps.
 - Project-level **Debug** and **Demo** build settings use `DEBUG_INFORMATION_FORMAT = dwarf-with-dsym` so Debug-style builds still produce dSYM for symbolication.
-- Shared `GraceNotes.xcscheme`: **Run** uses **Release** build configuration (revert locally if you prefer ⌘R to stay on Debug).
+- Shared `GraceNotes.xcscheme`: **Run** used **Release** build configuration at this ship cut (later **main** defaults **Run** to **Debug**; see Build 8 Developer).
 - App target **Swift strict concurrency** set to **minimal**; removed `SWIFT_APPROACHABLE_CONCURRENCY`, `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, and `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY` from Grace Notes app build settings.
 - `StartupCoordinator.PersistenceFactory` drops the `@Sendable` requirement (aligned with relaxed concurrency checking).
 - **Accessibility QA (manual):** Settings → Display & Text Size → Text Size (largest) and Accessibility → Display & Text Size → Larger Accessibility Sizes — confirm tab bar (Today / Review / Settings) and sample navigation/toolbar titles remain usable without icon overlap or severe clipping. No snapshot suite covers UIKit chrome; regressions are caught by this pass.

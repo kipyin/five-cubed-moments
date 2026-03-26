@@ -6,6 +6,7 @@ import SwiftUI
 struct ChipSectionOperations {
     let updateImmediate: (Int, String) -> Int?
     let addImmediate: (String) -> Int?
+    let remove: (Int) -> Bool
     let fullText: (Int) -> String?
     let count: Int
     let summarizeAndUpdateChip: (Int) -> Void
@@ -23,6 +24,17 @@ enum JournalScreenChipHandling {
         isTransitioning: Binding<Bool>
     ) -> Bool {
         let trimmed = input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let index = editingIndex.wrappedValue, trimmed.isEmpty {
+            guard beginTransition(isTransitioning) else { return false }
+            defer { endTransition(isTransitioning) }
+
+            guard operations.remove(index) else { return false }
+            editingIndex.wrappedValue = nil
+            input.wrappedValue = ""
+            return true
+        }
+
         guard !trimmed.isEmpty else { return false }
 
         guard beginTransition(isTransitioning) else { return false }

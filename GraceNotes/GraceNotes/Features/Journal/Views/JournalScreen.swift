@@ -21,9 +21,130 @@ private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
     }
 }
 
+private struct JournalNavigationBarTapProbe: UIViewControllerRepresentable {
+    struct TapContext {
+        let isNavigationChrome: Bool
+    }
+
+    let isEnabled: Bool
+    let onTap: (TapContext) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isEnabled: isEnabled, onTap: onTap)
+    }
+
+    func makeUIViewController(context: Context) -> ProbeViewController {
+        let controller = ProbeViewController()
+        controller.coordinator = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: ProbeViewController, context: Context) {
+        context.coordinator.isEnabled = isEnabled
+        context.coordinator.onTap = onTap
+        uiViewController.coordinator = context.coordinator
+        uiViewController.attachIfPossible()
+    }
+
+    static func dismantleUIViewController(_ uiViewController: ProbeViewController, coordinator: Coordinator) {
+        coordinator.detach()
+        uiViewController.coordinator = nil
+    }
+
+    final class ProbeViewController: UIViewController {
+        weak var coordinator: Coordinator?
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            attachIfPossible()
+        }
+
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            attachIfPossible()
+        }
+
+        func attachIfPossible() {
+            guard let navigationContainerView = navigationController?.view else { return }
+            coordinator?.attach(to: navigationContainerView)
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        weak var navigationContainerView: UIView?
+        var isEnabled: Bool
+        var onTap: (TapContext) -> Void
+        private weak var recognizer: UITapGestureRecognizer?
+
+        init(isEnabled: Bool, onTap: @escaping (TapContext) -> Void) {
+            self.isEnabled = isEnabled
+            self.onTap = onTap
+        }
+
+        func attach(to navigationContainerView: UIView) {
+            guard self.navigationContainerView !== navigationContainerView else { return }
+            detach()
+            let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+            recognizer.cancelsTouchesInView = false
+            recognizer.delegate = self
+            navigationContainerView.addGestureRecognizer(recognizer)
+            self.navigationContainerView = navigationContainerView
+            self.recognizer = recognizer
+        }
+
+        func detach() {
+            if let recognizer, let navigationContainerView {
+                navigationContainerView.removeGestureRecognizer(recognizer)
+            }
+            recognizer = nil
+            navigationContainerView = nil
+        }
+
+        @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
+            guard isEnabled, let navigationContainerView else { return }
+            let location = recognizer.location(in: navigationContainerView)
+            let hitView = navigationContainerView.hitTest(location, with: nil)
+            let hitViewChain = viewChainDescription(startingAt: hitView)
+            let isNavigationChrome =
+                hitViewChain.contains("UINavigationBar")
+                || hitViewChain.contains("NavigationBarContentView")
+                || hitViewChain.contains("_UINavigationBarLargeTitleView")
+                || hitViewChain.contains("UIKitNavigationBar")
+            onTap(TapContext(isNavigationChrome: isNavigationChrome))
+        }
+
+        private func viewChainDescription(startingAt view: UIView?) -> String {
+            var classes: [String] = []
+            var currentView = view
+            while let candidate = currentView, classes.count < 6 {
+                classes.append(String(describing: type(of: candidate)))
+                currentView = candidate.superview
+            }
+            return classes.joined(separator: " > ")
+        }
+
+        func gestureRecognizer(
+            _: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+    }
+}
+
 private extension View {
     @ViewBuilder
     func journalDismissUnlockToastOnTapOutside(_ isPresented: Bool, dismiss: @escaping () -> Void) -> some View {
+        if isPresented {
+            self.simultaneousGesture(TapGesture().onEnded { _ in dismiss() })
+        } else {
+            self
+        }
+    }
+
+    /// Non-invasive tap-to-dismiss hook used on non-input regions.
+    @ViewBuilder
+    func journalDismissInlineEditOnTap(_ isPresented: Bool, dismiss: @escaping () -> Void) -> some View {
         if isPresented {
             self.simultaneousGesture(TapGesture().onEnded { _ in dismiss() })
         } else {
@@ -36,6 +157,8 @@ struct JournalScreen: View {
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var viewModel = JournalViewModel()
     @State private var shareableImage: ShareableImage?
     @State private var showShareError = false
@@ -82,6 +205,9 @@ struct JournalScreen: View {
     @State private var editingGratitudeIndex: Int?
     @State private var editingNeedIndex: Int?
     @State private var editingPersonIndex: Int?
+    @State private var isGratitudeAddMorphComposerVisible = false
+    @State private var isNeedAddMorphComposerVisible = false
+    @State private var isPersonAddMorphComposerVisible = false
     @State private var isGratitudeTransitioning = false
     @State private var isNeedTransitioning = false
     @State private var isPersonTransitioning = false
@@ -90,19 +216,25 @@ struct JournalScreen: View {
     @FocusState private var isPersonInputFocused: Bool
     @FocusState private var isReadingNotesFocused: Bool
     @FocusState private var isReflectionsFocused: Bool
-
     var entryDate: Date?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
-                DateSectionView(
-                    completionLevel: viewModel.completionLevel,
-                    celebratingLevel: celebratingLevel
-                )
+                Group {
+                    DateSectionView(
+                        completionLevel: viewModel.completionLevel,
+                        celebratingLevel: celebratingLevel
+                    )
 
-                journalTutorialHintIfNeeded
-                journalOnboardingSuggestionIfNeeded
-                journalChipSections
+                    journalTutorialHintIfNeeded
+                    journalOnboardingSuggestionIfNeeded
+                }
+                .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
+                    dismissInlineChipEditingSession()
+                }
+
+                journalSentenceSections
+
                 journalNotesSections
 
                 if let saveErrorMessage = viewModel.saveErrorMessage {
@@ -110,15 +242,32 @@ struct JournalScreen: View {
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.journalError)
                 }
+
+                if isAnyInlineChipEditing {
+                    Color.clear
+                        .frame(minHeight: SequentialSectionInlineLayout.inlineEditBottomTapCatcherMinHeight)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            dismissInlineChipEditingSession()
+                        }
+                }
             }
             .padding(.horizontal, AppTheme.todayHorizontalPadding)
             .padding(.top, AppTheme.todayTopPadding)
-            .padding(.bottom, AppTheme.todayBottomPadding)
+            .padding(.bottom, contentBottomPadding)
             .background(journalScrollOffsetReader)
+            .background(journalInlineEditGapTapCatcher)
             .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
                 dismissUnlockToastIfNeeded()
             }
         }
+        .background(
+            JournalNavigationBarTapProbe(isEnabled: isAnyInlineChipEditing) { context in
+                guard context.isNavigationChrome else { return }
+                dismissInlineChipEditingSession()
+            }
+        )
         .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
         .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
             journalScrollOffsetY = offsetY
@@ -130,7 +279,7 @@ struct JournalScreen: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
-        .background(AppTheme.journalBackground)
+        .background(AppTheme.journalBackground.ignoresSafeArea(edges: [.top, .bottom]))
         .navigationTitle(navigationTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -140,7 +289,7 @@ struct JournalScreen: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(AppTheme.outfitSemiboldHeadline)
                 }
-                .accessibilityLabel("Share")
+                .accessibilityLabel(String(localized: "Share"))
                 .accessibilityIdentifier("Share")
             }
         }
@@ -150,12 +299,12 @@ struct JournalScreen: View {
                 applicationActivities: [SaveToPhotosActivity(image: item.image)]
             )
         }
-        .alert("Unable to share", isPresented: $showShareError) {
-            Button("Dismiss") {
+        .alert(String(localized: "Unable to share"), isPresented: $showShareError) {
+            Button(String(localized: "Dismiss")) {
                 showShareError = false
             }
         } message: {
-            Text("We couldn't create a share image right now. Please try again.")
+            Text(String(localized: "We couldn't create a share image right now. Please try again."))
         }
         .fullScreenCover(isPresented: $showPostSeedJourney) {
             PostSeedJourneyView(
@@ -166,10 +315,10 @@ struct JournalScreen: View {
         .onChange(of: showPostSeedJourney) { _, isPresented in
             dismissAllJournalFocusIfPostSeedJourneyPresented(isPresented)
         }
-        .overlay { journalToastOverlay }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: AppTheme.spacingSection)
+        .onChange(of: isAnyChipInputFocused) { wasFocused, isFocused in
+            handleChipInputFocusChange(wasFocused: wasFocused, isFocused: isFocused)
         }
+        .overlay { journalToastOverlay }
         .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
             scheduleSavedToPhotosToast()
         }
@@ -192,6 +341,108 @@ struct JournalScreen: View {
 }
 
 private extension JournalScreen {
+    var isAnyInlineChipEditing: Bool {
+        editingGratitudeIndex != nil
+            || editingNeedIndex != nil
+            || editingPersonIndex != nil
+            || isGratitudeAddMorphComposerVisible
+            || isNeedAddMorphComposerVisible
+            || isPersonAddMorphComposerVisible
+    }
+
+    var isAnyChipInputFocused: Bool {
+        isGratitudeInputFocused || isNeedInputFocused || isPersonInputFocused
+    }
+
+    func dismissInlineChipEditingSession() {
+        guard isAnyInlineChipEditing else { return }
+        commitActiveInlineChipEdit()
+    }
+
+    func handleChipInputFocusChange(wasFocused: Bool, isFocused: Bool) {
+        guard wasFocused, !isFocused else { return }
+        Task { @MainActor in
+            await Task.yield()
+            guard !isAnyChipInputFocused else { return }
+            dismissInlineChipEditingSession()
+        }
+    }
+
+    /// Saves the active inline strip edit and dismisses keyboard (same as tapping outside the editor).
+    func commitActiveInlineChipEdit() {
+        if editingGratitudeIndex != nil {
+            submit(section: .gratitude, restoreFocusAfterSubmit: false)
+        } else if editingNeedIndex != nil {
+            submit(section: .need, restoreFocusAfterSubmit: false)
+        } else if editingPersonIndex != nil {
+            submit(section: .person, restoreFocusAfterSubmit: false)
+        } else if isGratitudeAddMorphComposerVisible {
+            dismissEmptyAddMorphOrSubmit(section: .gratitude, restoreFocusAfterSubmit: false)
+        } else if isNeedAddMorphComposerVisible {
+            dismissEmptyAddMorphOrSubmit(section: .need, restoreFocusAfterSubmit: false)
+        } else if isPersonAddMorphComposerVisible {
+            dismissEmptyAddMorphOrSubmit(section: .person, restoreFocusAfterSubmit: false)
+        }
+    }
+
+    func dismissEmptyAddMorphOrSubmit(section: ChipSection, restoreFocusAfterSubmit: Bool) {
+        let adapter = chipSectionAdapter(for: section)
+        let trimmed = adapter.input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            clearAddMorphComposer(for: section)
+            clearChipInputFocus()
+        } else {
+            submit(section: section, restoreFocusAfterSubmit: restoreFocusAfterSubmit)
+        }
+    }
+
+    func clearAddMorphComposer(for section: ChipSection) {
+        switch section {
+        case .gratitude:
+            isGratitudeAddMorphComposerVisible = false
+        case .need:
+            isNeedAddMorphComposerVisible = false
+        case .person:
+            isPersonAddMorphComposerVisible = false
+        }
+    }
+
+    func isAddMorphComposerVisible(for section: ChipSection) -> Bool {
+        switch section {
+        case .gratitude:
+            return isGratitudeAddMorphComposerVisible
+        case .need:
+            return isNeedAddMorphComposerVisible
+        case .person:
+            return isPersonAddMorphComposerVisible
+        }
+    }
+
+    var contentBottomPadding: CGFloat {
+        AppTheme.todayBottomPadding + bottomSpacingAdjustment
+    }
+
+    @ViewBuilder
+    var journalInlineEditGapTapCatcher: some View {
+        if isAnyInlineChipEditing {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismissInlineChipEditingSession()
+                }
+        }
+    }
+
+    private var bottomSpacingAdjustment: CGFloat {
+        var adjustment: CGFloat = AppTheme.spacingTight
+        if dynamicTypeSize.isAccessibilitySize {
+            adjustment += AppTheme.spacingRegular
+        }
+        if verticalSizeClass == .compact {
+            adjustment += AppTheme.spacingRegular
+        }
+        return adjustment
+    }
 
     @ViewBuilder
     var journalTutorialHintIfNeeded: some View {
@@ -228,10 +479,12 @@ private extension JournalScreen {
         }
     }
 
-    var journalChipSections: some View {
+    var journalSentenceSections: some View {
         VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
             SequentialSectionView(
                 title: String(localized: "Gratitudes"),
+                addButtonTitle: String(localized: "Add another gratitude"),
+                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
                 guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .gratitude)?
@@ -240,10 +493,10 @@ private extension JournalScreen {
                 placeholder: String(localized: "What's one thing you're grateful for?"),
                 slotCount: JournalViewModel.slotCount,
                 inputAccessibilityIdentifier: "Gratitude 1",
-                chipAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalGratitudeChip"
+                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalGratitudeStrip"
                     : nil,
-                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                     ? "JournalSectionAdd.gratitude"
                     : nil,
                 onboardingState: onboardingPresentation.state(for: .gratitude),
@@ -251,24 +504,31 @@ private extension JournalScreen {
                 inputText: $gratitudeInput,
                 editingIndex: editingGratitudeIndex,
                 inputFocus: $isGratitudeInputFocused,
-                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .gratitude) },
                 onSubmit: submitGratitude,
-                onChipTap: { index in chipTapped(section: .gratitude, index: index) },
-                onRenameChip: { index, label in renameChip(section: .gratitude, index: index, label: label) },
-                onMoveChip: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
-                onDeleteChip: { index in deleteChip(section: .gratitude, index: index) },
-                onAddNew: { addNewTapped(section: .gratitude) }
+                onItemTap: { index in chipTapped(section: .gratitude, index: index) },
+                onMoveItem: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
+                onDeleteItem: { index in deleteChip(section: .gratitude, index: index) },
+                onAddNew: { addNewTapped(section: .gratitude) },
+                isAddMorphComposerVisible: $isGratitudeAddMorphComposerVisible,
+                ambientInlineEditingActive: isAnyInlineChipEditing,
+                sectionHostsInlineFocus: editingGratitudeIndex != nil || isGratitudeAddMorphComposerVisible,
+                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
             )
 
             SequentialSectionView(
                 title: String(localized: "Needs"),
+                addButtonTitle: String(localized: "Add another need"),
+                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
                 items: viewModel.needs,
                 placeholder: String(localized: "What do you need today?"),
                 slotCount: JournalViewModel.slotCount,
                 inputAccessibilityIdentifier: "Need 1",
-                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalNeedStrip"
+                    : nil,
+                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                     ? "JournalSectionAdd.need"
                     : nil,
                 onboardingState: onboardingPresentation.state(for: .need),
@@ -276,24 +536,31 @@ private extension JournalScreen {
                 inputText: $needInput,
                 editingIndex: editingNeedIndex,
                 inputFocus: $isNeedInputFocused,
-                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .need) },
                 onSubmit: submitNeed,
-                onChipTap: { index in chipTapped(section: .need, index: index) },
-                onRenameChip: { index, label in renameChip(section: .need, index: index, label: label) },
-                onMoveChip: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
-                onDeleteChip: { index in deleteChip(section: .need, index: index) },
-                onAddNew: { addNewTapped(section: .need) }
+                onItemTap: { index in chipTapped(section: .need, index: index) },
+                onMoveItem: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
+                onDeleteItem: { index in deleteChip(section: .need, index: index) },
+                onAddNew: { addNewTapped(section: .need) },
+                isAddMorphComposerVisible: $isNeedAddMorphComposerVisible,
+                ambientInlineEditingActive: isAnyInlineChipEditing,
+                sectionHostsInlineFocus: editingNeedIndex != nil || isNeedAddMorphComposerVisible,
+                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
             )
 
             SequentialSectionView(
                 title: String(localized: "People in Mind"),
+                addButtonTitle: String(localized: "Add another person"),
+                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
                 items: viewModel.people,
                 placeholder: String(localized: "Who are you thinking of today?"),
                 slotCount: JournalViewModel.slotCount,
                 inputAccessibilityIdentifier: "Person 1",
-                addChipAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                    ? "JournalPersonStrip"
+                    : nil,
+                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                     ? "JournalSectionAdd.person"
                     : nil,
                 onboardingState: onboardingPresentation.state(for: .person),
@@ -301,13 +568,15 @@ private extension JournalScreen {
                 inputText: $personInput,
                 editingIndex: editingPersonIndex,
                 inputFocus: $isPersonInputFocused,
-                onInputFocusLost: { commitChipDraftOnInputFocusLost(section: .person) },
                 onSubmit: submitPerson,
-                onChipTap: { index in chipTapped(section: .person, index: index) },
-                onRenameChip: { index, label in renameChip(section: .person, index: index, label: label) },
-                onMoveChip: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
-                onDeleteChip: { index in deleteChip(section: .person, index: index) },
-                onAddNew: { addNewTapped(section: .person) }
+                onItemTap: { index in chipTapped(section: .person, index: index) },
+                onMoveItem: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
+                onDeleteItem: { index in deleteChip(section: .person, index: index) },
+                onAddNew: { addNewTapped(section: .person) },
+                isAddMorphComposerVisible: $isPersonAddMorphComposerVisible,
+                ambientInlineEditingActive: isAnyInlineChipEditing,
+                sectionHostsInlineFocus: editingPersonIndex != nil || isPersonAddMorphComposerVisible,
+                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
             )
         }
         .padding(.top, AppTheme.spacingTight)
@@ -745,7 +1014,6 @@ private extension JournalScreen {
         let editingIndex: Binding<Int?>
         let isTransitioning: Binding<Bool>
         let inputFocus: FocusState<Bool>.Binding
-        let renameLabel: (Int, String) -> Bool
         let move: (Int, Int) -> Bool
         let remove: (Int) -> Bool
         let operations: ChipSectionOperations
@@ -766,7 +1034,6 @@ private extension JournalScreen {
             editingIndex: $editingGratitudeIndex,
             isTransitioning: $isGratitudeTransitioning,
             inputFocus: $isGratitudeInputFocused,
-            renameLabel: { index, label in viewModel.renameGratitudeLabel(at: index, to: label) },
             move: { from, toOffset in viewModel.moveGratitude(from: from, to: toOffset) },
             remove: { index in viewModel.removeGratitude(at: index) },
             operations: ChipSectionOperations(
@@ -774,6 +1041,7 @@ private extension JournalScreen {
                     viewModel.updateGratitudeImmediate(at: index, fullText: text)
                 },
                 addImmediate: viewModel.addGratitudeImmediate,
+                remove: { index in viewModel.removeGratitude(at: index) },
                 fullText: { index in viewModel.fullTextForGratitude(at: index) },
                 count: viewModel.gratitudes.count,
                 summarizeAndUpdateChip: { index in
@@ -788,7 +1056,6 @@ private extension JournalScreen {
             editingIndex: $editingNeedIndex,
             isTransitioning: $isNeedTransitioning,
             inputFocus: $isNeedInputFocused,
-            renameLabel: { index, label in viewModel.renameNeedLabel(at: index, to: label) },
             move: { from, toOffset in viewModel.moveNeed(from: from, to: toOffset) },
             remove: { index in viewModel.removeNeed(at: index) },
             operations: ChipSectionOperations(
@@ -796,6 +1063,7 @@ private extension JournalScreen {
                     viewModel.updateNeedImmediate(at: index, fullText: text)
                 },
                 addImmediate: viewModel.addNeedImmediate,
+                remove: { index in viewModel.removeNeed(at: index) },
                 fullText: { index in viewModel.fullTextForNeed(at: index) },
                 count: viewModel.needs.count,
                 summarizeAndUpdateChip: { index in
@@ -810,7 +1078,6 @@ private extension JournalScreen {
             editingIndex: $editingPersonIndex,
             isTransitioning: $isPersonTransitioning,
             inputFocus: $isPersonInputFocused,
-            renameLabel: { index, label in viewModel.renamePersonLabel(at: index, to: label) },
             move: { from, toOffset in viewModel.movePerson(from: from, to: toOffset) },
             remove: { index in viewModel.removePerson(at: index) },
             operations: ChipSectionOperations(
@@ -818,6 +1085,7 @@ private extension JournalScreen {
                     viewModel.updatePersonImmediate(at: index, fullText: text)
                 },
                 addImmediate: viewModel.addPersonImmediate,
+                remove: { index in viewModel.removePerson(at: index) },
                 fullText: { index in viewModel.fullTextForPerson(at: index) },
                 count: viewModel.people.count,
                 summarizeAndUpdateChip: { index in
@@ -847,11 +1115,6 @@ private extension JournalScreen {
             input: adapter.input,
             editingIndex: adapter.editingIndex
         )
-    }
-
-    func renameChip(section: ChipSection, index: Int, label: String) {
-        let adapter = chipSectionAdapter(for: section)
-        _ = adapter.renameLabel(index, label)
     }
 
     func moveChip(section: ChipSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
@@ -898,8 +1161,11 @@ private extension JournalScreen {
         }
     }
 
-    func submit(section: ChipSection) {
+    func submit(section: ChipSection, restoreFocusAfterSubmit: Bool = true) {
         let adapter = chipSectionAdapter(for: section)
+        let wasEditingExistingItem = adapter.editingIndex.wrappedValue != nil
+        let shouldClearAddMorphAfterSubmit =
+            adapter.editingIndex.wrappedValue == nil && isAddMorphComposerVisible(for: section)
         let didSubmit = JournalScreenChipHandling.submitChipSection(
             editingIndex: adapter.editingIndex,
             input: adapter.input,
@@ -907,26 +1173,55 @@ private extension JournalScreen {
             isTransitioning: adapter.isTransitioning
         )
         guard didSubmit else { return }
+        if shouldClearAddMorphAfterSubmit {
+            clearAddMorphComposer(for: section)
+        }
         if shouldAdvanceGuidedFocusAfterChipSubmit(section: section) {
             clearChipInputFocus()
             Task { @MainActor in
                 await Task.yield()
                 focusOnboardingStepForced(onboardingPresentation.step)
             }
-        } else {
+        } else if wasEditingExistingItem {
+            clearChipInputFocus()
+        } else if restoreFocusAfterSubmit {
             restoreInputFocus(adapter.inputFocus)
+        } else {
+            clearChipInputFocus()
+        }
+    }
+
+    private func clearInlineChipEditingState(adapter: ChipSectionAdapter) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+            adapter.editingIndex.wrappedValue = nil
+            adapter.input.wrappedValue = ""
         }
     }
 
     func commitChipDraftOnInputFocusLost(section: ChipSection) {
         let adapter = chipSectionAdapter(for: section)
+        // Keep add-button-first composition stable: losing focus from a "new draft" field
+        // should not auto-submit and block immediate same-section strip taps.
+        guard adapter.editingIndex.wrappedValue != nil else { return }
+        if let editingIndex = adapter.editingIndex.wrappedValue,
+           let persisted = adapter.operations.fullText(editingIndex) {
+            let draft = adapter.input.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let persistedTrimmed = persisted.trimmingCharacters(in: .whitespacesAndNewlines)
+            if draft == persistedTrimmed {
+                clearInlineChipEditingState(adapter: adapter)
+                return
+            }
+        }
         let didSubmit = JournalScreenChipHandling.submitChipSection(
             editingIndex: adapter.editingIndex,
             input: adapter.input,
             operations: adapter.operations,
             isTransitioning: adapter.isTransitioning
         )
-        guard didSubmit else { return }
+        guard didSubmit else {
+            clearInlineChipEditingState(adapter: adapter)
+            return
+        }
         if shouldAdvanceGuidedFocusAfterChipSubmit(section: section) {
             clearChipInputFocus()
             Task { @MainActor in

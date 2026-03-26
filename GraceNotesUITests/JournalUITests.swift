@@ -20,6 +20,11 @@ final class JournalUITests: XCTestCase {
         return app
     }
 
+    /// Today’s journal composers use `UITextView`; XCUI exposes them as TextView, not TextField.
+    private func journalTextView(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
+        app.textViews[identifier]
+    }
+
     @MainActor
     private func submitEntry(
         fieldIdentifier: String,
@@ -28,7 +33,7 @@ final class JournalUITests: XCTestCase {
         text: String,
         in app: XCUIApplication
     ) {
-        let field = app.textFields[fieldIdentifier]
+        let field = journalTextView(fieldIdentifier, in: app)
         if !field.waitForExistence(timeout: 2), let addButtonIdentifier {
             let addButton = app.buttons[addButtonIdentifier].firstMatch
             XCTAssertTrue(
@@ -206,7 +211,7 @@ final class JournalUITests: XCTestCase {
     @MainActor
     func test_todayScreen_addChipTap_commitsActiveDraftWithoutLoss() {
         let app = launchApp()
-        let gratitudeField = app.textFields["Gratitude 1"]
+        let gratitudeField = journalTextView("Gratitude 1", in: app)
         let addForFirstField = app.buttons["JournalSectionAdd.gratitude"].firstMatch
         XCTAssertTrue(addForFirstField.waitForExistence(timeout: 5))
         addForFirstField.tap()
@@ -239,7 +244,7 @@ final class JournalUITests: XCTestCase {
     @MainActor
     func test_todayScreen_submitKeepsKeyboardAvailableForNextEntry() {
         let app = launchApp()
-        let gratitudeField = app.textFields["Gratitude 1"]
+        let gratitudeField = journalTextView("Gratitude 1", in: app)
         let addForFirstField = app.buttons["JournalSectionAdd.gratitude"].firstMatch
         XCTAssertTrue(addForFirstField.waitForExistence(timeout: 5))
         addForFirstField.tap()
@@ -249,8 +254,8 @@ final class JournalUITests: XCTestCase {
         gratitudeField.typeText("First gratitude entry\n")
 
         XCTAssertTrue(
-            app.keyboards.firstMatch.waitForExistence(timeout: 5),
-            "Keyboard should remain available after submitting an entry."
+            app.buttons["JournalGratitudeStrip.0"].waitForExistence(timeout: 8),
+            "Expected first gratitude to appear as a strip after submit."
         )
 
         let addButton = app.buttons["JournalSectionAdd.gratitude"].firstMatch
@@ -259,6 +264,10 @@ final class JournalUITests: XCTestCase {
 
         XCTAssertTrue(gratitudeField.waitForExistence(timeout: 2))
         gratitudeField.tap()
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForExistence(timeout: 5),
+            "Keyboard should show when focusing the composer for the next entry."
+        )
         gratitudeField.typeText("Second gratitude draft")
         XCTAssertEqual(gratitudeField.value as? String, "Second gratitude draft")
     }
@@ -286,7 +295,7 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(strip.waitForExistence(timeout: 5))
         strip.tap()
 
-        let gratitudeEditor = app.textFields["JournalGratitudeStrip.0.editor"]
+        let gratitudeEditor = journalTextView("JournalGratitudeStrip.0.editor", in: app)
         XCTAssertTrue(gratitudeEditor.waitForExistence(timeout: 5))
         XCTAssertEqual(gratitudeEditor.value as? String, sentence)
     }
@@ -313,7 +322,7 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(strip.waitForExistence(timeout: 5))
         strip.tap()
 
-        let gratitudeEditor = app.textFields["JournalGratitudeStrip.0.editor"]
+        let gratitudeEditor = journalTextView("JournalGratitudeStrip.0.editor", in: app)
         XCTAssertTrue(gratitudeEditor.waitForExistence(timeout: 5))
         gratitudeEditor.tap()
         gratitudeEditor.typeText(" Added detail")
@@ -323,7 +332,7 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(strip.waitForExistence(timeout: 5))
         strip.tap()
 
-        let reopenedEditor = app.textFields["JournalGratitudeStrip.0.editor"]
+        let reopenedEditor = journalTextView("JournalGratitudeStrip.0.editor", in: app)
         XCTAssertTrue(reopenedEditor.waitForExistence(timeout: 5))
         let updatedValue = reopenedEditor.value as? String
         XCTAssertTrue(
@@ -386,12 +395,22 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(secondStrip.waitForExistence(timeout: 5))
 
         firstStrip.tap()
-        let firstEditor = app.textFields["JournalGratitudeStrip.0.editor"]
+        let firstEditor = journalTextView("JournalGratitudeStrip.0.editor", in: app)
         XCTAssertTrue(firstEditor.waitForExistence(timeout: 5))
+        firstEditor.typeText(" UPDATED")
 
         secondStrip.tap()
-        let secondEditor = app.textFields["JournalGratitudeStrip.1.editor"]
+        let secondEditor = journalTextView("JournalGratitudeStrip.1.editor", in: app)
         XCTAssertTrue(secondEditor.waitForExistence(timeout: 5))
         XCTAssertEqual(secondEditor.value as? String, "Second gratitude sentence")
+
+        firstStrip.tap()
+        let firstEditorReopened = journalTextView("JournalGratitudeStrip.0.editor", in: app)
+        XCTAssertTrue(firstEditorReopened.waitForExistence(timeout: 5))
+        let firstValue = firstEditorReopened.value as? String ?? ""
+        XCTAssertTrue(
+            firstValue.contains("UPDATED"),
+            "Expected first strip edits to persist after focusing another strip."
+        )
     }
 }

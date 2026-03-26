@@ -188,4 +188,68 @@ final class JournalScreenChipHandlingEdgeCaseTests: XCTestCase {
         XCTAssertTrue(didCallMove)
         XCTAssertNil(editingIndex)
     }
+
+    func test_handleAddChipTap_whileTransitioning_returnsFalseWithoutMutating() {
+        var input = "Draft"
+        var editingIndex: Int? = nil
+        var isTransitioning = true
+        var didAdd = false
+        let operations = ChipSectionOperations(
+            updateImmediate: { _, _ in 0 },
+            addImmediate: { _ in
+                didAdd = true
+                return 0
+            },
+            remove: { _ in false },
+            fullText: { _ in nil },
+            count: 0,
+            summarizeAndUpdateChip: { _ in }
+        )
+
+        let handled = JournalScreenChipHandling.handleAddChipTap(
+            input: Binding(get: { input }, set: { input = $0 }),
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 }),
+            operations: operations,
+            isTransitioning: Binding(get: { isTransitioning }, set: { isTransitioning = $0 })
+        )
+
+        XCTAssertFalse(handled)
+        XCTAssertEqual(input, "Draft")
+        XCTAssertNil(editingIndex)
+        XCTAssertFalse(didAdd)
+    }
+
+    func test_performChipTap_whenNotEditingButDraftPresent_addsThenOpensTappedChip() {
+        var input = "New draft line"
+        var editingIndex: Int?
+        var isTransitioning = false
+        var addedIndex: Int?
+        let operations = ChipSectionOperations(
+            updateImmediate: { _, _ in nil },
+            addImmediate: { text in
+                addedIndex = 0
+                XCTAssertEqual(text, "New draft line")
+                return 0
+            },
+            remove: { _ in false },
+            fullText: { index in
+                index == 1 ? "Second saved" : "First saved"
+            },
+            count: 2,
+            summarizeAndUpdateChip: { _ in }
+        )
+
+        let handled = JournalScreenChipHandling.performChipTap(
+            tapIndex: 1,
+            input: Binding(get: { input }, set: { input = $0 }),
+            editingIndex: Binding(get: { editingIndex }, set: { editingIndex = $0 }),
+            operations: operations,
+            isTransitioning: Binding(get: { isTransitioning }, set: { isTransitioning = $0 })
+        )
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(editingIndex, 1)
+        XCTAssertEqual(input, "Second saved")
+        XCTAssertEqual(addedIndex, 0)
+    }
 }

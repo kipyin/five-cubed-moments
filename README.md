@@ -103,7 +103,7 @@ Note: `make test-all` resets simulators (wipes simulator state) to reduce flaky 
 
 ## CI (GitHub Actions)
 
-Workflows: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (lint, build, tests) and [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) (CodeQL Swift). Simulator steps use **`make`** (`ci-build`, `ci-full`, `ci-pr-full-ci`; `ci-merge-queue` is an alias for `ci-full` in the [`Makefile`](Makefile)) so destinations match `Scripts/simulator_destination.py` resolution.
+Workflows: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (lint, build, tests) and [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) (CodeQL Swift). **CodeQL** runs **daily** at **20:00 UTC** (**04:00 UTC+8**). Scheduled runs **skip** the traced macOS build when `main` is unchanged since the last successful scan (`actions/cache`; a miss or eviction still runs the scan). **Run workflow** (`workflow_dispatch`) on CodeQL always performs a full analysis. Simulator steps use **`make`** (`ci-build`, `ci-full`, `ci-pr-full-ci`; `ci-merge-queue` is an alias for `ci-full` in the [`Makefile`](Makefile)) so destinations match `Scripts/simulator_destination.py` resolution.
 
 **Why not both `push` and `pull_request` on every branch?** A push to a PR branch used to trigger *two* workflow runs (push + pull_request), which was noisy. The workflow now uses **`pull_request` only for PRs targeting `main`**, and **`push` only for the `main` branch** (post-merge build). Feature branches without a PR do not run CI until you open one.
 

@@ -1,14 +1,14 @@
 name: CodeQL
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
   security-events: write
+  actions: write
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
@@ -18,11 +18,46 @@ env:
   CI_SIMULATOR_PRO: platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2
 
 jobs:
+  gate:
+    name: Gate (skip if main unchanged)
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'main' }}
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: .codeql-cache
+          key: codeql-last-main-sha-v1
+          fail-on-cache-miss: false
+          enableCrossOsArchive: true
+
+      - name: Decide whether to run CodeQL
+        id: decide
+        run: |
+          CURRENT=$(git rev-parse HEAD)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -f .codeql-cache/last-sha ] && [ "$(tr -d '[:space:]' < .codeql-cache/last-sha)" = "$CURRENT" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   analyze:
     name: Analyze (Swift)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'main' }}
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -40,3 +75,16 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: /language:swift
+
+      - name: Save last analyzed SHA
+        if: success() && (github.event_name == 'schedule' || github.ref == 'refs/heads/main')
+        run: |
+          mkdir -p .codeql-cache
+          git rev-parse HEAD > .codeql-cache/last-sha
+
+      - uses: actions/cache/save@v4
+        if: success() && (github.event_name == 'schedule' || github.ref == 'refs/heads/main')
+        with:
+          path: .codeql-cache
+          key: codeql-last-main-sha-v1
+          enableCrossOsArchive: true

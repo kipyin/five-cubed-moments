@@ -95,45 +95,6 @@ final class JournalUITests: XCTestCase {
     }
 
     @MainActor
-    private func openReviewTimeline(in app: XCUIApplication) {
-        let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
-
-        if app.segmentedControls.firstMatch.waitForExistence(timeout: 2) {
-            return
-        }
-
-        let reviewByLabel = tabBar.buttons["Review"]
-        if reviewByLabel.waitForExistence(timeout: 3) {
-            reviewByLabel.tap()
-        } else {
-            tabBar.buttons.element(boundBy: 1).tap()
-        }
-
-        XCTAssertTrue(
-            app.segmentedControls.firstMatch.waitForExistence(timeout: 15),
-            "Expected Review mode segmented control."
-        )
-    }
-
-    @MainActor
-    private func firstTimelineEntryButton(in app: XCUIApplication) -> XCUIElement {
-        let identifiedElement = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "ReviewTimelineEntry.")
-        ).firstMatch
-        if identifiedElement.exists {
-            return identifiedElement
-        }
-
-        // Fallback: first timeline entry usually appears after the mode picker row.
-        let firstCellFallback = app.cells.element(boundBy: 1)
-        if firstCellFallback.exists {
-            return firstCellFallback
-        }
-        return app.cells.firstMatch
-    }
-
-    @MainActor
     func test_todayScreen_persistsJournalInputAcrossRelaunch() {
         let app = launchApp()
 
@@ -163,23 +124,8 @@ final class JournalUITests: XCTestCase {
     @MainActor
     func test_historyScreen_navigatesToPastEntry() throws {
         throw XCTSkip(
-            "Temporarily skipped: timeline list rows are not reliably exposed to XCUITest in current simulator runtime."
+            "Temporarily skipped: Review navigation to past entries is not covered by this UI test path."
         )
-        let app = launchApp()
-
-        // Add an entry on Today
-        addGratitude("History test gratitude", in: app)
-
-        // Switch to Review timeline
-        openReviewTimeline(in: app)
-
-        // Wait for at least one row and open the newest entry.
-        let firstEntry = firstTimelineEntryButton(in: app)
-        XCTAssertTrue(firstEntry.waitForExistence(timeout: 5))
-        firstEntry.tap()
-
-        // Verify we're on the entry screen.
-        XCTAssertTrue(app.staticTexts["Gratitudes"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -193,19 +139,8 @@ final class JournalUITests: XCTestCase {
     @MainActor
     func test_pastEntryScreen_shareButtonIsVisibleAfterNavigatingFromHistory() throws {
         throw XCTSkip(
-            "Temporarily skipped: timeline list rows are not reliably exposed to XCUITest in current simulator runtime."
+            "Temporarily skipped: Review navigation to past entries is not covered by this UI test path."
         )
-        let app = launchApp()
-
-        addGratitude("Share test entry", in: app)
-        openReviewTimeline(in: app)
-
-        let firstEntry = firstTimelineEntryButton(in: app)
-        XCTAssertTrue(firstEntry.waitForExistence(timeout: 5))
-        firstEntry.tap()
-
-        XCTAssertTrue(app.staticTexts["Gratitudes"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 5))
     }
 
     @MainActor

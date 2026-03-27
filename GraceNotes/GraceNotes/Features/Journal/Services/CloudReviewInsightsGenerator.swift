@@ -57,6 +57,7 @@ struct CloudReviewInsightsGenerator: ReviewInsightsGenerating {
             currentPeriod: weekRange,
             currentWeekEntries: currentWeekEntries,
             previousWeekEntries: previousWeekEntries,
+            allEntries: entries,
             calendar: calendar
         )
         let deviceRecurringLists = recurringLists(from: aggregates)

@@ -3585,6 +3585,22 @@
         }
       }
     },
+    "Reflection rhythm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reflection rhythm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反思节奏"
+          }
+        }
+      }
+    },
     "People in Mind" : {
       "localizations" : {
         "en" : {

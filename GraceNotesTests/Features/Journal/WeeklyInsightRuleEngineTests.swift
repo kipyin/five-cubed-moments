@@ -25,6 +25,7 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
             currentPeriod: currentPeriod,
             currentWeekEntries: [],
             previousWeekEntries: [],
+            allEntries: [],
             calendar: calendar
         )
 
@@ -72,6 +73,7 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
                 ),
                 currentWeekEntries: currentEntries,
                 previousWeekEntries: [],
+                allEntries: currentEntries,
                 calendar: calendar
             )
             XCTAssertLessThanOrEqual(analysis.weeklyInsights.count, 2)
@@ -102,6 +104,7 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
                 ),
                 currentWeekEntries: currentEntries,
                 previousWeekEntries: previousEntries,
+                allEntries: previousEntries + currentEntries,
                 calendar: calendar
             )
 
@@ -129,6 +132,7 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
                 ),
                 currentWeekEntries: currentEntries,
                 previousWeekEntries: [],
+                allEntries: currentEntries,
                 calendar: calendar
             )
 
@@ -159,6 +163,7 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
                 ),
                 currentWeekEntries: entries,
                 previousWeekEntries: [],
+                allEntries: entries,
                 calendar: calendar
             )
 

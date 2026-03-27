@@ -125,6 +125,8 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
     let meaningfulEntryCount: Int
     let completionMix: ReviewWeekCompletionMix
     let activity: [ReviewDayActivity]
+    /// Longer chronological slice for the scrollable rhythm curve; `nil` when absent from cached payloads.
+    let rhythmHistory: [ReviewDayActivity]?
     let sectionTotals: ReviewWeekSectionTotals
 }
 

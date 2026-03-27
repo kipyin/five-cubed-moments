@@ -206,6 +206,7 @@ final class ReviewInsightsCacheTests: XCTestCase {
                     hasReflectiveActivity: true
                 )
             ],
+            rhythmHistory: nil,
             sectionTotals: ReviewWeekSectionTotals(
                 gratitudeMentions: 2,
                 needMentions: 1,

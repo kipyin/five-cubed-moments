@@ -1,35 +1,11 @@
 import SwiftUI
 import SwiftData
 
-// swiftlint:disable type_body_length
 struct ReviewScreen: View {
-    private struct TimelineRefreshKey: Hashable {
-        let entryCount: Int
-        let newestEntryUpdateAt: Date
-    }
-
-    private enum ReviewMode: CaseIterable, Hashable, Identifiable {
-        case insights
-        case timeline
-
-        var id: Self { self }
-
-        var localizedTitle: String {
-            switch self {
-            case .insights:
-                return String(localized: "Insights")
-            case .timeline:
-                return String(localized: "Timeline")
-            }
-        }
-    }
-
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
-    @State private var selectedMode: ReviewMode
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
-    @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
     @AppStorage(ReviewInsightsProvider.aiFeaturesEnabledKey) private var aiFeaturesEnabled = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var appNavigation: AppNavigationModel
@@ -37,20 +13,12 @@ struct ReviewScreen: View {
     private let calendar = Calendar.current
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
     private let reviewInsightsCache = ReviewInsightsCache.shared
-    /// When true, keep Review list chrome (mode picker + identifiers) even with zero entries so UI tests can navigate.
+    /// When true, keep Review list chrome even with zero entries so UI tests can navigate.
     private let isUiTestingExperience: Bool
 
     init() {
         let isUiTesting = ProcessInfo.graceNotesIsRunningUITests
         isUiTestingExperience = isUiTesting
-        _selectedMode = State(initialValue: isUiTesting ? .timeline : .insights)
-    }
-
-    private var timelineRefreshKey: TimelineRefreshKey {
-        TimelineRefreshKey(
-            entryCount: entries.count,
-            newestEntryUpdateAt: entries.map(\.updatedAt).max() ?? .distantPast
-        )
     }
 
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
@@ -85,19 +53,8 @@ struct ReviewScreen: View {
             PerformanceTrace.instant("ReviewScreen.onAppear")
         }
         .task(id: currentInsightsRefreshKey) {
-            guard selectedMode == .insights else { return }
             await hydrateReviewInsightsFromCacheIfNeeded()
             await refreshReviewInsights()
-        }
-        .onChange(of: selectedMode) { _, newMode in
-            guard newMode == .insights else { return }
-            Task {
-                await hydrateReviewInsightsFromCacheIfNeeded()
-                await refreshReviewInsights()
-            }
-        }
-        .task(id: timelineRefreshKey) {
-            refreshTimelineGroups()
         }
     }
 
@@ -112,47 +69,18 @@ struct ReviewScreen: View {
 
     private var historyList: some View {
         List {
-            reviewModeSection
-
-            switch selectedMode {
-            case .insights:
-                insightsSection
-                insightsPullToRefreshScrollAssist
-            case .timeline:
-                timelineSections
-            }
+            insightsSection
+            insightsPullToRefreshScrollAssist
         }
         .listStyle(.insetGrouped)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
         .background(AppTheme.reviewBackground)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: selectedMode)
         .refreshable {
-            switch selectedMode {
-            case .insights:
-                await refreshReviewInsights(force: true)
-            case .timeline:
-                refreshTimelineGroups()
-            }
+            await refreshReviewInsights(force: true)
         }
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
-        }
-    }
-
-    private var reviewModeSection: some View {
-        Section {
-            Picker(String(localized: "Review mode"), selection: $selectedMode) {
-                ForEach(ReviewMode.allCases) { mode in
-                    Text(mode.localizedTitle).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .tint(AppTheme.reviewAccent)
-            .accessibilityHint(String(localized: "Switch between Insights and Timeline."))
-            .accessibilityIdentifier("ReviewModePicker")
-            .listRowBackground(AppTheme.reviewBackground)
         }
     }
 
@@ -181,33 +109,8 @@ struct ReviewScreen: View {
         }
     }
 
-    @ViewBuilder
-    private var timelineSections: some View {
-        ForEach(timelineGroups, id: \.key) { group in
-            Section {
-                ForEach(group.entries, id: \.id) { entry in
-                    NavigationLink {
-                        JournalScreen(entryDate: entry.entryDate)
-                    } label: {
-                        HistoryRow(entry: entry)
-                    }
-                    .accessibilityLabel(accessibilityTimelineRowLabel(for: entry))
-                    .accessibilityIdentifier("ReviewTimelineEntry.\(entry.id.uuidString)")
-                    .accessibilityHint(String(localized: "Opens that day's entry."))
-                    .listRowBackground(AppTheme.reviewPaper)
-                }
-            } header: {
-                Text(monthYearString(from: group.key))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.reviewTextPrimary)
-                    .accessibilityAddTraits(.isHeader)
-            }
-        }
-    }
-
     @MainActor
     private func refreshReviewInsights(force: Bool = false) async {
-        guard selectedMode == .insights else { return }
         guard !entries.isEmpty else {
             reviewInsights = nil
             isLoadingInsights = false
@@ -256,7 +159,6 @@ struct ReviewScreen: View {
     }
 
     private func hydrateReviewInsightsFromCacheIfNeeded() async {
-        guard selectedMode == .insights else { return }
         guard !entries.isEmpty else { return }
         guard reviewInsights == nil else { return }
         reviewInsights = await reviewInsightsCache.insights(
@@ -279,148 +181,8 @@ struct ReviewScreen: View {
         )
     }
 
-    private func monthYearString(from date: Date) -> String {
-        date.formatted(.dateTime.month(.wide).year())
-    }
-
     private func shouldCacheRefreshKey(for insights: ReviewInsights) -> Bool {
         guard aiFeaturesEnabled else { return true }
         return insights.source == .cloudAI
-    }
-
-    private func refreshTimelineGroups() {
-        timelineGroups = HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
-    }
-
-    private func accessibilityTimelineRowLabel(for entry: JournalEntry) -> String {
-        let dateText = entry.entryDate.formatted(date: .complete, time: .omitted)
-        return String(
-            format: String(localized: "%1$@, %2$@"),
-            dateText,
-            completionText(for: entry.completionLevel)
-        )
-    }
-
-    private func completionText(for completionLevel: JournalCompletionLevel) -> String {
-        switch completionLevel {
-        case .empty:
-            return String(localized: "Empty")
-        case .started:
-            return String(localized: "Started")
-        case .growing:
-            return String(localized: "Growing")
-        case .balanced:
-            return String(localized: "Balanced")
-        case .full:
-            return String(localized: "Full")
-        }
-    }
-
-}
-// swiftlint:enable type_body_length
-private struct HistoryRow: View {
-    let entry: JournalEntry
-
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            compactLayout
-            stackedLayout
-        }
-        .padding(.vertical, 2)
-    }
-
-    private var compactLayout: some View {
-        HStack(alignment: .center, spacing: 10) {
-            dateText
-            if hasCompletionBadge {
-                Spacer(minLength: 8)
-                completionBadge(lineLimit: 1)
-            }
-        }
-    }
-
-    private var stackedLayout: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            dateText
-            if hasCompletionBadge {
-                completionBadge(lineLimit: 2)
-            }
-        }
-    }
-
-    private var dateText: some View {
-        Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
-            .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.reviewTextPrimary)
-    }
-
-    private var hasCompletionBadge: Bool { true }
-
-    @ViewBuilder
-    private func completionBadge(lineLimit: Int) -> some View {
-        switch entry.completionLevel {
-        case .full:
-            statusChip(
-                text: String(localized: "Full"),
-                textColor: AppTheme.reviewCompleteText,
-                backgroundColor: AppTheme.reviewCompleteBackground,
-                borderColor: AppTheme.reviewCompleteBorder
-            )
-            .lineLimit(lineLimit)
-        case .balanced:
-            statusChip(
-                text: String(localized: "Balanced"),
-                textColor: AppTheme.reviewStandardText,
-                backgroundColor: AppTheme.reviewStandardBackground,
-                borderColor: AppTheme.reviewStandardBorder
-            )
-            .lineLimit(lineLimit)
-        case .growing:
-            statusChip(
-                text: String(localized: "Growing"),
-                textColor: AppTheme.reviewStandardText,
-                backgroundColor: AppTheme.reviewStandardBackground,
-                borderColor: AppTheme.reviewStandardBorder
-            )
-            .lineLimit(lineLimit)
-        case .started:
-            statusChip(
-                text: String(localized: "Started"),
-                textColor: AppTheme.reviewQuickStartText,
-                backgroundColor: AppTheme.reviewQuickStartBackground,
-                borderColor: AppTheme.reviewQuickStartBorder
-            )
-            .lineLimit(lineLimit)
-        case .empty:
-            statusChip(
-                text: String(localized: "Empty"),
-                textColor: AppTheme.reviewTextMuted,
-                backgroundColor: AppTheme.reviewBackground,
-                borderColor: AppTheme.border
-            )
-            .lineLimit(lineLimit)
-        }
-    }
-
-    private func statusChip(
-        text: String,
-        textColor: Color,
-        backgroundColor: Color,
-        borderColor: Color
-    ) -> some View {
-        Text(text)
-            .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-            .lineLimit(1)
-            .foregroundStyle(textColor)
-            .multilineTextAlignment(.leading)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(backgroundColor)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(borderColor.opacity(0.8), lineWidth: 1)
-            )
-            .accessibilityLabel(text)
     }
 }

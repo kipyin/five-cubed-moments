@@ -299,6 +299,7 @@ extension ReviewInsightsProviderTests {
                 ReviewDayActivity(date: Date(timeIntervalSince1970: 2), hasReflectiveActivity: true),
                 ReviewDayActivity(date: Date(timeIntervalSince1970: 3), hasReflectiveActivity: true)
             ],
+            rhythmHistory: nil,
             sectionTotals: ReviewWeekSectionTotals(
                 gratitudeMentions: 3,
                 needMentions: 2,

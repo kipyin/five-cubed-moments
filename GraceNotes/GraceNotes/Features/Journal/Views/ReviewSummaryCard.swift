@@ -128,11 +128,11 @@ struct ReviewSummaryCard: View {
 
     private func weekRhythmPanel(for insights: ReviewInsights) -> some View {
         ReviewInsightInsetPanel(
-            title: String(localized: "Past seven days rhythm"),
+            title: String(localized: "Reflection rhythm"),
             panelChrome: .standard,
             titleTrailingText: weekRangeText(insights)
         ) {
-            activityStrip(for: insights.weekStats)
+            rhythmHistoryCurve(for: insights)
         }
     }
 
@@ -349,21 +349,96 @@ struct ReviewSummaryCard: View {
         }
     }
 
-    private func activityStrip(for stats: ReviewWeekStats) -> some View {
-        HStack(spacing: 8) {
-            ForEach(stats.activity, id: \.date) { day in
-                VStack(spacing: 6) {
-                    Text(day.date.formatted(.dateTime.weekday(.narrow)))
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.reviewTextMuted)
-                    Circle()
-                        .fill(activityIconTint(for: day))
-                        .frame(width: 10, height: 10)
+    private func rhythmHistoryCurve(for insights: ReviewInsights) -> some View {
+        let stats = insights.weekStats
+        let days = stats.rhythmHistory ?? stats.activity
+        let currentWeek = insights.weekStart..<insights.weekEnd
+        let calendar = Calendar.current
+
+        return ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .bottom, spacing: 8) {
+                    ForEach(days, id: \.date) { day in
+                        rhythmColumn(day: day, currentWeek: currentWeek, calendar: calendar)
+                            .id(day.date)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(activityAccessibilityLabel(for: day))
+                .padding(.vertical, 6)
+                .padding(.horizontal, 4)
             }
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(AppTheme.reviewPaper.opacity(0.45))
+            }
+            .onAppear {
+                guard let last = days.last else { return }
+                proxy.scrollTo(last.date, anchor: .trailing)
+            }
+        }
+    }
+
+    private func rhythmColumn(
+        day: ReviewDayActivity,
+        currentWeek: Range<Date>,
+        calendar: Calendar
+    ) -> some View {
+        let activeRow = levelRowIndexFromTop(for: day)
+        let labelText = rhythmDayLabel(date: day.date, currentWeek: currentWeek, calendar: calendar)
+        return VStack(spacing: 6) {
+            VStack(spacing: 4) {
+                ForEach(0..<5, id: \.self) { rowFromTop in
+                    ZStack {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 10, height: 10)
+                        if activeRow == rowFromTop {
+                            Circle()
+                                .fill(activityIconTint(for: day))
+                                .frame(width: 10, height: 10)
+                        }
+                    }
+                    .frame(height: 14)
+                }
+            }
+            .frame(minHeight: 78)
+            Text(labelText)
+                .font(AppTheme.warmPaperMeta)
+                .foregroundStyle(AppTheme.reviewTextMuted)
+                .frame(width: 40)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+        }
+        .frame(width: 44)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(activityAccessibilityLabel(for: day))
+        .accessibilityIdentifier(accessibilityRhythmColumnId(for: day))
+    }
+
+    private func accessibilityRhythmColumnId(for day: ReviewDayActivity) -> String {
+        "ReviewRhythmDay.\(day.date.timeIntervalSince1970)"
+    }
+
+    private func rhythmDayLabel(date: Date, currentWeek: Range<Date>, calendar: Calendar) -> String {
+        let dayStart = calendar.startOfDay(for: date)
+        if currentWeek.contains(dayStart) {
+            return date.formatted(.dateTime.weekday(.narrow))
+        }
+        return date.formatted(.dateTime.month(.defaultDigits).day(.defaultDigits))
+    }
+
+    private func levelRowIndexFromTop(for day: ReviewDayActivity) -> Int {
+        let level = day.strongestCompletionLevel ?? .empty
+        switch level {
+        case .full:
+            return 0
+        case .balanced:
+            return 1
+        case .growing:
+            return 2
+        case .started:
+            return 3
+        case .empty:
+            return 4
         }
     }
 
@@ -484,7 +559,7 @@ private struct InsightsLoadingSkeleton: View {
             }
             VStack(alignment: .leading, spacing: 10) {
                 skeletonInsetPanel(
-                    title: String(localized: "Past seven days rhythm"),
+                    title: String(localized: "Reflection rhythm"),
                     panelChrome: .standard,
                     lineSpecs: [(1.0, 10), (0.64, 10)]
                 )

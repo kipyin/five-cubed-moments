@@ -20,6 +20,7 @@ struct WeeklyInsightRuleEngine {
         currentPeriod: Range<Date>,
         currentWeekEntries: [JournalEntry],
         previousWeekEntries: [JournalEntry],
+        allEntries: [JournalEntry],
         calendar: Calendar
     ) -> WeeklyInsightAnalysis {
         let candidateBuilder = WeeklyInsightCandidateBuilder(textNormalizer: textNormalizer)
@@ -27,6 +28,7 @@ struct WeeklyInsightRuleEngine {
             currentPeriod: currentPeriod,
             currentWeekEntries: currentWeekEntries,
             previousWeekEntries: previousWeekEntries,
+            allEntries: allEntries,
             calendar: calendar
         )
 

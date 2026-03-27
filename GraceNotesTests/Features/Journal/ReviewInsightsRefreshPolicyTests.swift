@@ -195,6 +195,7 @@ final class ReviewInsightsRefreshPolicyTests: XCTestCase {
                 fullDays: 0
             ),
             activity: [ReviewDayActivity(date: weekStart, hasReflectiveActivity: true)],
+            rhythmHistory: nil,
             sectionTotals: ReviewWeekSectionTotals(
                 gratitudeMentions: 2,
                 needMentions: 1,

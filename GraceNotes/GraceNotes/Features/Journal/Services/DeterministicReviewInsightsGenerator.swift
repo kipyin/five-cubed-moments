@@ -16,6 +16,7 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
             currentPeriod: currentPeriod,
             currentWeekEntries: currentWeekEntries,
             previousWeekEntries: previousWeekEntries,
+            allEntries: entries,
             calendar: calendar
         )
 

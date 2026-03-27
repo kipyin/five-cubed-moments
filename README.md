@@ -15,6 +15,7 @@ Marketing version stays **0.5.0** across several TestFlight / App Store drops; e
 - **Journal onboarding** — Post-Seed journey (**C**) is driven by user state (completion level, `hasSeenPostSeedJourney`, guided journal), not app version gates; legacy `pending051*` keys migrate safely for installs mid-upgrade.
 - **Today sentence strips (#102)** — Gratitudes, Needs, and People in mind show submitted lines as **strips** (sentence-first) with inline edit; chip-style labels remain secondary for weekly aggregation. See CHANGELOG.
 - **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
+- **Review weekly rhythm (#115)** — **Reflection rhythm** in weekly insights uses a redesigned per-day column chart (horizontal scroll when needed); tap a day to open that day’s journal entry. See CHANGELOG.
 - **Review insights (#40 / #80)** — Tracked on GitHub and in `GraceNotes/docs/07-release-roadmap.md` (**#80** may remain open for engine depth). See CHANGELOG for full bullets.
 
 ### Build 7 (2026-03-24)
@@ -51,7 +52,7 @@ See `GraceNotes/docs/07-release-roadmap.md`.
 - **Daily journaling** - Today's entry with five gratitudes, five needs, five people in mind, reading notes, and reflections. Entries auto-create and save as you type.
   - **Sequential input** – Type a full sentence, press Enter; the app summarizes it to a short label for aggregation while you still see your full line as a **sentence strip**. Tap a strip to edit inline. Supports 5 gratitudes, 5 needs, 5 people.
 - **Review** – Browse past entries by month with weekly recurring-theme insights and continuity prompts.
-- **Structured Review modes** – Switch between Insight and Timeline modes for cleaner weekly reflection and archive browsing.
+- **Weekly insights** – Insights-first Review with a scrollable **Reflection rhythm** chart (tap a day that has a saved entry to open that day’s journal).
 - **Shareable cards** – Generate a formatted image of a day's entry and share via the iOS share sheet.
 - **Reminders** – Optional daily notification to complete today's 5³.
 - **Advanced review insights** – Optional AI-generated weekly reflection summary with deterministic on-device fallback.

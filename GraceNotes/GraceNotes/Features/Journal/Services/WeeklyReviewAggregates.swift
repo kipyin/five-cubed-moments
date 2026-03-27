@@ -67,6 +67,7 @@ struct WeeklyReviewAggregatesBuilder {
         currentPeriod: Range<Date>,
         currentWeekEntries: [JournalEntry],
         previousWeekEntries: [JournalEntry],
+        allEntries: [JournalEntry],
         calendar: Calendar
     ) -> WeeklyReviewAggregates {
         let sortedCurrentEntries = sortedEntries(currentWeekEntries)
@@ -108,6 +109,7 @@ struct WeeklyReviewAggregatesBuilder {
             stats: buildWeekStats(
                 currentPeriod: currentPeriod,
                 entries: sortedCurrentEntries,
+                allEntries: allEntries,
                 reflectionDays: reflectionDays,
                 calendar: calendar
             )
@@ -288,6 +290,7 @@ private extension WeeklyReviewAggregatesBuilder {
     private func buildWeekStats(
         currentPeriod: Range<Date>,
         entries: [JournalEntry],
+        allEntries: [JournalEntry],
         reflectionDays: Int,
         calendar: Calendar
     ) -> ReviewWeekStats {
@@ -300,6 +303,11 @@ private extension WeeklyReviewAggregatesBuilder {
             strongestCompletionByDay: strongestCompletionByDay,
             calendar: calendar
         )
+        let rhythmHistory = buildRhythmHistory(
+            allEntries: allEntries,
+            currentPeriod: currentPeriod,
+            calendar: calendar
+        )
         let sectionTotals = ReviewWeekSectionTotals(
             gratitudeMentions: entries.reduce(0) { $0 + ($1.gratitudes ?? []).count },
             needMentions: entries.reduce(0) { $0 + ($1.needs ?? []).count },
@@ -310,8 +318,36 @@ private extension WeeklyReviewAggregatesBuilder {
             meaningfulEntryCount: meaningfulEntryCount,
             completionMix: completionMix,
             activity: activity,
+            rhythmHistory: rhythmHistory,
             sectionTotals: sectionTotals
         )
+    }
+
+    /// Builds a longer oldest-to-newest activity sequence ending on the last day of `currentPeriod`,
+    /// capped for performance.
+    private func buildRhythmHistory(
+        allEntries: [JournalEntry],
+        currentPeriod: Range<Date>,
+        calendar: Calendar
+    ) -> [ReviewDayActivity]? {
+        guard !allEntries.isEmpty else { return nil }
+
+        let strongestCompletionByDay = strongestCompletionByDay(from: allEntries, calendar: calendar)
+        let endDayInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound)
+            ?? currentPeriod.lowerBound
+        let entryMin = allEntries.map { calendar.startOfDay(for: $0.entryDate) }.min()
+        let capBack = calendar.date(byAdding: .day, value: -179, to: endDayInclusive) ?? endDayInclusive
+        let startDay = max(capBack, entryMin ?? capBack)
+        guard startDay <= endDayInclusive else { return nil }
+
+        let rangeEndExclusive = calendar.date(byAdding: .day, value: 1, to: endDayInclusive) ?? currentPeriod.upperBound
+        let history = buildDayActivity(
+            currentPeriod: startDay..<rangeEndExclusive,
+            entries: allEntries,
+            strongestCompletionByDay: strongestCompletionByDay,
+            calendar: calendar
+        )
+        return history.isEmpty ? nil : history
     }
 
     private func strongestCompletionByDay(
@@ -373,13 +409,16 @@ private extension WeeklyReviewAggregatesBuilder {
         var activity: [ReviewDayActivity] = []
         var day = currentPeriod.lowerBound
         while day < currentPeriod.upperBound {
+            let dayStart = calendar.startOfDay(for: day)
+            let hasPersistedEntry = strongestCompletionByDay[dayStart] != nil
             activity.append(
                 ReviewDayActivity(
                     date: day,
-                    hasReflectiveActivity: activeDays.contains(calendar.startOfDay(for: day)),
-                    strongestCompletionLevel: activeDays.contains(calendar.startOfDay(for: day))
-                        ? strongestCompletionByDay[calendar.startOfDay(for: day)]
-                        : nil
+                    hasReflectiveActivity: activeDays.contains(dayStart),
+                    strongestCompletionLevel: activeDays.contains(dayStart)
+                        ? strongestCompletionByDay[dayStart]
+                        : nil,
+                    hasPersistedEntry: hasPersistedEntry
                 )
             )
             day = calendar.date(byAdding: .day, value: 1, to: day) ?? currentPeriod.upperBound

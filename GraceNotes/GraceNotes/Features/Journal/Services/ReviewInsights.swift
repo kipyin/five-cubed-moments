@@ -20,21 +20,49 @@ struct ReviewDayActivity: Equatable, Hashable, Sendable, Codable {
     let date: Date
     let hasReflectiveActivity: Bool
     let strongestCompletionLevel: JournalCompletionLevel?
+    /// True when there is a `JournalEntry` row for this calendar day (it may still be inactive for rhythm signal).
+    let hasPersistedEntry: Bool
 
     private enum CodingKeys: String, CodingKey {
         case date
         case hasReflectiveActivity = "hasMeaningfulContent"
         case strongestCompletionLevel
+        case hasPersistedEntry
     }
 
     init(
         date: Date,
         hasReflectiveActivity: Bool,
-        strongestCompletionLevel: JournalCompletionLevel? = nil
+        strongestCompletionLevel: JournalCompletionLevel? = nil,
+        hasPersistedEntry: Bool
     ) {
         self.date = date
         self.hasReflectiveActivity = hasReflectiveActivity
         self.strongestCompletionLevel = strongestCompletionLevel
+        self.hasPersistedEntry = hasPersistedEntry
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        date = try container.decode(Date.self, forKey: .date)
+        hasReflectiveActivity = try container.decode(Bool.self, forKey: .hasReflectiveActivity)
+        strongestCompletionLevel = try container.decodeIfPresent(
+            JournalCompletionLevel.self,
+            forKey: .strongestCompletionLevel
+        )
+        if let persisted = try container.decodeIfPresent(Bool.self, forKey: .hasPersistedEntry) {
+            hasPersistedEntry = persisted
+        } else {
+            hasPersistedEntry = strongestCompletionLevel != nil || hasReflectiveActivity
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(date, forKey: .date)
+        try container.encode(hasReflectiveActivity, forKey: .hasReflectiveActivity)
+        try container.encodeIfPresent(strongestCompletionLevel, forKey: .strongestCompletionLevel)
+        try container.encode(hasPersistedEntry, forKey: .hasPersistedEntry)
     }
 }
 
@@ -125,6 +153,8 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
     let meaningfulEntryCount: Int
     let completionMix: ReviewWeekCompletionMix
     let activity: [ReviewDayActivity]
+    /// Longer chronological slice for the scrollable rhythm curve; `nil` when absent from cached payloads.
+    let rhythmHistory: [ReviewDayActivity]?
     let sectionTotals: ReviewWeekSectionTotals
 }
 

@@ -194,6 +194,7 @@
       }
     },
     "%1$@, %2$@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3520,18 +3521,34 @@
         }
       }
     },
-    "Opens that day's entry." : {
+    "Opens the journal entry for that day." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opens that day's entry."
+            "value" : "Opens the journal entry for that day."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开该日的记录。"
+            "value" : "打开该日的感恩记。"
+          }
+        }
+      }
+    },
+    "No saved journal entry for this day." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved journal entry for this day."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该日尚无已保存的日记条目。"
           }
         }
       }
@@ -3570,6 +3587,7 @@
       }
     },
     "Past seven days rhythm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4084,6 +4102,22 @@
         }
       }
     },
+    "Reflection rhythm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reflection rhythm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「回顾」节奏"
+          }
+        }
+      }
+    },
     "Reflections" : {
       "localizations" : {
         "en" : {
@@ -4295,6 +4329,7 @@
       }
     },
     "Review mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5150,6 +5185,7 @@
       }
     },
     "Switch between Insights and Timeline." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5427,6 +5463,7 @@
       }
     },
     "Timeline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6378,7 +6415,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本周你的反思节奏很稳定。"
+            "value" : "本周你的「回顾」节奏很稳定。"
           }
         }
       }

@@ -351,9 +351,10 @@ struct PostSeedJourneyPathStrip: View {
 // MARK: - Sample insights preview
 
 struct PostSeedJourneyInsightsPreview: View {
-    private static let fadeBandHeight: CGFloat = 140
-    /// Tall enough for ``ReviewSummaryCard`` (reflection rhythm + panels) before the fade.
-    private static let previewClipHeight: CGFloat = 520
+    /// Soft scrim over the bottom of the clip (matches ``AppTheme.reviewBackground``).
+    private static let fadeBandHeight: CGFloat = 120
+    /// Shows roughly the source row + upper ~4/5 of the Reflection rhythm panel, then fades before Observation.
+    private static let previewClipHeight: CGFloat = 360
 
     private var sampleInsights: ReviewInsights {
         ReviewInsights.postSeedJourneyTutorialPreview()
@@ -375,9 +376,9 @@ struct PostSeedJourneyInsightsPreview: View {
             LinearGradient(
                 stops: [
                     .init(color: .white, location: 0),
-                    .init(color: .white, location: 0.52),
-                    .init(color: .white.opacity(0.35), location: 0.82),
-                    .init(color: .clear, location: 1)
+                    .init(color: .white, location: 0.62),
+                    .init(color: .white.opacity(0.4), location: 0.76),
+                    .init(color: .clear, location: 0.86)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -389,7 +390,7 @@ struct PostSeedJourneyInsightsPreview: View {
             LinearGradient(
                 colors: [
                     AppTheme.reviewBackground.opacity(0),
-                    AppTheme.reviewBackground.opacity(0.55),
+                    AppTheme.reviewBackground.opacity(0.65),
                     AppTheme.reviewBackground
                 ],
                 startPoint: .top,

@@ -15,6 +15,7 @@ Marketing version stays **0.5.0** across several TestFlight / App Store drops; e
 - **Journal onboarding** — Post-Seed journey (**C**) is driven by user state (completion level, `hasSeenPostSeedJourney`, guided journal), not app version gates; legacy `pending051*` keys migrate safely for installs mid-upgrade.
 - **Today sentence strips (#102)** — Gratitudes, Needs, and People in mind show submitted lines as **strips** (sentence-first) with inline edit; chip-style labels remain secondary for weekly aggregation. See CHANGELOG.
 - **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
+- **Review weekly rhythm (#115)** — **Reflection rhythm** in weekly insights uses a redesigned per-day column chart (horizontal scroll when needed); tap a day to open that day’s journal entry. See CHANGELOG.
 - **Review insights (#40 / #80)** — Tracked on GitHub and in `GraceNotes/docs/07-release-roadmap.md` (**#80** may remain open for engine depth). See CHANGELOG for full bullets.
 
 ### Build 7 (2026-03-24)

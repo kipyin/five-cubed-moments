@@ -6,8 +6,6 @@ struct ReviewScreen: View {
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
-    @AppStorage(ReviewInsightsProvider.aiFeaturesEnabledKey) private var aiFeaturesEnabled = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var appNavigation: AppNavigationModel
 
     private let calendar = Calendar.current
@@ -24,7 +22,6 @@ struct ReviewScreen: View {
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
         ReviewInsightsRefreshKey(
             weekStart: currentReviewPeriod.lowerBound,
-            aiFeaturesEnabled: aiFeaturesEnabled,
             entrySnapshots: weeklyEntriesForRefresh.map {
                 ReviewEntrySnapshot(id: $0.id, updatedAt: $0.updatedAt)
             }
@@ -88,7 +85,6 @@ struct ReviewScreen: View {
         Section {
             ReviewSummaryCard(
                 insights: reviewInsights,
-                aiFeaturesEnabled: aiFeaturesEnabled,
                 isLoading: isLoadingInsights,
                 weekJournalEntryCount: weeklyEntriesForRefresh.count,
                 onContinueToToday: { appNavigation.selectedTab = .today }
@@ -153,7 +149,7 @@ struct ReviewScreen: View {
         reviewInsights = outcome.insights
         await reviewInsightsCache.storeIfEligible(outcome.insights, calendar: calendar)
         if outcome.shouldUpdateCachedRefreshKey {
-            lastInsightsRefreshKey = shouldCacheRefreshKey(for: generatedInsights) ? refreshKey : nil
+            lastInsightsRefreshKey = refreshKey
         }
         isLoadingInsights = false
     }
@@ -179,10 +175,5 @@ struct ReviewScreen: View {
             insights: generated,
             shouldUpdateCachedRefreshKey: true
         )
-    }
-
-    private func shouldCacheRefreshKey(for insights: ReviewInsights) -> Bool {
-        guard aiFeaturesEnabled else { return true }
-        return insights.source == .cloudAI
     }
 }

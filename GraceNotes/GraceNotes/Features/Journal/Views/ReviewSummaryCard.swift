@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 private struct ReviewInsightPanelBodies {
     let observation: String
@@ -15,11 +16,7 @@ struct ReviewSummaryCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    @State private var showCloudSkipExplanation = false
-    @State private var cloudSkipExplanationMessage = ""
-
     let insights: ReviewInsights?
-    let aiFeaturesEnabled: Bool
     let isLoading: Bool
     let weekJournalEntryCount: Int
     let onContinueToToday: () -> Void
@@ -42,14 +39,6 @@ struct ReviewSummaryCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.vertical, 4)
-        .alert(
-            String(localized: "On your device this week"),
-            isPresented: $showCloudSkipExplanation
-        ) {
-            Button(String(localized: "OK"), role: .cancel) {}
-        } message: {
-            Text(cloudSkipExplanationMessage)
-        }
     }
 
     @ViewBuilder
@@ -67,10 +56,6 @@ struct ReviewSummaryCard: View {
         let bodies = dedupedPanelBodies(for: insights)
         let recurringGroups = recurringThemeGroups(for: insights)
         return VStack(alignment: .leading, spacing: 0) {
-            if AppFeatureFlags.cloudAIUserFacingEnabled {
-                sourceBadgeRow(for: insights)
-                    .padding(.bottom, 8)
-            }
             VStack(alignment: .leading, spacing: 10) {
                 weekRhythmPanel(for: insights)
                 if !recurringGroups.isEmpty {
@@ -158,63 +143,6 @@ struct ReviewSummaryCard: View {
             .foregroundStyle(AppTheme.reviewTextPrimary)
             .lineSpacing(lineSpacing)
             .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func sourceBadgeRow(for insights: ReviewInsights) -> some View {
-        let badgeLabel = sourceBadgeLabel(for: insights.source)
-        let showCloudSkipInfo = aiFeaturesEnabled
-            && insights.source == .deterministic
-            && insights.cloudSkippedReason != nil
-
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(badgeLabel)
-                .font(AppTheme.warmPaperMeta.weight(.semibold))
-                .foregroundStyle(AppTheme.reviewTextPrimary)
-                .multilineTextAlignment(.leading)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(AppTheme.reviewAccent.opacity(0.2))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(AppTheme.border.opacity(0.45), lineWidth: 1)
-                }
-
-            if showCloudSkipInfo {
-                Button {
-                    if let reason = insights.cloudSkippedReason {
-                        cloudSkipExplanationMessage = reason.localizedExplanation
-                        showCloudSkipExplanation = true
-                    }
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(AppTheme.warmPaperMeta.weight(.semibold))
-                        .foregroundStyle(AppTheme.reviewAccent)
-                        .imageScale(.small)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Why on-device insights this week"))
-                .accessibilityHint(String(localized: "Shows why Cloud AI wasn't used for this weekly digest."))
-                .accessibilityIdentifier("ReviewInsightCloudSkipInfoButton")
-            }
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
-    }
-
-    private func sourceBadgeLabel(for source: ReviewInsightSource) -> String {
-        switch source {
-        case .deterministic:
-            String(localized: "Source: On your device")
-        case .cloudAI:
-            String(localized: "Source: Cloud AI")
-        }
     }
 
     private func shouldShowNarrativeSummary(for insights: ReviewInsights) -> Bool {
@@ -342,19 +270,15 @@ struct ReviewSummaryCard: View {
         let currentWeek = insights.weekStart..<insights.weekEnd
         let metrics = RhythmCurveScaledMetrics(dynamicTypeSize: dynamicTypeSize)
 
-        return ScrollViewReader { proxy in
-            rhythmHistoryScrollSection(
-                proxy: proxy,
-                days: days,
-                currentWeek: currentWeek,
-                metrics: metrics
-            )
-        }
+        return rhythmHistoryScrollSection(
+            days: days,
+            currentWeek: currentWeek,
+            metrics: metrics
+        )
     }
 
     @ViewBuilder
     private func rhythmHistoryScrollSection(
-        proxy: ScrollViewProxy,
         days: [ReviewDayActivity],
         currentWeek: Range<Date>,
         metrics: RhythmCurveScaledMetrics
@@ -369,16 +293,11 @@ struct ReviewSummaryCard: View {
                 )
             }
             .padding(.vertical, 8)
+            .background(ReviewRhythmHorizontalScrollEndPin())
         }
         .frame(minHeight: metrics.horizontalScrollMinHeight)
         .overlay {
             rhythmHorizontalFeatherOverlay(daysCount: days.count, metrics: metrics)
-        }
-        .onAppear {
-            guard let last = days.last else { return }
-            DispatchQueue.main.async {
-                proxy.scrollTo(last.date, anchor: .trailing)
-            }
         }
     }
 
@@ -412,7 +331,7 @@ struct ReviewSummaryCard: View {
     /// Per-day column with rounded fill; spaced from neighbors via ``RhythmCurveScaledMetrics/columnGap``.
     @ViewBuilder
     private func rhythmChartStrip(days: [ReviewDayActivity], metrics: RhythmCurveScaledMetrics) -> some View {
-        LazyHStack(alignment: .center, spacing: metrics.columnGap) {
+        HStack(alignment: .center, spacing: metrics.columnGap) {
             Color.clear
                 .frame(width: metrics.chartHorizontalPadding)
                 .accessibilityHidden(true)
@@ -488,7 +407,7 @@ struct ReviewSummaryCard: View {
         currentWeek: Range<Date>,
         metrics: RhythmCurveScaledMetrics
     ) -> some View {
-        LazyHStack(alignment: .top, spacing: metrics.columnGap) {
+        HStack(alignment: .top, spacing: metrics.columnGap) {
             Color.clear
                 .frame(width: metrics.chartHorizontalPadding)
                 .accessibilityHidden(true)
@@ -791,10 +710,6 @@ private struct InsightsLoadingSkeleton: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if AppFeatureFlags.cloudAIUserFacingEnabled {
-                sourceSkeletonRow
-                    .padding(.bottom, 8)
-            }
             VStack(alignment: .leading, spacing: 10) {
                 skeletonInsetPanel(
                     title: String(localized: "Reflection rhythm"),
@@ -821,12 +736,6 @@ private struct InsightsLoadingSkeleton: View {
         .modifier(InsightsCalmLoadingBreath(active: !reduceMotion))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "Loading weekly insights."))
-    }
-
-    private var sourceSkeletonRow: some View {
-        InsightsPlaceholderBar(widthFraction: 1, height: 13)
-            .frame(width: 200, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func skeletonInsetPanel(
@@ -936,6 +845,106 @@ private struct ReviewCountBadge: View {
             .padding(.vertical, 5)
             .background(accent.opacity(0.16))
             .clipShape(Capsule())
+    }
+}
+
+/// Pins the backing `UIScrollView` to the trailing edge when content is wider than the viewport (issue #127).
+/// `ScrollViewReader` / `GeometryReader` on scroll content can run before layout or break intrinsic width.
+private struct ReviewRhythmHorizontalScrollEndPin: UIViewRepresentable {
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = ReviewRhythmScrollLayoutProbeView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        context.coordinator.probeView = view
+        view.onLayout = { [weak coordinator = context.coordinator] in
+            coordinator?.attachIfNeeded()
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.attachIfNeeded()
+    }
+
+    final class Coordinator {
+        weak var probeView: UIView?
+        weak var observedScrollView: UIScrollView?
+        var contentSizeObservation: NSKeyValueObservation?
+        var boundsObservation: NSKeyValueObservation?
+
+        deinit {
+            contentSizeObservation = nil
+            boundsObservation = nil
+        }
+
+        func attachIfNeeded() {
+            guard let probeView else { return }
+            guard let scrollView = findAncestorScrollView(from: probeView) else { return }
+            if observedScrollView === scrollView {
+                pinToTrailingIfNeeded(scrollView)
+                return
+            }
+            contentSizeObservation = nil
+            boundsObservation = nil
+            observedScrollView = scrollView
+            contentSizeObservation = scrollView.observe(\.contentSize, options: [.new]) { [weak self] _, _ in
+                guard let self, let observed = self.observedScrollView else { return }
+                self.pinToTrailingIfNeeded(observed)
+            }
+            boundsObservation = scrollView.observe(\.bounds, options: [.new]) { [weak self] _, _ in
+                guard let self, let observed = self.observedScrollView else { return }
+                self.pinToTrailingIfNeeded(observed)
+            }
+            pinToTrailingIfNeeded(scrollView)
+        }
+
+        private func pinToTrailingIfNeeded(_ scrollView: UIScrollView) {
+            let contentWidth = scrollView.contentSize.width
+            let viewportWidth = scrollView.bounds.width
+            guard contentWidth > viewportWidth + 0.5 else { return }
+            guard scrollView.contentOffset.x < 8 else { return }
+            DispatchQueue.main.async { [weak scrollView] in
+                guard let scrollView else { return }
+                let contentWidth = scrollView.contentSize.width
+                let viewportWidth = scrollView.bounds.width
+                guard contentWidth > viewportWidth + 0.5 else { return }
+                let target = max(0, contentWidth - viewportWidth)
+                scrollView.setContentOffset(CGPoint(x: target, y: scrollView.contentOffset.y), animated: false)
+            }
+        }
+
+        private func findAncestorScrollView(from view: UIView) -> UIScrollView? {
+            var currentView: UIView? = view
+            while let candidate = currentView?.superview {
+                if let scrollView = candidate as? UIScrollView {
+                    return scrollView
+                }
+                currentView = candidate
+            }
+            return nil
+        }
+    }
+}
+
+private final class ReviewRhythmScrollLayoutProbeView: UIView {
+    var onLayout: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onLayout?()
+    }
+
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        onLayout?()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onLayout?()
     }
 }
 

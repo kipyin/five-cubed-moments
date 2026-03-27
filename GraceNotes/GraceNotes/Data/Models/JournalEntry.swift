@@ -1,12 +1,13 @@
 import Foundation
 import SwiftData
 
+/// Chip-section completion status (Gratitudes, Needs, People in Mind only). Reading notes and reflections are excluded.
 enum JournalCompletionLevel: String, Equatable, Hashable, Sendable, Codable {
-    case soil
-    case seed
-    case ripening
-    case harvest
-    case abundance
+    case empty
+    case started
+    case growing
+    case balanced
+    case full
 }
 
 @Model
@@ -58,8 +59,7 @@ final class JournalEntry {
         }
     }
 
-    /// All chip slots filled (5 gratitudes, 5 needs, 5 people). Issue #67: this is **harvest**;
-    /// notes and reflections do not change it.
+    /// All chip slots filled (5 gratitudes, 5 needs, 5 people). Notes and reflections do not change it.
     var hasHarvestChips: Bool {
         Self.hasAllFifteenChips(
             gratitudesCount: (gratitudes ?? []).count,
@@ -71,7 +71,7 @@ final class JournalEntry {
     /// Same as ``hasHarvestChips``. Older call sites use this name for History and persistence.
     var isComplete: Bool { hasHarvestChips }
 
-    /// Chips plus non-empty reading notes and reflections (internal **fullness**; UI label **Abundance**).
+    /// Chips plus non-empty reading notes and reflections (“full rhythm” for streaks and guided completion).
     var hasAbundanceRhythm: Bool {
         Self.criteriaMet(
             gratitudesCount: (gratitudes ?? []).count,
@@ -86,9 +86,7 @@ final class JournalEntry {
         Self.completionLevel(
             gratitudesCount: (gratitudes ?? []).count,
             needsCount: (needs ?? []).count,
-            peopleCount: (people ?? []).count,
-            readingNotes: readingNotes,
-            reflections: reflections
+            peopleCount: (people ?? []).count
         )
     }
 
@@ -131,49 +129,43 @@ final class JournalEntry {
         min(gratitudesCount, needsCount, peopleCount)
     }
 
+    /// Chip-only status: Gratitudes, Needs, and People in Mind counts. Notes and reflections are ignored.
     static func completionLevel(
         gratitudesCount: Int,
         needsCount: Int,
-        peopleCount: Int,
-        readingNotes: String,
-        reflections: String
+        peopleCount: Int
     ) -> JournalCompletionLevel {
-        if criteriaMet(
-            gratitudesCount: gratitudesCount,
-            needsCount: needsCount,
-            peopleCount: peopleCount,
-            readingNotes: readingNotes,
-            reflections: reflections
-        ) {
-            return .abundance
+        if gratitudesCount == 0 && needsCount == 0 && peopleCount == 0 {
+            return .empty
         }
 
-        if hasAllFifteenChips(
-            gratitudesCount: gratitudesCount,
-            needsCount: needsCount,
-            peopleCount: peopleCount
-        ) {
-            return .harvest
+        if gratitudesCount == slotCount && needsCount == slotCount && peopleCount == slotCount {
+            return .full
         }
 
-        let minCount = minChipSectionCount(
-            gratitudesCount: gratitudesCount,
-            needsCount: needsCount,
-            peopleCount: peopleCount
-        )
-        if minCount >= 3 {
-            return .ripening
+        if gratitudesCount >= 3 && needsCount >= 3 && peopleCount >= 3 {
+            return .balanced
         }
 
-        if gratitudesCount >= 1 && needsCount >= 1 && peopleCount >= 1 {
-            return .seed
+        let hasAtLeastThree = gratitudesCount >= 3 || needsCount >= 3 || peopleCount >= 3
+        let hasBelowThree = gratitudesCount < 3 || needsCount < 3 || peopleCount < 3
+        if hasAtLeastThree && hasBelowThree {
+            return .growing
         }
 
-        return .soil
+        return .started
     }
 
     var hasMeaningfulContent: Bool {
-        completionLevel != .soil
+        completionLevel != .empty
+    }
+
+    /// True when each chip section has at least one item (milestone “1/1/1”, independent of status name).
+    var hasAtLeastOneInEachChipSection: Bool {
+        let gratitudesCount = (gratitudes ?? []).count
+        let needsCount = (needs ?? []).count
+        let peopleCount = (people ?? []).count
+        return gratitudesCount >= 1 && needsCount >= 1 && peopleCount >= 1
     }
 
     /// Maximum number of items per chip section (gratitudes, needs, people).

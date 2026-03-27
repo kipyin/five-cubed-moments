@@ -39,14 +39,14 @@ struct ReviewDayActivity: Equatable, Hashable, Sendable, Codable {
 }
 
 struct ReviewWeekCompletionMix: Equatable, Sendable, Codable {
-    let soilDays: Int
-    let seedDays: Int
-    let ripeningDays: Int
-    let harvestDays: Int
-    let abundanceDays: Int
+    let emptyDays: Int
+    let startedDays: Int
+    let growingDays: Int
+    let balancedDays: Int
+    let fullDays: Int
 
     var highCompletionDays: Int {
-        harvestDays + abundanceDays
+        balancedDays + fullDays
     }
 }
 

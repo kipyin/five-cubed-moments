@@ -17,22 +17,6 @@
         }
       }
     },
-    "%1$@. Gratitudes %2$d, Needs %3$d, People in Mind %4$d." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@. Gratitudes: %2$d. Needs: %3$d. People in Mind: %4$d."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@。感恩的事 %2$d 条。需要的事 %3$d 条。牵挂的人 %4$d 条。"
-          }
-        }
-      }
-    },
     "%@ editor" : {
       "localizations" : {
         "en" : {
@@ -221,6 +205,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@，%2$@"
+          }
+        }
+      }
+    },
+    "%1$@. Gratitudes %2$d, Needs %3$d, People in Mind %4$d." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. Gratitudes: %2$d. Needs: %3$d. People in Mind: %4$d."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@。感恩的事 %2$d 条。需要的事 %3$d 条。牵挂的人 %4$d 条。"
           }
         }
       }
@@ -461,6 +461,7 @@
       }
     },
     "Abundance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -477,6 +478,7 @@
       }
     },
     "Abundance means every spot is filled in Gratitudes, Needs, and People, and you have added reading notes and reflections for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2185,214 +2187,6 @@
         }
       }
     },
-    "First time with one gratitude, one need, and someone in mind—nice work." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "First time with one in each section. Nice work."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一次三个分栏里都写了一条。做得好。"
-          }
-        }
-      }
-    },
-    "Full" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圆满"
-          }
-        }
-      }
-    },
-    "Full means all five spots are filled in Gratitudes, Needs, and People in Mind. Reading notes and reflections are separate from this status." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full means all five spots in each section are filled. Reading notes and reflections do not change this status."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「圆满」表示三个分栏都已写满五条。阅读笔记和反思不会改变这个状态。"
-          }
-        }
-      }
-    },
-    "Growing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Growing"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "成长"
-          }
-        }
-      }
-    },
-    "Growing means at least one section has three or more items and at least one section still has room to grow." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Growing means at least one section has reached three, and at least one section is still under three."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「成长」表示至少有一个分栏已经达到三条，也至少有一个分栏还不到三条。"
-          }
-        }
-      }
-    },
-    "Started" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Started"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "起步"
-          }
-        }
-      }
-    },
-    "Started means you have begun filling the three sections, and each section still has fewer than three items." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Started means you've added at least one item, and all three sections are still under three."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「起步」表示你已经写下至少一条，而且三个分栏都还不到三条。"
-          }
-        }
-      }
-    },
-    "You are growing—keep going across the three sections." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're growing. Keep going across all three sections."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你正在成长。继续把三个分栏都写下去吧。"
-          }
-        }
-      }
-    },
-    "You have started filling in today." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You've started today's entry."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你已经开始写今天这篇了。"
-          }
-        }
-      }
-    },
-    "You reached Balanced today." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You reached Balanced today."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你今天达到了「平衡」。"
-          }
-        }
-      }
-    },
-    "You reached Full today—all chip spots filled." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You reached Full today. All fifteen chip spots are filled."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你今天达到了「圆满」。十五个条目位都已填满。"
-          }
-        }
-      }
-    },
-    "Your first Balanced day—at least three in each section. Keep going toward Full." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your first Balanced day. Each section has at least three."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一次达到「平衡」。每个分栏都至少三条。"
-          }
-        }
-      }
-    },
-    "Your first Full—all fifteen chip spots filled. Add notes when you want." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your first Full day. All fifteen chip spots are filled."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第一次达到「圆满」。十五个条目位都已填满。"
-          }
-        }
-      }
-    },
     "Entries stay private to your devices and account. Export creates a full JSON backup." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2540,6 +2334,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "填色圆点表示那天有写下内容。"
+          }
+        }
+      }
+    },
+    "First time with one gratitude, one need, and someone in mind—nice work." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First time with one in each section. Nice work."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第一次三个分栏里都写了一条。做得好。"
+          }
+        }
+      }
+    },
+    "Full" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆满"
+          }
+        }
+      }
+    },
+    "Full means all five spots are filled in Gratitudes, Needs, and People in Mind. Reading notes and reflections are separate from this status." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full means all five spots in each section are filled. Reading notes and reflections do not change this status."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「圆满」表示三个分栏都已写满五条。阅读笔记和反思不会改变这个状态。"
           }
         }
       }
@@ -2744,7 +2586,40 @@
         }
       }
     },
+    "Growing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Growing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "成长"
+          }
+        }
+      }
+    },
+    "Growing means at least one section has three or more items and at least one section still has room to grow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Growing means at least one section has reached three, and at least one section is still under three."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「成长」表示至少有一个分栏已经达到三条，也至少有一个分栏还不到三条。"
+          }
+        }
+      }
+    },
     "Harvest" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2761,6 +2636,7 @@
       }
     },
     "Harvest means every spot is filled—five gratitudes, five needs, and five people. Add reading notes and reflections to reach Abundance." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4452,6 +4328,7 @@
       }
     },
     "Ripening" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4468,6 +4345,7 @@
       }
     },
     "Ripening means you have at least three items in each section. Keep going to fill all five slots in each section to reach Harvest." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4565,6 +4443,7 @@
       }
     },
     "Seed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4581,6 +4460,7 @@
       }
     },
     "Seed means each section has at least one item, and you are still building toward three in each section." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4774,6 +4654,7 @@
       }
     },
     "Shows what Abundance means for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4790,6 +4671,7 @@
       }
     },
     "Shows what Harvest means for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4823,6 +4705,7 @@
       }
     },
     "Shows what Ripening means for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4839,6 +4722,7 @@
       }
     },
     "Shows what Seed means for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4855,6 +4739,7 @@
       }
     },
     "Shows what Soil means for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4953,6 +4838,7 @@
       }
     },
     "Soil" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4969,6 +4855,7 @@
       }
     },
     "Soil means you have not yet added at least one gratitude, one need, and one person." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5176,6 +5063,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "开始本周的记录后，你就能看到回顾洞察。"
+          }
+        }
+      }
+    },
+    "Started" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起步"
+          }
+        }
+      }
+    },
+    "Started means you have begun filling the three sections, and each section still has fewer than three items." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Started means you've added at least one item, and all three sections are still under three."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「起步」表示你已经写下至少一条，而且三个分栏都还不到三条。"
           }
         }
       }
@@ -6284,7 +6203,24 @@
         }
       }
     },
+    "You are growing—keep going across the three sections." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're growing. Keep going across all three sections."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你正在成长。继续把三个分栏都写下去吧。"
+          }
+        }
+      }
+    },
     "You can keep writing in Gratitudes, Needs, and People in Mind if you'd like a fuller reflection. Tap the status above anytime to read about Harvest." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6362,6 +6298,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天你也写好了阅读笔记和反思，这一篇感恩记更完整了。"
+          }
+        }
+      }
+    },
+    "You have started filling in today." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've started today's entry."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你已经开始写今天这篇了。"
           }
         }
       }
@@ -6563,6 +6515,7 @@
       }
     },
     "You planted a seed today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6612,6 +6565,7 @@
       }
     },
     "You reached Abundance today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6627,7 +6581,40 @@
         }
       }
     },
+    "You reached Balanced today." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You reached Balanced today."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你今天达到了「平衡」。"
+          }
+        }
+      }
+    },
+    "You reached Full today—all chip spots filled." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You reached Full today. All fifteen chip spots are filled."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你今天达到了「圆满」。十五个条目位都已填满。"
+          }
+        }
+      }
+    },
     "You reached Harvest." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6743,6 +6730,7 @@
       }
     },
     "You're growing—at least three in each section. Keep going toward Harvest." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6774,7 +6762,11 @@
         }
       }
     },
+    "You've begun. Keep going until each section has three." : {
+
+    },
     "You've filled Gratitudes, Needs, and People. Add reading notes and reflections when you're ready for Abundance." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6790,7 +6782,11 @@
         }
       }
     },
+    "You've filled Gratitudes, Needs, and People. Add reading notes and reflections when you're ready." : {
+
+    },
     "You've planted Seed for the first time—one gratitude, one need, and someone on your mind. Lovely." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6807,6 +6803,7 @@
       }
     },
     "You've planted Seed. Keep going until each section has three." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6839,7 +6836,40 @@
         }
       }
     },
+    "Your first Balanced day—at least three in each section. Keep going toward Full." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your first Balanced day. Each section has at least three."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第一次达到「平衡」。每个分栏都至少三条。"
+          }
+        }
+      }
+    },
+    "Your first Full—all fifteen chip spots filled. Add notes when you want." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your first Full day. All fifteen chip spots are filled."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第一次达到「圆满」。十五个条目位都已填满。"
+          }
+        }
+      }
+    },
     "Your first Harvest—you filled all fifteen spots today. Add reading notes and reflections when you're ready for Abundance." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6856,6 +6886,7 @@
       }
     },
     "Your first Harvest, and you've added reading notes and reflections—a full rhythm for today." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

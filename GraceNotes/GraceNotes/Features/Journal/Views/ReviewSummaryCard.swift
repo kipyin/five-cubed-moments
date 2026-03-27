@@ -417,37 +417,68 @@ struct ReviewSummaryCard: View {
                 .frame(width: metrics.chartHorizontalPadding)
                 .accessibilityHidden(true)
             ForEach(Array(days.enumerated()), id: \.element.date) { index, day in
-                let cornerRadii = rhythmColumnCornerRadii(
+                rhythmColumnCell(
+                    day: day,
                     index: index,
                     count: days.count,
-                    radius: metrics.columnCornerRadius
+                    metrics: metrics
                 )
-                NavigationLink {
-                    JournalScreen(entryDate: day.date)
-                } label: {
-                    rhythmColumnChart(day: day, metrics: metrics)
-                        .frame(width: metrics.columnWidth)
-                        .background {
-                            UnevenRoundedRectangle(cornerRadii: cornerRadii, style: .continuous)
-                                .fill(AppTheme.reviewRhythmColumnFill)
-                        }
-                        .overlay {
-                            UnevenRoundedRectangle(cornerRadii: cornerRadii, style: .continuous)
-                                .stroke(AppTheme.reviewRhythmColumnStroke.opacity(0.58), lineWidth: 0.8)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(activityAccessibilityLabel(for: day))
-                .accessibilityHint(String(localized: "Opens the journal entry for that day."))
-                .accessibilityIdentifier(accessibilityRhythmColumnId(for: day))
-                .id(day.date)
             }
             Color.clear
                 .frame(width: metrics.chartHorizontalPadding)
                 .accessibilityHidden(true)
         }
         .frame(minHeight: metrics.chartRowMinHeight)
+    }
+
+    @ViewBuilder
+    private func rhythmColumnCell(
+        day: ReviewDayActivity,
+        index: Int,
+        count: Int,
+        metrics: RhythmCurveScaledMetrics
+    ) -> some View {
+        let cornerRadii = rhythmColumnCornerRadii(
+            index: index,
+            count: count,
+            radius: metrics.columnCornerRadius
+        )
+        let column = rhythmColumnChart(day: day, metrics: metrics)
+            .frame(width: metrics.columnWidth)
+            .background {
+                UnevenRoundedRectangle(cornerRadii: cornerRadii, style: .continuous)
+                    .fill(AppTheme.reviewRhythmColumnFill)
+            }
+            .overlay {
+                UnevenRoundedRectangle(cornerRadii: cornerRadii, style: .continuous)
+                    .stroke(AppTheme.reviewRhythmColumnStroke.opacity(0.58), lineWidth: 0.8)
+            }
+
+        Group {
+            if day.hasPersistedEntry {
+                NavigationLink {
+                    JournalScreen(entryDate: day.date)
+                } label: {
+                    column
+                }
+                .buttonStyle(.plain)
+            } else {
+                column
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(activityAccessibilityLabel(for: day))
+        .accessibilityHint(rhythmColumnAccessibilityHint(for: day))
+        .accessibilityIdentifier(accessibilityRhythmColumnId(for: day))
+        .id(day.date)
+    }
+
+    private func rhythmColumnAccessibilityHint(for day: ReviewDayActivity) -> String {
+        if day.hasPersistedEntry {
+            String(localized: "Opens the journal entry for that day.")
+        } else {
+            String(localized: "No saved journal entry for this day.")
+        }
     }
 
     /// Weekday / M·d labels aligned under columns (below column fills).
@@ -576,7 +607,8 @@ struct ReviewSummaryCard: View {
     }
 
     private func accessibilityRhythmColumnId(for day: ReviewDayActivity) -> String {
-        "ReviewRhythmDay.\(day.date.timeIntervalSince1970)"
+        // Integer seconds so UI tests and string catalog don’t depend on `Double` interpolation (`…1774540800.0`).
+        "ReviewRhythmDay.\(Int(day.date.timeIntervalSince1970))"
     }
 
     private func levelRowIndexFromTop(for day: ReviewDayActivity) -> Int {

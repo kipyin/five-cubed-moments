@@ -409,13 +409,16 @@ private extension WeeklyReviewAggregatesBuilder {
         var activity: [ReviewDayActivity] = []
         var day = currentPeriod.lowerBound
         while day < currentPeriod.upperBound {
+            let dayStart = calendar.startOfDay(for: day)
+            let hasPersistedEntry = strongestCompletionByDay[dayStart] != nil
             activity.append(
                 ReviewDayActivity(
                     date: day,
-                    hasReflectiveActivity: activeDays.contains(calendar.startOfDay(for: day)),
-                    strongestCompletionLevel: activeDays.contains(calendar.startOfDay(for: day))
-                        ? strongestCompletionByDay[calendar.startOfDay(for: day)]
-                        : nil
+                    hasReflectiveActivity: activeDays.contains(dayStart),
+                    strongestCompletionLevel: activeDays.contains(dayStart)
+                        ? strongestCompletionByDay[dayStart]
+                        : nil,
+                    hasPersistedEntry: hasPersistedEntry
                 )
             )
             day = calendar.date(byAdding: .day, value: 1, to: day) ?? currentPeriod.upperBound

@@ -295,9 +295,9 @@ extension ReviewInsightsProviderTests {
                 fullDays: 0
             ),
             activity: [
-                ReviewDayActivity(date: Date(timeIntervalSince1970: 1), hasReflectiveActivity: true),
-                ReviewDayActivity(date: Date(timeIntervalSince1970: 2), hasReflectiveActivity: true),
-                ReviewDayActivity(date: Date(timeIntervalSince1970: 3), hasReflectiveActivity: true)
+                ReviewDayActivity(date: Date(timeIntervalSince1970: 1), hasReflectiveActivity: true, hasPersistedEntry: true),
+                ReviewDayActivity(date: Date(timeIntervalSince1970: 2), hasReflectiveActivity: true, hasPersistedEntry: true),
+                ReviewDayActivity(date: Date(timeIntervalSince1970: 3), hasReflectiveActivity: true, hasPersistedEntry: true)
             ],
             rhythmHistory: nil,
             sectionTotals: ReviewWeekSectionTotals(

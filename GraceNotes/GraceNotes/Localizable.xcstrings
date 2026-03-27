@@ -3537,6 +3537,22 @@
         }
       }
     },
+    "No saved journal entry for this day." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved journal entry for this day."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该日尚无已保存的日记条目。"
+          }
+        }
+      }
+    },
     "Opens Today and starts the guided first entry." : {
       "localizations" : {
         "en" : {

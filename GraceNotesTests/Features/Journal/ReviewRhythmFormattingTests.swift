@@ -40,7 +40,15 @@ final class ReviewRhythmFormattingTests: XCTestCase {
             calendar: calendar
         )
 
-        XCTAssertTrue(label.contains("/"), "Expected locale M/d style with slash, got: \(label)")
+        XCTAssertTrue(
+            label.rangeOfCharacter(from: .decimalDigits) != nil,
+            "Expected date label to contain at least one digit, got: \(label)"
+        )
+        let shortWeekdaySymbols = Set(calendar.shortWeekdaySymbols)
+        XCTAssertFalse(
+            shortWeekdaySymbols.contains(label),
+            "Expected date label to be a numeric style, not just a weekday name; got: \(label)"
+        )
     }
 
     func test_assetName_mapsAllCompletionLevels() {
@@ -52,10 +60,10 @@ final class ReviewRhythmFormattingTests: XCTestCase {
     }
 
     private func date(year: Int, month: Int, day: Int) -> Date {
-        var c = DateComponents()
-        c.year = year
-        c.month = month
-        c.day = day
-        return calendar.date(from: c)!
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        return calendar.date(from: components)!
     }
 }

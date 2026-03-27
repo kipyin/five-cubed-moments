@@ -52,7 +52,7 @@ See `GraceNotes/docs/07-release-roadmap.md`.
 - **Daily journaling** - Today's entry with five gratitudes, five needs, five people in mind, reading notes, and reflections. Entries auto-create and save as you type.
   - **Sequential input** – Type a full sentence, press Enter; the app summarizes it to a short label for aggregation while you still see your full line as a **sentence strip**. Tap a strip to edit inline. Supports 5 gratitudes, 5 needs, 5 people.
 - **Review** – Browse past entries by month with weekly recurring-theme insights and continuity prompts.
-- **Structured Review modes** – Switch between Insight and Timeline modes for cleaner weekly reflection and archive browsing.
+- **Weekly insights** – Insights-first Review with a scrollable **Reflection rhythm** chart (tap a day that has a saved entry to open that day’s journal).
 - **Shareable cards** – Generate a formatted image of a day's entry and share via the iOS share sheet.
 - **Reminders** – Optional daily notification to complete today's 5³.
 - **Advanced review insights** – Optional AI-generated weekly reflection summary with deterministic on-device fallback.

@@ -200,10 +200,11 @@ final class ReviewInsightsCacheTests: XCTestCase {
                 fullDays: 0
             ),
             activity: [
-                ReviewDayActivity(date: weekStart, hasReflectiveActivity: true),
+                ReviewDayActivity(date: weekStart, hasReflectiveActivity: true, hasPersistedEntry: true),
                 ReviewDayActivity(
                     date: calendar.date(byAdding: .day, value: 1, to: weekStart)!,
-                    hasReflectiveActivity: true
+                    hasReflectiveActivity: true,
+                    hasPersistedEntry: true
                 )
             ],
             rhythmHistory: nil,

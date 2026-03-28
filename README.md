@@ -12,17 +12,18 @@ Marketing version stays **0.5.0** across several TestFlight / App Store drops; e
 
 ### Build 8 (Unreleased)
 
+- **Past tab (#130 / #132)** — Middle navigation label **Review** → **Past** (en / zh-Hans) with aligned onboarding copy; **Reflection rhythm** shows **Today** for the current calendar day instead of a weekday abbreviation. See CHANGELOG.
 - **Journal onboarding** — Post-Seed journey (**C**) is driven by user state (completion level, `hasSeenPostSeedJourney`, guided journal), not app version gates; legacy `pending051*` keys migrate safely for installs mid-upgrade.
 - **Today sequential entry (#102)** — Gratitudes, Needs, and People in mind take full sentences first, with inline edit on each saved line. See CHANGELOG.
 - **Settings (#84)** — Section headers move to authored title case instead of forced all-caps list styling.
-- **Review weekly rhythm (#115)** — **Reflection rhythm** in weekly insights uses a redesigned per-day column chart (horizontal scroll when needed); tap a day to open that day’s journal entry. See CHANGELOG.
-- **Deterministic-only insights (#119)** — Cloud AI summarization and cloud review generation are removed; journal and Review insights now stay on-device (with optional iCloud sync).
-- **Review insights (#40 / #80)** — Tracked on GitHub and in `GraceNotes/docs/07-release-roadmap.md` (**#80** may remain open for engine depth). See CHANGELOG for full bullets.
+- **Reflection rhythm (#115)** — **Reflection rhythm** in weekly insights uses a redesigned per-day column chart (horizontal scroll when needed); tap a day to open that day’s journal entry. See CHANGELOG.
+- **Deterministic-only insights (#119)** — Cloud AI summarization and cloud review generation are removed; journal and weekly insights now stay on-device (with optional iCloud sync).
+- **Weekly insights (#40 / #80)** — Tracked on GitHub and in `GraceNotes/docs/07-release-roadmap.md` (**#80** may remain open for engine depth). See CHANGELOG for full bullets.
 
 ### Build 7 (2026-03-24)
 
 - **Packaging** — Marketing **0.5.0**, build **7**, tag **`v0.5.0+7`**; Debug **dSYM**; shared **GraceNotes** scheme **Run** was **Release** in that build (later builds use **Debug** for Run; see CHANGELOG).
-- **Onboarding** — Milestone cards that jump to Settings share one eligibility rule with the UI and re-check it when you tap; onboarding/iCloud continuity keys use shared constants (see CHANGELOG **Developer**). Post-Seed orientation sample Review preview matches real insights layout; welcome copy is slightly tighter.
+- **Onboarding** — Milestone cards that jump to Settings share one eligibility rule with the UI and re-check it when you tap; onboarding/iCloud continuity keys use shared constants (see CHANGELOG **Developer**). Post-Seed orientation sample insights preview matches real Past-tab layout; welcome copy is slightly tighter.
 - **Localization** — String Catalog **zh-Hans** polish and aligned **Save to Photos** permission wording for **感恩记**.
 - **`AppInstructionLocale` + label grounding (#39)** — Instruction locale alignment, low-signal / grounding handling, unit tests (see CHANGELOG).
 - **Product docs** — Roadmap separates **#40** vs **#80**; see `GraceNotes/docs/07-release-roadmap.md`.
@@ -30,7 +31,7 @@ Marketing version stays **0.5.0** across several TestFlight / App Store drops; e
 
 ### Foundation (2026-03-21)
 
-- **Insight quality** — Review and weekly insights that better reflect your own entries: **#40**, **#80**, **#39**, **#11**.
+- **Insight quality** — Weekly insights that better reflect your own entries: **#40**, **#80**, **#39**, **#11**.
 - **First-run tutorial** — Dismissible hints toward **Started** and **Full** on today’s entry (`#60`).
 - **Behavior-first onboarding** — Welcome, then guided first journal (Gratitude → Need → People → …); optional post-Seed journey; milestone suggestions (`#71`–`#75`).
 
@@ -51,11 +52,11 @@ See `GraceNotes/docs/07-release-roadmap.md`.
 
 - **Daily journaling** - Today's entry with five gratitudes, five needs, five people in mind, reading notes, and reflections. Entries auto-create and save as you type.
   - **Sequential input** – Type a full sentence, press Enter; your full line stays easy to read on Today. Tap a line to edit inline. Each section holds up to five lines (5 gratitudes, 5 needs, 5 people).
-- **Review** – Browse past entries by month with weekly recurring-theme insights and continuity prompts.
-- **Weekly insights** – Insights-first Review with a scrollable **Reflection rhythm** chart (tap a day that has a saved entry to open that day’s journal).
+- **Past** – Middle tab: browse past entries by month with weekly recurring-theme insights and continuity prompts.
+- **Weekly insights** – Insights-first layout on **Past** with a scrollable **Reflection rhythm** chart (tap a day that has a saved entry to open that day’s journal).
 - **Shareable cards** – Generate a formatted image of a day's entry and share via the iOS share sheet.
 - **Reminders** – Optional daily notification to complete today’s entry (including a fully filled structured entry when you want it).
-- **Advanced review insights** – Deterministic weekly reflection summary generated on-device.
+- **Advanced weekly insights** – Deterministic weekly reflection summary generated on-device.
 - **Data trust controls** – private-by-default storage plus JSON export and import for backup and ownership.
 - **First-run onboarding** – A minimal welcome followed by a guided first journal path on Today, with milestone-based opt-in suggestions for reminders and iCloud.
 - **Habit support** – Streak plus tiered completion states (quick check-in, standard reflection, structured entry fully filled) to reduce all-or-nothing pressure.
@@ -75,7 +76,7 @@ Official product language: **entry** / **entries** (what the user writes; one **
 | Balanced | `.balanced` | `balanced`, `ripening` |
 | Full | `.full` | `full`, `harvest`, `abundance` |
 
-Main tabs: **Today** (journaling), **Review** (history and insights), **Settings**. The full-screen onboarding continuation is **`PostSeedJourney`** / **App tour** in code and settings; eligibility for **Started** is at least one line in each structured section (1/1/1), plus related flags—not the old “five cubed” naming.
+Main tabs: **Today** (journaling), **Past** (history and insights), **Settings**. The full-screen onboarding continuation is **`PostSeedJourney`** / **App tour** in code and settings; eligibility for **Started** is at least one line in each structured section (1/1/1), plus related flags—not the old “five cubed” naming.
 
 ## Requirements
 

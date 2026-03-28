@@ -39,11 +39,11 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
     @MainActor
     func test_reviewScreen_rhythm_doesNotSnapToTodayAfterOrientationChange() {
         let app = launchAppWithWideReviewRhythm()
-        app.tabBars.buttons["Review"].tap()
+        app.tabBars.buttons["Past"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Reflection rhythm"].waitForExistence(timeout: 25),
-            "Expected Review insights with wide rhythm seed."
+            "Expected Past tab insights with wide rhythm seed."
         )
 
         let scroll = app.scrollViews["ReviewRhythmHorizontalScroll"]

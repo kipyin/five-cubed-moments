@@ -3594,6 +3594,22 @@
         }
       }
     },
+    "Past" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Past"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "过去"
+          }
+        }
+      }
+    },
     "Past seven days" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3812,13 +3828,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open the Review tab for this week’s digest: your reflection rhythm, patterns across your sentence strips, one observation grounded in what you wrote, and a practical next step. The more specific you write each day, the closer these insights stay to you—it may take a little time."
+            "value" : "Open the Past tab for this week’s digest: your reflection rhythm, patterns across your sentence strips, one observation grounded in what you wrote, and a practical next step. The more specific you write each day, the closer these insights stay to you—it may take a little time."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在「回顾」里可以查看本周摘要：反思节奏、你在各个句子条里的规律、基于你所写内容的观察，以及一个可执行的下一步。每天写得越具体，这些洞察就越贴近你，不过这可能需要一点时间。"
+            "value" : "打开「过去」，可以查看本周摘要：反思节奏、你在各个句子条里的规律、一条基于你所写内容的观察，以及一个可执行的下一步。每天写得越具体，这些洞察就越贴近你——不过这可能需要一点时间。"
           }
         }
       }
@@ -4303,22 +4319,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新尝试安排每日提醒。"
-          }
-        }
-      }
-    },
-    "Review" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Review"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回顾"
           }
         }
       }
@@ -7094,6 +7094,23 @@
         }
       }
     },
+    "Your Past tab helps you spot themes later. Today, focus on one honest moment and call it complete." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Past tab helps you spot themes later. Today, focus on one honest moment and call it complete."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「过去」会在之后帮助你发现主题。今天先专注记录一个真实瞬间，完成就好。"
+          }
+        }
+      }
+    },
     "Your path" : {
       "localizations" : {
         "en" : {
@@ -7106,23 +7123,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的节奏"
-          }
-        }
-      }
-    },
-    "Your Review tab helps you spot themes later. Today, focus on one honest moment and call it complete." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your Review helps you spot themes later. Today, focus on one honest moment and call it complete."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「回顾」会在之后帮助你发现主题。今天先专注记录一个真实瞬间，完成就好。"
           }
         }
       }

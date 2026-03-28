@@ -137,11 +137,11 @@ final class JournalUITests: XCTestCase {
         addGratitude("Review rhythm drill-in test", in: app)
         waitForDebouncedJournalSave()
 
-        app.tabBars.buttons["Review"].tap()
+        app.tabBars.buttons["Past"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Reflection rhythm"].waitForExistence(timeout: 20),
-            "Expected Review insights to finish loading (reflection rhythm section)."
+            "Expected Past tab insights to finish loading (reflection rhythm section)."
         )
 
         let dayStart = Calendar.current.startOfDay(for: Date())
@@ -156,11 +156,11 @@ final class JournalUITests: XCTestCase {
 
         XCTAssertTrue(
             app.buttons["Share"].waitForExistence(timeout: 8),
-            "Expected journal screen with Share after drilling in from Review rhythm."
+            "Expected journal screen with Share after drilling in from Past tab rhythm."
         )
         XCTAssertTrue(
-            app.navigationBars.buttons["Review"].waitForExistence(timeout: 5),
-            "Expected back affordance to return to Review."
+            app.navigationBars.buttons["Past"].waitForExistence(timeout: 5),
+            "Expected back affordance to return to Past."
         )
     }
 

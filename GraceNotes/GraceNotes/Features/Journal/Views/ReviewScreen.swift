@@ -44,7 +44,7 @@ struct ReviewScreen: View {
                 historyList
             }
         }
-        .navigationTitle(String(localized: "Review"))
+        .navigationTitle(String(localized: "Past"))
         .background(AppTheme.reviewBackground)
         .onAppear {
             PerformanceTrace.instant("ReviewScreen.onAppear")

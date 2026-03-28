@@ -2,8 +2,16 @@ import Foundation
 
 /// Shared formatting for the Review reflection rhythm chart (labels, asset catalog image names). Kept small for tests.
 enum ReviewRhythmFormatting {
-    static func dayLabel(date: Date, currentWeek: Range<Date>, calendar cal: Calendar) -> String {
+    static func dayLabel(
+        date: Date,
+        currentWeek: Range<Date>,
+        calendar cal: Calendar,
+        now: Date = Date()
+    ) -> String {
         let dayStart = cal.startOfDay(for: date)
+        if currentWeek.contains(dayStart), cal.isDate(dayStart, inSameDayAs: now) {
+            return String(localized: "Today")
+        }
         let formatter = DateFormatter()
         formatter.calendar = cal
         formatter.locale = cal.locale ?? .current

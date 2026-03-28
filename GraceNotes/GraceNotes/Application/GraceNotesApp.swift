@@ -161,7 +161,7 @@ struct GraceNotesApp: App {
                 DeferredReviewRoot(isSelected: appNavigation.selectedTab == .history)
             }
             .tabItem {
-                Label(String(localized: "Review"), systemImage: "clock.arrow.circlepath")
+                Label(String(localized: "Past"), systemImage: "clock.arrow.circlepath")
             }
             .tag(AppTab.history)
             NavigationStack {
@@ -198,7 +198,7 @@ private struct DeferredReviewRoot: View {
                 ReviewScreen()
             } else {
                 Color.clear
-                    .navigationTitle(String(localized: "Review"))
+                    .navigationTitle(String(localized: "Past"))
             }
         }
         .onChange(of: isSelected) { _, selected in

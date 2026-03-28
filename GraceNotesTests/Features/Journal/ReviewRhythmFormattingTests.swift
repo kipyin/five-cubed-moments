@@ -19,7 +19,8 @@ final class ReviewRhythmFormattingTests: XCTestCase {
         let label = ReviewRhythmFormatting.dayLabel(
             date: midWeek,
             currentWeek: weekStart..<weekEnd,
-            calendar: calendar
+            calendar: calendar,
+            now: date(year: 2020, month: 1, day: 1)
         )
 
         XCTAssertFalse(
@@ -27,6 +28,26 @@ final class ReviewRhythmFormattingTests: XCTestCase {
             "Weekday-in-week label should not use M/d numeric form; got \(label)"
         )
         XCTAssertFalse(label.isEmpty)
+        XCTAssertNotEqual(
+            label,
+            "Today",
+            "With a non-today reference date, label should be a weekday, not Today; got \(label)"
+        )
+    }
+
+    func test_dayLabel_dateInsideWeek_matchingNow_usesToday() {
+        let weekStart = date(year: 2026, month: 3, day: 21)
+        let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
+        let todayInWeek = date(year: 2026, month: 3, day: 24)
+
+        let label = ReviewRhythmFormatting.dayLabel(
+            date: todayInWeek,
+            currentWeek: weekStart..<weekEnd,
+            calendar: calendar,
+            now: todayInWeek
+        )
+
+        XCTAssertEqual(label, "Today")
     }
 
     func test_dayLabel_dateOutsideWeek_usesMonthDayDigits() {

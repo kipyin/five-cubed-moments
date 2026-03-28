@@ -6,8 +6,6 @@ struct ReviewScreen: View {
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
-    @AppStorage(ReviewInsightsProvider.aiFeaturesEnabledKey) private var aiFeaturesEnabled = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var appNavigation: AppNavigationModel
 
     private let calendar = Calendar.current
@@ -24,7 +22,6 @@ struct ReviewScreen: View {
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
         ReviewInsightsRefreshKey(
             weekStart: currentReviewPeriod.lowerBound,
-            aiFeaturesEnabled: aiFeaturesEnabled,
             entrySnapshots: weeklyEntriesForRefresh.map {
                 ReviewEntrySnapshot(id: $0.id, updatedAt: $0.updatedAt)
             }
@@ -70,15 +67,11 @@ struct ReviewScreen: View {
     private var historyList: some View {
         List {
             insightsSection
-            insightsPullToRefreshScrollAssist
         }
         .listStyle(.insetGrouped)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
         .background(AppTheme.reviewBackground)
-        .refreshable {
-            await refreshReviewInsights(force: true)
-        }
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
         }
@@ -88,7 +81,6 @@ struct ReviewScreen: View {
         Section {
             ReviewSummaryCard(
                 insights: reviewInsights,
-                aiFeaturesEnabled: aiFeaturesEnabled,
                 isLoading: isLoadingInsights,
                 weekJournalEntryCount: weeklyEntriesForRefresh.count,
                 onContinueToToday: { appNavigation.selectedTab = .today }
@@ -98,19 +90,8 @@ struct ReviewScreen: View {
         }
     }
 
-    /// `List.refreshable` only engages when the scroll view can overscroll; a short insights stack often cannot.
-    private var insightsPullToRefreshScrollAssist: some View {
-        Section {
-            Color.clear
-                .frame(height: 280)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .accessibilityHidden(true)
-        }
-    }
-
     @MainActor
-    private func refreshReviewInsights(force: Bool = false) async {
+    private func refreshReviewInsights() async {
         guard !entries.isEmpty else {
             reviewInsights = nil
             isLoadingInsights = false
@@ -120,14 +101,11 @@ struct ReviewScreen: View {
 
         let refreshKey = currentInsightsRefreshKey
         let shouldRefresh = ReviewInsightsRefreshPolicy.shouldRefresh(
-            force: force,
             hasInsights: reviewInsights != nil,
             previousKey: lastInsightsRefreshKey,
             currentKey: refreshKey
         )
         guard shouldRefresh else { return }
-
-        let previousForForcedRefresh = force ? reviewInsights : nil
 
         isLoadingInsights = true
         let generatedInsights = await reviewInsightsProvider.generateInsights(
@@ -139,22 +117,14 @@ struct ReviewScreen: View {
             isLoadingInsights = false
             return
         }
-        if !force, refreshKey != currentInsightsRefreshKey {
+        if refreshKey != currentInsightsRefreshKey {
             isLoadingInsights = false
             return
         }
 
-        let outcome = reviewInsightsRefreshOutcome(
-            force: force,
-            previous: previousForForcedRefresh,
-            generated: generatedInsights
-        )
-
-        reviewInsights = outcome.insights
-        await reviewInsightsCache.storeIfEligible(outcome.insights, calendar: calendar)
-        if outcome.shouldUpdateCachedRefreshKey {
-            lastInsightsRefreshKey = shouldCacheRefreshKey(for: generatedInsights) ? refreshKey : nil
-        }
+        reviewInsights = generatedInsights
+        await reviewInsightsCache.storeIfEligible(generatedInsights, calendar: calendar)
+        lastInsightsRefreshKey = refreshKey
         isLoadingInsights = false
     }
 
@@ -165,24 +135,5 @@ struct ReviewScreen: View {
             forWeekStart: currentReviewPeriod.lowerBound,
             calendar: calendar
         )
-    }
-
-    private func reviewInsightsRefreshOutcome(
-        force: Bool,
-        previous: ReviewInsights?,
-        generated: ReviewInsights
-    ) -> ReviewInsightsRefreshPolicy.ForcedRefreshOutcome {
-        if force {
-            return ReviewInsightsRefreshPolicy.forcedRefreshOutcome(previous: previous, generated: generated)
-        }
-        return ReviewInsightsRefreshPolicy.ForcedRefreshOutcome(
-            insights: generated,
-            shouldUpdateCachedRefreshKey: true
-        )
-    }
-
-    private func shouldCacheRefreshKey(for insights: ReviewInsights) -> Bool {
-        guard aiFeaturesEnabled else { return true }
-        return insights.source == .cloudAI
     }
 }

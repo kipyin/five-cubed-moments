@@ -2,7 +2,6 @@ import Foundation
 
 struct ReviewInsightsRefreshKey: Hashable {
     let weekStart: Date
-    let aiFeaturesEnabled: Bool
     let entrySnapshots: [ReviewEntrySnapshot]
 }
 
@@ -13,19 +12,18 @@ struct ReviewEntrySnapshot: Hashable {
 
 enum ReviewInsightsRefreshPolicy {
     static func shouldRefresh(
-        force: Bool,
         hasInsights: Bool,
         previousKey: ReviewInsightsRefreshKey?,
         currentKey: ReviewInsightsRefreshKey
     ) -> Bool {
-        if force || !hasInsights {
+        if !hasInsights {
             return true
         }
         return previousKey != currentKey
     }
 
-    /// Matches the final fallback `ReviewInsights` in `ReviewInsightsProvider` when cloud and deterministic
-    /// generation both fail.
+    /// Matches the final fallback `ReviewInsights` in `ReviewInsightsProvider` when deterministic
+    /// generation fails.
     static func isSparseProviderFallback(_ insights: ReviewInsights) -> Bool {
         guard insights.source == .deterministic,
               insights.narrativeSummary == nil,
@@ -41,22 +39,5 @@ enum ReviewInsightsRefreshPolicy {
             && only.primaryTheme == nil
             && only.mentionCount == nil
             && only.dayCount == 0
-    }
-
-    /// Outcome of a pull-to-refresh (forced) insights regeneration.
-    struct ForcedRefreshOutcome: Equatable {
-        let insights: ReviewInsights
-        /// When false, keep `lastInsightsRefreshKey` unchanged (discarded generated payload).
-        let shouldUpdateCachedRefreshKey: Bool
-    }
-
-    static func forcedRefreshOutcome(previous: ReviewInsights?, generated: ReviewInsights) -> ForcedRefreshOutcome {
-        guard let previous else {
-            return ForcedRefreshOutcome(insights: generated, shouldUpdateCachedRefreshKey: true)
-        }
-        if isSparseProviderFallback(generated), !isSparseProviderFallback(previous) {
-            return ForcedRefreshOutcome(insights: previous, shouldUpdateCachedRefreshKey: false)
-        }
-        return ForcedRefreshOutcome(insights: generated, shouldUpdateCachedRefreshKey: true)
     }
 }

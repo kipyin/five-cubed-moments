@@ -297,6 +297,7 @@ struct ReviewSummaryCard: View {
             .padding(.vertical, 8)
             .background(ReviewRhythmHorizontalScrollEndPin(pinIdentity: pinIdentity))
         }
+        .rhythmHorizontalScrollUITestIdentifier()
         .frame(minHeight: metrics.horizontalScrollMinHeight)
         .overlay {
             rhythmHorizontalFeatherOverlay(daysCount: days.count, metrics: metrics)
@@ -850,12 +851,6 @@ private struct ReviewCountBadge: View {
     }
 }
 
-/// Identity for when visible rhythm data changes (not every insights regeneration — avoids #131 snap-back on refresh).
-private struct ReviewRhythmScrollPinIdentity: Equatable {
-    let weekStart: Date
-    let days: [ReviewDayActivity]
-}
-
 /// Pins the backing `UIScrollView` to the trailing edge when content is wider than the viewport (issue #127).
 /// `ScrollViewReader` / `GeometryReader` on scroll content can run before layout or break intrinsic width.
 private struct ReviewRhythmHorizontalScrollEndPin: UIViewRepresentable {
@@ -976,6 +971,17 @@ private final class ReviewRhythmScrollLayoutProbeView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         onLayout?()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func rhythmHorizontalScrollUITestIdentifier() -> some View {
+        if ProcessInfo.graceNotesIsRunningUITests {
+            accessibilityIdentifier("ReviewRhythmHorizontalScroll")
+        } else {
+            self
+        }
     }
 }
 

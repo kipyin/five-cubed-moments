@@ -63,7 +63,7 @@ brew install swiftlint
 
 **GitHub issue:** Use one when product intent or acceptance should outlive the chat — write in plain language, not forms or required section headers.
 
-**Specialist skills:** `.agents/skills/` holds optional roles (Strategist, Architect, Builder, and others). Attach or follow them **only** when work is ambiguous, high-risk, or you explicitly want that lens — not as a default pipeline.
+**Specialist skills:** `.agents/skills/` holds optional roles (Strategist, Architect, Builder, and others). Attach or follow them **only** when work is ambiguous, high-risk, or you explicitly want that lens — not as a default pipeline. For **plain-language explanations** of code or fixes with **user-visible impact** first (not diff walkthroughs), use `.agents/skills/explain/SKILL.md`.
 
 **Handoffs:** Put anything the next person needs in the **PR** or **linked issue** (description or comments). This repo does not use a separate handoff folder.
 

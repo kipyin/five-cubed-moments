@@ -30,8 +30,8 @@ final class ReviewRhythmFormattingTests: XCTestCase {
         XCTAssertFalse(label.isEmpty)
         XCTAssertNotEqual(
             label,
-            "Today",
-            "With a non-today reference date, label should be a weekday, not Today; got \(label)"
+            String(localized: "Today"),
+            "With a non-today reference date, label should be a weekday, not the localized Today string; got \(label)"
         )
     }
 
@@ -47,7 +47,7 @@ final class ReviewRhythmFormattingTests: XCTestCase {
             now: todayInWeek
         )
 
-        XCTAssertEqual(label, "Today")
+        XCTAssertEqual(label, String(localized: "Today"))
     }
 
     func test_dayLabel_dateOutsideWeek_usesMonthDayDigits() {

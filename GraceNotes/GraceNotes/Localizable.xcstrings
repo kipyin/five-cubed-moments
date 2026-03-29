@@ -5665,22 +5665,6 @@
         }
       }
     },
-    "Today's entry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today's entry"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今天的记录"
-          }
-        }
-      }
-    },
     "Toward the end of the week, %1$@ became a clearer thread in your entries." : {
       "extractionState" : "stale",
       "localizations" : {

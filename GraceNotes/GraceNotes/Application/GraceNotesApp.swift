@@ -21,8 +21,6 @@ struct GraceNotesApp: App {
     @AppStorage(FirstRunOnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
     @AppStorage(JournalAppearanceStorageKeys.todayMode)
     private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
-    @AppStorage(JournalAppearanceStorageKeys.summerLeavesRenderer)
-    private var journalSummerLeavesRendererRaw = JournalSummerLeavesRenderer.video.rawValue
 
     init() {
         let startupTrace = PerformanceTrace.begin("App.init")
@@ -154,7 +152,6 @@ struct GraceNotesApp: App {
     private var mainTabView: some View {
         let isSummerAtmosphereGlobal =
             (JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard) == .summer
-        let leavesRenderer = JournalSummerLeavesRenderer(rawValue: journalSummerLeavesRendererRaw) ?? .video
 
         return ZStack {
             if isSummerAtmosphereGlobal {
@@ -184,7 +181,7 @@ struct GraceNotesApp: App {
             }
 
             if isSummerAtmosphereGlobal {
-                GlobalSummerLeavesOverlayLayer(renderer: leavesRenderer)
+                GlobalSummerLeavesOverlayLayer()
             }
         }
         .environment(\.journalSummerAtmosphereHosted, isSummerAtmosphereGlobal)
@@ -232,10 +229,9 @@ private struct DeferredReviewRoot: View {
 }
 
 private struct GlobalSummerLeavesOverlayLayer: View {
-    let renderer: JournalSummerLeavesRenderer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        SummerLeavesOverlaySeam(renderer: renderer, reduceMotion: reduceMotion)
+        SummerLeavesOverlaySeam(reduceMotion: reduceMotion)
     }
 }

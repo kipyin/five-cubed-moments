@@ -2,6 +2,7 @@ import SwiftUI
 
 /// A section with a title and multiline TextEditor. Used for Reading Notes and Reflections.
 struct EditableTextSection: View {
+    @Environment(\.todayJournalPalette) private var palette
     let title: String
     let guidanceTitle: String?
     let guidanceMessage: String?
@@ -42,12 +43,12 @@ struct EditableTextSection: View {
                     }
                     Text(guidanceMessage)
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.journalTextPrimary)
+                        .foregroundStyle(palette.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     if let guidanceMessageSecondary {
                         Text(guidanceMessageSecondary)
                             .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.journalTextPrimary)
+                            .foregroundStyle(palette.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -56,13 +57,13 @@ struct EditableTextSection: View {
             if let guidanceNote = onboardingState.guidanceNote {
                 Text(guidanceNote)
                     .font(AppTheme.warmPaperMeta)
-                    .foregroundStyle(AppTheme.journalTextMuted)
+                    .foregroundStyle(palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Text(title)
                 .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(onboardingState.titleColor)
+                .foregroundStyle(onboardingState.titleColor(palette: palette))
             textEditor
         }
         .journalOnboardingSectionStyle(onboardingState)
@@ -72,7 +73,7 @@ struct EditableTextSection: View {
     private var textEditor: some View {
         let editor = TextEditor(text: $text)
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalTextPrimary)
+            .foregroundStyle(palette.textPrimary)
             .scrollContentBackground(.hidden)
             .frame(minHeight: minHeight)
             .warmPaperInputStyle()

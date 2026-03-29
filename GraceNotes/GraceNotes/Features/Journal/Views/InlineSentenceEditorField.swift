@@ -29,6 +29,7 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     let accessibilityHint: String
     let accessibilityIdentifier: String?
     let isInteractionEnabled: Bool
+    let primaryTextUIColor: UIColor
     let onSubmit: () -> Void
 
     static let minimumHeight = ceil(InlineSentenceEditorFieldLayout.bodyUIFont().lineHeight)
@@ -75,7 +76,7 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     private func configure(_ textView: UITextView) {
         textView.backgroundColor = .clear
         textView.font = InlineSentenceEditorFieldLayout.bodyUIFont()
-        textView.textColor = UIColor(AppTheme.journalTextPrimary)
+        textView.textColor = primaryTextUIColor
         textView.tintColor = .systemBlue
         textView.isEditable = isInteractionEnabled
         textView.isSelectable = isInteractionEnabled
@@ -135,6 +136,7 @@ private struct FocusedWhenLet: ViewModifier {
 
 /// Multiline inline editor for strip editing and the add morph composer (shared field behavior).
 struct InlineSentenceEditorField: View {
+    @Environment(\.todayJournalPalette) private var palette
     let sectionTitle: String
     let placeholder: String
     @Binding var text: String
@@ -161,7 +163,7 @@ struct InlineSentenceEditorField: View {
     var body: some View {
         let prompt = Text(placeholder)
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalInputPlaceholder)
+            .foregroundStyle(palette.inputPlaceholder)
             .allowsHitTesting(false)
 
         ZStack(alignment: .topLeading) {
@@ -177,6 +179,7 @@ struct InlineSentenceEditorField: View {
                 accessibilityHint: InlineSentenceEditorFieldCopy.editingAccessibilityHint,
                 accessibilityIdentifier: editorIdentifier,
                 isInteractionEnabled: isInteractionEnabled,
+                primaryTextUIColor: UIColor(palette.textPrimary),
                 onSubmit: onSubmit
             )
             .frame(minHeight: InlineSentenceEditorTextView.minimumHeight, alignment: .leading)

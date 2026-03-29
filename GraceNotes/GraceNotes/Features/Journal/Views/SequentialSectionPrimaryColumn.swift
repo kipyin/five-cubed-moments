@@ -7,6 +7,7 @@ private enum SequentialSectionPrimaryColumnLayout {
 
 /// Main column of `SequentialSectionView` (guidance, sentence strips, text field) split out for type-size limits.
 struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
+    @Environment(\.todayJournalPalette) private var palette
     let reduceMotion: Bool
     let title: String
     let addButtonTitle: String
@@ -143,12 +144,12 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                             }
                             Text(guidanceMessage)
                                 .font(AppTheme.warmPaperBody)
-                                .foregroundStyle(AppTheme.journalTextPrimary)
+                                .foregroundStyle(palette.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                             if let guidanceMessageSecondary {
                                 Text(guidanceMessageSecondary)
                                     .font(AppTheme.warmPaperBody)
-                                    .foregroundStyle(AppTheme.journalTextPrimary)
+                                    .foregroundStyle(palette.textPrimary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -157,7 +158,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                     if let guidanceNote = onboardingState.guidanceNote {
                         Text(guidanceNote)
                             .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.journalTextMuted)
+                            .foregroundStyle(palette.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -166,7 +167,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 HStack {
                     Text(title)
                         .font(AppTheme.warmPaperHeader)
-                        .foregroundStyle(onboardingState.titleColor)
+                        .foregroundStyle(onboardingState.titleColor(palette: palette))
                     Spacer(minLength: AppTheme.spacingTight)
                     progressDots
                         .padding(.trailing, SequentialSectionPrimaryColumnLayout.sectionProgressDotsTrailingInset)
@@ -214,15 +215,15 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                         .controlSize(.small)
                     Text(String(localized: "Updating…"))
                         .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.journalTextMuted)
+                        .foregroundStyle(palette.textMuted)
                 }
                 .padding(.horizontal, AppTheme.spacingTight)
                 .padding(.vertical, 6)
-                .background(AppTheme.journalPaper.opacity(0.92))
+                .background(palette.paper.opacity(0.92 * palette.sectionPaperOpacity))
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .stroke(AppTheme.journalInputBorder.opacity(0.7), lineWidth: 1)
+                        .stroke(palette.inputBorder.opacity(0.7), lineWidth: 1)
                 )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(

@@ -153,6 +153,7 @@ private extension View {
 struct JournalScreen: View {
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.journalSummerAtmosphereHosted) private var journalSummerAtmosphereHosted
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -192,6 +193,8 @@ struct JournalScreen: View {
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
     @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
     @State private var gratitudeInput = ""
     @State private var needInput = ""
@@ -213,6 +216,81 @@ struct JournalScreen: View {
     @FocusState private var isReflectionsFocused: Bool
     var entryDate: Date?
     var body: some View {
+        let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+        ZStack {
+            if effectiveTodayAppearance == .summer, !journalSummerAtmosphereHosted {
+                SummerPaperBackgroundView()
+            }
+            if effectiveTodayAppearance == .summer, !journalSummerAtmosphereHosted {
+                SummerLeavesOverlaySeam(reduceMotion: reduceMotion)
+            }
+            journalScrollContent
+        }
+        .environment(\.todayJournalPalette, palette)
+        .overlay { journalToastOverlay }
+        .navigationTitle(navigationTitle)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    shareTapped()
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(AppTheme.outfitSemiboldHeadline)
+                }
+                .accessibilityLabel(String(localized: "Share"))
+                .accessibilityIdentifier("Share")
+            }
+        }
+        .toolbarBackground(
+            effectiveTodayAppearance == .summer ? .hidden : .automatic,
+            for: .navigationBar
+        )
+        .sheet(item: $shareableImage) { item in
+            ShareSheet(
+                activityItems: [item.image],
+                applicationActivities: [SaveToPhotosActivity(image: item.image)]
+            )
+        }
+        .alert(String(localized: "Unable to share"), isPresented: $showShareError) {
+            Button(String(localized: "Dismiss")) {
+                showShareError = false
+            }
+        } message: {
+            Text(String(localized: "We couldn't create a share image right now. Please try again."))
+        }
+        .fullScreenCover(isPresented: $showPostSeedJourney) {
+            PostSeedJourneyView(
+                onFinish: completePostSeedJourney,
+                skipsCongratulationsPage: postSeedJourneySkipsCongratulations
+            )
+        }
+        .onChange(of: showPostSeedJourney) { _, isPresented in
+            dismissAllJournalFocusIfPostSeedJourneyPresented(isPresented)
+        }
+        .onChange(of: isAnyChipInputFocused) { wasFocused, isFocused in
+            handleChipInputFocusChange(wasFocused: wasFocused, isFocused: isFocused)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
+            scheduleSavedToPhotosToast()
+        }
+        .onDisappear {
+            gratitudeSummarizationTask?.cancel()
+            needSummarizationTask?.cancel()
+            personSummarizationTask?.cancel()
+            statusCelebrationDismissTask?.cancel()
+        }
+        .onChange(of: onboardingPresentation.step) { _, newStep in
+            focusOnboardingStepIfNeeded(newStep)
+        }
+        .onChange(of: journalProgressFingerprint) { _, _ in
+            handleJournalProgressChange()
+        }
+        .task {
+            await runJournalScreenLoadTask()
+        }
+    }
+
+    private var journalScrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
                 Group {
@@ -238,7 +316,7 @@ struct JournalScreen: View {
                 if let saveErrorMessage = viewModel.saveErrorMessage {
                     Text(saveErrorMessage)
                         .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.journalError)
+                        .foregroundStyle(todayPalette.journalError)
                 }
 
                 if isAnyInlineChipEditing {
@@ -277,68 +355,20 @@ struct JournalScreen: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
-        .background(AppTheme.journalBackground.ignoresSafeArea(edges: [.top, .bottom]))
-        .navigationTitle(navigationTitle)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    shareTapped()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(AppTheme.outfitSemiboldHeadline)
-                }
-                .accessibilityLabel(String(localized: "Share"))
-                .accessibilityIdentifier("Share")
-            }
-        }
-        .sheet(item: $shareableImage) { item in
-            ShareSheet(
-                activityItems: [item.image],
-                applicationActivities: [SaveToPhotosActivity(image: item.image)]
-            )
-        }
-        .alert(String(localized: "Unable to share"), isPresented: $showShareError) {
-            Button(String(localized: "Dismiss")) {
-                showShareError = false
-            }
-        } message: {
-            Text(String(localized: "We couldn't create a share image right now. Please try again."))
-        }
-        .fullScreenCover(isPresented: $showPostSeedJourney) {
-            PostSeedJourneyView(
-                onFinish: completePostSeedJourney,
-                skipsCongratulationsPage: postSeedJourneySkipsCongratulations
-            )
-        }
-        .onChange(of: showPostSeedJourney) { _, isPresented in
-            dismissAllJournalFocusIfPostSeedJourneyPresented(isPresented)
-        }
-        .onChange(of: isAnyChipInputFocused) { wasFocused, isFocused in
-            handleChipInputFocusChange(wasFocused: wasFocused, isFocused: isFocused)
-        }
-        .overlay { journalToastOverlay }
-        .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
-            scheduleSavedToPhotosToast()
-        }
-        .onDisappear {
-            gratitudeSummarizationTask?.cancel()
-            needSummarizationTask?.cancel()
-            personSummarizationTask?.cancel()
-            statusCelebrationDismissTask?.cancel()
-        }
-        .onChange(of: onboardingPresentation.step) { _, newStep in
-            focusOnboardingStepIfNeeded(newStep)
-        }
-        .onChange(of: journalProgressFingerprint) { _, _ in
-            handleJournalProgressChange()
-        }
-        .task {
-            await runJournalScreenLoadTask()
-        }
+        .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
     }
 }
 
 private extension JournalScreen {
+    var effectiveTodayAppearance: JournalAppearanceMode {
+        if entryDate != nil { return .standard }
+        return JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
+    }
+
+    var todayPalette: TodayJournalPalette {
+        TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+    }
+
     /// Tracks chip counts and completion level together so milestones like first 1/1/1 fire without a rank change.
     var journalProgressFingerprint: String {
         let gratitudesCount = viewModel.gratitudes.count

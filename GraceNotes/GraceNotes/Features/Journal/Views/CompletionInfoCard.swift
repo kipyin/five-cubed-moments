@@ -38,7 +38,9 @@ struct CompletionInfoCard: View {
 
     private var cardSurface: AnyView {
         let base = RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-            .fill(palette.paper.opacity(reduceTransparency ? palette.sectionPaperOpacity : 0.94 * palette.sectionPaperOpacity))
+            .fill(
+                palette.paper.opacity(reduceTransparency ? 1.0 : 0.94 * palette.sectionPaperOpacity)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                     .stroke(cardTintColor.opacity(0.24 * bloomProgress), lineWidth: 1.4)

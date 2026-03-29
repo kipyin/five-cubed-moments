@@ -4705,6 +4705,22 @@
         }
       }
     },
+    "Settings.todayJournalAppearance.bloomToggleA11yHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turns on the warm Summer look for Today, including animated leaves."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开后，为今日日记启用温暖的夏日风格，包含树叶动画。"
+          }
+        }
+      }
+    },
     "Settings.todayJournalAppearance.modeLabel" : {
       "localizations" : {
         "en" : {

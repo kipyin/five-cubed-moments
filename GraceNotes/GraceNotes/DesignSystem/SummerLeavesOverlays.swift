@@ -85,6 +85,10 @@ private struct LoopingVideoPlayerView: UIViewRepresentable {
         context.coordinator.updateBounds(uiView.bounds)
     }
 
+    static func dismantleUIView(_ uiView: LeavesVideoHostView, coordinator: Coordinator) {
+        coordinator.teardown()
+    }
+
     final class Coordinator {
         private let url: URL
         private var player: AVQueuePlayer?

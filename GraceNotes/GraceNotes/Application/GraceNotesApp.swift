@@ -153,6 +153,8 @@ struct GraceNotesApp: App {
         let isSummerAtmosphereGlobal =
             (JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard) == .summer
 
+        // App-wide Summer paper, leaves, and forced light scheme are intentional (#125):
+        // Past/Settings stay visually cohesive with Today.
         return ZStack {
             if isSummerAtmosphereGlobal {
                 SummerPaperBackgroundView()

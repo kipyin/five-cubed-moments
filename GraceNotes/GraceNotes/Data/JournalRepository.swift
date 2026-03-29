@@ -28,6 +28,22 @@ struct JournalRepository {
         return try fetchEntry(dayStart: dayStart, context: context)
     }
 
+    /// True when the user has reached Full/Harvest at least once.
+    /// Prefers `completedAt` (cheap query), then scans for legacy rows without that field.
+    func hasUserReachedFullHarvest(context: ModelContext) throws -> Bool {
+        var completedDescriptor = FetchDescriptor<JournalEntry>(
+            predicate: #Predicate<JournalEntry> { entry in
+                entry.completedAt != nil
+            }
+        )
+        completedDescriptor.fetchLimit = 1
+        if try context.fetch(completedDescriptor).first != nil {
+            return true
+        }
+        let entries = try fetchAllEntries(context: context)
+        return entries.contains { $0.completionLevel == .full }
+    }
+
     /// Fetches the journal row for `[dayStart, nextDay)` using the same interval semantics as import and demo seeding.
     func fetchEntry(dayStart: Date, context: ModelContext) throws -> JournalEntry? {
         let trace = PerformanceTrace.begin("JournalRepository.fetchEntry")

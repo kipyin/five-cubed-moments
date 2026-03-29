@@ -25,7 +25,11 @@ struct JournalUnlockToastView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.spacingWide)
             .padding(.vertical, AppTheme.spacingRegular)
-            .background(palette.paper.opacity(palette.sectionPaperOpacity))
+            .background(
+                reduceTransparency
+                    ? palette.paper
+                    : palette.paper.opacity(palette.sectionPaperOpacity)
+            )
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)

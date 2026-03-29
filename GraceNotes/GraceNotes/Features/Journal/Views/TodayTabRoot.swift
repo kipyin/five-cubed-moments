@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Shell for the Today tab: in Summer mode, paper and leaves are the root inside `NavigationStack`
-/// so they stay visible (a stack drawn *behind* `NavigationStack` is covered by its default material).
+/// Shell for the Today tab’s navigation. When Bloom (Summer) appearance is on, paper and leaves are layered
+/// in ``GraceNotesApp`` above the whole ``TabView`` so they stay visible behind system chrome.
 struct TodayTabRoot: View {
     var body: some View {
         NavigationStack {

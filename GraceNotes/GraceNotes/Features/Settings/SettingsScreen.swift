@@ -20,7 +20,8 @@ struct SettingsScreen: View {
     @State private var showAppTourFromSettings = false
     @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
-    @AppStorage(JournalTutorialStorageKeys.celebratedFirstHarvest) private var hasReachedBloomAtLeastOnce = false
+    /// Same storage as first Full/Harvest celebration; unlocks the Bloom (Summer) appearance toggle in Settings.
+    @AppStorage(JournalTutorialStorageKeys.celebratedFirstHarvest) private var hasCelebratedFirstHarvest = false
     @AppStorage(JournalAppearanceStorageKeys.todayMode)
     private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
@@ -59,7 +60,7 @@ struct SettingsScreen: View {
                         .textCase(nil)
                 }
 
-                if hasReachedBloomAtLeastOnce {
+                if hasCelebratedFirstHarvest {
                     Section {
                         Toggle(isOn: summerModeBinding) {
                             Text(String(localized: "Settings.todayJournalAppearance.modeLabel"))
@@ -67,6 +68,7 @@ struct SettingsScreen: View {
                                 .foregroundStyle(AppTheme.settingsTextPrimary)
                         }
                         .tint(AppTheme.accent)
+                        .accessibilityHint(String(localized: "Settings.todayJournalAppearance.bloomToggleA11yHint"))
                     } header: {
                         Text(String(localized: "Settings.todayJournalAppearance.sectionTitle"))
                             .font(AppTheme.warmPaperHeader)
@@ -374,11 +376,9 @@ private extension SettingsScreen {
     }
 
     func backfillBloomUnlockIfNeeded() {
-        guard !hasReachedBloomAtLeastOnce else { return }
+        guard !hasCelebratedFirstHarvest else { return }
         let repository = JournalRepository()
-        guard let entries = try? repository.fetchAllEntries(context: modelContext) else { return }
-        if entries.contains(where: { $0.completionLevel == .full }) {
-            hasReachedBloomAtLeastOnce = true
-        }
+        guard (try? repository.hasUserReachedFullHarvest(context: modelContext)) == true else { return }
+        hasCelebratedFirstHarvest = true
     }
 }

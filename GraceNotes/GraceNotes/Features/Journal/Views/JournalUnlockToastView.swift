@@ -11,6 +11,7 @@ enum JournalUnlockMilestoneHighlight: Equatable {
 /// Brief encouragement when journal completion moves up a tier.
 struct JournalUnlockToastView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.todayJournalPalette) private var palette
 
     let level: JournalCompletionLevel
     var milestoneHighlight: JournalUnlockMilestoneHighlight = .none
@@ -18,13 +19,13 @@ struct JournalUnlockToastView: View {
     var body: some View {
         Text(message)
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalTextPrimary)
+            .foregroundStyle(palette.textPrimary)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.spacingWide)
             .padding(.vertical, AppTheme.spacingRegular)
-            .background(AppTheme.journalPaper)
+            .background(palette.paper.opacity(palette.sectionPaperOpacity))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
@@ -66,15 +67,15 @@ struct JournalUnlockToastView: View {
     private var borderTint: Color {
         switch level {
         case .empty:
-            return AppTheme.journalBorder
+            return palette.border
         case .started:
-            return AppTheme.journalQuickCheckInBorder
+            return palette.quickCheckInBorder
         case .growing:
-            return AppTheme.journalStandardBorder
+            return palette.standardBorder
         case .balanced:
-            return AppTheme.journalStandardBorder
+            return palette.standardBorder
         case .full:
-            return AppTheme.journalFullBorder
+            return palette.fullBorder
         }
     }
 
@@ -83,20 +84,20 @@ struct JournalUnlockToastView: View {
         case .empty:
             return .clear
         case .started:
-            return AppTheme.journalQuickCheckInGlow
+            return palette.quickCheckInGlow
         case .growing:
-            return AppTheme.journalStandardGlow
+            return palette.standardGlow
         case .balanced:
-            return AppTheme.journalStandardGlow
+            return palette.standardGlow
         case .full:
-            return AppTheme.journalFullGlow
+            return palette.fullGlow
         }
     }
 
     private var glowAccentColor: Color {
         switch level {
         case .empty:
-            return AppTheme.journalBorder
+            return palette.border
         default:
             return shadowTint
         }

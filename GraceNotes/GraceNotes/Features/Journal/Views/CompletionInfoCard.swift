@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CompletionInfoCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.todayJournalPalette) private var palette
     @State private var contentVisible = false
 
     let badgeInfo: CompletionBadgeInfo
@@ -15,7 +16,7 @@ struct CompletionInfoCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(badgeInfo.description)
                 .font(AppTheme.warmPaperMeta)
-                .foregroundStyle(AppTheme.journalTextMuted)
+                .foregroundStyle(palette.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,7 +38,7 @@ struct CompletionInfoCard: View {
 
     private var cardSurface: AnyView {
         let base = RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-            .fill(AppTheme.journalPaper.opacity(reduceTransparency ? 1.0 : 0.94))
+            .fill(palette.paper.opacity(reduceTransparency ? palette.sectionPaperOpacity : 0.94 * palette.sectionPaperOpacity))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                     .stroke(cardTintColor.opacity(0.24 * bloomProgress), lineWidth: 1.4)

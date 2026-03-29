@@ -29,6 +29,7 @@ enum JournalTutorialHintPresentation {
 
 /// Dismissible nudge to keep writing toward Started or Full chip milestones (issue #60).
 struct JournalTutorialHintView: View {
+    @Environment(\.todayJournalPalette) private var palette
     let kind: JournalTutorialHintKind
     let onDismiss: () -> Void
 
@@ -36,7 +37,7 @@ struct JournalTutorialHintView: View {
         VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
             Text(message)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.journalTextPrimary)
+                .foregroundStyle(palette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Button(action: onDismiss) {
@@ -49,11 +50,11 @@ struct JournalTutorialHintView: View {
         }
         .padding(AppTheme.spacingRegular)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppTheme.journalPaper)
+        .background(palette.paper.opacity(palette.sectionPaperOpacity))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                .stroke(AppTheme.journalBorder, lineWidth: 1)
+                .stroke(palette.border, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
     }

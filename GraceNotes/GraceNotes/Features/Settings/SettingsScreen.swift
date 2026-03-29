@@ -19,6 +19,10 @@ struct SettingsScreen: View {
     @State private var showAppTourFromSettings = false
     @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
+    @AppStorage(JournalAppearanceStorageKeys.summerLeavesRenderer)
+    private var journalSummerLeavesRendererRaw = JournalSummerLeavesRenderer.video.rawValue
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -53,6 +57,36 @@ struct SettingsScreen: View {
                         .font(AppTheme.warmPaperHeader)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .textCase(nil)
+                }
+
+                Section {
+                    Picker(selection: $journalTodayAppearanceRaw) {
+                        Text(String(localized: "Settings.todayJournalAppearance.standard"))
+                            .tag(JournalAppearanceMode.standard.rawValue)
+                        Text(String(localized: "Settings.todayJournalAppearance.summer"))
+                            .tag(JournalAppearanceMode.summer.rawValue)
+                    } label: {
+                        Text(String(localized: "Settings.todayJournalAppearance.modeLabel"))
+                    }
+                    if settingsJournalTodayAppearance == .summer {
+                        Picker(selection: $journalSummerLeavesRendererRaw) {
+                            Text(String(localized: "Settings.summerLeaves.video"))
+                                .tag(JournalSummerLeavesRenderer.video.rawValue)
+                            Text(String(localized: "Settings.summerLeaves.native"))
+                                .tag(JournalSummerLeavesRenderer.native.rawValue)
+                        } label: {
+                            Text(String(localized: "Settings.summerLeaves.sectionTitle"))
+                        }
+                    }
+                } header: {
+                    Text(String(localized: "Settings.todayJournalAppearance.sectionTitle"))
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(AppTheme.settingsTextPrimary)
+                        .textCase(nil)
+                } footer: {
+                    Text(String(localized: "Settings.todayJournalAppearance.footer"))
+                        .font(AppTheme.warmPaperCaption)
+                        .foregroundStyle(AppTheme.settingsTextMuted)
                 }
 
                 DataPrivacySettingsSection(
@@ -147,6 +181,10 @@ struct SettingsScreen: View {
 }
 
 private extension SettingsScreen {
+    var settingsJournalTodayAppearance: JournalAppearanceMode {
+        JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
+    }
+
     var shouldUseCompactReminderPicker: Bool {
         dynamicTypeSize >= .accessibility1 || verticalSizeClass == .compact
     }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChipView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.todayJournalPalette) private var palette
 
     let label: String
     let isTruncated: Bool
@@ -13,7 +14,9 @@ struct ChipView: View {
     @State private var showRenamePrompt = false
     @State private var renameDraft = ""
 
-    private static let chipBackground = AppTheme.journalComplete.opacity(0.2)
+    private var chipBackground: Color {
+        palette.complete.opacity(0.2)
+    }
 
     private var resolvedMaxLabelWidth: CGFloat {
         if dynamicTypeSize.isAccessibilitySize {
@@ -86,18 +89,18 @@ struct ChipView: View {
         Button(action: onTap) {
             Text(label)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.journalTextPrimary)
+                .foregroundStyle(palette.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .padding(.horizontal, AppTheme.spacingRegular)
                 .padding(.vertical, AppTheme.spacingTight)
                 .frame(minWidth: 44, minHeight: 44)
                 .frame(maxWidth: resolvedMaxLabelWidth, alignment: .leading)
-                .background(isSelected ? AppTheme.journalActiveEditingAccent.opacity(0.28) : Self.chipBackground)
+                .background(isSelected ? palette.activeEditingAccent.opacity(0.28) : chipBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusLarge)
                         .stroke(
-                            isSelected ? AppTheme.journalActiveEditingAccentStrong.opacity(0.86) : .clear,
+                            isSelected ? palette.activeEditingAccentStrong.opacity(0.86) : .clear,
                             lineWidth: 1
                         )
                 )
@@ -107,15 +110,15 @@ struct ChipView: View {
                         if isTruncated {
                             LinearGradient(
                                 stops: [
-                                    .init(color: AppTheme.journalTextPrimary, location: 0),
-                                    .init(color: AppTheme.journalTextPrimary, location: 0.82),
+                                    .init(color: palette.textPrimary, location: 0),
+                                    .init(color: palette.textPrimary, location: 0.82),
                                     .init(color: .clear, location: 1)
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         } else {
-                            AppTheme.journalTextPrimary
+                            palette.textPrimary
                         }
                     }
                 )

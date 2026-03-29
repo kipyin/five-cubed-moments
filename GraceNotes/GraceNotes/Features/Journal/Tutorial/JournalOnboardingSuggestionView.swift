@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct JournalOnboardingSuggestionView: View {
+    @Environment(\.todayJournalPalette) private var palette
     let title: String
     let message: String
     let primaryActionTitle: String
@@ -17,7 +18,7 @@ struct JournalOnboardingSuggestionView: View {
 
                 Text(message)
                     .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.journalTextPrimary)
+                    .foregroundStyle(palette.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -42,11 +43,11 @@ struct JournalOnboardingSuggestionView: View {
         }
         .padding(AppTheme.spacingRegular)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppTheme.journalPaper)
+        .background(palette.paper.opacity(palette.sectionPaperOpacity))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                .stroke(AppTheme.journalInputBorder, lineWidth: 1)
+                .stroke(palette.inputBorder, lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
     }

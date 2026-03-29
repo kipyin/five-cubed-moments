@@ -192,6 +192,10 @@ struct JournalScreen: View {
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
     @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
+    @AppStorage(JournalAppearanceStorageKeys.summerLeavesRenderer)
+    private var journalSummerLeavesRendererRaw = JournalSummerLeavesRenderer.video.rawValue
 
     @State private var gratitudeInput = ""
     @State private var needInput = ""
@@ -213,71 +217,21 @@ struct JournalScreen: View {
     @FocusState private var isReflectionsFocused: Bool
     var entryDate: Date?
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
-                Group {
-                    DateSectionView(
-                        completionLevel: viewModel.completionLevel,
-                        celebratingLevel: celebratingLevel,
-                        gratitudesCount: viewModel.gratitudes.count,
-                        needsCount: viewModel.needs.count,
-                        peopleCount: viewModel.people.count
-                    )
-
-                    journalTutorialHintIfNeeded
-                    journalOnboardingSuggestionIfNeeded
-                }
-                .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
-                    dismissInlineChipEditingSession()
-                }
-
-                journalSentenceSections
-
-                journalNotesSections
-
-                if let saveErrorMessage = viewModel.saveErrorMessage {
-                    Text(saveErrorMessage)
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.journalError)
-                }
-
-                if isAnyInlineChipEditing {
-                    Color.clear
-                        .frame(minHeight: SequentialSectionInlineLayout.inlineEditBottomTapCatcherMinHeight)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissInlineChipEditingSession()
-                        }
-                }
+        let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+        ZStack {
+            if effectiveTodayAppearance == .summer {
+                SummerPaperBackgroundView()
             }
-            .padding(.horizontal, AppTheme.todayHorizontalPadding)
-            .padding(.top, AppTheme.todayTopPadding)
-            .padding(.bottom, contentBottomPadding)
-            .background(journalScrollOffsetReader)
-            .background(journalInlineScrollBackdropDismiss)
-            .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
-                dismissUnlockToastIfNeeded()
+            if effectiveTodayAppearance == .summer {
+                SummerLeavesOverlaySeam(
+                    renderer: summerLeavesRendererResolved,
+                    reduceMotion: reduceMotion
+                )
             }
+            journalScrollContent
         }
-        .background(
-            JournalNavigationBarTapProbe(isEnabled: isAnyInlineChipEditing) { context in
-                guard context.isNavigationChrome else { return }
-                dismissInlineChipEditingSession()
-            }
-        )
-        .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
-        .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
-            journalScrollOffsetY = offsetY
-            if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
-                if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
-                    dismissUnlockToastIfNeeded()
-                }
-            }
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .scrollContentBackground(.hidden)
-        .background(AppTheme.journalBackground.ignoresSafeArea(edges: [.top, .bottom]))
+        .environment(\.todayJournalPalette, palette)
+        .overlay { journalToastOverlay }
         .navigationTitle(navigationTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -316,7 +270,6 @@ struct JournalScreen: View {
         .onChange(of: isAnyChipInputFocused) { wasFocused, isFocused in
             handleChipInputFocusChange(wasFocused: wasFocused, isFocused: isFocused)
         }
-        .overlay { journalToastOverlay }
         .onReceive(NotificationCenter.default.publisher(for: .photoSavedToLibrary)) { _ in
             scheduleSavedToPhotosToast()
         }
@@ -336,9 +289,90 @@ struct JournalScreen: View {
             await runJournalScreenLoadTask()
         }
     }
+
+    private var journalScrollContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
+                Group {
+                    DateSectionView(
+                        completionLevel: viewModel.completionLevel,
+                        celebratingLevel: celebratingLevel,
+                        gratitudesCount: viewModel.gratitudes.count,
+                        needsCount: viewModel.needs.count,
+                        peopleCount: viewModel.people.count
+                    )
+
+                    journalTutorialHintIfNeeded
+                    journalOnboardingSuggestionIfNeeded
+                }
+                .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
+                    dismissInlineChipEditingSession()
+                }
+
+                journalSentenceSections
+
+                journalNotesSections
+
+                if let saveErrorMessage = viewModel.saveErrorMessage {
+                    Text(saveErrorMessage)
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(todayPalette.journalError)
+                }
+
+                if isAnyInlineChipEditing {
+                    Color.clear
+                        .frame(minHeight: SequentialSectionInlineLayout.inlineEditBottomTapCatcherMinHeight)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            dismissInlineChipEditingSession()
+                        }
+                }
+            }
+            .padding(.horizontal, AppTheme.todayHorizontalPadding)
+            .padding(.top, AppTheme.todayTopPadding)
+            .padding(.bottom, contentBottomPadding)
+            .background(journalScrollOffsetReader)
+            .background(journalInlineScrollBackdropDismiss)
+            .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
+                dismissUnlockToastIfNeeded()
+            }
+        }
+        .background(
+            JournalNavigationBarTapProbe(isEnabled: isAnyInlineChipEditing) { context in
+                guard context.isNavigationChrome else { return }
+                dismissInlineChipEditingSession()
+            }
+        )
+        .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
+        .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
+            journalScrollOffsetY = offsetY
+            if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
+                if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
+                    dismissUnlockToastIfNeeded()
+                }
+            }
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .scrollContentBackground(.hidden)
+        .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
+    }
 }
 
 private extension JournalScreen {
+    var effectiveTodayAppearance: JournalAppearanceMode {
+        if entryDate != nil { return .standard }
+        return JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
+    }
+
+    var summerLeavesRendererResolved: JournalSummerLeavesRenderer {
+        JournalSummerLeavesRenderer(rawValue: journalSummerLeavesRendererRaw) ?? .video
+    }
+
+    var todayPalette: TodayJournalPalette {
+        TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+    }
+
     /// Tracks chip counts and completion level together so milestones like first 1/1/1 fire without a rank change.
     var journalProgressFingerprint: String {
         let gratitudesCount = viewModel.gratitudes.count

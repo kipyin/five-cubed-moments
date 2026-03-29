@@ -5,6 +5,7 @@ struct JournalCompletionPill: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.todayJournalPalette) private var palette
 
     let completionLevel: JournalCompletionLevel
     let celebratingLevel: JournalCompletionLevel?
@@ -61,19 +62,19 @@ struct JournalCompletionPill: View {
         switch completionLevel {
         case .empty:
             Text(String(localized: "Empty"))
-                .foregroundStyle(AppTheme.journalTextMuted)
+                .foregroundStyle(palette.textMuted)
         case .started:
             Text(String(localized: "Started"))
-                .foregroundStyle(AppTheme.journalQuickCheckInText)
+                .foregroundStyle(palette.quickCheckInText)
         case .growing:
             Text(String(localized: "Growing"))
-                .foregroundStyle(AppTheme.journalStandardText)
+                .foregroundStyle(palette.standardText)
         case .balanced:
             Text(String(localized: "Balanced"))
-                .foregroundStyle(AppTheme.journalStandardText)
+                .foregroundStyle(palette.standardText)
         case .full:
             Text(String(localized: "Full"))
-                .foregroundStyle(AppTheme.journalFullText)
+                .foregroundStyle(palette.fullText)
         }
     }
 
@@ -98,13 +99,13 @@ struct JournalCompletionPill: View {
     private func backgroundFill(for level: JournalCompletionLevel) -> AnyShapeStyle {
         switch level {
         case .empty:
-            return AnyShapeStyle(AppTheme.journalBackground)
+            return AnyShapeStyle(palette.background)
         case .started:
-            return AnyShapeStyle(AppTheme.journalQuickCheckInBackground)
+            return AnyShapeStyle(palette.quickCheckInBackground)
         case .growing, .balanced:
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [AppTheme.journalStandardBackgroundStart, AppTheme.journalStandardBackgroundEnd],
+                    colors: [palette.standardBackgroundStart, palette.standardBackgroundEnd],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -112,7 +113,7 @@ struct JournalCompletionPill: View {
         case .full:
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [AppTheme.journalFullBackgroundStart, AppTheme.journalFullBackgroundEnd],
+                    colors: [palette.fullBackgroundStart, palette.fullBackgroundEnd],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -123,13 +124,13 @@ struct JournalCompletionPill: View {
     private func borderColor(for level: JournalCompletionLevel) -> Color {
         switch level {
         case .empty:
-            return AppTheme.journalBorder
+            return palette.border
         case .started:
-            return AppTheme.journalQuickCheckInBorder
+            return palette.quickCheckInBorder
         case .growing, .balanced:
-            return AppTheme.journalStandardBorder
+            return palette.standardBorder
         case .full:
-            return AppTheme.journalFullBorder
+            return palette.fullBorder
         }
     }
 
@@ -155,11 +156,11 @@ struct JournalCompletionPill: View {
         case .empty:
             return .clear
         case .started:
-            return AppTheme.journalQuickCheckInGlow.opacity(0.25)
+            return palette.quickCheckInGlow.opacity(0.25)
         case .growing, .balanced:
-            return AppTheme.journalStandardGlow.opacity(0.4)
+            return palette.standardGlow.opacity(0.4)
         case .full:
-            return AppTheme.journalFullGlow.opacity(0.48)
+            return palette.fullGlow.opacity(0.48)
         }
     }
 

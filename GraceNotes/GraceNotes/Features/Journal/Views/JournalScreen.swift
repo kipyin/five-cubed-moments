@@ -1367,7 +1367,7 @@ private extension JournalScreen {
         if let date = entryDate {
             return date.formatted(date: .abbreviated, time: .omitted)
         }
-        return String(localized: "Today's entry")
+        return String(localized: "Today")
     }
 
     func unlockToastTransition(for level: JournalCompletionLevel) -> AnyTransition {

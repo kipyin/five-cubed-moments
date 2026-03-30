@@ -43,6 +43,12 @@ actor ReviewInsightsCache {
         userDefaults.removeObject(forKey: Self.payloadKey)
     }
 
+    /// Synchronous wipe paired with `-grace-notes-reset-uitest-store` so a fresh SwiftData file does not
+    /// hydrate stale `weekStats` from a previous session.
+    nonisolated static func wipeDiskPayloadForUITestStoreReset() {
+        UserDefaults.standard.removeObject(forKey: Self.payloadKey)
+    }
+
     private func loadPayload() -> Payload? {
         guard let data = userDefaults.data(forKey: Self.payloadKey) else {
             return nil

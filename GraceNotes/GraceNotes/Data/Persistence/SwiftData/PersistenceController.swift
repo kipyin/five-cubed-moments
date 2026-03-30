@@ -50,6 +50,7 @@ final class PersistenceController {
         if FileManager.default.fileExists(atPath: url.path) {
             try? FileManager.default.removeItem(at: url)
         }
+        ReviewInsightsCache.wipeDiskPayloadForUITestStoreReset()
     }
 
     static func makeForUITesting() throws -> PersistenceController {
@@ -230,11 +231,31 @@ final class PersistenceController {
     ) throws {
         for dayOffset in 1...36 {
             guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let gratitudeSeed: String
+            let needSeed: String
+            switch dayOffset {
+            case 1...6:
+                gratitudeSeed = "rest"
+                needSeed = "focus"
+            case 7...13:
+                gratitudeSeed = "walking"
+                needSeed = "focus"
+            case 14...20:
+                gratitudeSeed = "family time"
+                needSeed = "rest"
+            default:
+                let rolling = ["rest", "walking", "quiet morning"]
+                gratitudeSeed = rolling[dayOffset % rolling.count]
+                needSeed = rolling[(dayOffset + 1) % rolling.count]
+            }
+            let personSeed = dayOffset % 2 == 0 ? "Mia" : "Dad"
             let entry = JournalEntry(
                 entryDate: day,
-                gratitudes: [JournalItem(fullText: "Wide rhythm seed day \(dayOffset)")],
-                needs: [],
-                people: [],
+                gratitudes: [JournalItem(fullText: gratitudeSeed)],
+                needs: [JournalItem(fullText: needSeed)],
+                people: [JournalItem(fullText: personSeed)],
+                readingNotes: dayOffset % 3 == 0 ? "Short note about \(gratitudeSeed)." : "",
+                reflections: dayOffset % 4 == 0 ? "Reflecting on \(needSeed)." : "",
                 createdAt: now,
                 updatedAt: now
             )

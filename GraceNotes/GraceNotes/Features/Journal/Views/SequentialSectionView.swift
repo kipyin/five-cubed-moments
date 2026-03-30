@@ -9,6 +9,7 @@ struct SequentialSectionView: View {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.todayJournalPalette) private var palette
 
     let title: String
     let addButtonTitle: String
@@ -202,14 +203,14 @@ struct SequentialSectionView: View {
                     .overlay {
                         if status == .editing {
                             Circle()
-                                .fill(AppTheme.journalActiveEditingAccentStrong)
+                                .fill(palette.activeEditingAccentStrong)
                                 .frame(width: 4, height: 4)
                         }
                     }
                     .overlay {
                         if status == .editing && shouldAnimateEditingPulse {
                             Circle()
-                                .stroke(AppTheme.journalActiveEditingAccentStrong.opacity(0.45), lineWidth: 1)
+                                .stroke(palette.activeEditingAccentStrong.opacity(0.45), lineWidth: 1)
                                 .frame(width: 14, height: 14)
                                 .scaleEffect(isEditingPulseExpanded ? 1.14 : 0.94)
                                 .opacity(isEditingPulseExpanded ? 0 : 0.56)
@@ -224,9 +225,9 @@ struct SequentialSectionView: View {
     private func dotFill(for status: SlotStatus) -> Color {
         switch status {
         case .edited:
-            return AppTheme.journalComplete
+            return palette.complete
         case .editing:
-            return AppTheme.journalActiveEditingAccent.opacity(0.28)
+            return palette.activeEditingAccent.opacity(0.28)
         case .pending:
             return .clear
         }
@@ -237,9 +238,9 @@ struct SequentialSectionView: View {
         case .edited:
             return .clear
         case .editing:
-            return AppTheme.journalActiveEditingAccentStrong.opacity(0.9)
+            return palette.activeEditingAccentStrong.opacity(0.9)
         case .pending:
-            return AppTheme.journalPendingOutline.opacity(0.52)
+            return palette.pendingOutline.opacity(0.52)
         }
     }
 

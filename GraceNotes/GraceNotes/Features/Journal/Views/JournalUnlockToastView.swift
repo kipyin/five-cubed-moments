@@ -11,6 +11,7 @@ enum JournalUnlockMilestoneHighlight: Equatable {
 /// Brief encouragement when journal completion moves up a tier.
 struct JournalUnlockToastView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.todayJournalPalette) private var palette
 
     let level: JournalCompletionLevel
     var milestoneHighlight: JournalUnlockMilestoneHighlight = .none
@@ -18,13 +19,17 @@ struct JournalUnlockToastView: View {
     var body: some View {
         Text(message)
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalTextPrimary)
+            .foregroundStyle(palette.textPrimary)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.spacingWide)
             .padding(.vertical, AppTheme.spacingRegular)
-            .background(AppTheme.journalPaper)
+            .background(
+                reduceTransparency
+                    ? palette.paper
+                    : palette.paper.opacity(palette.sectionPaperOpacity)
+            )
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
@@ -36,14 +41,15 @@ struct JournalUnlockToastView: View {
     private var message: String {
         switch milestoneHighlight {
         case .firstOneOneOne:
-            return String(localized: "First time with one gratitude, one need, and someone in mind—nice work.")
+            return String(localized: "First time with one line in each section. Nice work.")
         case .firstBalanced:
             return String(
-                localized: "Your first Balanced day—at least three in each section. Keep going toward Full."
+                localized: "Your first Leaf day. Each section has at least three lines. Keep going toward Bloom."
             )
         case .firstFull:
             return String(
-                localized: "Your first Full—all fifteen chip spots filled. Add notes when you want."
+                localized:
+                    "Your first Bloom day. Each section has five lines. Add reading notes or reflections when you want."
             )
         case .none:
             break
@@ -52,28 +58,28 @@ struct JournalUnlockToastView: View {
         case .empty:
             return ""
         case .started:
-            return String(localized: "You have started filling in today.")
+            return String(localized: "You reached Sprout today.")
         case .growing:
-            return String(localized: "You are growing—keep going across the three sections.")
+            return String(localized: "Keep going in each section toward Leaf.")
         case .balanced:
-            return String(localized: "You reached Balanced today.")
+            return String(localized: "You reached Leaf today.")
         case .full:
-            return String(localized: "You reached Full today—all chip spots filled.")
+            return String(localized: "You reached Bloom today. All five lines are filled in each section.")
         }
     }
 
     private var borderTint: Color {
         switch level {
         case .empty:
-            return AppTheme.journalBorder
+            return palette.border
         case .started:
-            return AppTheme.journalQuickCheckInBorder
+            return palette.quickCheckInBorder
         case .growing:
-            return AppTheme.journalStandardBorder
+            return palette.standardBorder
         case .balanced:
-            return AppTheme.journalStandardBorder
+            return palette.standardBorder
         case .full:
-            return AppTheme.journalFullBorder
+            return palette.fullBorder
         }
     }
 
@@ -82,20 +88,20 @@ struct JournalUnlockToastView: View {
         case .empty:
             return .clear
         case .started:
-            return AppTheme.journalQuickCheckInGlow
+            return palette.quickCheckInGlow
         case .growing:
-            return AppTheme.journalStandardGlow
+            return palette.standardGlow
         case .balanced:
-            return AppTheme.journalStandardGlow
+            return palette.standardGlow
         case .full:
-            return AppTheme.journalFullGlow
+            return palette.fullGlow
         }
     }
 
     private var glowAccentColor: Color {
         switch level {
         case .empty:
-            return AppTheme.journalBorder
+            return palette.border
         default:
             return shadowTint
         }

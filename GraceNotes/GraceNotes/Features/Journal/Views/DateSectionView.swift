@@ -5,6 +5,7 @@ import UIKit
 struct DateSectionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.todayJournalPalette) private var palette
     @Namespace private var completionInfoMorphNamespace
     @State private var selectedBadgeInfo: CompletionBadgeInfo?
     @State private var isInfoCardPresented = false
@@ -237,13 +238,13 @@ private extension DateSectionView {
     func infoCardTintColor(for badgeInfo: CompletionBadgeInfo) -> Color {
         switch badgeInfo {
         case .empty:
-            return AppTheme.journalTextMuted
+            return palette.textMuted
         case .started:
-            return AppTheme.journalQuickCheckInText
+            return palette.quickCheckInText
         case .growing, .balanced:
-            return AppTheme.journalStandardText
+            return palette.standardText
         case .full:
-            return AppTheme.journalFullText
+            return palette.fullText
         }
     }
 

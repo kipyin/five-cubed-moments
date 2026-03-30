@@ -6,6 +6,7 @@ private enum SequentialSectionChipScrollerLayout {
 
 /// Horizontal chip row with scroll metrics, masks, and optional add control.
 struct SequentialSectionChipScroller<ChipRow: View>: View {
+    @Environment(\.todayJournalPalette) private var palette
     let reduceMotion: Bool
     let title: String
     let addButtonTitle: String
@@ -80,8 +81,8 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
     private func edgeFeather(_ edge: HorizontalEdge) -> some View {
         LinearGradient(
             colors: edge == .leading
-                ? [AppTheme.journalBackground, AppTheme.journalBackground.opacity(0)]
-                : [AppTheme.journalBackground.opacity(0), AppTheme.journalBackground],
+                ? [palette.background, palette.background.opacity(0)]
+                : [palette.background.opacity(0), palette.background],
             startPoint: .leading,
             endPoint: .trailing
         )

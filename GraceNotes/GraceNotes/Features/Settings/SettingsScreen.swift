@@ -6,6 +6,7 @@ struct SettingsScreen: View {
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
     @EnvironmentObject private var appNavigation: AppNavigationModel
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -21,6 +22,10 @@ struct SettingsScreen: View {
     @State private var showAppTourFromSettings = false
     @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
+    /// Same storage as first Full/Harvest celebration; unlocks the Bloom (Summer) appearance toggle in Settings.
+    @AppStorage(JournalTutorialStorageKeys.celebratedFirstHarvest) private var hasCelebratedFirstHarvest = false
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -78,6 +83,23 @@ struct SettingsScreen: View {
                         .textCase(nil)
                 }
 
+                if hasCelebratedFirstHarvest {
+                    Section {
+                        Toggle(isOn: summerModeBinding) {
+                            Text(String(localized: "Settings.todayJournalAppearance.modeLabel"))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.settingsTextPrimary)
+                        }
+                        .tint(AppTheme.accent)
+                        .accessibilityHint(String(localized: "Settings.todayJournalAppearance.bloomToggleA11yHint"))
+                    } header: {
+                        Text(String(localized: "Settings.todayJournalAppearance.sectionTitle"))
+                            .font(AppTheme.warmPaperHeader)
+                            .foregroundStyle(AppTheme.settingsTextPrimary)
+                            .textCase(nil)
+                    }
+                }
+
                 DataPrivacySettingsSection(
                     isICloudSyncEnabled: $isICloudSyncEnabled,
                     iCloudAccountState: iCloudAccountState,
@@ -119,6 +141,7 @@ struct SettingsScreen: View {
             }
             .navigationTitle(String(localized: "Settings"))
             .task {
+                backfillBloomUnlockIfNeeded()
                 await reminderState.refreshStatus()
                 syncReminderControlState(with: reminderState.liveStatus)
                 iCloudAccountState.refresh()
@@ -181,8 +204,23 @@ private extension SettingsScreen {
         )
     }
 
+    var settingsJournalTodayAppearance: JournalAppearanceMode {
+        JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
+    }
+
     var shouldUseCompactReminderPicker: Bool {
         dynamicTypeSize >= .accessibility1 || verticalSizeClass == .compact
+    }
+
+    var summerModeBinding: Binding<Bool> {
+        Binding(
+            get: { settingsJournalTodayAppearance == .summer },
+            set: { isEnabled in
+                journalTodayAppearanceRaw = isEnabled
+                    ? JournalAppearanceMode.summer.rawValue
+                    : JournalAppearanceMode.standard.rawValue
+            }
+        )
     }
 
     var reminderToggleBinding: Binding<Bool> {
@@ -369,5 +407,12 @@ private extension SettingsScreen {
             return
         }
         openURL(url)
+    }
+
+    func backfillBloomUnlockIfNeeded() {
+        guard !hasCelebratedFirstHarvest else { return }
+        let repository = JournalRepository()
+        guard (try? repository.hasUserReachedFullHarvest(context: modelContext)) == true else { return }
+        hasCelebratedFirstHarvest = true
     }
 }

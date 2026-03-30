@@ -2,19 +2,27 @@ import SwiftUI
 import QuartzCore
 import UIKit
 
-private extension View {
-    /// Browse-state chrome for the add control (matches `SentenceStripView` row styling).
-    func journalAddSentenceBrowseRowChrome() -> some View {
-        self
+private struct AddSentenceBrowseChromeModifier: ViewModifier {
+    @Environment(\.todayJournalPalette) private var palette
+
+    func body(content: Content) -> some View {
+        content
             .padding(.horizontal, AppTheme.spacingRegular)
             .padding(.vertical, AppTheme.spacingRegular)
             .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
-            .background(AppTheme.journalPaper.opacity(0.72))
+            .background(palette.paper.opacity(0.72 * palette.sectionPaperOpacity))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                    .stroke(AppTheme.journalInputBorder.opacity(0.76), lineWidth: 1)
+                    .stroke(palette.inputBorder.opacity(0.76), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
+    }
+}
+
+private extension View {
+    /// Browse-state chrome for the add control (matches `SentenceStripView` row styling).
+    func journalAddSentenceBrowseRowChrome() -> some View {
+        modifier(AddSentenceBrowseChromeModifier())
     }
 }
 
@@ -57,6 +65,7 @@ enum SequentialSectionChipRow {
 
     /// Label row used by the add control and by the morph composer slot (same chrome).
     struct AddSentenceRowLabel: View {
+        @Environment(\.todayJournalPalette) private var palette
         let title: String
 
         var body: some View {
@@ -66,10 +75,10 @@ enum SequentialSectionChipRow {
                     .foregroundStyle(AppTheme.accentText)
                 Text(title)
                 .font(AppTheme.warmPaperMetaEmphasis)
-                .foregroundStyle(AppTheme.journalTextPrimary)
+                .foregroundStyle(palette.textPrimary)
                 Image(systemName: "chevron.right")
                     .font(AppTheme.outfitSemiboldCaption)
-                    .foregroundStyle(AppTheme.journalTextMuted)
+                    .foregroundStyle(palette.textMuted)
                 Spacer(minLength: 0)
             }
         }

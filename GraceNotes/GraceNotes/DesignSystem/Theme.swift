@@ -275,14 +275,16 @@ enum AppTheme {
 /// Applies Warm Paper styling: rounded corners, light border, paper-tinted background.
 /// System applies default focus styling when the input is focused.
 struct WarmPaperInputStyle: ViewModifier {
+    @Environment(\.todayJournalPalette) private var palette
+
     func body(content: Content) -> some View {
         content
             .padding(AppTheme.spacingRegular)
-            .background(AppTheme.journalPaper.opacity(0.6))
+            .background(palette.paper.opacity(palette.inputPaperOpacity))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                    .stroke(AppTheme.journalInputBorder, lineWidth: 1)
+                    .stroke(palette.inputBorder, lineWidth: 1)
             )
     }
 }

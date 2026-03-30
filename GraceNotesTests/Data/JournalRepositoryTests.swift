@@ -71,6 +71,61 @@ final class JournalRepositoryTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    func test_hasUserReachedFullHarvest_trueWhenCompletedAtSet() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let entry = JournalEntry(
+            entryDate: day,
+            gratitudes: [JournalItem(fullText: "a", chipLabel: "a")],
+            needs: [],
+            people: [],
+            completedAt: day
+        )
+        context.insert(entry)
+        try context.save()
+
+        XCTAssertTrue(try repo.hasUserReachedFullHarvest(context: context))
+    }
+
+    func test_hasUserReachedFullHarvest_trueWhenLegacyFullWithoutCompletedAt() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let entry = JournalEntry(
+            entryDate: day,
+            gratitudes: Self.fiveStubItems(prefix: "g"),
+            needs: Self.fiveStubItems(prefix: "n"),
+            people: Self.fiveStubItems(prefix: "p"),
+            completedAt: nil
+        )
+        context.insert(entry)
+        try context.save()
+
+        XCTAssertTrue(try repo.hasUserReachedFullHarvest(context: context))
+    }
+
+    func test_hasUserReachedFullHarvest_falseWhenNoHarvest() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let entry = JournalEntry(
+            entryDate: day,
+            gratitudes: [JournalItem(fullText: "a", chipLabel: "a")],
+            needs: [],
+            people: [],
+            completedAt: nil
+        )
+        context.insert(entry)
+        try context.save()
+
+        XCTAssertFalse(try repo.hasUserReachedFullHarvest(context: context))
+    }
+
+    private static func fiveStubItems(prefix: String) -> [JournalItem] {
+        (0..<5).map { JournalItem(fullText: "\(prefix)\($0)", chipLabel: "\($0)") }
+    }
+
     private func makeInMemoryContext() throws -> ModelContext {
         try SwiftDataTestIsolation.makeModelContext()
     }

@@ -13,6 +13,7 @@ private struct StripDeleteAccessibilityAction: ViewModifier {
 }
 
 struct SentenceStripView: View {
+    @Environment(\.todayJournalPalette) private var palette
     private enum Layout {
         static let expansionThreshold = 88
         static let softCapLineLimit = 3
@@ -89,7 +90,7 @@ struct SentenceStripView: View {
         Button(action: onTap) {
             Text(sentence)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.journalTextPrimary)
+                .foregroundStyle(palette.textPrimary)
                 .lineLimit(isExpanded ? nil : Layout.softCapLineLimit)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -98,15 +99,15 @@ struct SentenceStripView: View {
                 .frame(minHeight: 50, alignment: .leading)
                 .background(
                     isSelected
-                        ? AppTheme.journalActiveEditingAccent.opacity(0.24)
-                        : AppTheme.journalPaper.opacity(0.72)
+                        ? palette.activeEditingAccent.opacity(0.24)
+                        : palette.paper.opacity(0.72 * palette.sectionPaperOpacity)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                         .stroke(
                             isSelected
-                                ? AppTheme.journalActiveEditingAccentStrong.opacity(0.86)
-                                : AppTheme.journalInputBorder.opacity(0.76),
+                                ? palette.activeEditingAccentStrong.opacity(0.86)
+                                : palette.inputBorder.opacity(0.76),
                             lineWidth: 1
                         )
                 )

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Resolve and validate iOS simulator destinations for make targets."""
+"""Resolve and validate iOS simulator destinations for make targets.
+
+Also exposes booted device UDID for tools like `axe` (`Scripts/uat_axe_run.sh`).
+"""
 
 import json
 import re
@@ -14,6 +17,7 @@ def usage() -> None:
   python3 Scripts/simulator_destination.py list
   python3 Scripts/simulator_destination.py resolve "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3"
   python3 Scripts/simulator_destination.py name "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3"
+  python3 Scripts/simulator_destination.py udid "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
   python3 Scripts/simulator_destination.py matrix-destinations "iPhone XR@17.5;iPhone 17 Pro@26.3"
 
 Notes:
@@ -226,6 +230,29 @@ def print_destination_name(destination: str) -> None:
     print(name)
 
 
+def print_destination_udid(destination: str, rows: List[Dict[str, str]]) -> None:
+    """Print the UDID for a resolved simulator device + iOS version pair."""
+    resolved = resolve_destination(destination, rows)
+    fields = parse_destination(resolved)
+    name = fields.get("name")
+    os_value = fields.get("OS")
+    if not name or not os_value:
+        print("ERROR: resolved destination missing name or OS.", file=sys.stderr)
+        sys.exit(2)
+
+    matching = [
+        row
+        for row in rows
+        if row["name"] == name and row["runtime_version"] == os_value and row.get("udid")
+    ]
+    if not matching:
+        fail_with_guidance(
+            f"No UDID found for '{name}' on iOS {os_value}.",
+            rows,
+        )
+    print(matching[0]["udid"])
+
+
 def matrix_destinations(spec: str, rows: List[Dict[str, str]]) -> None:
     entries = [entry.strip() for entry in spec.split(";") if entry.strip()]
     if not entries:
@@ -263,6 +290,14 @@ def main() -> int:
         return 0
 
     rows = load_available_ios_devices()
+
+    if command_name == "udid":
+        if len(command_args) != 1:
+            print("ERROR: udid command expects exactly one destination argument.", file=sys.stderr)
+            return 2
+        print_destination_udid(command_args[0], rows)
+        return 0
+
 
     if command_name == "list":
         list_destinations(rows)

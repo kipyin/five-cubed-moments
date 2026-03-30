@@ -1,0 +1,2 @@
+tap --label Past --post-delay 0.5
+sleep 2

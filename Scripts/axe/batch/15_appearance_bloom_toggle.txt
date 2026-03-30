@@ -1,0 +1,4 @@
+tap -x 310 -y 832 --post-delay 0.5
+sleep 2
+tap --label "Bloom" --post-delay 0.3
+sleep 1

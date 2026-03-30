@@ -9,7 +9,7 @@ final class PersistenceController {
 
     static let iCloudSyncEnabledKey = "iCloudSyncEnabled"
     static var isCloudSyncEnabled: Bool {
-#if USE_DEMO_DATABASE
+#if USE_UAT_DATABASE
         false
 #else
         ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
@@ -138,20 +138,22 @@ final class PersistenceController {
         if inMemory {
             return ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         }
-#if USE_DEMO_DATABASE
+#if USE_UAT_DATABASE
         let cloudDatabase: ModelConfiguration.CloudKitDatabase = cloudSyncEnabled ? .automatic : .none
-        return ModelConfiguration(schema: schema, url: demoStoreURL, cloudKitDatabase: cloudDatabase)
+        return ModelConfiguration(schema: schema, url: uatStoreURL, cloudKitDatabase: cloudDatabase)
 #else
         let cloudDatabase: ModelConfiguration.CloudKitDatabase = cloudSyncEnabled ? .automatic : .none
         return ModelConfiguration(schema: schema, cloudKitDatabase: cloudDatabase)
 #endif
     }
 
-#if USE_DEMO_DATABASE
-    private static var demoStoreURL: URL {
+#if USE_UAT_DATABASE
+    /// UAT / sample-data builds use a dedicated on-disk store (`USE_UAT_DATABASE`).
+    /// No migration from legacy `Demo.store`; reset the simulator or remove that file if needed.
+    private static var uatStoreURL: URL {
         let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         let baseURL = appSupportURL ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        return baseURL.appendingPathComponent("Demo.store", isDirectory: false)
+        return baseURL.appendingPathComponent("Uat.store", isDirectory: false)
     }
 #endif
 

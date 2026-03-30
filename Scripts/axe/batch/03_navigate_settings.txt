@@ -1,2 +1,2 @@
-tap --label Settings --post-delay 0.5
+tap -x 310 -y 832 --post-delay 0.5
 sleep 2

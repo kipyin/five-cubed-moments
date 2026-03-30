@@ -60,7 +60,7 @@ struct SettingsScreen: View {
                         .textCase(nil)
                 }
 
-                if hasCelebratedFirstHarvest {
+                if hasCelebratedFirstHarvest || ProcessInfo.graceNotesUATUnlocksSummerToggle {
                     Section {
                         Toggle(isOn: summerModeBinding) {
                             Text(String(localized: "Settings.todayJournalAppearance.modeLabel"))

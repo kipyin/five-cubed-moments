@@ -1,0 +1,3 @@
+sleep 3
+tap --id Share --post-delay 0.5
+sleep 1

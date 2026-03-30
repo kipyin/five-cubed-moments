@@ -56,17 +56,17 @@ Main tabs: **Today** (journaling), **Past** (history and insights), **Settings**
 1. Clone the repository.
 2. Open `GraceNotes/GraceNotes.xcodeproj` in Xcode.
 3. For code signing, select your development team in the project's Signing & Capabilities (if needed).
-4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *GraceNotes (Demo)* scheme.
+4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *GraceNotes (UAT)* scheme.
 
 ## Automation
 
-Use the root `Makefile` for common local workflows (tests use the **GraceNotes** scheme only; the **GraceNotes (Demo)** scheme stays in Xcode for ⌘R with sample data):
+Use the root `Makefile` for common local workflows (tests use the **GraceNotes** scheme only; the **GraceNotes (UAT)** scheme stays in Xcode for ⌘R with sample data):
 
 - `make lint` – Run SwiftLint checks (requires `swiftlint` on your PATH).
 - `make build` – Build the app (requires macOS + Xcode).
 - `make run` – Clean build, install on the booted simulator, and launch the app (`RUN_SCHEME` / `RUN_CONFIGURATION`; default **GraceNotes** Debug). See `Makefile` for `RUN_BUNDLE_ID` and derived data path.
-- `make run-demo` – Same as `run` for **GraceNotes (Demo)** (`Demo` configuration; seeded sample data).
-- `make uat-axe` – **Local** regression captures: builds Demo, drives the simulator with **axe** (`brew install axe`), writes PNGs under `build/uat-captures/<timestamp>/`. Scenarios: [GraceNotes/docs/uat-scenarios.md](GraceNotes/docs/uat-scenarios.md). Not part of CI.
+- `make run-uat` – Same as `run` for **GraceNotes (UAT)** (`UAT` configuration; seeded sample data).
+- `make uat-axe` – **Local** regression captures: builds **GraceNotes (UAT)** (`UAT` configuration), drives the simulator with **axe** (`brew install axe`), writes PNGs under `build/uat-captures/<timestamp>/`. Full scenario table, batches, and launch args: [Scripts/axe/README.md](Scripts/axe/README.md) (shortcut: [GraceNotes/docs/uat-scenarios.md](GraceNotes/docs/uat-scenarios.md)). Not part of CI.
 - `make test` – Run unit + UI tests for **GraceNotes** on `DESTINATION` (resolved via `Scripts/simulator_destination.py`).
 - `make test-all` – Reset simulators, then `make test` (reduces flaky simulator state).
 - `make test-matrix` – Run **GraceNotes** tests across `TEST_DESTINATION_MATRIX` (default: iPhone XR @ iOS 17.5 and iPhone 17 Pro @ iOS 26.3).

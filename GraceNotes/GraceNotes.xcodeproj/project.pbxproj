@@ -303,19 +303,19 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		37CE845F2F68EFE30099A6F0 /* Demo */ = {
+		37CE845F2F68EFE30099A6F0 /* UAT */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = GraceNotesTests;
 			};
-			name = Demo;
+			name = UAT;
 		};
-		37CE84602F68EFE30099A6F0 /* Demo */ = {
+		37CE84602F68EFE30099A6F0 /* UAT */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = GraceNotesUITests;
 			};
-			name = Demo;
+			name = UAT;
 		};
 		37D873512F66C99500955D3E /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -594,7 +594,7 @@
 			};
 			name = Release;
 		};
-		8EED0A12313A958000DE0001 /* Demo */ = {
+		8EED0A12313A958000DE0001 /* UAT */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -652,12 +652,12 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG USE_DEMO_DATABASE $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG USE_UAT_DATABASE $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
-			name = Demo;
+			name = UAT;
 		};
-		8EED0A13313A958000DE0001 /* Demo */ = {
+		8EED0A13313A958000DE0001 /* UAT */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37DE0A102F70000100955D3E /* DeveloperSettings.xcconfig */;
 			buildSettings = {
@@ -692,7 +692,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Demo;
+			name = UAT;
 		};
 /* End XCBuildConfiguration section */
 
@@ -702,7 +702,7 @@
 			buildConfigurations = (
 				37D873512F66C99500955D3E /* Debug */,
 				37D873522F66C99500955D3E /* Release */,
-				8EED0A12313A958000DE0001 /* Demo */,
+				8EED0A12313A958000DE0001 /* UAT */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -712,7 +712,7 @@
 			buildConfigurations = (
 				37D873542F66C99500955D3E /* Debug */,
 				37D873552F66C99500955D3E /* Release */,
-				8EED0A13313A958000DE0001 /* Demo */,
+				8EED0A13313A958000DE0001 /* UAT */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -722,7 +722,7 @@
 			buildConfigurations = (
 				37D873572F66C99500955D3E /* Debug */,
 				37D873582F66C99500955D3E /* Release */,
-				37CE845F2F68EFE30099A6F0 /* Demo */,
+				37CE845F2F68EFE30099A6F0 /* UAT */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -732,7 +732,7 @@
 			buildConfigurations = (
 				37D8735A2F66C99500955D3E /* Debug */,
 				37D8735B2F66C99500955D3E /* Release */,
-				37CE84602F68EFE30099A6F0 /* Demo */,
+				37CE84602F68EFE30099A6F0 /* UAT */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

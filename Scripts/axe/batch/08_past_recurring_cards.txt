@@ -1,0 +1,2 @@
+tap -x 201 -y 832 --post-delay 0.5
+sleep 3

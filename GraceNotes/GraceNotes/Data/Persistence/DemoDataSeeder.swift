@@ -1,4 +1,4 @@
-#if USE_DEMO_DATABASE
+#if USE_UAT_DATABASE
 import Foundation
 import SwiftData
 

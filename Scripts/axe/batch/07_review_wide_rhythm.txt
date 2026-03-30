@@ -1,0 +1,4 @@
+tap -x 201 -y 832 --post-delay 0.5
+sleep 4
+swipe --start-x 300 --start-y 480 --end-x 60 --end-y 480 --duration 0.35
+sleep 1

@@ -39,7 +39,7 @@ xcodebuild \
   test
 ```
 
-Automated Makefile targets test the **GraceNotes** scheme only. The **GraceNotes (Demo)** scheme remains in Xcode for local runs with demo seed data; it is not part of `make test` / `make ci`.
+Automated Makefile targets test the **GraceNotes** scheme only. The **GraceNotes (UAT)** scheme remains in Xcode for local runs with UAT seed data; it is not part of `make test` / `make ci`. Local **`make uat-axe`** capture (fifteen `axe` batches + PNGs) is documented in [`Scripts/axe/README.md`](Scripts/axe/README.md).
 
 ### Lint command
 

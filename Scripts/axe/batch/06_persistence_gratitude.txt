@@ -1,0 +1,6 @@
+sleep 3
+# Plain UAT (no -ui-testing): seeded today has full gratitude chips — use Reflections editor (EN labels via launch AppleLanguages).
+tap --label "Reflections text" --post-delay 0.5
+type UATaxePersistenceProbe
+key 40
+sleep 2

@@ -34,6 +34,12 @@ struct GraceNotesApp: App {
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
             AppLaunchVersionTracker.applyLaunch()
             _ = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: .standard)
+            if ProcessInfo.graceNotesUATRequestsFastOnboarding {
+                UserDefaults.standard.set(true, forKey: FirstRunOnboardingStorageKeys.completed)
+            }
+            if ProcessInfo.graceNotesUATMarksPostSeedJourneySeen {
+                UserDefaults.standard.set(true, forKey: JournalOnboardingStorageKeys.hasSeenPostSeedJourney)
+            }
         }
 
         if isRunningUITests, processInfo.arguments.contains("-reset-journal-tutorial") {
@@ -140,7 +146,7 @@ struct GraceNotesApp: App {
         if isRunningUITests {
             mainTabView
                 .environmentObject(appNavigation)
-        } else if !hasCompletedOnboarding {
+        } else if !hasCompletedOnboarding, !ProcessInfo.graceNotesUATRequestsFastOnboarding {
             OnboardingScreen {
                 hasCompletedOnboarding = true
             }
@@ -195,8 +201,8 @@ struct GraceNotesApp: App {
         guard !hasRunDeferredStartupTasks else { return }
         hasRunDeferredStartupTasks = true
 
-#if USE_DEMO_DATABASE
-        PerformanceTrace.instant("Starting deferred demo seeding")
+#if USE_UAT_DATABASE
+        PerformanceTrace.instant("Starting deferred UAT seeding")
         await Task.yield()
         let context = ModelContext(controller.container)
         DemoDataSeeder.seedIfNeeded(context: context)

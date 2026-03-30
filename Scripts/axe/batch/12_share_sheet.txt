@@ -1,0 +1,6 @@
+sleep 2
+tap --id Share --post-delay 0.5
+sleep 2
+# iOS share sheet: no stable "Cancel" in AX on simulator; dismiss with downward swipe (402pt-wide layout).
+swipe --start-x 201 --start-y 350 --end-x 201 --end-y 700 --duration 0.35 --post-delay 0.5
+sleep 1

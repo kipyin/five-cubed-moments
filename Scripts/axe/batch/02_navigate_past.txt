@@ -1,2 +1,3 @@
-tap --label Past --post-delay 0.5
+# Main tab bar: center of Past (middle of three). iPhone 17 Pro–class width 402pt; see README if `DESTINATION` differs.
+tap -x 201 -y 832 --post-delay 0.5
 sleep 2

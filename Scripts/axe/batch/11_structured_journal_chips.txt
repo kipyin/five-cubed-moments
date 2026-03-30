@@ -1,0 +1,16 @@
+sleep 3
+tap --id JournalSectionAdd.gratitude --post-delay 0.5
+sleep 0.5
+type UATgratitudeChip
+key 40
+sleep 1
+tap --id JournalSectionAdd.need --post-delay 0.5
+sleep 0.5
+type UATneedChip
+key 40
+sleep 1
+tap --id JournalSectionAdd.person --post-delay 0.5
+sleep 0.5
+type UATpersonChip
+key 40
+sleep 2

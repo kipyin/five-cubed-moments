@@ -1,0 +1,6 @@
+tap -x 310 -y 832 --post-delay 0.5
+sleep 2
+tap --label "Import and export backups" --post-delay 0.5
+sleep 3
+tap -x 310 -y 832 --post-delay 0.5
+sleep 1

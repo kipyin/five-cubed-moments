@@ -9,8 +9,8 @@ ISOLATED_DERIVED_DATA := /tmp/GraceNotes-TestDerivedData
 RUN_DERIVED_DATA ?= /tmp/GraceNotes-RunDerivedData
 RUN_SCHEME ?= $(SCHEME)
 RUN_CONFIGURATION ?= Debug
-# Matches Xcode shared scheme "GraceNotes (Demo)"; launch uses Demo configuration.
-DEMO_SCHEME := GraceNotes (Demo)
+# Matches Xcode shared scheme "GraceNotes (UAT)"; launch uses UAT configuration.
+UAT_SCHEME := GraceNotes (UAT)
 RUN_BUNDLE_ID := com.gracenotes.GraceNotes
 UNIT_TEST_BUNDLE := GraceNotesTests
 UI_TEST_BUNDLE := GraceNotesUITests
@@ -21,15 +21,15 @@ SIMULATOR_HELPER := Scripts/simulator_destination.py
 # iOS 17 hosted runtime can crash in these suites before assertions run.
 LEGACY_RUNTIME_SKIP_FLAGS := -skip-testing:GraceNotesTests/DeterministicReviewInsightsTests -skip-testing:GraceNotesTests/HistoryEntryGroupingTests
 
-.PHONY: help lint lint-preflight build run run-demo uat-axe test test-unit test-ui test-ui-smoke test-isolated test-all test-matrix ci ci-matrix ci-build ci-full ci-merge-queue ci-pr-full-ci reset-simulators list-simulator-destinations validate-destination validate-test-matrix
+.PHONY: help lint lint-preflight build run run-uat uat-axe test test-unit test-ui test-ui-smoke test-isolated test-all test-matrix ci ci-matrix ci-build ci-full ci-merge-queue ci-pr-full-ci reset-simulators list-simulator-destinations validate-destination validate-test-matrix
 
 help:
 	@echo "Available targets:"
 	@echo "  make lint   - Run SwiftLint checks"
 	@echo "  make build  - Build app (macOS + Xcode required)"
 	@echo "  make run    - Clean build (RUN_SCHEME/RUN_CONFIGURATION), install, launch $(RUN_BUNDLE_ID)"
-	@echo "  make run-demo - Same as run for GraceNotes (Demo) scheme (sample data; Demo configuration)"
-	@echo "  make uat-axe - Local UAT: build Demo, run axe batches + screenshots (requires brew install axe; see GraceNotes/docs/uat-scenarios.md)"
+	@echo "  make run-uat - Same as run for GraceNotes (UAT) scheme (sample data; UAT configuration)"
+	@echo "  make uat-axe - Local UAT: build GraceNotes (UAT), run axe batches + screenshots (brew install axe; SSOT: Scripts/axe/README.md)"
 	@echo "  make test   - Run tests for GraceNotes scheme on DESTINATION"
 	@echo "  make test-unit - Run unit tests only"
 	@echo "  make test-ui   - Run UI tests only"
@@ -50,11 +50,11 @@ help:
 	@echo "Configurable variables:"
 	@echo "  DESTINATION='platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2'"
 	@echo "  RUN_DERIVED_DATA='$(RUN_DERIVED_DATA)' (clean+build output for make run)"
-	@echo "  RUN_SCHEME / RUN_CONFIGURATION - default: $(SCHEME) / Debug; use run-demo for Demo config"
+	@echo "  RUN_SCHEME / RUN_CONFIGURATION - default: $(SCHEME) / Debug; use run-uat for UAT config"
 	@echo "  TEST_DESTINATION_MATRIX='iPhone SE (3rd generation)@18.5;iPhone 17 Pro@26.2'"
 	@echo ""
 	@echo "Note: make run resolves DESTINATION to a simulator UDID and targets that device for boot/install/launch."
-	@echo "Note: GraceNotes (Demo) is supported via make run-demo; Makefile does not test that scheme."
+	@echo "Note: GraceNotes (UAT) is supported via make run-uat; Makefile does not test that scheme."
 
 list-simulator-destinations:
 	@$(PYTHON) "$(SIMULATOR_HELPER)" list
@@ -95,8 +95,8 @@ run:
 	xcrun simctl install "$$simulator_udid" "$(RUN_DERIVED_DATA)/Build/Products/$(RUN_CONFIGURATION)-iphonesimulator/GraceNotes.app" && \
 	xcrun simctl launch "$$simulator_udid" "$(RUN_BUNDLE_ID)"
 
-run-demo:
-	@$(MAKE) run RUN_SCHEME="$(DEMO_SCHEME)" RUN_CONFIGURATION=Demo
+run-uat:
+	@$(MAKE) run RUN_SCHEME="$(UAT_SCHEME)" RUN_CONFIGURATION=UAT
 
 uat-axe:
 	@command -v axe >/dev/null 2>&1 || { echo "axe not found. Install: brew install axe"; exit 1; }

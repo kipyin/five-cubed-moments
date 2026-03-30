@@ -864,6 +864,10 @@ private extension JournalScreen {
         syncGuidedJournalCompletionIfNeeded()
         focusOnboardingStepIfNeeded(onboardingPresentation.step)
         evaluatePostSeedJourneyIfNeeded()
+        if entryDate == nil, ProcessInfo.graceNotesUATRequestsPostSeedJourney {
+            postSeedJourneySkipsCongratulations = hasCompletedGuidedJournal
+            showPostSeedJourney = true
+        }
         PerformanceTrace.end("JournalScreen.loadTask", startedAt: loadTrace)
     }
 

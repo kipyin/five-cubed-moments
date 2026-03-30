@@ -29,6 +29,9 @@ DerivedData/
 # Cursor
 .cursor/
 
+# XcodeBuild MCP (local session/config; not reproducible across machines)
+.xcodebuildmcp/
+
 # Git worktrees (local parallel checkouts)
 .worktrees/
 

@@ -53,7 +53,7 @@ help:
 	@echo "  RUN_SCHEME / RUN_CONFIGURATION - default: $(SCHEME) / Debug; use run-demo for Demo config"
 	@echo "  TEST_DESTINATION_MATRIX='iPhone SE (3rd generation)@18.5;iPhone 17 Pro@26.2'"
 	@echo ""
-	@echo "Note: make run uses simctl install booted; only one booted simulator is supported."
+	@echo "Note: make run resolves DESTINATION to a simulator UDID and targets that device for boot/install/launch."
 	@echo "Note: GraceNotes (Demo) is supported via make run-demo; Makefile does not test that scheme."
 
 list-simulator-destinations:
@@ -85,15 +85,15 @@ build:
 
 run:
 	@resolved_destination="$$($(PYTHON) "$(SIMULATOR_HELPER)" resolve "$(DESTINATION)")" || exit $$?; \
-	simulator_name="$$($(PYTHON) "$(SIMULATOR_HELPER)" name "$$resolved_destination")" || exit $$?; \
+	simulator_udid="$$($(PYTHON) "$(SIMULATOR_HELPER)" udid "$$resolved_destination")" || exit $$?; \
 	echo "Using destination: $$resolved_destination"; \
 	echo "Using scheme: $(RUN_SCHEME) ($(RUN_CONFIGURATION))"; \
-	xcrun simctl boot "$$simulator_name" >/dev/null 2>&1 || true; \
-	xcrun simctl bootstatus "$$simulator_name" -b >/dev/null 2>&1 || true; \
+	xcrun simctl boot "$$simulator_udid" >/dev/null 2>&1 || true; \
+	xcrun simctl bootstatus "$$simulator_udid" -b >/dev/null 2>&1 || true; \
 	open -a Simulator 2>/dev/null || true; \
 	xcodebuild -project "$(PROJECT)" -scheme "$(RUN_SCHEME)" -destination "$$resolved_destination" -configuration "$(RUN_CONFIGURATION)" -derivedDataPath "$(RUN_DERIVED_DATA)" clean build && \
-	xcrun simctl install booted "$(RUN_DERIVED_DATA)/Build/Products/$(RUN_CONFIGURATION)-iphonesimulator/GraceNotes.app" && \
-	xcrun simctl launch booted "$(RUN_BUNDLE_ID)"
+	xcrun simctl install "$$simulator_udid" "$(RUN_DERIVED_DATA)/Build/Products/$(RUN_CONFIGURATION)-iphonesimulator/GraceNotes.app" && \
+	xcrun simctl launch "$$simulator_udid" "$(RUN_BUNDLE_ID)"
 
 run-demo:
 	@$(MAKE) run RUN_SCHEME="$(DEMO_SCHEME)" RUN_CONFIGURATION=Demo

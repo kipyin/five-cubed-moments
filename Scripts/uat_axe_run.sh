@@ -23,13 +23,12 @@ fi
 
 resolved="$("${PYTHON}" "${SIM_HELPER}" resolve "${DESTINATION}")" || exit $?
 udid="$("${PYTHON}" "${SIM_HELPER}" udid "${DESTINATION}")" || exit $?
-sim_name="$("${PYTHON}" "${SIM_HELPER}" name "${resolved}")" || exit $?
 
 echo "UAT axe: destination=${resolved}"
 echo "UAT axe: udid=${udid}"
 
-xcrun simctl boot "${sim_name}" >/dev/null 2>&1 || true
-xcrun simctl bootstatus "${sim_name}" -b >/dev/null 2>&1 || true
+xcrun simctl boot "${udid}" >/dev/null 2>&1 || true
+xcrun simctl bootstatus "${udid}" -b >/dev/null 2>&1 || true
 open -a Simulator 2>/dev/null || true
 
 echo "UAT axe: building ${DEMO_SCHEME} (${CONFIGURATION})…"
@@ -47,9 +46,9 @@ if [[ ! -d "${app_path}" ]]; then
   exit 1
 fi
 
-xcrun simctl install booted "${app_path}"
-xcrun simctl terminate booted "${BUNDLE_ID}" >/dev/null 2>&1 || true
-xcrun simctl launch booted "${BUNDLE_ID}" >/dev/null
+xcrun simctl install "${udid}" "${app_path}"
+xcrun simctl terminate "${udid}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
+xcrun simctl launch "${udid}" "${BUNDLE_ID}" >/dev/null
 
 stamp="$(date +%Y%m%d-%H%M%S)"
 out_dir="${ROOT}/build/uat-captures/${stamp}"

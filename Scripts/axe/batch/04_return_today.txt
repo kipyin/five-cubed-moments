@@ -1,0 +1,2 @@
+tap --label Today --post-delay 0.5
+sleep 1

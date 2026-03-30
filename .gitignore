@@ -1,4 +1,5 @@
 # Xcode
+# Full tree ignored — includes `build/uat-captures/` from `make uat-axe`.
 build/
 *.pbxuser
 !default.pbxuser

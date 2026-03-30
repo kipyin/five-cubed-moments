@@ -64,6 +64,9 @@ Use the root `Makefile` for common local workflows (tests use the **GraceNotes**
 
 - `make lint` – Run SwiftLint checks (requires `swiftlint` on your PATH).
 - `make build` – Build the app (requires macOS + Xcode).
+- `make run` – Clean build, install on the booted simulator, and launch the app (`RUN_SCHEME` / `RUN_CONFIGURATION`; default **GraceNotes** Debug). See `Makefile` for `RUN_BUNDLE_ID` and derived data path.
+- `make run-demo` – Same as `run` for **GraceNotes (Demo)** (`Demo` configuration; seeded sample data).
+- `make uat-axe` – **Local** regression captures: builds Demo, drives the simulator with **axe** (`brew install axe`), writes PNGs under `build/uat-captures/<timestamp>/`. Scenarios: [GraceNotes/docs/uat-scenarios.md](GraceNotes/docs/uat-scenarios.md). Not part of CI.
 - `make test` – Run unit + UI tests for **GraceNotes** on `DESTINATION` (resolved via `Scripts/simulator_destination.py`).
 - `make test-all` – Reset simulators, then `make test` (reduces flaky simulator state).
 - `make test-matrix` – Run **GraceNotes** tests across `TEST_DESTINATION_MATRIX` (default: iPhone XR @ iOS 17.5 and iPhone 17 Pro @ iOS 26.3).

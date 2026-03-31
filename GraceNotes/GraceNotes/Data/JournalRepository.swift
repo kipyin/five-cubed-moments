@@ -66,4 +66,65 @@ struct JournalRepository {
             throw error
         }
     }
+
+    /// Returns structured lines and notes whose text contains `query`
+    /// (case- and diacritic-insensitive), newest days first. Caps total rows for responsiveness on large stores.
+    func searchMatches(
+        query: String,
+        context: ModelContext,
+        maxRows: Int = 200
+    ) throws -> [JournalSearchMatch] {
+        let trace = PerformanceTrace.begin("JournalRepository.searchMatches")
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            PerformanceTrace.end("JournalRepository.searchMatches.emptyQuery", startedAt: trace)
+            return []
+        }
+
+        let entries = try fetchAllEntries(context: context)
+        var matches: [JournalSearchMatch] = []
+
+        for entry in entries {
+            guard matches.count < maxRows else { break }
+
+            let dayStart = calendar.startOfDay(for: entry.entryDate)
+
+            func appendIfMatch(source: ReviewThemeSourceCategory, text: String) {
+                guard matches.count < maxRows else { return }
+                guard Self.textContains(trimmed, in: text) else { return }
+                matches.append(JournalSearchMatch(entryDate: dayStart, source: source, content: text))
+            }
+
+            for item in entry.gratitudes ?? [] {
+                appendIfMatch(source: .gratitudes, text: item.displayLabel)
+            }
+            for item in entry.needs ?? [] {
+                appendIfMatch(source: .needs, text: item.displayLabel)
+            }
+            for item in entry.people ?? [] {
+                appendIfMatch(source: .people, text: item.displayLabel)
+            }
+
+            let notes = entry.readingNotes
+            if !notes.isEmpty {
+                appendIfMatch(source: .readingNotes, text: notes)
+            }
+
+            let reflections = entry.reflections
+            if !reflections.isEmpty {
+                appendIfMatch(source: .reflections, text: reflections)
+            }
+        }
+
+        PerformanceTrace.end("JournalRepository.searchMatches", startedAt: trace)
+        return matches
+    }
+
+    private static func textContains(_ needle: String, in haystack: String) -> Bool {
+        haystack.range(
+            of: needle,
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: .current
+        ) != nil
+    }
 }

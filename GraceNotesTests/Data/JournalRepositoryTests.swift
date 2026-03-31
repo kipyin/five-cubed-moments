@@ -122,6 +122,79 @@ final class JournalRepositoryTests: XCTestCase {
         XCTAssertFalse(try repo.hasUserReachedFullHarvest(context: context))
     }
 
+    func test_searchMatches_returnsChipAndNotesLines() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        let day1 = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let day2 = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_056_800))
+
+        let entry1 = JournalEntry(
+            entryDate: day1,
+            gratitudes: [JournalItem(fullText: "Morning coffee ritual", chipLabel: nil)],
+            needs: [],
+            people: [],
+            readingNotes: "Psalm study notes",
+            reflections: "",
+            createdAt: day1,
+            updatedAt: day1
+        )
+        let entry2 = JournalEntry(
+            entryDate: day2,
+            gratitudes: [],
+            needs: [],
+            people: [],
+            readingNotes: "",
+            reflections: "Rest day reflection",
+            createdAt: day2,
+            updatedAt: day2
+        )
+        context.insert(entry1)
+        context.insert(entry2)
+        try context.save()
+
+        let coffeeMatches = try repo.searchMatches(query: "coffee", context: context, maxRows: 50)
+        XCTAssertEqual(coffeeMatches.count, 1)
+        XCTAssertEqual(coffeeMatches[0].source, .gratitudes)
+        XCTAssertEqual(coffeeMatches[0].content, "Morning coffee ritual")
+        XCTAssertEqual(coffeeMatches[0].entryDate, day1)
+
+        let psalmMatches = try repo.searchMatches(query: "psalm", context: context, maxRows: 50)
+        XCTAssertEqual(psalmMatches.count, 1)
+        XCTAssertEqual(psalmMatches[0].source, .readingNotes)
+
+        let restMatches = try repo.searchMatches(query: "rest", context: context, maxRows: 50)
+        XCTAssertEqual(restMatches.count, 1)
+        XCTAssertEqual(restMatches[0].source, .reflections)
+
+        let empty = try repo.searchMatches(query: "   ", context: context, maxRows: 50)
+        XCTAssertTrue(empty.isEmpty)
+    }
+
+    func test_searchMatches_respectsMaxRows() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        for index in 0..<5 {
+            let day = calendar.startOfDay(
+                for: Date(timeIntervalSince1970: 1_742_147_200 + TimeInterval(index * 86_400))
+            )
+            let entry = JournalEntry(
+                entryDate: day,
+                gratitudes: [JournalItem(fullText: "match token", chipLabel: nil)],
+                needs: [],
+                people: [],
+                readingNotes: "",
+                reflections: "",
+                createdAt: day,
+                updatedAt: day
+            )
+            context.insert(entry)
+        }
+        try context.save()
+
+        let matches = try repo.searchMatches(query: "match", context: context, maxRows: 2)
+        XCTAssertEqual(matches.count, 2)
+    }
+
     private static func fiveStubItems(prefix: String) -> [JournalItem] {
         (0..<5).map { JournalItem(fullText: "\(prefix)\($0)", chipLabel: "\($0)") }
     }

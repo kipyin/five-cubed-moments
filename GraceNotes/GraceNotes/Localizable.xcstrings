@@ -6108,6 +6108,54 @@
         }
       }
     },
+    "Search journal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search journal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索日记"
+          }
+        }
+      }
+    },
+    "No matches" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无匹配结果"
+          }
+        }
+      }
+    },
+    "PastSearch.noMatches.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a different word or check your spelling."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换个关键词试试，或检查一下拼写。"
+          }
+        }
+      }
+    },
     "Start writing this week to unlock review insights." : {
       "localizations" : {
         "en" : {

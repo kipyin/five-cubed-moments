@@ -87,9 +87,9 @@ struct ReviewInsightInsetPanel<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         // `reviewPaper` on `reviewBackground` (list row); avoid low-opacity `reviewBackground` here — it vanishes.
         .background(AppTheme.reviewPaper)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(AppTheme.border.opacity(strokeOpacity), lineWidth: 1)
         )
     }

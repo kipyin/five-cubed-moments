@@ -10,6 +10,10 @@ final class ReviewInsightsCacheTests: XCTestCase {
         ReviewWeekBoundaryPreference.defaultValue.rawValue
     }
 
+    private var defaultPastStatsToken: String {
+        PastStatisticsIntervalSelection.default.cacheKeyToken
+    }
+
     override func setUp() {
         super.setUp()
         calendar = Calendar(identifier: .gregorian)
@@ -27,12 +31,14 @@ final class ReviewInsightsCacheTests: XCTestCase {
         await cache.storeIfEligible(
             insights,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         let loaded = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
 
         XCTAssertEqual(loaded, insights)
@@ -45,12 +51,14 @@ final class ReviewInsightsCacheTests: XCTestCase {
         await cache.storeIfEligible(
             sparse,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         let loaded = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
 
         XCTAssertNil(loaded)
@@ -85,7 +93,8 @@ final class ReviewInsightsCacheTests: XCTestCase {
             await cache.storeIfEligible(
                 insights,
                 calendar: calendar,
-                weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+                weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+                pastStatisticsIntervalToken: defaultPastStatsToken
             )
         }
 
@@ -95,14 +104,16 @@ final class ReviewInsightsCacheTests: XCTestCase {
         let oldestLoaded = await cache.insights(
             forWeekStart: oldest,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         XCTAssertNil(oldestLoaded)
         for weekStart in newestEight {
             let loaded = await cache.insights(
                 forWeekStart: weekStart,
                 calendar: calendar,
-                weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+                weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+                pastStatisticsIntervalToken: defaultPastStatsToken
             )
             XCTAssertNotNil(loaded)
         }
@@ -115,19 +126,22 @@ final class ReviewInsightsCacheTests: XCTestCase {
         await cache.storeIfEligible(
             insights,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.sundayStart.rawValue
+            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.sundayStart.rawValue,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         let loadedOtherBoundary = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.mondayStart.rawValue
+            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.mondayStart.rawValue,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         XCTAssertNil(loadedOtherBoundary)
 
         let loadedSameBoundary = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.sundayStart.rawValue
+            weekBoundaryPreferenceRawValue: ReviewWeekBoundaryPreference.sundayStart.rawValue,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         XCTAssertEqual(loadedSameBoundary, insights)
     }
@@ -156,12 +170,14 @@ final class ReviewInsightsCacheTests: XCTestCase {
         await cache.storeIfEligible(
             insights,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         let loaded = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
 
         XCTAssertEqual(loaded?.weekStats.historySectionTotals, insights.weekStats.historySectionTotals)
@@ -250,7 +266,8 @@ final class ReviewInsightsCacheTests: XCTestCase {
         let beforeHeal = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         XCTAssertNil(beforeHeal)
 
@@ -258,12 +275,14 @@ final class ReviewInsightsCacheTests: XCTestCase {
         await cache.storeIfEligible(
             insights,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         let afterStore = await cache.insights(
             forWeekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw
+            weekBoundaryPreferenceRawValue: defaultWeekBoundaryRaw,
+            pastStatisticsIntervalToken: defaultPastStatsToken
         )
         XCTAssertEqual(afterStore, insights)
     }

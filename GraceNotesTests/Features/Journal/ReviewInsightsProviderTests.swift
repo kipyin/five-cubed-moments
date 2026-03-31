@@ -180,8 +180,10 @@ private struct StubReviewInsightsGenerator: ReviewInsightsGenerating {
     func generateInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) async throws -> ReviewInsights {
+        _ = pastStatisticsInterval
         try result.get()
     }
 }

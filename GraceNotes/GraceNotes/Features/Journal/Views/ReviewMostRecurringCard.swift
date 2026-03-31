@@ -4,6 +4,8 @@ struct ReviewMostRecurringCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
+    @AppStorage(PastStatisticsIntervalPreference.appStorageKey)
+    private var pastStatisticsIntervalEncoded = ""
 
     @Binding var themeDrilldown: ReviewThemeDrilldownPayload?
     @Binding var browseAllPayload: MostRecurringBrowsePayload?
@@ -52,7 +54,7 @@ struct ReviewMostRecurringCard: View {
             if isLoading {
                 themesPanel(
                     themes: themes,
-                    reviewWeekEnd: insights.weekEnd,
+                    referenceDate: insights.generatedAt,
                     calendar: reviewCalendar
                 )
                 .accessibilityHint(String(localized: "Updated insights appear when ready."))
@@ -60,7 +62,7 @@ struct ReviewMostRecurringCard: View {
             } else {
                 themesPanel(
                     themes: themes,
-                    reviewWeekEnd: insights.weekEnd,
+                    referenceDate: insights.generatedAt,
                     calendar: reviewCalendar
                 )
             }
@@ -69,7 +71,7 @@ struct ReviewMostRecurringCard: View {
 
     private func themesPanel(
         themes: [ReviewMostRecurringTheme],
-        reviewWeekEnd: Date,
+        referenceDate: Date,
         calendar: Calendar
     ) -> some View {
         ReviewInsightInsetPanel(
@@ -86,7 +88,7 @@ struct ReviewMostRecurringCard: View {
                     Button {
                         browseAllPayload = MostRecurringBrowsePayload(
                             themes: themes,
-                            reviewWeekEnd: reviewWeekEnd,
+                            referenceDate: referenceDate,
                             calendar: calendar
                         )
                     } label: {
@@ -128,13 +130,12 @@ struct ReviewMostRecurringCard: View {
     }
 
     private func drilldownPayload(for theme: ReviewMostRecurringTheme) -> ReviewThemeDrilldownPayload {
-        ReviewThemeDrilldownPayload(
+        let selection = PastStatisticsIntervalPreference.selection(fromAppStorage: pastStatisticsIntervalEncoded)
+            .validated
+        return ReviewThemeDrilldownPayload(
             label: theme.label,
             sectionTitle: String(localized: "Most recurring"),
-            subtitle: String(
-                format: String(localized: "Showed up %1$lld times in the last 4 weeks."),
-                Int64(theme.totalCount)
-            ),
+            subtitle: selection.mostRecurringDrilldownSubtitle(mentionCount: theme.totalCount),
             trend: nil,
             evidence: theme.evidence
         )

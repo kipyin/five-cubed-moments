@@ -16,13 +16,15 @@ struct WeeklyInsightRuleEngine {
     private let aggregatesBuilder = WeeklyReviewAggregatesBuilder()
     private let textNormalizer = WeeklyInsightTextNormalizer()
 
+    // swiftlint:disable:next function_parameter_count
     func analyze(
         currentPeriod: Range<Date>,
         currentWeekEntries: [JournalEntry],
         previousWeekEntries: [JournalEntry],
         allEntries: [JournalEntry],
         calendar: Calendar,
-        referenceDate: Date
+        referenceDate: Date,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) -> WeeklyInsightAnalysis {
         let candidateBuilder = WeeklyInsightCandidateBuilder(textNormalizer: textNormalizer)
         let aggregates = aggregatesBuilder.build(
@@ -31,7 +33,8 @@ struct WeeklyInsightRuleEngine {
             previousWeekEntries: previousWeekEntries,
             allEntries: allEntries,
             calendar: calendar,
-            referenceDate: referenceDate
+            referenceDate: referenceDate,
+            pastStatisticsInterval: pastStatisticsInterval
         )
 
         let candidates = candidateBuilder.buildCandidates(inputs: aggregates.candidateInputs)

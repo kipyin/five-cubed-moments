@@ -35,12 +35,14 @@ actor ReviewInsightsCache {
     func insights(
         forWeekStart weekStart: Date,
         calendar: Calendar,
-        weekBoundaryPreferenceRawValue: String
+        weekBoundaryPreferenceRawValue: String,
+        pastStatisticsIntervalToken: String
     ) -> ReviewInsights? {
         let key = Self.compositeCacheKey(
             weekStart: weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue
+            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue,
+            pastStatisticsIntervalToken: pastStatisticsIntervalToken
         )
         guard let payload = loadPayload() else {
             return nil
@@ -51,7 +53,8 @@ actor ReviewInsightsCache {
     func storeIfEligible(
         _ insights: ReviewInsights,
         calendar: Calendar,
-        weekBoundaryPreferenceRawValue: String
+        weekBoundaryPreferenceRawValue: String,
+        pastStatisticsIntervalToken: String
     ) {
         guard !ReviewInsightsRefreshPolicy.isSparseProviderFallback(insights) else {
             return
@@ -59,7 +62,8 @@ actor ReviewInsightsCache {
         let key = Self.compositeCacheKey(
             weekStart: insights.weekStart,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue
+            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue,
+            pastStatisticsIntervalToken: pastStatisticsIntervalToken
         )
         var payload = loadPayload() ?? Payload(weeks: [:])
         payload.weeks[key] = insights
@@ -107,10 +111,11 @@ actor ReviewInsightsCache {
     private static func compositeCacheKey(
         weekStart: Date,
         calendar: Calendar,
-        weekBoundaryPreferenceRawValue: String
+        weekBoundaryPreferenceRawValue: String,
+        pastStatisticsIntervalToken: String
     ) -> String {
         let interval = normalizedWeekStartInterval(weekStart, calendar: calendar)
-        return "\(interval)#\(weekBoundaryPreferenceRawValue)"
+        return "\(interval)#\(weekBoundaryPreferenceRawValue)#\(pastStatisticsIntervalToken)"
     }
 
     private static func weekInterval(fromCompositeCacheKey key: String) -> Double {

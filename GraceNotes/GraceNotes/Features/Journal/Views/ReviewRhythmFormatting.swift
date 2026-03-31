@@ -4,19 +4,19 @@ import Foundation
 enum ReviewRhythmFormatting {
     static func dayLabel(
         date: Date,
-        currentWeek: Range<Date>,
+        displayInterval: Range<Date>,
         calendar cal: Calendar,
-        now: Date = Date()
+        referenceNow: Date
     ) -> String {
         let dayStart = cal.startOfDay(for: date)
-        if currentWeek.contains(dayStart), cal.isDate(dayStart, inSameDayAs: now) {
+        if displayInterval.contains(dayStart), cal.isDate(dayStart, inSameDayAs: referenceNow) {
             return String(localized: "Today")
         }
         let formatter = DateFormatter()
         formatter.calendar = cal
         formatter.locale = cal.locale ?? .current
         formatter.timeZone = cal.timeZone
-        if currentWeek.contains(dayStart) {
+        if displayInterval.contains(dayStart) {
             formatter.setLocalizedDateFormatFromTemplate("EEE")
         } else {
             formatter.setLocalizedDateFormatFromTemplate("Md")

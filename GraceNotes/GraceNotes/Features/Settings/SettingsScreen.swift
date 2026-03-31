@@ -3,8 +3,6 @@ import UIKit
 
 struct SettingsScreen: View {
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
-    @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
-    private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
@@ -22,10 +20,8 @@ struct SettingsScreen: View {
     @State private var showAppTourFromSettings = false
     @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
-    /// Same storage as first Full/Harvest celebration; unlocks the Bloom (Summer) appearance toggle in Settings.
+    /// Same storage as first Full/Harvest celebration; unlocks Bloom in Advanced settings.
     @AppStorage(JournalTutorialStorageKeys.celebratedFirstHarvest) private var hasCelebratedFirstHarvest = false
-    @AppStorage(JournalAppearanceStorageKeys.todayMode)
-    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -62,44 +58,6 @@ struct SettingsScreen: View {
                         .textCase(nil)
                 }
 
-                Section {
-                    Picker(
-                        String(localized: "Week starts"),
-                        selection: reviewWeekBoundaryBinding
-                    ) {
-                        ForEach(ReviewWeekBoundaryPreference.allCases, id: \.self) { option in
-                            Text(option.localizedLabel).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .font(AppTheme.warmPaperBody)
-                    .foregroundStyle(AppTheme.settingsTextPrimary)
-                    .accessibilityIdentifier("SettingsReviewWeekBoundaryPicker")
-                    .frame(minHeight: 44)
-                } header: {
-                    Text(String(localized: "Past"))
-                        .font(AppTheme.warmPaperHeader)
-                        .foregroundStyle(AppTheme.settingsTextPrimary)
-                        .textCase(nil)
-                }
-
-                if hasCelebratedFirstHarvest {
-                    Section {
-                        Toggle(isOn: summerModeBinding) {
-                            Text(String(localized: "Settings.todayJournalAppearance.modeLabel"))
-                                .font(AppTheme.warmPaperBody)
-                                .foregroundStyle(AppTheme.settingsTextPrimary)
-                        }
-                        .tint(AppTheme.accent)
-                        .accessibilityHint(String(localized: "Settings.todayJournalAppearance.bloomToggleA11yHint"))
-                    } header: {
-                        Text(String(localized: "Settings.todayJournalAppearance.sectionTitle"))
-                            .font(AppTheme.warmPaperHeader)
-                            .foregroundStyle(AppTheme.settingsTextPrimary)
-                            .textCase(nil)
-                    }
-                }
-
                 DataPrivacySettingsSection(
                     isICloudSyncEnabled: $isICloudSyncEnabled,
                     iCloudAccountState: iCloudAccountState,
@@ -131,6 +89,24 @@ struct SettingsScreen: View {
                         .font(AppTheme.warmPaperHeader)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .textCase(nil)
+                }
+
+                Section {
+                    NavigationLink {
+                        AdvancedSettingsScreen()
+                    } label: {
+                        HStack(spacing: AppTheme.spacingRegular) {
+                            Text(String(localized: "Settings.advanced.navTitle"))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.settingsTextPrimary)
+                            Spacer(minLength: AppTheme.spacingRegular)
+                            Image(systemName: "chevron.right")
+                                .font(AppTheme.outfitSemiboldCaption)
+                                .foregroundStyle(AppTheme.settingsTextMuted)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .frame(minHeight: 44)
                 }
             }
             .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
@@ -193,34 +169,8 @@ struct SettingsScreen: View {
 }
 
 private extension SettingsScreen {
-    var reviewWeekBoundaryBinding: Binding<ReviewWeekBoundaryPreference> {
-        Binding(
-            get: {
-                ReviewWeekBoundaryPreference.resolve(from: reviewWeekBoundaryRawValue)
-            },
-            set: { newValue in
-                reviewWeekBoundaryRawValue = newValue.rawValue
-            }
-        )
-    }
-
-    var settingsJournalTodayAppearance: JournalAppearanceMode {
-        JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
-    }
-
     var shouldUseCompactReminderPicker: Bool {
         dynamicTypeSize >= .accessibility1 || verticalSizeClass == .compact
-    }
-
-    var summerModeBinding: Binding<Bool> {
-        Binding(
-            get: { settingsJournalTodayAppearance == .summer },
-            set: { isEnabled in
-                journalTodayAppearanceRaw = isEnabled
-                    ? JournalAppearanceMode.summer.rawValue
-                    : JournalAppearanceMode.standard.rawValue
-            }
-        )
     }
 
     var reminderToggleBinding: Binding<Bool> {

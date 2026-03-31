@@ -61,7 +61,6 @@ struct WeeklyReviewAggregatesBuilder {
     private let maxThemesPerSection = 3
     private let chipWeight = 3
     private let textWeight = 1
-    private let mostRecurringRollingWindowDays = 28
     private let minimumMostRecurringSignalCount = 2
     private let textNormalizer = WeeklyInsightTextNormalizer()
 
@@ -72,7 +71,8 @@ struct WeeklyReviewAggregatesBuilder {
         previousWeekEntries: [JournalEntry],
         allEntries: [JournalEntry],
         calendar: Calendar,
-        referenceDate: Date
+        referenceDate: Date,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) -> WeeklyReviewAggregates {
         let sortedCurrentEntries = sortedEntries(currentWeekEntries)
         let sortedPreviousEntries = sortedEntries(previousWeekEntries)
@@ -116,7 +116,8 @@ struct WeeklyReviewAggregatesBuilder {
                 allEntries: allEntries,
                 reflectionDays: reflectionDays,
                 calendar: calendar,
-                referenceDate: referenceDate
+                referenceDate: referenceDate,
+                pastStatisticsInterval: pastStatisticsInterval
             )
         )
     }
@@ -299,7 +300,8 @@ private extension WeeklyReviewAggregatesBuilder {
         allEntries: [JournalEntry],
         reflectionDays: Int,
         calendar: Calendar,
-        referenceDate: Date
+        referenceDate: Date,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) -> ReviewWeekStats {
         let meaningfulEntryCount = meaningfulEntryCount(from: entries)
         let weekStrongestByDay = strongestCompletionByDay(from: entries, calendar: calendar)
@@ -321,20 +323,30 @@ private extension WeeklyReviewAggregatesBuilder {
             peopleMentions: entries.reduce(0) { $0 + ($1.people ?? []).count }
         )
         let sortedAllEntries = sortedEntries(allEntries)
-        let historyStrongestByDay = strongestCompletionByDay(from: sortedAllEntries, calendar: calendar)
+        let historyRange = pastStatisticsInterval.validated.resolvedHistoryRange(
+            referenceDate: referenceDate,
+            calendar: calendar,
+            allEntries: allEntries
+        )
+        let entriesInHistoryRange = sortedAllEntries.filter { entry in
+            let day = calendar.startOfDay(for: entry.entryDate)
+            return day >= historyRange.lowerBound && day < historyRange.upperBound
+        }
+        let historyStrongestByDay = strongestCompletionByDay(from: entriesInHistoryRange, calendar: calendar)
         // Same invariant as week ``completionMix``: bucket totals sum to calendar days with ≥1 persisted
-        // entry in the entry set used for the per-day strongest level (here, all loaded entries).
+        // entry in the entry set used for the per-day strongest level (here, entries in the past-stats window).
         let historyCompletionMix = buildCompletionMix(from: historyStrongestByDay)
         let historySectionTotals = ReviewWeekSectionTotals(
-            gratitudeMentions: sortedAllEntries.reduce(0) { $0 + ($1.gratitudes ?? []).count },
-            needMentions: sortedAllEntries.reduce(0) { $0 + ($1.needs ?? []).count },
-            peopleMentions: sortedAllEntries.reduce(0) { $0 + ($1.people ?? []).count }
+            gratitudeMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.gratitudes ?? []).count },
+            needMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.needs ?? []).count },
+            peopleMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.people ?? []).count }
         )
         let sections = buildThemeSections(
             from: sortedEntries(allEntries),
             currentPeriod: currentPeriod,
             calendar: calendar,
-            referenceDate: referenceDate
+            referenceDate: referenceDate,
+            mostRecurringWindow: historyRange
         )
         return ReviewWeekStats(
             reflectionDays: reflectionDays,
@@ -355,7 +367,8 @@ private extension WeeklyReviewAggregatesBuilder {
         from entries: [JournalEntry],
         currentPeriod: Range<Date>,
         calendar: Calendar,
-        referenceDate: Date
+        referenceDate: Date,
+        mostRecurringWindow: Range<Date>
     ) -> (mostRecurring: [ReviewMostRecurringTheme], trending: ReviewTrendingBuckets) {
         let isWarmUpPhase = ReviewWeekTrendPolicy.isWarmUpPhase(
             currentPeriod: currentPeriod,
@@ -366,7 +379,6 @@ private extension WeeklyReviewAggregatesBuilder {
             return ([], ReviewTrendingBuckets(newThemes: [], upThemes: [], downThemes: []))
         }
         let trendRanges = calendarWeekComparisonPeriods(currentPeriod: currentPeriod, calendar: calendar)
-        let mostRecurringWindow = mostRecurringRange(currentPeriod: currentPeriod, calendar: calendar)
         var map: [String: DistilledThemeAccumulator] = [:]
         var sequence = 0
 
@@ -524,15 +536,6 @@ private extension WeeklyReviewAggregatesBuilder {
                 }
             }
         }
-    }
-
-    private func mostRecurringRange(
-        currentPeriod: Range<Date>,
-        calendar: Calendar
-    ) -> Range<Date> {
-        let lower = calendar.date(byAdding: .day, value: -mostRecurringRollingWindowDays, to: currentPeriod.upperBound)
-            ?? currentPeriod.lowerBound
-        return lower..<currentPeriod.upperBound
     }
 
     /// The current calendar week vs the immediately preceding calendar week (``ReviewInsightsPeriod``).

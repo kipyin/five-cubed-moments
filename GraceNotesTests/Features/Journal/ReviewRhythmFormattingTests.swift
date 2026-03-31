@@ -11,65 +11,61 @@ final class ReviewRhythmFormattingTests: XCTestCase {
         calendar.locale = Locale(identifier: "en_US_POSIX")
     }
 
-    func test_dayLabel_dateInsideWeek_usesAbbreviatedWeekday() {
-        let weekStart = date(year: 2026, month: 3, day: 21)
-        let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
-        let midWeek = date(year: 2026, month: 3, day: 24)
+    func test_dayLabel_insideRollingInterval_usesAbbreviatedWeekday() {
+        let reference = date(year: 2026, month: 3, day: 18)
+        let oldest = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: reference))!
+        let oldestStart = calendar.startOfDay(for: oldest)
+        let endExclusive = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: reference))!
+        let displayInterval = oldestStart..<endExclusive
+        let mid = date(year: 2026, month: 3, day: 15)
 
         let label = ReviewRhythmFormatting.dayLabel(
-            date: midWeek,
-            currentWeek: weekStart..<weekEnd,
+            date: mid,
+            displayInterval: displayInterval,
             calendar: calendar,
-            now: date(year: 2020, month: 1, day: 1)
+            referenceNow: reference
         )
 
-        XCTAssertFalse(
-            label.contains("/"),
-            "Weekday-in-week label should not use M/d numeric form; got \(label)"
-        )
+        XCTAssertFalse(label.contains("/"))
         XCTAssertFalse(label.isEmpty)
-        XCTAssertNotEqual(
-            label,
-            String(localized: "Today"),
-            "With a non-today reference date, label should be a weekday, not the localized Today string; got \(label)"
-        )
+        XCTAssertNotEqual(label, String(localized: "Today"))
     }
 
-    func test_dayLabel_dateInsideWeek_matchingNow_usesToday() {
-        let weekStart = date(year: 2026, month: 3, day: 21)
-        let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
-        let todayInWeek = date(year: 2026, month: 3, day: 24)
+    func test_dayLabel_referenceDay_usesToday() {
+        let reference = date(year: 2026, month: 3, day: 18)
+        let oldest = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: reference))!
+        let displayInterval = calendar.startOfDay(for: oldest)..<(
+            calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: reference))!
+        )
 
         let label = ReviewRhythmFormatting.dayLabel(
-            date: todayInWeek,
-            currentWeek: weekStart..<weekEnd,
+            date: reference,
+            displayInterval: displayInterval,
             calendar: calendar,
-            now: todayInWeek
+            referenceNow: reference
         )
 
         XCTAssertEqual(label, String(localized: "Today"))
     }
 
-    func test_dayLabel_dateOutsideWeek_usesMonthDayDigits() {
-        let weekStart = date(year: 2026, month: 3, day: 21)
-        let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
-        let beforeWeek = date(year: 2026, month: 3, day: 14)
+    func test_dayLabel_outsideDisplayInterval_usesMonthDayDigits() {
+        let reference = date(year: 2026, month: 3, day: 18)
+        let oldest = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: reference))!
+        let displayInterval = calendar.startOfDay(for: oldest)..<(
+            calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: reference))!
+        )
+        let before = date(year: 2026, month: 3, day: 1)
 
         let label = ReviewRhythmFormatting.dayLabel(
-            date: beforeWeek,
-            currentWeek: weekStart..<weekEnd,
-            calendar: calendar
+            date: before,
+            displayInterval: displayInterval,
+            calendar: calendar,
+            referenceNow: reference
         )
 
-        XCTAssertTrue(
-            label.rangeOfCharacter(from: .decimalDigits) != nil,
-            "Expected date label to contain at least one digit, got: \(label)"
-        )
+        XCTAssertNotNil(label.rangeOfCharacter(from: .decimalDigits))
         let shortWeekdaySymbols = Set(calendar.shortWeekdaySymbols)
-        XCTAssertFalse(
-            shortWeekdaySymbols.contains(label),
-            "Expected date label to be a numeric style, not just a weekday name; got: \(label)"
-        )
+        XCTAssertFalse(shortWeekdaySymbols.contains(label))
     }
 
     func test_assetName_mapsAllCompletionLevels() {

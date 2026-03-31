@@ -4,15 +4,18 @@ struct ReviewInsightsRefreshKey: Hashable {
     let weekStart: Date
     let entrySnapshots: [ReviewEntrySnapshot]
     let weekBoundaryPreferenceRawValue: String
+    let pastStatisticsIntervalToken: String
 
     init(
         weekStart: Date,
         entrySnapshots: [ReviewEntrySnapshot],
-        weekBoundaryPreferenceRawValue: String = ReviewWeekBoundaryPreference.defaultValue.rawValue
+        weekBoundaryPreferenceRawValue: String = ReviewWeekBoundaryPreference.defaultValue.rawValue,
+        pastStatisticsIntervalToken: String = PastStatisticsIntervalSelection.default.cacheKeyToken
     ) {
         self.weekStart = weekStart
         self.entrySnapshots = entrySnapshots
         self.weekBoundaryPreferenceRawValue = weekBoundaryPreferenceRawValue
+        self.pastStatisticsIntervalToken = pastStatisticsIntervalToken
     }
 }
 

@@ -6,7 +6,8 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
     func generateInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) async throws -> ReviewInsights {
         let currentPeriod = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
         let previousPeriod = ReviewInsightsPeriod.previousPeriod(before: currentPeriod, calendar: calendar)
@@ -18,7 +19,8 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
             previousWeekEntries: previousWeekEntries,
             allEntries: entries,
             calendar: calendar,
-            referenceDate: referenceDate
+            referenceDate: referenceDate,
+            pastStatisticsInterval: pastStatisticsInterval
         )
 
         return ReviewInsights(

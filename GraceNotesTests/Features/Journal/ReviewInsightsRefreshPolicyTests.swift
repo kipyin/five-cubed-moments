@@ -52,6 +52,19 @@ final class ReviewInsightsRefreshPolicyTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func test_shouldRefresh_whenPastStatisticsIntervalChanges_returnsTrue() {
+        let custom = PastStatisticsIntervalSelection(mode: .custom, quantity: 2, unit: .week).cacheKeyToken
+        let previous = makeKey(pastStatisticsIntervalToken: custom)
+        let current = makeKey(pastStatisticsIntervalToken: PastStatisticsIntervalSelection.default.cacheKeyToken)
+        let result = ReviewInsightsRefreshPolicy.shouldRefresh(
+            hasInsights: true,
+            previousKey: previous,
+            currentKey: current
+        )
+
+        XCTAssertTrue(result)
+    }
+
     func test_isSparseProviderFallback_matchesProviderFallbackShape() {
         XCTAssertTrue(ReviewInsightsRefreshPolicy.isSparseProviderFallback(makeSparseProviderFallbackInsights()))
     }
@@ -79,12 +92,14 @@ final class ReviewInsightsRefreshPolicyTests: XCTestCase {
     private func makeKey(
         weekStart: Date = Date(timeIntervalSince1970: 0),
         snapshots: [ReviewEntrySnapshot] = [],
-        weekBoundaryPreferenceRawValue: String = ReviewWeekBoundaryPreference.defaultValue.rawValue
+        weekBoundaryPreferenceRawValue: String = ReviewWeekBoundaryPreference.defaultValue.rawValue,
+        pastStatisticsIntervalToken: String = PastStatisticsIntervalSelection.default.cacheKeyToken
     ) -> ReviewInsightsRefreshKey {
         ReviewInsightsRefreshKey(
             weekStart: weekStart,
             entrySnapshots: snapshots,
-            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue
+            weekBoundaryPreferenceRawValue: weekBoundaryPreferenceRawValue,
+            pastStatisticsIntervalToken: pastStatisticsIntervalToken
         )
     }
 

@@ -5,6 +5,8 @@ struct ReviewScreen: View {
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
+    @AppStorage(PastStatisticsIntervalPreference.appStorageKey)
+    private var pastStatisticsIntervalEncoded = ""
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
@@ -24,13 +26,18 @@ struct ReviewScreen: View {
         isUiTestingExperience = isUiTesting
     }
 
+    private var pastStatisticsInterval: PastStatisticsIntervalSelection {
+        PastStatisticsIntervalPreference.selection(fromAppStorage: pastStatisticsIntervalEncoded).validated
+    }
+
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
         ReviewInsightsRefreshKey(
             weekStart: currentReviewPeriod.lowerBound,
             entrySnapshots: weeklyEntriesForRefresh.map {
                 ReviewEntrySnapshot(id: $0.id, updatedAt: $0.updatedAt)
             },
-            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
     }
 
@@ -70,7 +77,7 @@ struct ReviewScreen: View {
         .sheet(item: $mostRecurringBrowsePayload) { payload in
             MostRecurringBrowseSheetContainer(
                 themes: payload.themes,
-                reviewWeekEnd: payload.reviewWeekEnd,
+                referenceDate: payload.referenceDate,
                 calendar: payload.calendar
             )
         }
@@ -149,9 +156,7 @@ struct ReviewScreen: View {
 
             ReviewNarrativeSummaryCard(
                 insights: reviewInsights,
-                isLoading: isLoadingInsights,
-                weekJournalEntryCount: weeklyEntriesForRefresh.count,
-                onContinueToToday: { appNavigation.selectedTab = .today }
+                isLoading: isLoadingInsights
             )
             .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 6, trailing: 0))
             .listRowBackground(AppTheme.reviewBackground)
@@ -179,7 +184,8 @@ struct ReviewScreen: View {
         let generatedInsights = await reviewInsightsProvider.generateInsights(
             from: entries,
             referenceDate: Date(),
-            calendar: calendar
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
         )
         guard !Task.isCancelled else {
             isLoadingInsights = false
@@ -194,7 +200,8 @@ struct ReviewScreen: View {
         await reviewInsightsCache.storeIfEligible(
             generatedInsights,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
         lastInsightsRefreshKey = refreshKey
         isLoadingInsights = false
@@ -206,7 +213,8 @@ struct ReviewScreen: View {
         reviewInsights = await reviewInsightsCache.insights(
             forWeekStart: currentReviewPeriod.lowerBound,
             calendar: calendar,
-            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
     }
 }

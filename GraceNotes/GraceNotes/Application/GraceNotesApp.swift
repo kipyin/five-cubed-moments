@@ -32,6 +32,7 @@ struct GraceNotesApp: App {
         if !isRunningUnitTests {
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
+            PastStatisticsIntervalPreference.bootstrapUserDefaultsIfNeeded(using: .standard)
             AppLaunchVersionTracker.applyLaunch()
             _ = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: .standard)
         }

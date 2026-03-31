@@ -29,7 +29,7 @@ class CLISurfaceTest(unittest.TestCase):
         result = runner.invoke(app, ["--help"])
 
         self.assertEqual(result.exit_code, 0)
-        for token in ["doctor", "lint", "sim", "build", "test", "ci", "run"]:
+        for token in ["doctor", "lint", "sim", "build", "test", "ci", "interactive", "run"]:
             self.assertIn(token, result.output)
         self.assertIn("Examples:", result.output)
         self.assertIn("grace doctor", result.output)
@@ -138,6 +138,104 @@ class CLISurfaceTest(unittest.TestCase):
         result = runner.invoke(app, ["ci", "--profile", "missing-profile"])
 
         self.assertEqual(result.exit_code, 2)
+        combined = f"{result.stdout}\n{result.stderr}"
+        self.assertIn("grace ci --profile lint-build-test", combined)
+
+    def test_ci_without_profile_uses_default_ci_profile(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = replace(config.default_config(), default_ci_profile="test-all")
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_load_config", return_value=cfg):
+                with mock.patch.object(cli, "_execute_ci_profile") as run_ci:
+                    runner = CliRunner()
+                    result = runner.invoke(app, ["ci"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        run_ci.assert_called_once_with(cfg, "test-all")
+
+    def test_ci_with_explicit_profile_passes_through(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_load_config", return_value=cfg):
+                with mock.patch.object(cli, "_execute_ci_profile") as run_ci:
+                    runner = CliRunner()
+                    result = runner.invoke(app, ["ci", "--profile", "full"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        run_ci.assert_called_once_with(cfg, "full")
+
+    def test_interactive_refused_when_stdin_not_tty(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_load_config", return_value=cfg):
+                runner = CliRunner()
+                result = runner.invoke(app, ["interactive"])
+
+        self.assertEqual(result.exit_code, 2)
+        combined = f"{result.stdout}\n{result.stderr}"
+        self.assertIn("Interactive mode unavailable", combined)
+
+    def test_interactive_refused_when_ci_env_set(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        with mock.patch.dict(os.environ, {"CI": "true"}, clear=False):
+            stdin_mock = mock.Mock()
+            stdin_mock.isatty.return_value = True
+            with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+                with mock.patch.object(cli, "_load_config", return_value=cfg):
+                    runner = CliRunner()
+                    with mock.patch.object(sys, "stdin", stdin_mock):
+                        result = runner.invoke(app, ["interactive"])
+
+        self.assertEqual(result.exit_code, 2)
+
+    def test_interactive_refused_when_grace_noninteractive_set(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        with mock.patch.dict(os.environ, {"GRACE_NONINTERACTIVE": "1"}, clear=False):
+            stdin_mock = mock.Mock()
+            stdin_mock.isatty.return_value = True
+            with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+                with mock.patch.object(cli, "_load_config", return_value=cfg):
+                    runner = CliRunner()
+                    with mock.patch.object(sys, "stdin", stdin_mock):
+                        result = runner.invoke(app, ["interactive"])
+
+        self.assertEqual(result.exit_code, 2)
+
+    def test_interactive_runs_selected_profile(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        prompt = mock.Mock()
+        prompt.ask.return_value = "lint-build"
+
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_load_config", return_value=cfg):
+                with mock.patch.object(cli, "_interactive_cli_allowed", return_value=True):
+                    with mock.patch.object(cli.questionary, "select", return_value=prompt):
+                        with mock.patch.object(cli, "_execute_ci_profile") as run_ci:
+                            runner = CliRunner()
+                            result = runner.invoke(app, ["interactive"])
+
+        self.assertEqual(result.exit_code, 0, msg=f"{result.stdout}\n{result.stderr}")
+        run_ci.assert_called_once_with(cfg, "lint-build")
+
+    def test_interactive_cancel_exits_with_code_one(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        cfg = config.default_config()
+        prompt = mock.Mock()
+        prompt.ask.return_value = None
+
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_load_config", return_value=cfg):
+                with mock.patch.object(cli, "_interactive_cli_allowed", return_value=True):
+                    with mock.patch.object(cli.questionary, "select", return_value=prompt):
+                        runner = CliRunner()
+                        result = runner.invoke(app, ["interactive"])
+
+        self.assertEqual(result.exit_code, 1)
 
     def test_run_preset_and_passthrough_merge_for_simctl_launch(self) -> None:
         """``--preset`` argv plus ``--`` app args reach ``simctl launch`` (no real Xcode)."""
@@ -293,7 +391,7 @@ class CLISurfaceTest(unittest.TestCase):
     def test_print_error_block_plain_mode(self) -> None:
         buffer = io.StringIO()
         fake_console = Console(file=buffer, force_terminal=False, no_color=True)
-        with mock.patch.object(cli, "_stderr_console", fake_console):
+        with mock.patch.object(cli, "_stderr_console", return_value=fake_console):
             with mock.patch.object(cli, "_supports_rich_output", return_value=False):
                 cli._print_error_block(
                     title="Sample Error",

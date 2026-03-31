@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Callable
 
+import questionary
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -26,7 +27,7 @@ from gracenotes_dev import xcode as xcode_helpers
 app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="rich",
-    help="Grace Notes developer CLI — doctor, simulator helpers, build, test, CI, and run.",
+    help="Grace Notes developer CLI — doctor, simulator helpers, build, test, CI, interactive, and run.",
     epilog=(
         "Examples:\n"
         "  grace doctor\n"
@@ -55,7 +56,8 @@ def _console(stream: io.TextIOBase, *, stderr: bool = False) -> Console:
     )
 
 
-_stderr_console = _console(sys.stderr, stderr=True)
+def _stderr_console() -> Console:
+    return _console(sys.stderr, stderr=True)
 
 
 def _stdout_console() -> Console:
@@ -81,11 +83,11 @@ def _print_error_block(
     body = "\n".join(lines)
 
     if _supports_rich_output(sys.stderr):
-        _stderr_console.print(Panel.fit(body, title=title, border_style="red"))
+        _stderr_console().print(Panel.fit(body, title=title, border_style="red"))
         return
 
-    _stderr_console.print(title)
-    _stderr_console.print(body)
+    _stderr_console().print(title)
+    _stderr_console().print(body)
 
 
 def _fail(
@@ -128,7 +130,7 @@ def _run_theater(steps: list[TheaterStep]) -> float:
             detail = step.callback()
         except typer.Exit:
             elapsed = time.perf_counter() - started_step
-            _stderr_console.print(
+            _stderr_console().print(
                 _step_line(index=index, total=total, title=step.title, outcome="failed", elapsed=elapsed),
             )
             raise
@@ -145,6 +147,16 @@ def _run_theater(steps: list[TheaterStep]) -> float:
 
 def _repo_root() -> Path:
     return xcode_helpers.repo_root_from(Path.cwd())
+
+
+def _interactive_cli_allowed() -> bool:
+    if os.environ.get("CI"):
+        return False
+    if os.environ.get("GRACE_NONINTERACTIVE", "").strip() == "1":
+        return False
+    if not sys.stdin.isatty():
+        return False
+    return True
 
 
 def _load_config(repo_root: Path) -> config.DevConfig:
@@ -222,7 +234,7 @@ def _run_capture(argv: list[str], *, cwd: Path, check: bool = True) -> subproces
         )
     if check and completed.returncode != 0:
         if completed.stderr:
-            _stderr_console.print(completed.stderr.strip())
+            _stderr_console().print(completed.stderr.strip())
         raise typer.Exit(code=completed.returncode)
     return completed
 
@@ -734,19 +746,8 @@ def test(
     )
 
 
-@app.command("ci")
-def ci(
-    profile: Annotated[
-        str,
-        typer.Option(
-            "--profile",
-            help="CI profile from config (for example: lint-build, test-all, full).",
-        ),
-    ],
-) -> None:
-    """Run a named CI profile from ``gracenotes-dev.toml``."""
-    repo_root = _repo_root()
-    cfg = _load_config(repo_root)
+def _execute_ci_profile(cfg: config.DevConfig, profile: str) -> None:
+    """Run lint / build / test / smoke gates for a configured CI profile name."""
     selected = cfg.ci_profiles.get(profile)
     if selected is None:
         _fail(
@@ -754,8 +755,8 @@ def ci(
             title="Unknown CI profile",
             problem=f"`{profile}` is not defined in {config.DEFAULT_CONFIG_FILENAME}.",
             likely_cause="The profile name is misspelled or the profile has not been configured.",
-            try_commands=(f"grace ci --profile {next(iter(sorted(cfg.ci_profiles.keys())), 'full')}",),
-            retry_command=f"grace ci --profile {next(iter(sorted(cfg.ci_profiles.keys())), 'full')}",
+            try_commands=(f"grace ci --profile {cfg.default_ci_profile}",),
+            retry_command=f"grace ci --profile {cfg.default_ci_profile}",
         )
         return
 
@@ -786,6 +787,63 @@ def ci(
             isolated_dd=selected.isolated_dd,
             no_reset_sims=False,
         )
+
+
+@app.command("ci")
+def ci(
+    profile: Annotated[
+        str | None,
+        typer.Option(
+            "--profile",
+            help=(
+                "CI profile from config (for example: lint-build-test, lint-build, test-all, full). "
+                "When omitted, uses defaults.default_ci_profile from gracenotes-dev.toml."
+            ),
+        ),
+    ] = None,
+) -> None:
+    """Run a CI profile from ``gracenotes-dev.toml`` (default: ``defaults.default_ci_profile``)."""
+    repo_root = _repo_root()
+    cfg = _load_config(repo_root)
+    resolved = (profile or "").strip() or cfg.default_ci_profile
+    _execute_ci_profile(cfg, resolved)
+
+
+@app.command("interactive")
+def interactive() -> None:
+    """Choose a CI profile interactively, then run ``grace ci`` with that profile.
+
+    Requires an interactive terminal. In CI or when stdin is not a TTY, use ``grace ci --profile …``.
+    Set ``GRACE_NONINTERACTIVE=1`` to force non-interactive behavior (for scripts probing availability).
+    """
+    cfg = _load_config(_repo_root())
+
+    if not _interactive_cli_allowed():
+        _fail(
+            code=2,
+            title="Interactive mode unavailable",
+            problem=(
+                "`grace interactive` needs an interactive terminal (stdin must be a TTY), "
+                "and must not run with CI=1 or GRACE_NONINTERACTIVE=1."
+            ),
+            likely_cause="Automation and GitHub Actions should invoke `grace ci` with an explicit `--profile`.",
+            try_commands=(
+                f"grace ci --profile {cfg.default_ci_profile}",
+                "grace ci --profile full",
+            ),
+            retry_command=f"grace ci --profile {cfg.default_ci_profile}",
+        )
+        return
+
+    choice = questionary.select(
+        "CI profile:",
+        choices=sorted(cfg.ci_profiles.keys()),
+    ).ask()
+
+    if choice is None:
+        raise typer.Exit(code=1)
+
+    _execute_ci_profile(cfg, choice)
 
 
 @app.command(

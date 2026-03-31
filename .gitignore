@@ -38,9 +38,6 @@ __pycache__/
 # Git worktrees (local parallel checkouts)
 .worktrees/
 
-# Git worktrees (local parallel checkouts)
-.worktrees/
-
 # Local secrets (do not commit real keys)
 GraceNotes/Secrets.plist
 GraceNotes/DeveloperSettings.local.xcconfig

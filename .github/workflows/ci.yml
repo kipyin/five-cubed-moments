@@ -53,7 +53,7 @@ jobs:
             core.setOutput('skip_full_ci', skip ? 'true' : 'false');
 
   lint-build:
-    name: Lint & build (iPhone 17 Pro)
+    name: Lint, build & test (iPhone 17 Pro)
     if: github.event_name == 'pull_request'
     runs-on: macos-15
     steps:
@@ -77,8 +77,8 @@ jobs:
           fi
           swiftlint version
 
-      - name: Lint & build
-        run: grace ci --profile lint-build
+      - name: Lint, build & test (default CI profile)
+        run: grace ci
 
   main-push-full-ci:
     name: Main push — lint, test, UI smoke

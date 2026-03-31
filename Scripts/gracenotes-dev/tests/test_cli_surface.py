@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 import io
+import json
 import os
+import shutil
+import subprocess
+import tempfile
 import unittest
+from dataclasses import replace
+from pathlib import Path
 from unittest import mock
 
 from rich.console import Console
 from typer.testing import CliRunner
 
 from gracenotes_dev import cli
+from gracenotes_dev import config
+from gracenotes_dev import simulator
 from gracenotes_dev.cli import app
 
 
@@ -33,6 +41,83 @@ class CLISurfaceTest(unittest.TestCase):
         for token in ["list", "resolve", "reset"]:
             self.assertIn(token, result.output)
 
+    def test_sim_list_plain_outputs_columns_and_default_star(self) -> None:
+        """Human list uses stable sort, table headers, and marks config default with *."""
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+            {"name": "iPhone SE (3rd generation)", "runtime_version": "18.5", "runtime_key": "k2", "udid": "u2"},
+            {"name": "iPhone 13", "runtime_version": "17.0", "runtime_key": "k3", "udid": "u3"},
+        ]
+        cfg = replace(
+            config.default_config(),
+            destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=latest",
+        )
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_require_macos_xcode"):
+                with mock.patch.object(cli, "_load_config", return_value=cfg):
+                    with mock.patch.object(simulator, "load_available_ios_devices", return_value=rows):
+                        runner = CliRunner()
+                        result = runner.invoke(app, ["sim", "list"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        self.assertIn("Default", result.output)
+        self.assertIn("Device", result.output)
+        self.assertIn("Availability", result.output)
+        idx_13 = result.output.index("iPhone 13")
+        idx_17 = result.output.index("iPhone 17 Pro")
+        idx_se = result.output.index("iPhone SE (3rd generation)")
+        self.assertLess(idx_13, idx_17)
+        self.assertLess(idx_17, idx_se)
+        star_line = [ln for ln in result.output.splitlines() if "*" in ln and "iPhone 17 Pro" in ln]
+        self.assertEqual(len(star_line), 1, msg=result.output)
+
+    def test_sim_list_json_is_array_of_destination_strings(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 13", "runtime_version": "17.0", "runtime_key": "k3", "udid": "u3"},
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+        ]
+        expected = [
+            "platform=iOS Simulator,name=iPhone 13,OS=17.0",
+            "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0",
+        ]
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_require_macos_xcode"):
+                with mock.patch.object(simulator, "load_available_ios_devices", return_value=rows):
+                    runner = CliRunner()
+                    result = runner.invoke(app, ["sim", "list", "--json"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        parsed = json.loads(result.output)
+        self.assertIsInstance(parsed, list)
+        self.assertEqual(parsed, expected)
+        self.assertTrue(all(isinstance(item, str) for item in parsed))
+
+    def test_sim_list_rich_table_when_tty(self) -> None:
+        """With rich output enabled, list renders as a Rich table (box lines)."""
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+        ]
+        cfg = replace(
+            config.default_config(),
+            destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0",
+        )
+        with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+            with mock.patch.object(cli, "_require_macos_xcode"):
+                with mock.patch.object(cli, "_load_config", return_value=cfg):
+                    with mock.patch.object(simulator, "load_available_ios_devices", return_value=rows):
+                        with mock.patch.object(cli, "_supports_rich_output", return_value=True):
+                            runner = CliRunner()
+                            result = runner.invoke(app, ["sim", "list"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        self.assertIn("iPhone 17 Pro", result.output)
+        self.assertIn("26.0", result.output)
+        self.assertIn("┏", result.output)
+        self.assertIn("Default", result.output)
+
     def test_run_help_includes_examples(self) -> None:
         runner = CliRunner()
         result = runner.invoke(app, ["run", "--help"])
@@ -52,6 +137,61 @@ class CLISurfaceTest(unittest.TestCase):
         result = runner.invoke(app, ["ci", "--profile", "missing-profile"])
 
         self.assertEqual(result.exit_code, 2)
+
+    def test_run_preset_and_passthrough_merge_for_simctl_launch(self) -> None:
+        """``--preset`` argv plus ``--`` app args reach ``simctl launch`` (no real Xcode)."""
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+        ]
+        capture_run: list[list[str]] = []
+        capture_capture: list[list[str]] = []
+
+        def fake_run(argv: list[str], *, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
+            capture_run.append(list(argv))
+            return subprocess.CompletedProcess(argv, 0, "", "")
+
+        def fake_capture(
+            argv: list[str],
+            *,
+            cwd: Path,
+            check: bool = True,
+        ) -> subprocess.CompletedProcess[str]:
+            capture_capture.append(list(argv))
+            return subprocess.CompletedProcess(argv, 0, "com.gracenotes.GraceNotes: 12345", "")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_app = Path(tmp) / "GraceNotes.app"
+            fake_app.mkdir()
+            with mock.patch.object(cli, "_repo_root", return_value=repo_root):
+                with mock.patch.object(cli, "_require_macos_xcode"):
+                    with mock.patch.object(simulator, "load_available_ios_devices", return_value=rows):
+                        with mock.patch.object(
+                            cli.xcode_helpers,
+                            "built_app_path",
+                            return_value=fake_app,
+                        ):
+                            with mock.patch.object(cli, "_run", side_effect=fake_run):
+                                with mock.patch.object(cli, "_run_capture", side_effect=fake_capture):
+                                    runner = CliRunner()
+                                    result = runner.invoke(
+                                        app,
+                                        [
+                                            "run",
+                                            "--preset",
+                                            "tutorial-reset",
+                                            "--",
+                                            "-extra-flag",
+                                        ],
+                                    )
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        launch_lines = [a for a in capture_capture if a[:4] == ["xcrun", "simctl", "launch", "booted"]]
+        self.assertEqual(len(launch_lines), 1)
+        self.assertEqual(
+            launch_lines[0][4:],
+            ["com.gracenotes.GraceNotes", "-reset-journal-tutorial", "-extra-flag"],
+        )
 
     def test_no_color_disables_rich_output(self) -> None:
         stream = io.StringIO()

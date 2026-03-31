@@ -14,7 +14,8 @@ def repo_root_from(start: Path | None = None) -> Path:
     """Walk up from ``start`` to find the repo root (directory containing GraceNotes/)."""
     here = (start or Path.cwd()).resolve()
     for candidate in [here, *here.parents]:
-        if (candidate / "GraceNotes").is_dir() and (candidate / config.DEFAULT_PROJECT_RELATIVE).is_file():
+        project = candidate / config.DEFAULT_PROJECT_RELATIVE
+        if (candidate / "GraceNotes").is_dir() and project.exists():
             return candidate
     # Fall back to cwd for relative paths (callers may set cwd explicitly).
     return here

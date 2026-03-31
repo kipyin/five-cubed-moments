@@ -46,3 +46,9 @@ class XcodeHelpersTest(unittest.TestCase):
         self.assertIn("Debug", argv)
         self.assertIn("-derivedDataPath", argv)
         self.assertIn("/tmp/dd", argv)
+
+    def test_repo_root_from_package_dir(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        package_dir = Path(__file__).resolve().parents[1]
+        self.assertTrue((repo_root / "GraceNotes").is_dir())
+        self.assertEqual(xcode.repo_root_from(package_dir), repo_root)

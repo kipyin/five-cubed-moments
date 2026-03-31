@@ -286,6 +286,50 @@ def _resolved_destinations_for_matrix(
     return []
 
 
+def _doctor_default_destination_check(destination: str, rows: list[dict[str, str]]) -> dict[str, str]:
+    """Resolve default destination for doctor without exiting; stderr message on failure."""
+    err = io.StringIO()
+    try:
+        with redirect_stderr(err):
+            requested = _to_destination_spec(destination)
+            resolved = simulator.resolve_destination(requested, rows)
+    except (SystemExit, typer.Exit):
+        detail = err.getvalue().strip().splitlines()
+        msg = detail[0] if detail else "Unable to resolve destination; run `grace sim list`"
+        return {
+            "name": "default destination",
+            "status": "error",
+            "detail": msg,
+        }
+    return {
+        "name": "default destination",
+        "status": "ok",
+        "detail": resolved,
+    }
+
+
+def _doctor_matrix_check(specs: tuple[str, ...], rows: list[dict[str, str]]) -> dict[str, str]:
+    """Resolve test matrix for doctor without exiting; stderr message on failure."""
+    err = io.StringIO()
+    joined = ";".join(specs)
+    try:
+        with redirect_stderr(err):
+            lines = simulator.matrix_destinations_lines(joined, rows)
+    except (SystemExit, typer.Exit):
+        detail = err.getvalue().strip().splitlines()
+        msg = detail[0] if detail else "One or more matrix entries cannot be resolved"
+        return {
+            "name": "matrix destinations",
+            "status": "error",
+            "detail": msg,
+        }
+    return {
+        "name": "matrix destinations",
+        "status": "ok",
+        "detail": ", ".join(lines),
+    }
+
+
 def _test_only_filter(kind: str, cfg: config.DevConfig) -> list[str] | None:
     if kind == "all":
         return None
@@ -362,37 +406,27 @@ def doctor(
         },
     )
 
-    rows: list[dict[str, str]] = []
     destination_check = {"name": "default destination", "status": "skipped", "detail": "xcode tools not available"}
     matrix_check = {"name": "matrix destinations", "status": "skipped", "detail": "xcode tools not available"}
 
     if sys.platform == "darwin" and xcodebuild_path and xcrun_path:
         try:
             rows = simulator.load_available_ios_devices()
-            with redirect_stderr(io.StringIO()):
-                resolved_default = _resolve_destination(cfg.destination, rows)
-                resolved_matrix = _resolved_destinations_for_matrix(cfg.test_destination_matrix, rows)
-            destination_check = {
-                "name": "default destination",
-                "status": "ok",
-                "detail": resolved_default,
-            }
-            matrix_check = {
-                "name": "matrix destinations",
-                "status": "ok",
-                "detail": ", ".join(resolved_matrix),
-            }
         except (SystemExit, typer.Exit):
+            load_detail = "Could not list simulators (simctl failed); run `grace sim list` after fixing Xcode."
             destination_check = {
                 "name": "default destination",
                 "status": "error",
-                "detail": "Unable to resolve destination; run `grace sim list`",
+                "detail": load_detail,
             }
             matrix_check = {
                 "name": "matrix destinations",
                 "status": "error",
-                "detail": "One or more matrix entries cannot be resolved",
+                "detail": load_detail,
             }
+        else:
+            destination_check = _doctor_default_destination_check(cfg.destination, rows)
+            matrix_check = _doctor_matrix_check(cfg.test_destination_matrix, rows)
 
     checks.extend([destination_check, matrix_check])
 
@@ -418,6 +452,41 @@ def lint() -> None:
     _run(["swiftlint", "lint"], cwd=repo_root, check=True)
 
 
+def _sim_list_entries(rows: list[dict[str, str]]) -> list[tuple[str, str, str]]:
+    """Deduplicated rows sorted by device name and OS version. Tuple is (xcodebuild line, device, OS)."""
+    seen: set[tuple[str, str]] = set()
+    entries: list[tuple[str, str, str]] = []
+    for row in sorted(rows, key=lambda item: (item["name"], simulator.version_tuple(item["runtime_version"]))):
+        key = (row["name"], row["runtime_version"])
+        if key in seen:
+            continue
+        seen.add(key)
+        line = f"platform=iOS Simulator,name={row['name']},OS={row['runtime_version']}"
+        entries.append((line, row["name"], row["runtime_version"]))
+    return entries
+
+
+def _resolve_default_destination_line(cfg_destination: str, rows: list[dict[str, str]]) -> str | None:
+    """Return resolved full destination string for config default, or None if it cannot be resolved."""
+    with redirect_stderr(io.StringIO()):
+        try:
+            return simulator.resolve_destination(cfg_destination, rows)
+        except SystemExit:
+            return None
+
+
+def _print_sim_list_plain(
+    entries: list[tuple[str, str, str]],
+    default_resolved: str | None,
+) -> None:
+    """Log-friendly lines when stdout is not a TTY or color is disabled."""
+    console = _stdout_console()
+    console.print(f"{'Default':<8}{'Device':<42}{'OS':<8}Availability")
+    for line, name, os_version in entries:
+        mark = "*" if default_resolved is not None and line == default_resolved else ""
+        console.print(f"{mark:<8}{name:<42}{os_version:<8}available")
+
+
 @sim_app.command("list")
 def sim_list(
     json_out: Annotated[
@@ -428,20 +497,29 @@ def sim_list(
     """List installed iOS Simulator destinations."""
     _require_macos_xcode()
     rows = simulator.load_available_ios_devices()
-    lines: list[str] = []
-    seen: set[tuple[str, str]] = set()
-    for row in sorted(rows, key=lambda item: (item["name"], simulator.version_tuple(item["runtime_version"]))):
-        key = (row["name"], row["runtime_version"])
-        if key in seen:
-            continue
-        seen.add(key)
-        lines.append(f"platform=iOS Simulator,name={row['name']},OS={row['runtime_version']}")
+    entries = _sim_list_entries(rows)
+    lines = [item[0] for item in entries]
     if json_out:
         json.dump(lines, sys.stdout, indent=2)
         sys.stdout.write("\n")
         return
-    for line in lines:
-        _stdout_console().print(line)
+
+    cfg = _load_config(_repo_root())
+    default_resolved = _resolve_default_destination_line(cfg.destination, rows)
+
+    if _supports_rich_output(sys.stdout):
+        table = Table(show_header=True, header_style="bold")
+        table.add_column("Default", justify="center", min_width=3)
+        table.add_column("Device")
+        table.add_column("OS", justify="right")
+        table.add_column("Availability")
+        for line, name, os_version in entries:
+            mark = "*" if default_resolved is not None and line == default_resolved else ""
+            table.add_row(mark, name, os_version, "available")
+        _stdout_console().print(table)
+        return
+
+    _print_sim_list_plain(entries, default_resolved)
 
 
 @sim_app.command("resolve")
@@ -707,7 +785,7 @@ def ci(
             destination=selected.smoke_destination or cfg.ci_simulator_xr,
             matrix=False,
             isolated_dd=selected.isolated_dd,
-            no_reset_sims=not selected.reset_simulators_before_test,
+            no_reset_sims=False,
         )
 
 
@@ -821,14 +899,15 @@ def run(
         detail = completed.stdout.strip() if completed.stdout else ""
         if expanded_args:
             suffix = f"args: {' '.join(expanded_args)}"
-            return f"{detail} | {suffix}" if detail else suffix
+            merged = f"{detail} | {suffix}" if detail else suffix
+            return merged
         return detail or None
 
     steps.extend(
         [
             TheaterStep("Resolve destination", resolve_step),
             TheaterStep("Boot simulator", boot_step),
-            TheaterStep("Build (Debug)", build_step),
+            TheaterStep(f"Build (Debug, {resolved_scheme})", build_step),
             TheaterStep("Install", install_step),
             TheaterStep(f"Launch {resolved_bundle_id}", launch_step),
         ],

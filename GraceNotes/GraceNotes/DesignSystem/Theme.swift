@@ -161,6 +161,9 @@ enum AppTheme {
     /// Disclosure chevrons and other compact chrome.
     static let outfitSemiboldCaption = Font.custom("Outfit-SemiBold", size: 12, relativeTo: .caption2)
 
+    /// Lighter disclosure chevrons (e.g. settings rows that are plain buttons, not `NavigationLink`).
+    static let outfitRegularCaption2 = Font.custom("Outfit-Regular", size: 12, relativeTo: .caption2)
+
     // MARK: - Spacing & Radius
 
     static let spacingTight: CGFloat = 8

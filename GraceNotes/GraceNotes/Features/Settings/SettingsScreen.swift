@@ -76,7 +76,7 @@ struct SettingsScreen: View {
                                 .foregroundStyle(AppTheme.settingsTextPrimary)
                             Spacer(minLength: AppTheme.spacingRegular)
                             Image(systemName: "chevron.right")
-                                .font(AppTheme.outfitSemiboldCaption)
+                                .font(AppTheme.outfitRegularCaption2)
                                 .foregroundStyle(AppTheme.settingsTextMuted)
                         }
                         .contentShape(Rectangle())
@@ -100,9 +100,6 @@ struct SettingsScreen: View {
                                 .font(AppTheme.warmPaperBody)
                                 .foregroundStyle(AppTheme.settingsTextPrimary)
                             Spacer(minLength: AppTheme.spacingRegular)
-                            Image(systemName: "chevron.right")
-                                .font(AppTheme.outfitSemiboldCaption)
-                                .foregroundStyle(AppTheme.settingsTextMuted)
                         }
                         .contentShape(Rectangle())
                     }

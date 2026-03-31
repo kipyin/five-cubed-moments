@@ -14,6 +14,7 @@ struct SequentialSectionView: View {
     let title: String
     let addButtonTitle: String
     let addButtonAccessibilityHint: String
+    let showsTrailingChevronOnAddRow: Bool
     /// Guided onboarding title shown above the section header (optional; omitted when empty).
     let guidanceTitle: String?
     /// Guided onboarding message shown under `guidanceTitle`.
@@ -57,6 +58,7 @@ struct SequentialSectionView: View {
         title: String,
         addButtonTitle: String,
         addButtonAccessibilityHint: String,
+        showsTrailingChevronOnAddRow: Bool = true,
         guidanceTitle: String? = nil,
         guidanceMessage: String? = nil,
         guidanceMessageSecondary: String? = nil,
@@ -85,6 +87,7 @@ struct SequentialSectionView: View {
         self.title = title
         self.addButtonTitle = addButtonTitle
         self.addButtonAccessibilityHint = addButtonAccessibilityHint
+        self.showsTrailingChevronOnAddRow = showsTrailingChevronOnAddRow
         self.guidanceTitle = guidanceTitle
         self.guidanceMessage = guidanceMessage
         self.guidanceMessageSecondary = guidanceMessageSecondary
@@ -154,6 +157,7 @@ struct SequentialSectionView: View {
             title: title,
             addButtonTitle: addButtonTitle,
             addButtonAccessibilityHint: addButtonAccessibilityHint,
+            showsTrailingChevronOnAddRow: showsTrailingChevronOnAddRow,
             guidanceTitle: guidanceTitle,
             guidanceMessage: guidanceMessage,
             guidanceMessageSecondary: guidanceMessageSecondary,

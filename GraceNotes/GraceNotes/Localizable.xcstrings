@@ -22,13 +22,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ editor"
+            "value" : "%@, multiline text field"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 编辑框"
+            "value" : "%@，多行文本输入框"
           }
         }
       }
@@ -672,7 +672,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "记一位惦记的人"
+            "value" : "记一位牵挂的人"
           }
         }
       }
@@ -2483,13 +2483,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editing this sentence. Press Done to save, or tap outside the text field."
+            "value" : "Editing this field. Tap Done to save, or tap outside the text field."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在编辑这句话。轻点“完成”即可保存，也可以轻点输入框外保存。"
+            "value" : "正在编辑。轻点「完成」保存，或轻点文本框外结束编辑。"
           }
         }
       }
@@ -5030,13 +5030,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Entries distribution"
+            "value" : "Section mix"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "条目分布"
+            "value" : "记录分布"
           }
         }
       }
@@ -5194,13 +5194,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Custom…"
+            "value" : "Custom"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自定义…"
+            "value" : "自定义"
           }
         }
       }
@@ -5210,13 +5210,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This affects Growth stages, Entries distribution, and Most recurring in Past."
+            "value" : "This affects Growth stages, section mix, and Most recurring on the Past tab."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将影响「过去」中的成长阶段、条目分布与最常出现主题。"
+            "value" : "将影响「过去」中的完成度分布、记录分布与「最常出现」。"
           }
         }
       }
@@ -5226,13 +5226,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Past statistics interval"
+            "value" : "Time range for Past"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「过去」统计区间"
+            "value" : "「过去」显示的时间范围"
           }
         }
       }
@@ -5242,13 +5242,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Interval quantity"
+            "value" : "Number of periods"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "区间数量"
+            "value" : "跨度个数"
           }
         }
       }
@@ -5258,13 +5258,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Interval unit"
+            "value" : "Weeks, months, or years"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "区间单位"
+            "value" : "周、月或年"
           }
         }
       }
@@ -5338,13 +5338,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "all journal history to date"
+            "value" : "all entries to date"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "截至目前的全部手记"
+            "value" : "全部手记至今"
           }
         }
       }
@@ -5397,18 +5397,66 @@
         }
       }
     },
-    "Review.mostRecurring.drilldown.subtitle" : {
+    "PastStatisticsInterval.phrase.lastOneMonth" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Showed up %1$lld times in %2$@."
+            "value" : "the last month"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在%2$@内出现了 %1$lld 次。"
+            "value" : "最近一个月"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastOneWeek" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近一周"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastOneYear" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last year"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近一年"
+          }
+        }
+      }
+    },
+    "Review.mostRecurring.drilldown.subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentioned %1$lld times across %2$@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共出现 %1$lld 次（%2$@）。"
           }
         }
       }
@@ -5609,6 +5657,7 @@
       }
     },
     "Showed up %1$lld times in the last %2$lld weeks." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5625,6 +5674,7 @@
       }
     },
     "Showed up %1$lld times in the last 4 weeks." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

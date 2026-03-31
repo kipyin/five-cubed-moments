@@ -58,7 +58,7 @@ final class ReviewInsightsProviderTests: XCTestCase {
         XCTAssertEqual(insights.weeklyInsights.first?.pattern, .sparseFallback)
         XCTAssertEqual(
             insights.weeklyInsights.first?.observation,
-            "Start with one reflection today to build your weekly review."
+            String(localized: "Start with one reflection today to build your weekly review.")
         )
     }
 
@@ -184,6 +184,6 @@ private struct StubReviewInsightsGenerator: ReviewInsightsGenerating {
         pastStatisticsInterval: PastStatisticsIntervalSelection
     ) async throws -> ReviewInsights {
         _ = pastStatisticsInterval
-        try result.get()
+        return try result.get()
     }
 }

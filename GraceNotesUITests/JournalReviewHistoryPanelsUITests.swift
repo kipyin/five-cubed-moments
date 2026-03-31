@@ -30,11 +30,11 @@ final class JournalReviewHistoryPanelsUITests: XCTestCase {
         )
         XCTAssertTrue(
             distribution.waitForExistence(timeout: 15),
-            "Expected Section Distribution panel UITest identifier."
+            "Expected section distribution panel UITest identifier."
         )
         let sectionCardTitle = app.staticTexts.matching(
-            NSPredicate(format: "label == %@", "Section Distribution")
+            NSPredicate(format: "label == %@", "Section mix")
         ).firstMatch
-        XCTAssertTrue(sectionCardTitle.exists, "Expected Section Distribution card title on Past.")
+        XCTAssertTrue(sectionCardTitle.exists, "Expected Section mix card title on Past.")
     }
 }

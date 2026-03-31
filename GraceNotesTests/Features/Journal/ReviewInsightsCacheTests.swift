@@ -19,8 +19,10 @@ final class ReviewInsightsCacheTests: XCTestCase {
         calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let suiteName = "ReviewInsightsCacheTests.\(UUID().uuidString)"
+        // Clear disk for the suite, then allocate a fresh `UserDefaults` instance so in-memory
+        // registration does not return stale empties across sequential actor reads/writes.
+        UserDefaults.standard.removePersistentDomain(forName: suiteName)
         userDefaults = UserDefaults(suiteName: suiteName)!
-        userDefaults.removePersistentDomain(forName: suiteName)
         cache = ReviewInsightsCache(userDefaults: userDefaults)
     }
 

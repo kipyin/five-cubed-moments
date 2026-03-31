@@ -24,13 +24,15 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
         return app.descendants(matching: .any).matching(predicate).firstMatch
     }
 
+    /// Identifiers for the leftmost and rightmost days in ``ReviewDaysYouWrotePanel/rollingRhythmDaysForDisplay``
+    /// (seven local days ending on today). The wide UI-test seed still spans 36 days so every column has data.
     private func rhythmDayIds() -> (oldest: String, today: String)? {
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: Date())
-        guard let oldestDay = calendar.date(byAdding: .day, value: -36, to: todayStart) else {
+        guard let oldestInStrip = calendar.date(byAdding: .day, value: -6, to: todayStart) else {
             return nil
         }
-        let oldestStart = calendar.startOfDay(for: oldestDay)
+        let oldestStart = calendar.startOfDay(for: oldestInStrip)
         let oldestId = "ReviewRhythmDay.\(Int(oldestStart.timeIntervalSince1970))"
         let todayId = "ReviewRhythmDay.\(Int(todayStart.timeIntervalSince1970))"
         return (oldestId, todayId)
@@ -59,7 +61,7 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
 
         XCTAssertTrue(oldestColumn.waitForExistence(timeout: 10), "Expected oldest rhythm column.")
 
-        for _ in 0..<18 {
+        for _ in 0..<8 {
             if oldestColumn.isHittable { break }
             scroll.swipeRight()
         }

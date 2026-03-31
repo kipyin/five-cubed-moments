@@ -74,7 +74,9 @@ struct PastStatisticsIntervalSelection: Codable, Equatable, Hashable, Sendable {
 
     var cacheKeyToken: String {
         let toEncode = validated
-        guard let data = try? JSONEncoder().encode(toEncode) else {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(toEncode) else {
             return "default"
         }
         return data.base64EncodedString()
@@ -85,14 +87,16 @@ struct PastStatisticsIntervalSelection: Codable, Equatable, Hashable, Sendable {
               let data = appStorageRaw.data(using: .utf8),
               let decoded = try? JSONDecoder().decode(PastStatisticsIntervalSelection.self, from: data)
         else {
-            return default.validated
+            return PastStatisticsIntervalSelection.default.validated
         }
         return decoded.validated
     }
 
     static func encodeForStorage(_ selection: PastStatisticsIntervalSelection) -> String {
         let toEncode = selection.validated
-        guard let data = try? JSONEncoder().encode(toEncode) else {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(toEncode) else {
             return ""
         }
         return String(data: data, encoding: .utf8) ?? ""
@@ -110,10 +114,19 @@ extension PastStatisticsIntervalSelection {
             let count = Int64(selection.quantity)
             switch selection.unit {
             case .week:
+                if selection.quantity == 1 {
+                    return String(localized: "PastStatisticsInterval.phrase.lastOneWeek")
+                }
                 return String(format: String(localized: "PastStatisticsInterval.phrase.lastNWeeks"), count)
             case .month:
+                if selection.quantity == 1 {
+                    return String(localized: "PastStatisticsInterval.phrase.lastOneMonth")
+                }
                 return String(format: String(localized: "PastStatisticsInterval.phrase.lastNMonths"), count)
             case .year:
+                if selection.quantity == 1 {
+                    return String(localized: "PastStatisticsInterval.phrase.lastOneYear")
+                }
                 return String(format: String(localized: "PastStatisticsInterval.phrase.lastNYears"), count)
             }
         }

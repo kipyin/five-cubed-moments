@@ -113,9 +113,9 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
         func textView(
             _ textView: UITextView,
             shouldChangeTextIn _: NSRange,
-            replacementText replacementText: String
+            replacementText text: String
         ) -> Bool {
-            guard replacementText == "\n" else { return true }
+            guard text == "\n" else { return true }
             parent.onSubmit()
             return false
         }

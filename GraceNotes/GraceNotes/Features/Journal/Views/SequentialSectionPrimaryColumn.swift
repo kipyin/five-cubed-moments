@@ -12,6 +12,8 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let title: String
     let addButtonTitle: String
     let addButtonAccessibilityHint: String
+    /// When false, the add-row chip omits the trailing chevron (e.g. People empty state).
+    let showsTrailingChevronOnAddRow: Bool
     let guidanceTitle: String?
     let guidanceMessage: String?
     let guidanceMessageSecondary: String?
@@ -114,6 +116,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                     addButtonTitle: addButtonTitle,
                     addButtonAccessibilityHint: addButtonAccessibilityHint,
                     accessibilityIdentifier: addItemAccessibilityIdentifier,
+                    showsTrailingChevron: showsTrailingChevronOnAddRow,
                     isComposing: isAddMorphComposerVisible,
                     placeholder: placeholder,
                     text: $inputText,

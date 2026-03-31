@@ -595,6 +595,7 @@ private extension JournalScreen {
                     ? String(localized: "Add person")
                     : String(localized: "Add another person"),
                 addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
+                showsTrailingChevronOnAddRow: false,
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
                 items: viewModel.people,

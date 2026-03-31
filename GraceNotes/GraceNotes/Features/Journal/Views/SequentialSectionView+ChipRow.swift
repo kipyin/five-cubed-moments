@@ -67,6 +67,7 @@ enum SequentialSectionChipRow {
     struct AddSentenceRowLabel: View {
         @Environment(\.todayJournalPalette) private var palette
         let title: String
+        let showsTrailingChevron: Bool
 
         var body: some View {
             HStack(spacing: AppTheme.spacingTight) {
@@ -76,9 +77,11 @@ enum SequentialSectionChipRow {
                 Text(title)
                 .font(AppTheme.warmPaperMetaEmphasis)
                 .foregroundStyle(palette.textPrimary)
-                Image(systemName: "chevron.right")
-                    .font(AppTheme.outfitSemiboldCaption)
-                    .foregroundStyle(palette.textMuted)
+                if showsTrailingChevron {
+                    Image(systemName: "chevron.right")
+                        .font(AppTheme.outfitSemiboldCaption)
+                        .foregroundStyle(palette.textMuted)
+                }
                 Spacer(minLength: 0)
             }
         }
@@ -89,11 +92,12 @@ enum SequentialSectionChipRow {
         let accessibilityHint: String
         /// Stable query for UI tests (`XCUIApplication` matches this as the element identifier).
         let accessibilityIdentifier: String?
+        let showsTrailingChevron: Bool
         let onTap: () -> Void
 
         var body: some View {
             Button(action: onTap) {
-                AddSentenceRowLabel(title: buttonTitle)
+                AddSentenceRowLabel(title: buttonTitle, showsTrailingChevron: showsTrailingChevron)
                     .journalAddSentenceBrowseRowChrome()
             }
             .buttonStyle(WarmPaperPressStyle())
@@ -109,6 +113,7 @@ enum SequentialSectionChipRow {
         let addButtonTitle: String
         let addButtonAccessibilityHint: String
         let accessibilityIdentifier: String?
+        let showsTrailingChevron: Bool
         let isComposing: Bool
         let placeholder: String
         @Binding var text: String
@@ -154,7 +159,7 @@ enum SequentialSectionChipRow {
                     .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 4)
                 } else {
                     Button(action: onAddTap) {
-                        AddSentenceRowLabel(title: addButtonTitle)
+                        AddSentenceRowLabel(title: addButtonTitle, showsTrailingChevron: showsTrailingChevron)
                             .journalAddSentenceBrowseRowChrome()
                     }
                     .buttonStyle(WarmPaperPressStyle())

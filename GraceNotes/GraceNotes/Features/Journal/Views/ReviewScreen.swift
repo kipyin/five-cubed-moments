@@ -114,14 +114,14 @@ struct ReviewScreen: View {
                 .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 6, trailing: 0))
                 .listRowBackground(AppTheme.reviewBackground)
 
-                ReviewWeekSectionTotalsPanel(
+                ReviewHistoryGrowthStagesPanel(
                     insights: reviewInsights,
                     isLoading: isLoadingInsights
                 )
                 .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 6, trailing: 0))
                 .listRowBackground(AppTheme.reviewBackground)
 
-                ReviewWeekCompletionMixPanel(
+                ReviewHistorySectionDistributionPanel(
                     insights: reviewInsights,
                     isLoading: isLoadingInsights
                 )

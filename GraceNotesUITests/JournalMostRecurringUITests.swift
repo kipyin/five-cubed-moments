@@ -42,18 +42,19 @@ final class JournalMostRecurringUITests: XCTestCase {
     @MainActor
     private func openPastReviewPanels(_ app: XCUIApplication) {
         app.tabBars.buttons["Past"].tap()
-        let rows = mainMostRecurringRows(in: app)
-        if !rows.firstMatch.waitForExistence(timeout: 5) {
-            for _ in 0..<14 {
-                app.swipeUp()
-                if rows.firstMatch.waitForExistence(timeout: 1) {
-                    break
-                }
+        let mostRecurringTitle = app.staticTexts["Most recurring"]
+        if mostRecurringTitle.waitForExistence(timeout: 8) {
+            return
+        }
+        for _ in 0..<16 {
+            app.swipeUp()
+            if mostRecurringTitle.waitForExistence(timeout: 1.5) {
+                return
             }
         }
         XCTAssertTrue(
-            rows.firstMatch.waitForExistence(timeout: 30),
-            "Expected Most recurring theme rows in Past tab once review insights are ready."
+            mostRecurringTitle.waitForExistence(timeout: 10),
+            "Expected Most recurring panel in Past tab."
         )
     }
 

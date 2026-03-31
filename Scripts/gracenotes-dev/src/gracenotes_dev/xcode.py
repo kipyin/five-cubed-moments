@@ -94,12 +94,19 @@ def test_argv(
     extra_xcodebuild_args: Sequence[str] | None = None,
     isolated_derived_data: Path | str | None = None,
     apply_legacy_skips: bool = True,
+    xcode_test_flags: Sequence[str] | None = None,
+    legacy_skip_flags: Sequence[str] | None = None,
 ) -> list[str]:
     """``xcodebuild test`` argument list matching Makefile ``test`` / ``test-unit`` / ``test-ui`` patterns."""
     args = xcodebuild_base_args(project=project, scheme=scheme, resolved_destination=resolved_destination)
-    args.extend(xcodebuild_test_flag_list())
+    args.extend(list(xcode_test_flags) if xcode_test_flags is not None else xcodebuild_test_flag_list())
     if apply_legacy_skips:
-        args.extend(legacy_skip_flags_if_needed(resolved_destination))
+        if legacy_skip_flags is None:
+            args.extend(legacy_skip_flags_if_needed(resolved_destination))
+        else:
+            major = ios_major_from_resolved_destination(resolved_destination)
+            if major is not None and major < 18:
+                args.extend(list(legacy_skip_flags))
     if isolated_derived_data is not None:
         args.extend(["-derivedDataPath", str(isolated_derived_data)])
     if only_testing:
@@ -128,3 +135,31 @@ def simctl_reset_all_argv() -> tuple[list[str], list[str]]:
 def resolved_name_for_smoke(resolved_destination: str) -> str:
     """Device name for simctl commands (Makefile ``test-ui-smoke``)."""
     return destination_display_name(resolved_destination)
+
+
+def built_app_path(derived_data_path: Path, *, scheme: str, configuration: str = "Debug") -> Path:
+    """Locate the built ``.app`` bundle under DerivedData products."""
+    app_path = (
+        derived_data_path
+        / "Build"
+        / "Products"
+        / f"{configuration}-iphonesimulator"
+        / f"{scheme}.app"
+    )
+    if app_path.is_dir():
+        return app_path
+
+    matches = sorted(derived_data_path.glob(f"**/{scheme}.app"))
+    if matches:
+        return matches[0]
+    raise FileNotFoundError(f"Could not find {scheme}.app under {derived_data_path}")
+
+
+def simctl_install_argv(*, app_path: Path, device: str = "booted") -> list[str]:
+    """Return ``simctl install`` argv."""
+    return ["xcrun", "simctl", "install", device, str(app_path)]
+
+
+def simctl_launch_argv(*, bundle_id: str, app_args: Sequence[str], device: str = "booted") -> list[str]:
+    """Return ``simctl launch`` argv with optional app arguments."""
+    return ["xcrun", "simctl", "launch", device, bundle_id, *app_args]

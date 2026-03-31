@@ -50,23 +50,45 @@ struct ReviewDaysYouWrotePanel: View {
         }
     }
 
-    /// Rhythm strip shows days through ``referenceNow`` (usually “today”), but never beyond the reviewed week.
-    /// Uses the same week-boundary calendar as ``ReviewWeekBoundaryPreference`` / ``ReviewInsightsPeriod``.
-    static func rhythmDaysVisibleForDisplay(
-        _ days: [ReviewDayActivity],
-        weekEndExclusive: Date,
+    /// Seven consecutive local days ending on ``referenceNow`` (typically “today”), merged with rhythm payloads.
+    static func rollingRhythmDaysForDisplay(
+        _ rawDays: [ReviewDayActivity],
         referenceNow: Date,
         calendar: Calendar
-    ) -> [ReviewDayActivity] {
-        let startOfReference = calendar.startOfDay(for: referenceNow)
-        let lastDayOfWeekStart: Date = {
-            guard let lastDay = calendar.date(byAdding: .day, value: -1, to: weekEndExclusive) else {
-                return calendar.startOfDay(for: weekEndExclusive)
+    ) -> (
+        days: [ReviewDayActivity],
+        displayInterval: Range<Date>
+    ) {
+        let refStart = calendar.startOfDay(for: referenceNow)
+        guard let oldestRaw = calendar.date(byAdding: .day, value: -6, to: refStart),
+              let endExclusive = calendar.date(byAdding: .day, value: 1, to: refStart)
+        else {
+            return ([], refStart..<refStart)
+        }
+        let oldestStart = calendar.startOfDay(for: oldestRaw)
+        let displayInterval = oldestStart..<endExclusive
+        var byDay: [Date: ReviewDayActivity] = [:]
+        for day in rawDays {
+            let dayKey = calendar.startOfDay(for: day.date)
+            byDay[dayKey] = day
+        }
+        var result: [ReviewDayActivity] = []
+        for offset in 0..<7 {
+            guard let dayStart = calendar.date(byAdding: .day, value: offset, to: oldestStart) else { continue }
+            let normalizedDay = calendar.startOfDay(for: dayStart)
+            if let existing = byDay[normalizedDay] {
+                result.append(existing)
+            } else {
+                result.append(
+                    ReviewDayActivity(
+                        date: normalizedDay,
+                        hasReflectiveActivity: false,
+                        hasPersistedEntry: false
+                    )
+                )
             }
-            return calendar.startOfDay(for: lastDay)
-        }()
-        let clipEnd = min(startOfReference, lastDayOfWeekStart)
-        return days.filter { calendar.startOfDay(for: $0.date) <= clipEnd }
+        }
+        return (result, displayInterval)
     }
 
     private var reviewRhythmCalendar: Calendar {
@@ -77,27 +99,33 @@ struct ReviewDaysYouWrotePanel: View {
     private func rhythmHistoryCurve(for insights: ReviewInsights) -> some View {
         let stats = insights.weekStats
         let rawDays = stats.rhythmHistory ?? stats.activity
-        let days = Self.rhythmDaysVisibleForDisplay(
+        let referenceNow = Date()
+        let calendar = reviewRhythmCalendar
+        let (days, displayInterval) = Self.rollingRhythmDaysForDisplay(
             rawDays,
-            weekEndExclusive: insights.weekEnd,
-            referenceNow: Date(),
-            calendar: reviewRhythmCalendar
+            referenceNow: referenceNow,
+            calendar: calendar
         )
-        let currentWeek = insights.weekStart..<insights.weekEnd
         let metrics = RhythmCurveScaledMetrics(dynamicTypeSize: dynamicTypeSize)
-        let pinIdentity = ReviewRhythmScrollPinIdentity(weekStart: insights.weekStart, days: days)
+        let pinStart = days.first.map { calendar.startOfDay(for: $0.date) } ?? insights.weekStart
+        let pinIdentity = ReviewRhythmScrollPinIdentity(weekStart: pinStart, days: days)
         return rhythmHistoryScrollSection(
             days: days,
-            currentWeek: currentWeek,
+            displayInterval: displayInterval,
+            referenceNow: referenceNow,
+            rhythmCalendar: calendar,
             metrics: metrics,
             pinIdentity: pinIdentity
         )
     }
 
+    // swiftlint:disable:next function_parameter_count
     @ViewBuilder
     private func rhythmHistoryScrollSection(
         days: [ReviewDayActivity],
-        currentWeek: Range<Date>,
+        displayInterval: Range<Date>,
+        referenceNow: Date,
+        rhythmCalendar: Calendar,
         metrics: RhythmCurveScaledMetrics,
         pinIdentity: ReviewRhythmScrollPinIdentity
     ) -> some View {
@@ -106,7 +134,9 @@ struct ReviewDaysYouWrotePanel: View {
                 rhythmChartStrip(days: days, metrics: metrics)
                 rhythmLabelRow(
                     days: days,
-                    currentWeek: currentWeek,
+                    displayInterval: displayInterval,
+                    referenceNow: referenceNow,
+                    rhythmCalendar: rhythmCalendar,
                     metrics: metrics
                 )
             }
@@ -223,7 +253,9 @@ struct ReviewDaysYouWrotePanel: View {
     @ViewBuilder
     private func rhythmLabelRow(
         days: [ReviewDayActivity],
-        currentWeek: Range<Date>,
+        displayInterval: Range<Date>,
+        referenceNow: Date,
+        rhythmCalendar: Calendar,
         metrics: RhythmCurveScaledMetrics
     ) -> some View {
         HStack(alignment: .top, spacing: metrics.columnGap) {
@@ -233,7 +265,9 @@ struct ReviewDaysYouWrotePanel: View {
             ForEach(days, id: \.date) { day in
                 rhythmColumnLabel(
                     date: day.date,
-                    currentWeek: currentWeek
+                    displayInterval: displayInterval,
+                    referenceNow: referenceNow,
+                    rhythmCalendar: rhythmCalendar
                 )
                 .frame(width: metrics.columnWidth)
             }
@@ -307,10 +341,19 @@ struct ReviewDaysYouWrotePanel: View {
 
     private func rhythmColumnLabel(
         date: Date,
-        currentWeek: Range<Date>
+        displayInterval: Range<Date>,
+        referenceNow: Date,
+        rhythmCalendar: Calendar
     ) -> some View {
-        Text(ReviewRhythmFormatting.dayLabel(date: date, currentWeek: currentWeek, calendar: .current))
-            .monospacedDigit()
+        Text(
+            ReviewRhythmFormatting.dayLabel(
+                date: date,
+                displayInterval: displayInterval,
+                calendar: rhythmCalendar,
+                referenceNow: referenceNow
+            )
+        )
+        .monospacedDigit()
         .font(AppTheme.warmPaperCaption)
         .foregroundStyle(AppTheme.reviewTextMuted)
         .frame(maxWidth: .infinity)
@@ -487,15 +530,9 @@ struct ReviewDaysYouWrotePanel: View {
 
 /// Observation, next step, and primary CTA for the Past tab as its own list row (after recurring and trending).
 struct ReviewNarrativeSummaryCard: View {
-    /// Hide the “Write today’s reflection” nudge under loaded insights when the review week has at least this
-    /// many journal entries. UI-only; not cloud eligibility.
-    private static let minWeekEntriesToOmitContinueNudge = 4
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let insights: ReviewInsights?
     let isLoading: Bool
-    let weekJournalEntryCount: Int
-    let onContinueToToday: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -508,7 +545,6 @@ struct ReviewNarrativeSummaryCard: View {
                     Text(String(localized: "Start writing this week to unlock review insights."))
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.reviewTextMuted)
-                    continueJournalCallToAction()
                 }
             }
         }
@@ -538,27 +574,8 @@ struct ReviewNarrativeSummaryCard: View {
                     // `.statsFirst` stays rhythm-led by design, so we omit the next-step panel in that mode.
                     actionPanel(body: bodies.action)
                 }
-                if weekJournalEntryCount < Self.minWeekEntriesToOmitContinueNudge {
-                    continueJournalCallToAction()
-                }
             }
         }
-    }
-
-    @ViewBuilder
-    private func continueJournalCallToAction() -> some View {
-        Button(action: onContinueToToday) {
-            Text(String(localized: "Write today's reflection"))
-                .font(AppTheme.warmPaperBody.weight(.semibold))
-                .foregroundStyle(AppTheme.reviewOnAccent)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(AppTheme.reviewAccent.opacity(0.32))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 6)
-        .accessibilityIdentifier("ReviewInsightsContinueJournalCTA")
     }
 
     private func observationPanel(body: String) -> some View {

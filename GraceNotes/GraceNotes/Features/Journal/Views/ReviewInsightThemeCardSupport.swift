@@ -224,7 +224,7 @@ struct ReviewThemeDrilldownPayload: Identifiable {
 struct MostRecurringBrowsePayload: Identifiable {
     let id = UUID()
     let themes: [ReviewMostRecurringTheme]
-    let reviewWeekEnd: Date
+    let referenceDate: Date
     let calendar: Calendar
 }
 
@@ -235,13 +235,13 @@ struct TrendingBrowsePayload: Identifiable {
 
 struct MostRecurringBrowseSheetContainer: View {
     let themes: [ReviewMostRecurringTheme]
-    let reviewWeekEnd: Date
+    let referenceDate: Date
     let calendar: Calendar
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            MostRecurringThemesBrowseView(themes: themes, reviewWeekEnd: reviewWeekEnd, calendar: calendar)
+            MostRecurringThemesBrowseView(themes: themes, referenceDate: referenceDate, calendar: calendar)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(String(localized: "Done")) {
@@ -275,22 +275,13 @@ struct TrendingBrowseSheetContainer: View {
 
 struct MostRecurringThemesBrowseView: View {
     let themes: [ReviewMostRecurringTheme]
-    let reviewWeekEnd: Date
+    let referenceDate: Date
     let calendar: Calendar
-    @State private var viewingWindow: MostRecurringBrowseWindow = .fourWeeks
+    @AppStorage(PastStatisticsIntervalPreference.appStorageKey)
+    private var pastStatisticsIntervalEncoded = ""
 
     var body: some View {
         List {
-            Section {
-                Picker(String(localized: "Viewing window"), selection: $viewingWindow) {
-                    ForEach(MostRecurringBrowseWindow.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("MostRecurringBrowseWindowPicker")
-            }
-
             if !gratitudeRows.isEmpty {
                 recurringSection(
                     section: .gratitudes,
@@ -352,11 +343,26 @@ struct MostRecurringThemesBrowseView: View {
         }
     }
 
+    private var pastStatisticsSelection: PastStatisticsIntervalSelection {
+        PastStatisticsIntervalPreference.selection(fromAppStorage: pastStatisticsIntervalEncoded).validated
+    }
+
     private var viewingDateRange: Range<Date> {
-        let daysBack = viewingWindow.weeks * 7
-        let rawLower = calendar.date(byAdding: .day, value: -daysBack, to: reviewWeekEnd) ?? reviewWeekEnd
-        let lowerBound = calendar.startOfDay(for: rawLower)
-        return lowerBound..<reviewWeekEnd
+        let selection = pastStatisticsSelection
+        if selection.mode == .all {
+            let refStart = calendar.startOfDay(for: referenceDate)
+            guard let endExclusive = calendar.date(byAdding: .day, value: 1, to: refStart) else {
+                return refStart..<refStart
+            }
+            let evidenceDays = themes.flatMap(\.evidence).map { calendar.startOfDay(for: $0.entryDate) }
+            let low = evidenceDays.min() ?? refStart
+            return low..<endExclusive
+        }
+        return selection.resolvedHistoryRange(
+            referenceDate: referenceDate,
+            calendar: calendar,
+            allEntries: []
+        )
     }
 
     private var gratitudeRows: [MostRecurringBrowseRowModel] {
@@ -404,11 +410,7 @@ struct MostRecurringThemesBrowseView: View {
         ReviewThemeDrilldownPayload(
             label: row.label,
             sectionTitle: String(localized: "Most recurring"),
-            subtitle: String(
-                format: String(localized: "Showed up %1$lld times in the last %2$lld weeks."),
-                Int64(row.mentionCount),
-                Int64(viewingWindow.weeks)
-            ),
+            subtitle: pastStatisticsSelection.mostRecurringDrilldownSubtitle(mentionCount: row.mentionCount),
             trend: nil,
             evidence: row.evidence
         )
@@ -426,27 +428,6 @@ struct MostRecurringBrowseRowModel: Identifiable {
 
     var accessibilityId: String {
         "\(reviewInsightSanitizedThemeId(themeId)).\(section.rawValue)"
-    }
-}
-
-enum MostRecurringBrowseWindow: Int, CaseIterable, Identifiable {
-    case twoWeeks = 2
-    case fourWeeks = 4
-    case eightWeeks = 8
-
-    var id: Int { rawValue }
-
-    var weeks: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .twoWeeks:
-            return String(localized: "2 weeks")
-        case .fourWeeks:
-            return String(localized: "4 weeks")
-        case .eightWeeks:
-            return String(localized: "8 weeks")
-        }
     }
 }
 
@@ -547,6 +528,26 @@ struct ThemeDrilldownView: View {
     let payload: ReviewThemeDrilldownPayload
     let includeDoneButton: Bool
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
+    private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
+
+    private var groupingCalendar: Calendar {
+        ReviewWeekBoundaryPreference.resolve(from: reviewWeekBoundaryRawValue).configuredCalendar()
+    }
+
+    private var evidenceGroupedByDay: [(day: Date, rows: [ReviewThemeSurfaceEvidence])] {
+        let cal = groupingCalendar
+        let grouped = Dictionary(grouping: payload.evidence) { cal.startOfDay(for: $0.entryDate) }
+        return grouped.keys.sorted(by: >).map { day in
+            let rows = (grouped[day] ?? []).sorted { lhs, rhs in
+                if lhs.source != rhs.source {
+                    return lhs.source.rawValue < rhs.source.rawValue
+                }
+                return lhs.content.localizedCaseInsensitiveCompare(rhs.content) == .orderedAscending
+            }
+            return (day, rows)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -572,38 +573,46 @@ struct ThemeDrilldownView: View {
                         .textCase(nil)
                 }
 
-                Section {
-                    ForEach(payload.evidence) { evidence in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(localizedSourceLabel(evidence.source))
-                                    .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-                                    .foregroundStyle(AppTheme.reviewTextPrimary)
-                                Spacer(minLength: 6)
-                                Text(evidence.entryDate.formatted(date: .abbreviated, time: .omitted))
+                if !payload.evidence.isEmpty {
+                    Section {
+                        ForEach(evidenceGroupedByDay, id: \.day) { group in
+                            Section {
+                                ForEach(group.rows) { evidence in
+                                    NavigationLink {
+                                        JournalScreen(entryDate: evidence.entryDate)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(localizedSourceLabel(evidence.source))
+                                                .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
+                                                .foregroundStyle(AppTheme.reviewTextPrimary)
+                                            Text(evidence.content)
+                                                .font(AppTheme.warmPaperBody)
+                                                .foregroundStyle(AppTheme.reviewTextPrimary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 2)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityLabel(
+                                        themeDrilldownRowAccessibilityLabel(day: group.day, evidence: evidence)
+                                    )
+                                    .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
+                                }
+                            } header: {
+                                Text(group.day.formatted(date: .abbreviated, time: .omitted))
                                     .font(AppTheme.warmPaperMeta)
                                     .foregroundStyle(AppTheme.reviewTextMuted)
+                                    .textCase(nil)
                             }
-                            Text(evidence.content)
-                                .font(AppTheme.warmPaperBody)
-                                .foregroundStyle(AppTheme.reviewTextPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            NavigationLink {
-                                JournalScreen(entryDate: evidence.entryDate)
-                            } label: {
-                                Text(String(localized: "Open journal entry"))
-                                    .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-                                    .foregroundStyle(AppTheme.reviewAccent)
-                            }
-                            .buttonStyle(.plain)
                         }
-                        .padding(.vertical, 2)
+                    } header: {
+                        Text(String(localized: "Matching writing surfaces"))
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.reviewTextMuted)
+                            .textCase(nil)
                     }
-                } header: {
-                    Text(String(localized: "Matching writing surfaces"))
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.reviewTextMuted)
-                        .textCase(nil)
                 }
             }
             .scrollContentBackground(.hidden)
@@ -619,6 +628,18 @@ struct ThemeDrilldownView: View {
                 }
             }
         }
+    }
+
+    private func themeDrilldownRowAccessibilityLabel(
+        day: Date,
+        evidence: ReviewThemeSurfaceEvidence
+    ) -> String {
+        let dayText = day.formatted(date: .abbreviated, time: .omitted)
+        return [
+            dayText,
+            localizedSourceLabel(evidence.source),
+            evidence.content
+        ].joined(separator: ", ")
     }
 
     private func localizedSourceLabel(_ source: ReviewThemeSourceCategory) -> String {

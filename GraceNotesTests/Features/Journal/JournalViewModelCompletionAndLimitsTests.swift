@@ -87,7 +87,15 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
 
         XCTAssertTrue(viewModel.isChipsFullGridComplete)
         XCTAssertEqual(viewModel.chipsFilledCount, 15)
-        XCTAssertEqual(viewModel.chipsProgressText, "15 of 15")
+        XCTAssertEqual(
+            viewModel.chipsProgressText,
+            String(
+                format: String(localized: "%d of %d"),
+                locale: Locale.current,
+                15,
+                15
+            )
+        )
         XCTAssertEqual(viewModel.completionLevel, .full)
         XCTAssertTrue(viewModel.completedToday)
     }
@@ -108,7 +116,15 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
 
         XCTAssertFalse(viewModel.isChipsFullGridComplete)
         XCTAssertEqual(viewModel.chipsFilledCount, 14)
-        XCTAssertEqual(viewModel.chipsProgressText, "14 of 15")
+        XCTAssertEqual(
+            viewModel.chipsProgressText,
+            String(
+                format: String(localized: "%d of %d"),
+                locale: Locale.current,
+                14,
+                15
+            )
+        )
     }
 
     func test_addGratitude_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {

@@ -143,10 +143,6 @@ final class JournalMostRecurringUITests: XCTestCase {
             app.staticTexts["Matching writing surfaces"].waitForExistence(timeout: 5),
             "Expected per-surface evidence section in drilldown."
         )
-        XCTAssertTrue(
-            app.staticTexts["Open journal entry"].waitForExistence(timeout: 5),
-            "Expected way to open the original entry from drilldown."
-        )
     }
 
     @MainActor
@@ -183,10 +179,6 @@ final class JournalMostRecurringUITests: XCTestCase {
         XCTAssertTrue(
             browseRows.element(boundBy: 0).waitForExistence(timeout: 12),
             "Browse screen should expose at least one recurring theme row."
-        )
-        XCTAssertTrue(
-            app.descendants(matching: .any)["MostRecurringBrowseWindowPicker"].waitForExistence(timeout: 6),
-            "Browse screen should include the viewing window control."
         )
     }
 

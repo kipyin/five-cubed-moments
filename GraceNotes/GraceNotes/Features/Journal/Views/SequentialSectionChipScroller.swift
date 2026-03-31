@@ -11,6 +11,7 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
     let title: String
     let addButtonTitle: String
     let addButtonAccessibilityHint: String
+    var showsTrailingChevronOnAddChip: Bool = true
     let showAddChip: Bool
     let addChipAccessibilityIdentifier: String?
     let isInteractionEnabled: Bool
@@ -31,6 +32,7 @@ struct SequentialSectionChipScroller<ChipRow: View>: View {
                         buttonTitle: addButtonTitle,
                         accessibilityHint: addButtonAccessibilityHint,
                         accessibilityIdentifier: addChipAccessibilityIdentifier,
+                        showsTrailingChevron: showsTrailingChevronOnAddChip,
                         onTap: addNew
                     )
                 }

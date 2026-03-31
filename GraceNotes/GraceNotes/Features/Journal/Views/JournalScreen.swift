@@ -521,7 +521,9 @@ private extension JournalScreen {
         VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
             SequentialSectionView(
                 title: String(localized: "Gratitudes"),
-                addButtonTitle: String(localized: "Add another gratitude"),
+                addButtonTitle: viewModel.gratitudes.isEmpty
+                    ? String(localized: "Add gratitude")
+                    : String(localized: "Add another gratitude"),
                 addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
@@ -555,7 +557,9 @@ private extension JournalScreen {
 
             SequentialSectionView(
                 title: String(localized: "Needs"),
-                addButtonTitle: String(localized: "Add another need"),
+                addButtonTitle: viewModel.needs.isEmpty
+                    ? String(localized: "Add need")
+                    : String(localized: "Add another need"),
                 addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
@@ -587,8 +591,11 @@ private extension JournalScreen {
 
             SequentialSectionView(
                 title: String(localized: "People in Mind"),
-                addButtonTitle: String(localized: "Add another person"),
+                addButtonTitle: viewModel.people.isEmpty
+                    ? String(localized: "Add person")
+                    : String(localized: "Add another person"),
                 addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
+                showsTrailingChevronOnAddRow: false,
                 guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
                 guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
                 items: viewModel.people,

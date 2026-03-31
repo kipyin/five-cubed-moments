@@ -21,24 +21,28 @@ struct ReviewInsightsProvider: Sendable {
     func generateInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) async -> ReviewInsights {
         return await deterministicOrSparseInsights(
             from: entries,
             referenceDate: referenceDate,
-            calendar: calendar
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
         )
     }
 
     private func deterministicOrSparseInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) async -> ReviewInsights {
         if let deterministicInsights = try? await deterministicGenerator.generateInsights(
             from: entries,
             referenceDate: referenceDate,
-            calendar: calendar
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
         ) {
             return deterministicInsights
         }
@@ -46,14 +50,16 @@ struct ReviewInsightsProvider: Sendable {
         return sparseFallbackInsights(
             from: entries,
             referenceDate: referenceDate,
-            calendar: calendar
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
         )
     }
 
     private func sparseFallbackInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) -> ReviewInsights {
         let weekRange = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
         let previousPeriod = ReviewInsightsPeriod.previousPeriod(before: weekRange, calendar: calendar)
@@ -65,7 +71,8 @@ struct ReviewInsightsProvider: Sendable {
             previousWeekEntries: previousWeekEntries,
             allEntries: entries,
             calendar: calendar,
-            referenceDate: referenceDate
+            referenceDate: referenceDate,
+            pastStatisticsInterval: pastStatisticsInterval
         )
         let fallbackInsight = ReviewWeeklyInsight(
             pattern: .sparseFallback,

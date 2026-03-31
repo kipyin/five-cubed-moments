@@ -13,7 +13,7 @@ final class WeeklyReviewAggregatesMostRecurringTests: XCTestCase {
         builder = WeeklyReviewAggregatesBuilder()
     }
 
-    func test_buildThemeSections_mostRecurringUsesFourWeekLookbackAndMinimumSignals() throws {
+    func test_buildThemeSections_mostRecurringUsesCustomFourWeekWindowAndMinimumSignals() throws {
         let referenceDate = date(year: 2026, month: 3, day: 18)
         let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
         let previous = ReviewInsightsPeriod.previousPeriod(before: period, calendar: calendar)
@@ -28,18 +28,20 @@ final class WeeklyReviewAggregatesMostRecurringTests: XCTestCase {
             makeEntry(on: date(year: 2026, month: 2, day: 1), needs: ["quiet morning"])
         ]
 
+        let fourWeeksStats = PastStatisticsIntervalSelection(mode: .custom, quantity: 4, unit: .week)
         let aggregates = builder.build(
             currentPeriod: period,
             currentWeekEntries: insideWindow.filter { period.contains($0.entryDate) },
             previousWeekEntries: insideWindow.filter { previous.contains($0.entryDate) },
             allEntries: outsideWindow + insideWindow,
             calendar: calendar,
-            referenceDate: referenceDate
+            referenceDate: referenceDate,
+            pastStatisticsInterval: fourWeeksStats
         )
 
         let recurring = aggregates.stats.mostRecurringThemes
         let quiet = try XCTUnwrap(recurring.first(where: { $0.label == "Quiet time" }))
-        XCTAssertEqual(quiet.totalCount, 3, "Most recurring totals use the four-week lookback window.")
+        XCTAssertEqual(quiet.totalCount, 3, "Most recurring totals use the custom four-week Past statistics window.")
         XCTAssertFalse(recurring.contains(where: { $0.label == "Therapy" }))
     }
 
@@ -277,11 +279,11 @@ final class WeeklyReviewAggregatesMostRecurringTests: XCTestCase {
         let dad = try XCTUnwrap(stats.mostRecurringThemes.first(where: { $0.label == "Dad" }))
         XCTAssertTrue(dad.evidence.contains { $0.source == .people })
 
-        let reviewWeekEnd = period.upperBound
-        let daysBack = 28
-        let rawLower = calendar.date(byAdding: .day, value: -daysBack, to: reviewWeekEnd)!
-        let lowerBound = calendar.startOfDay(for: rawLower)
-        let viewingRange = lowerBound..<reviewWeekEnd
+        let viewingRange = PastStatisticsIntervalSelection.default.resolvedHistoryRange(
+            referenceDate: referenceDate,
+            calendar: calendar,
+            allEntries: entries
+        )
         let windowedPeople = dad.evidence.filter { evidence in
             evidence.source == .people && viewingRange.contains(calendar.startOfDay(for: evidence.entryDate))
         }

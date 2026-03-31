@@ -11,41 +11,44 @@ final class ReviewSummaryCardRhythmClipTests: XCTestCase {
         calendar.firstWeekday = 1
     }
 
-    /// Mid-week reference: only days from week start through Wednesday appear.
-    func test_rhythmDaysVisibleForDisplay_clipsFutureDaysInCurrentWeek() {
-        let weekStart = date(year: 2026, month: 3, day: 15)
-        let weekEndExclusive = date(year: 2026, month: 3, day: 22)
-        let days = (0..<7).map { offset -> ReviewDayActivity in
-            let d = calendar.date(byAdding: .day, value: offset, to: weekStart)!
-            return ReviewDayActivity(date: d, hasReflectiveActivity: false, hasPersistedEntry: false)
+    func test_rollingRhythmDaysForDisplay_emitsSevenDaysEndingOnReference() {
+        let reference = date(year: 2026, month: 3, day: 18)
+        let strayWeekStart = date(year: 2026, month: 2, day: 1)
+        let rawDays = (0..<7).map { offset -> ReviewDayActivity in
+            let day = calendar.date(byAdding: .day, value: offset, to: strayWeekStart)!
+            return ReviewDayActivity(date: day, hasReflectiveActivity: true, hasPersistedEntry: true)
         }
-        let referenceWednesday = date(year: 2026, month: 3, day: 18)
-        let clipped = ReviewDaysYouWrotePanel.rhythmDaysVisibleForDisplay(
-            days,
-            weekEndExclusive: weekEndExclusive,
-            referenceNow: referenceWednesday,
+        let (days, interval) = ReviewDaysYouWrotePanel.rollingRhythmDaysForDisplay(
+            rawDays,
+            referenceNow: reference,
             calendar: calendar
         )
-        XCTAssertEqual(clipped.count, 4)
-        XCTAssertEqual(calendar.startOfDay(for: clipped.last!.date), referenceWednesday)
+        XCTAssertEqual(days.count, 7)
+        XCTAssertEqual(calendar.startOfDay(for: days.last!.date), calendar.startOfDay(for: reference))
+        let expectedStart = calendar.startOfDay(
+            for: calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: reference))!
+        )
+        XCTAssertEqual(calendar.startOfDay(for: days.first!.date), expectedStart)
+        XCTAssertTrue(interval.contains(expectedStart))
+        XCTAssertTrue(interval.contains(calendar.startOfDay(for: reference)))
     }
 
-    /// Fully elapsed week: all seven days remain (clip end is last day of that week, not “today”).
-    func test_rhythmDaysVisibleForDisplay_pastWeek_keepsAllSevenDays() {
-        let weekStart = date(year: 2026, month: 3, day: 8)
-        let weekEndExclusive = date(year: 2026, month: 3, day: 15)
-        let days = (0..<7).map { offset -> ReviewDayActivity in
-            let d = calendar.date(byAdding: .day, value: offset, to: weekStart)!
-            return ReviewDayActivity(date: d, hasReflectiveActivity: true, hasPersistedEntry: true)
-        }
-        let laterReference = date(year: 2026, month: 3, day: 25)
-        let clipped = ReviewDaysYouWrotePanel.rhythmDaysVisibleForDisplay(
-            days,
-            weekEndExclusive: weekEndExclusive,
-            referenceNow: laterReference,
+    func test_rollingRhythmDaysForDisplay_fillsGapsWithEmptyColumns() {
+        let reference = date(year: 2026, month: 3, day: 18)
+        let penultimate = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: reference))!
+        let raw = [
+            ReviewDayActivity(date: penultimate, hasReflectiveActivity: true, hasPersistedEntry: true)
+        ]
+        let (days, _) = ReviewDaysYouWrotePanel.rollingRhythmDaysForDisplay(
+            raw,
+            referenceNow: reference,
             calendar: calendar
         )
-        XCTAssertEqual(clipped.count, 7)
+        XCTAssertEqual(days.count, 7)
+        let emptyColumns = days.filter { !$0.hasPersistedEntry }
+        XCTAssertFalse(emptyColumns.isEmpty)
+        let filled = days.first { calendar.isDate($0.date, inSameDayAs: penultimate) }
+        XCTAssertEqual(filled?.hasPersistedEntry, true)
     }
 
     private func date(year: Int, month: Int, day: Int) -> Date {

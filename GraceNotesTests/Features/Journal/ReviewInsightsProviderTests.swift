@@ -58,7 +58,7 @@ final class ReviewInsightsProviderTests: XCTestCase {
         XCTAssertEqual(insights.weeklyInsights.first?.pattern, .sparseFallback)
         XCTAssertEqual(
             insights.weeklyInsights.first?.observation,
-            "Start with one reflection today to build your weekly review."
+            String(localized: "Start with one reflection today to build your weekly review.")
         )
     }
 
@@ -180,8 +180,10 @@ private struct StubReviewInsightsGenerator: ReviewInsightsGenerating {
     func generateInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) async throws -> ReviewInsights {
-        try result.get()
+        _ = pastStatisticsInterval
+        return try result.get()
     }
 }

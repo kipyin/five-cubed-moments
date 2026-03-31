@@ -514,6 +514,7 @@ protocol ReviewInsightsGenerating: Sendable {
     func generateInsights(
         from entries: [JournalEntry],
         referenceDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) async throws -> ReviewInsights
 }

@@ -57,8 +57,30 @@ final class WeeklyReviewHistoryRollupsTests: XCTestCase {
         XCTAssertEqual(
             aggregates.stats.historyCompletionMix.totalDaysRepresented,
             2,
-            "Mix buckets sum to calendar days with ≥1 persisted entry in allEntries."
+            "Mix buckets wrap Past statistics interval (All) over `allEntries` days."
         )
+    }
+
+    func test_build_customPastStatisticsInterval_excludesDaysOutsideWindow() throws {
+        let referenceDate = date(year: 2026, month: 3, day: 18)
+        let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
+        let previous = ReviewInsightsPeriod.previousPeriod(before: period, calendar: calendar)
+        let ancient = date(year: 2025, month: 1, day: 1)
+        let recent = date(year: 2026, month: 3, day: 17)
+        let ancientEntry = makeEntry(on: ancient, gratitudes: ["old"])
+        let recentEntry = makeEntry(on: recent, gratitudes: ["new"])
+        let allEntries = [ancientEntry, recentEntry]
+        let oneWeek = PastStatisticsIntervalSelection(mode: .custom, quantity: 1, unit: .week)
+        let aggregates = builder.build(
+            currentPeriod: period,
+            currentWeekEntries: allEntries.filter { period.contains($0.entryDate) },
+            previousWeekEntries: allEntries.filter { previous.contains($0.entryDate) },
+            allEntries: allEntries,
+            calendar: calendar,
+            referenceDate: referenceDate,
+            pastStatisticsInterval: oneWeek
+        )
+        XCTAssertEqual(aggregates.stats.historyCompletionMix.totalDaysRepresented, 1)
     }
 
     /// Week-scoped mix counts only days in ``currentPeriod``; history mix counts all days in ``allEntries``.

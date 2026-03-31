@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import importlib.metadata
-import json
 import io
+import json
 import os
 import shlex
 import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from contextlib import redirect_stderr
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Callable, TypeVar
+from typing import Annotated, TypeVar
 
 import questionary
 import tomlkit
@@ -26,16 +27,16 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-from gracenotes_dev import cli_rich
-from gracenotes_dev import config
-from gracenotes_dev import simulator
-from gracenotes_dev import simulator_runtime
+from gracenotes_dev import cli_rich, config, simulator, simulator_runtime
 from gracenotes_dev import xcode as xcode_helpers
 
 app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="rich",
-    help="Grace Notes developer CLI — doctor, simulator helpers, build, clean, test, CI, interactive, and run.",
+    help=(
+        "Grace Notes developer CLI — doctor, simulator helpers, build, clean, test, "
+        "CI, interactive, and run."
+    ),
     epilog=(
         "Examples:\n"
         "  grace doctor\n"
@@ -63,6 +64,7 @@ runtime_app = typer.Typer(
 sim_app.add_typer(runtime_app, name="runtime")
 config_app = typer.Typer(help="Inspect and edit gracenotes-dev.toml.")
 app.add_typer(config_app, name="config")
+
 
 def _supports_rich_output(stream: io.TextIOBase) -> bool:
     if os.environ.get("NO_COLOR"):
@@ -248,21 +250,37 @@ def _run_theater(steps: list[TheaterStep]) -> float:
             elapsed = time.perf_counter() - started_step
             if use_rich_theater:
                 _stdout_console().print(
-                    _step_text(index=index, total=total, title=step.title, outcome="failed", elapsed=elapsed),
+                    _step_text(
+                        index=index,
+                        total=total,
+                        title=step.title,
+                        outcome="failed",
+                        elapsed=elapsed,
+                    ),
                 )
             else:
                 _stderr_console().print(
-                    _step_line(index=index, total=total, title=step.title, outcome="failed", elapsed=elapsed),
+                    _step_line(
+                        index=index,
+                        total=total,
+                        title=step.title,
+                        outcome="failed",
+                        elapsed=elapsed,
+                    ),
                 )
             raise
         elapsed = time.perf_counter() - started_step
         if use_rich_theater:
             _stdout_console().print(
-                _step_text(index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed),
+                _step_text(
+                    index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
+                ),
             )
         else:
             _stdout_console().print(
-                _step_line(index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed),
+                _step_line(
+                    index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
+                ),
             )
         if detail:
             _stdout_console().print(f"      {detail}")
@@ -305,7 +323,9 @@ def _require_interactive_cli(*, cfg: config.DevConfig, command_name: str) -> Non
             f"`{command_name}` needs an interactive terminal (stdin must be a TTY), "
             "and must not run with CI=1 or GRACE_NONINTERACTIVE=1."
         ),
-        likely_cause="Automation and GitHub Actions should use non-interactive commands and explicit flags.",
+        likely_cause=(
+            "Automation and GitHub Actions should use non-interactive commands and explicit flags."
+        ),
         try_commands=(
             f"grace ci --profile {cfg.default_ci_profile}",
             "grace config list",
@@ -518,7 +538,10 @@ def _require_macos_xcode() -> None:
             code=3,
             title="Xcode tools missing",
             problem="Could not find `xcodebuild` and `xcrun` on PATH.",
-            likely_cause="Xcode is not installed or xcode-select is pointing at the wrong developer directory.",
+            likely_cause=(
+                "Xcode is not installed or xcode-select is pointing at the wrong "
+                "developer directory."
+            ),
             try_commands=(
                 "xcode-select -p",
                 "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
@@ -534,7 +557,10 @@ def _require_swiftlint() -> None:
             code=1,
             title="SwiftLint unavailable",
             problem="`swiftlint` is not installed or not on PATH.",
-            likely_cause="Homebrew install is missing or shell startup files are not loaded in this terminal.",
+            likely_cause=(
+                "Homebrew install is missing or shell startup files are not loaded "
+                "in this terminal."
+            ),
             try_commands=("brew install swiftlint", "grace doctor"),
             retry_command="grace lint",
         )
@@ -590,8 +616,7 @@ def _run_capture(
             cwd=str(cwd),
             check=False,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
         )
     except FileNotFoundError:
         _fail(
@@ -630,7 +655,9 @@ def _resolve_destination(value: str, rows: list[dict[str, str]]) -> str:
             return simulator.resolve_destination(requested, rows)
         except SystemExit:
             detail = captured.getvalue().strip().splitlines()
-    likely_cause = detail[0] if detail else "No installed simulator matches the requested device/runtime pair."
+    likely_cause = (
+        detail[0] if detail else "No installed simulator matches the requested device/runtime pair."
+    )
     _fail(
         code=3,
         title="Cannot resolve destination",
@@ -656,7 +683,9 @@ def _resolved_destinations_for_matrix(
             return simulator.matrix_destinations_lines(joined, rows)
         except SystemExit:
             detail = captured.getvalue().strip().splitlines()
-    likely_cause = detail[0] if detail else "One or more configured matrix destinations are invalid."
+    likely_cause = (
+        detail[0] if detail else "One or more configured matrix destinations are invalid."
+    )
     _fail(
         code=3,
         title="Cannot resolve destination matrix",
@@ -704,7 +733,9 @@ def _suggested_runtime_install_commands(
     return sorted(commands)
 
 
-def _doctor_default_destination_check(destination: str, rows: list[dict[str, str]]) -> dict[str, object]:
+def _doctor_default_destination_check(
+    destination: str, rows: list[dict[str, str]]
+) -> dict[str, object]:
     """Resolve default destination for doctor without exiting; stderr message on failure."""
     err = io.StringIO()
     try:
@@ -862,7 +893,10 @@ def doctor(
         try:
             rows = simulator.load_available_ios_devices()
         except (SystemExit, typer.Exit):
-            load_detail = "Could not list simulators (simctl failed); run `grace sim list` after fixing Xcode."
+            load_detail = (
+                "Could not list simulators (simctl failed); run `grace sim list` "
+                "after fixing Xcode."
+            )
             destination_check = {
                 "name": "default destination",
                 "status": "error",
@@ -880,7 +914,9 @@ def doctor(
     checks.extend([destination_check, matrix_check])
 
     if json_out:
-        json.dump({"checks": checks, "config": str(config.config_path(repo_root))}, sys.stdout, indent=2)
+        json.dump(
+            {"checks": checks, "config": str(config.config_path(repo_root))}, sys.stdout, indent=2
+        )
         sys.stdout.write("\n")
         return
 
@@ -889,7 +925,9 @@ def doctor(
     table.add_column("Status")
     table.add_column("Detail")
     for item in checks:
-        table.add_row(str(item["name"]), cli_rich.status_text(str(item["status"])), str(item["detail"]))
+        table.add_row(
+            str(item["name"]), cli_rich.status_text(str(item["status"])), str(item["detail"])
+        )
     _stdout_console().print(table)
 
 
@@ -902,10 +940,15 @@ def lint() -> None:
 
 
 def _sim_list_entries(rows: list[dict[str, str]]) -> list[tuple[str, str, str]]:
-    """Deduplicated rows sorted by device name and OS version. Tuple is (xcodebuild line, device, OS)."""
+    """Deduplicated rows sorted by device name and OS version.
+
+    Tuple is (xcodebuild line, device, OS).
+    """
     seen: set[tuple[str, str]] = set()
     entries: list[tuple[str, str, str]] = []
-    for row in sorted(rows, key=lambda item: (item["name"], simulator.version_tuple(item["runtime_version"]))):
+    for row in sorted(
+        rows, key=lambda item: (item["name"], simulator.version_tuple(item["runtime_version"]))
+    ):
         key = (row["name"], row["runtime_version"])
         if key in seen:
             continue
@@ -915,8 +958,13 @@ def _sim_list_entries(rows: list[dict[str, str]]) -> list[tuple[str, str, str]]:
     return entries
 
 
-def _resolve_default_destination_line(cfg_destination: str, rows: list[dict[str, str]]) -> str | None:
-    """Return resolved full destination string for config default, or None if it cannot be resolved."""
+def _resolve_default_destination_line(
+    cfg_destination: str, rows: list[dict[str, str]]
+) -> str | None:
+    """Return resolved full destination string for config default.
+
+    Returns None if it cannot be resolved.
+    """
     with redirect_stderr(io.StringIO()):
         try:
             return simulator.resolve_destination(cfg_destination, rows)
@@ -1016,7 +1064,13 @@ def _prompt_build_options(
     chosen_verbose = _require_prompt_answer(
         _q_confirm("Show full xcodebuild logs?", default=verbose).ask(),
     )
-    return chosen_destination, chosen_configuration, chosen_derived_data, chosen_clean, chosen_verbose
+    return (
+        chosen_destination,
+        chosen_configuration,
+        chosen_derived_data,
+        chosen_clean,
+        chosen_verbose,
+    )
 
 
 def _prompt_clean_options(
@@ -1117,10 +1171,13 @@ def _prompt_run_options(
         default_destination=cfg.destination,
         rows=rows,
     )
-    chosen_scheme = _prompt_optional_text(
-        message="Scheme:",
-        default_value=scheme or cfg.scheme,
-    ) or cfg.scheme
+    chosen_scheme = (
+        _prompt_optional_text(
+            message="Scheme:",
+            default_value=scheme or cfg.scheme,
+        )
+        or cfg.scheme
+    )
     preset_choices = ["(none)", *sorted(cfg.run_presets.keys())]
     chosen_preset = preset
     if preset is None and len(preset_choices) > 1:
@@ -1128,10 +1185,13 @@ def _prompt_run_options(
             _q_select("Run preset:", choices=preset_choices, default="(none)").ask(),
         )
         chosen_preset = None if selected == "(none)" else selected
-    chosen_bundle = _prompt_optional_text(
-        message="Bundle identifier:",
-        default_value=bundle_id or cfg.bundle_id,
-    ) or cfg.bundle_id
+    chosen_bundle = (
+        _prompt_optional_text(
+            message="Bundle identifier:",
+            default_value=bundle_id or cfg.bundle_id,
+        )
+        or cfg.bundle_id
+    )
     derived_default = str(derived_data) if derived_data is not None else ""
     chosen_derived_data = _prompt_optional_path(
         message="DerivedData path (empty for default):",
@@ -1186,14 +1246,22 @@ def _print_runtime_list(records: list[simulator_runtime.RuntimeRecord]) -> None:
         table.add_column("State")
         table.add_column("Identifier")
         for row in records:
-            table.add_row(row.platform, row.version, row.build, cli_rich.status_text(row.state), row.identifier)
+            table.add_row(
+                row.platform,
+                row.version,
+                row.build,
+                cli_rich.status_text(row.state),
+                row.identifier,
+            )
         _stdout_console().print(table)
         return
 
     console = _stdout_console()
     console.print(f"{'Platform':<10}{'Version':<10}{'Build':<10}{'State':<12}Identifier")
     for row in records:
-        console.print(f"{row.platform:<10}{row.version:<10}{row.build:<10}{row.state:<12}{row.identifier}")
+        console.print(
+            f"{row.platform:<10}{row.version:<10}{row.build:<10}{row.state:<12}{row.identifier}"
+        )
 
 
 def _sim_interactive(*, cfg: config.DevConfig) -> None:
@@ -1218,10 +1286,13 @@ def _sim_interactive(*, cfg: config.DevConfig) -> None:
         sim_list()
         return
     if choice == "Resolve destination":
-        spec = _prompt_optional_text(
-            message="Destination spec (device@os or platform=...):",
-            default_value=cfg.destination,
-        ) or cfg.destination
+        spec = (
+            _prompt_optional_text(
+                message="Destination spec (device@os or platform=...):",
+                default_value=cfg.destination,
+            )
+            or cfg.destination
+        )
         sim_resolve(spec=spec)
         return
     if choice == "Reset simulators":
@@ -1284,7 +1355,10 @@ def sim_callback(
         _fail(
             code=2,
             title="Interactive mode and subcommand conflict",
-            problem="Use `grace sim --interactive` alone, or run the subcommand without `--interactive`.",
+            problem=(
+                "Use `grace sim --interactive` alone, or run the subcommand without "
+                "`--interactive`."
+            ),
             try_commands=("grace sim -i", "grace sim list"),
         )
     if interactive:
@@ -1412,7 +1486,10 @@ def runtime_install(
                 code=3,
                 title="Runtime download completed but DMG was not found",
                 problem=str(exc),
-                try_commands=(f"ls {download_dir}", "grace sim runtime install --from-dmg /path/to/runtime.dmg"),
+                try_commands=(
+                    f"ls {download_dir}",
+                    "grace sim runtime install --from-dmg /path/to/runtime.dmg",
+                ),
             )
         command_plan[1] = simulator_runtime.xcode_import_platform_argv(dmg_path=selected_dmg)
         if simctl_add:
@@ -1514,10 +1591,12 @@ def sim_list(
 
 @sim_app.command("resolve")
 def sim_resolve(
-    spec: Annotated[str, typer.Argument(help="Device@os shortcut or full platform=... destination.")],
+    spec: Annotated[
+        str, typer.Argument(help="Device@os shortcut or full platform=... destination.")
+    ],
     json_out: Annotated[
         bool,
-        typer.Option("--json", help="Emit JSON {\"resolved\": \"...\"}."),
+        typer.Option("--json", help='Emit JSON {"resolved": "..."}.'),
     ] = False,
 ) -> None:
     """Resolve ``@latest`` (or validate a full destination) for xcodebuild."""
@@ -1825,7 +1904,10 @@ def test(
         steps.append(
             TheaterStep(
                 "Boot simulator",
-                lambda: (_run(boot, cwd=repo_root, check=False), _run(bootstatus, cwd=repo_root, check=False))
+                lambda: (
+                    _run(boot, cwd=repo_root, check=False),
+                    _run(bootstatus, cwd=repo_root, check=False),
+                )
                 and simulator_name,
             ),
         )
@@ -1905,7 +1987,8 @@ def ci(
         typer.Option(
             "--profile",
             help=(
-                "CI profile from config (for example: lint-build-test, lint-build, test-all, full). "
+                "CI profile from config (for example: lint-build, lint-build-test, "
+                "test-all, full). "
                 "When omitted, uses defaults.default_ci_profile from gracenotes-dev.toml."
             ),
         ),
@@ -2067,7 +2150,7 @@ def interactive() -> None:
     epilog=(
         "Examples:\n"
         '  grace run --destination "iPhone 17 Pro@latest"\n'
-        '  grace run --preset tutorial-reset -- -reset-journal-tutorial'
+        "  grace run --preset tutorial-reset -- -reset-journal-tutorial"
     ),
 )
 def run(
@@ -2164,7 +2247,10 @@ def run(
             code=2,
             title="Scheme metadata unreadable",
             problem=str(exc),
-            likely_cause="The scheme may be missing from the Xcode project or the .xcscheme XML is unexpected.",
+            likely_cause=(
+                "The scheme may be missing from the Xcode project or the .xcscheme "
+                "XML is unexpected."
+            ),
             try_commands=(
                 f"ls {xcodeproj / 'xcshareddata/xcschemes'}",
                 "grace run --help",
@@ -2177,8 +2263,13 @@ def run(
         _fail(
             code=3,
             title="Cannot resolve simulator UDID",
-            problem=f"No simulator UDID matches `{resolved_destination}` in the current device list.",
-            likely_cause="simctl list changed between destination resolution and run, or device data is incomplete.",
+            problem=(
+                f"No simulator UDID matches `{resolved_destination}` in the current device list."
+            ),
+            likely_cause=(
+                "simctl list changed between destination resolution and run, or device "
+                "data is incomplete."
+            ),
             try_commands=("grace sim list", "xcrun simctl list devices available"),
         )
 
@@ -2381,7 +2472,9 @@ def config_set(
         )
 
     repo_root = _repo_root()
-    effective_value = _set_config_value(repo_root=repo_root, key=editable, parsed_value=parsed_value)
+    effective_value = _set_config_value(
+        repo_root=repo_root, key=editable, parsed_value=parsed_value
+    )
     _stdout_console().print(f"{dotted_key} = {_format_config_value(effective_value)}")
 
 
@@ -2400,7 +2493,10 @@ def config_interactive() -> None:
     while True:
         loaded = _load_config(repo_root)
         label_to_key = {
-            f"[{editable_map[key].group}] {key} = {_format_config_value(editable_map[key].getter(loaded))}": key
+            (
+                f"[{editable_map[key].group}] {key} = "
+                f"{_format_config_value(editable_map[key].getter(loaded))}"
+            ): key
             for key in ordered_keys
         }
         selected = _q_select(
@@ -2439,7 +2535,9 @@ def config_interactive() -> None:
             _stderr_console().print(f"Invalid value: {exc}")
             continue
 
-        effective_value = _set_config_value(repo_root=repo_root, key=editable, parsed_value=parsed_value)
+        effective_value = _set_config_value(
+            repo_root=repo_root, key=editable, parsed_value=parsed_value
+        )
         _stdout_console().print(f"Updated {dotted_key} = {_format_config_value(effective_value)}")
 
 

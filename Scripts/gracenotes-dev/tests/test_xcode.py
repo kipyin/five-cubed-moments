@@ -47,9 +47,12 @@ class XcodeHelpersTest(unittest.TestCase):
             "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=17.5",
         )
         self.assertTrue(all(f.startswith("-skip-testing:") for f in flags))
-        self.assertEqual(xcode.legacy_skip_flags_if_needed(
-            "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0",
-        ), [])
+        self.assertEqual(
+            xcode.legacy_skip_flags_if_needed(
+                "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0",
+            ),
+            [],
+        )
 
     def test_build_argv_order(self) -> None:
         argv = xcode.build_argv(
@@ -96,7 +99,7 @@ class XcodeHelpersTest(unittest.TestCase):
 
     def test_run_launch_metadata_from_fixture_scheme(self) -> None:
         xml = textwrap.dedent(
-            '''\
+            """\
             <?xml version="1.0" encoding="UTF-8"?>
             <Scheme version="1.7">
               <LaunchAction buildConfiguration = "Demo">
@@ -105,7 +108,7 @@ class XcodeHelpersTest(unittest.TestCase):
                 </BuildableProductRunnable>
               </LaunchAction>
             </Scheme>
-            '''
+            """
         )
         with tempfile.TemporaryDirectory() as tmp:
             proj = Path(tmp) / "App.xcodeproj"

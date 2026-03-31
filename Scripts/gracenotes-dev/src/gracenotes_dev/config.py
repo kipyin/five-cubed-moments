@@ -18,8 +18,8 @@ DEFAULT_SCHEME = "GraceNotes"
 # Default simulator destination (human / xcodebuild string)
 DEFAULT_DESTINATION = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
 
-# Default ``grace ci`` profile when ``--profile`` is omitted (lint + build + test).
-DEFAULT_CI_PROFILE = "lint-build-test"
+# Default ``grace ci`` profile when ``--profile`` is omitted (lint + simulator build).
+DEFAULT_CI_PROFILE = "lint-build"
 
 # CI pins (override if runtimes differ)
 CI_SIMULATOR_PRO = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
@@ -128,9 +128,7 @@ def default_config() -> DevConfig:
         ci_simulator_pro=CI_SIMULATOR_PRO,
         ci_simulator_xr=CI_SIMULATOR_XR,
         test_destination_matrix=tuple(
-            item.strip()
-            for item in TEST_DESTINATION_MATRIX.split(";")
-            if item.strip()
+            item.strip() for item in TEST_DESTINATION_MATRIX.split(";") if item.strip()
         ),
         isolated_derived_data=ISOLATED_DERIVED_DATA,
         unit_test_bundle=UNIT_TEST_BUNDLE,

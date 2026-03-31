@@ -28,7 +28,9 @@ class RuntimeRecord:
     deletable: bool | None = None
 
 
-def xcode_download_platform_argv(*, export_path: Path, build_version: str | None = None) -> list[str]:
+def xcode_download_platform_argv(
+    *, export_path: Path, build_version: str | None = None
+) -> list[str]:
     argv = [
         "xcodebuild",
         "-downloadPlatform",
@@ -45,7 +47,9 @@ def xcode_import_platform_argv(*, dmg_path: Path) -> list[str]:
     return ["xcodebuild", "-importPlatform", str(dmg_path)]
 
 
-def simctl_runtime_add_argv(*, dmg_path: Path, move: bool = False, async_mode: bool = False) -> list[str]:
+def simctl_runtime_add_argv(
+    *, dmg_path: Path, move: bool = False, async_mode: bool = False
+) -> list[str]:
     argv = ["xcrun", "simctl", "runtime", "add", str(dmg_path)]
     if move:
         argv.append("--move")
@@ -97,7 +101,9 @@ def parse_runtime_list_json(raw: str) -> list[RuntimeRecord]:
     rows: list[RuntimeRecord] = []
 
     if isinstance(payload, dict) and isinstance(payload.get("runtimes"), list):
-        entries: list[dict[str, Any]] = [entry for entry in payload["runtimes"] if isinstance(entry, dict)]
+        entries: list[dict[str, Any]] = [
+            entry for entry in payload["runtimes"] if isinstance(entry, dict)
+        ]
     elif isinstance(payload, dict):
         entries = [entry for entry in payload.values() if isinstance(entry, dict)]
     else:
@@ -108,7 +114,10 @@ def parse_runtime_list_json(raw: str) -> list[RuntimeRecord]:
         runtime_identifier = str(entry.get("runtimeIdentifier", "")).strip() or None
         platform = _platform_from_runtime_identifier(runtime_identifier)
         if not platform:
-            platform = _platform_from_identifier(str(entry.get("platformIdentifier", "")).strip()) or "unknown"
+            platform = (
+                _platform_from_identifier(str(entry.get("platformIdentifier", "")).strip())
+                or "unknown"
+            )
         state = str(entry.get("state", "")).strip() or "unknown"
         version = str(entry.get("version", "")).strip() or "unknown"
         build = str(entry.get("build", "")).strip() or "unknown"

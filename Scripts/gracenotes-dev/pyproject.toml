@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0,<9",
+    "ruff>=0.9.0,<0.14",
 ]
 
 [project.scripts]
@@ -29,3 +30,13 @@ packages = ["src/gracenotes_dev"]
 
 [tool.hatch.build.targets.wheel.sources]
 "src/gracenotes_dev" = "gracenotes_dev"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["gracenotes_dev"]

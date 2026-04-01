@@ -141,7 +141,6 @@ struct ReviewScreen: View {
                 .listRowSeparator(.hidden)
             } else {
                 PastJournalSearchResultsList(
-                    query: trimmedJournalSearchQuery,
                     isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
                     matches: journalSearchMatches,
                     calendar: calendar,
@@ -149,12 +148,12 @@ struct ReviewScreen: View {
                 )
             }
         }
-        .listStyle(.plain)
+        .pastTabListStyle()
         .listRowSeparator(.hidden)
         .listSectionSeparator(.hidden, edges: .all)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
-        .scrollDismissesKeyboard(.immediately)
+        .scrollDismissesKeyboard(isPastSearchFieldFocused ? .never : .immediately)
         .background(AppTheme.reviewBackground)
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
@@ -168,7 +167,6 @@ struct ReviewScreen: View {
                 insightsSection
             } else {
                 PastJournalSearchResultsList(
-                    query: trimmedJournalSearchQuery,
                     isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
                     matches: journalSearchMatches,
                     calendar: calendar,
@@ -176,12 +174,12 @@ struct ReviewScreen: View {
                 )
             }
         }
-        .listStyle(.plain)
+        .pastTabListStyle()
         .listRowSeparator(.hidden)
         .listSectionSeparator(.hidden, edges: .all)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
-        .scrollDismissesKeyboard(.immediately)
+        .scrollDismissesKeyboard(isPastSearchFieldFocused ? .never : .immediately)
         .background(AppTheme.reviewBackground)
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
@@ -190,9 +188,9 @@ struct ReviewScreen: View {
 
     private var pastSearchBarSection: some View {
         Section {
-            PastJournalSearchBar(text: $journalSearchText, searchFocus: $isPastSearchFieldFocused)
+            PastJournalSearchFieldRow(text: $journalSearchText, searchFocus: $isPastSearchFieldFocused)
                 .listRowInsets(PastTabListLayout.searchBarRowInsets)
-                .listRowBackground(AppTheme.reviewBackground)
+                .listRowBackground(isPastSearchMode ? Color.clear : AppTheme.reviewBackground)
                 .listRowSeparator(.hidden)
         }
     }
@@ -320,5 +318,11 @@ private extension ReviewScreen {
             weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
             pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
+    }
+}
+
+private extension View {
+    func pastTabListStyle() -> some View {
+        listStyle(.plain)
     }
 }

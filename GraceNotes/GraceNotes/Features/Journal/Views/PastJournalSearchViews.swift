@@ -34,32 +34,28 @@ enum PastJournalSearchDebouncer {
     }
 }
 
-private enum PastSearchListLayout {
-    static var rowInsets: EdgeInsets {
-        let inset = AppTheme.spacingWide
-        return EdgeInsets(top: 2, leading: inset, bottom: 6, trailing: inset)
-    }
-
-    static var searchBarRowInsets: EdgeInsets {
-        let inset = AppTheme.spacingWide
-        return EdgeInsets(top: 6, leading: inset, bottom: 8, trailing: inset)
-    }
-}
-
 enum PastJournalSearchGrouping {
-    static func groups(
+    /// Groups by calendar day, then by journal section in `ReviewThemeSourceCategory` definition order.
+    static func daySections(
         matches: [JournalSearchMatch],
         calendar: Calendar
-    ) -> [(day: Date, rows: [JournalSearchMatch])] {
-        let grouped = Dictionary(grouping: matches) { calendar.startOfDay(for: $0.entryDate) }
-        return grouped.keys.sorted(by: >).map { day in
-            let rows = (grouped[day] ?? []).sorted { lhs, rhs in
-                if lhs.source != rhs.source {
-                    return lhs.source.rawValue < rhs.source.rawValue
+    ) -> [(
+        day: Date,
+        sections: [(source: ReviewThemeSourceCategory, rows: [JournalSearchMatch])]
+    )] {
+        let groupedByDay = Dictionary(grouping: matches) { calendar.startOfDay(for: $0.entryDate) }
+        return groupedByDay.keys.sorted(by: >).map { day in
+            let dayMatches = groupedByDay[day] ?? []
+            let bySource = Dictionary(grouping: dayMatches) { $0.source }
+            let sections: [(source: ReviewThemeSourceCategory, rows: [JournalSearchMatch])] =
+                ReviewThemeSourceCategory.allCases.compactMap { source in
+                    guard let rows = bySource[source], !rows.isEmpty else { return nil }
+                    let sortedRows = rows.sorted {
+                        $0.content.localizedCaseInsensitiveCompare($1.content) == .orderedAscending
+                    }
+                    return (source: source, rows: sortedRows)
                 }
-                return lhs.content.localizedCaseInsensitiveCompare(rhs.content) == .orderedAscending
-            }
-            return (day, rows)
+            return (day, sections)
         }
     }
 }
@@ -90,8 +86,6 @@ private struct PastJournalSearchBarChrome<Content: View>: View {
 }
 
 struct PastJournalSearchBar: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     @Binding var text: String
     private let searchFocus: FocusState<Bool>.Binding?
 
@@ -100,40 +94,75 @@ struct PastJournalSearchBar: View {
         self.searchFocus = searchFocus
     }
 
+    var body: some View {
+        PastJournalSearchBarChrome {
+            Group {
+                if let searchFocus {
+                    TextField(String(localized: "Search journal"), text: $text)
+                        .focused(searchFocus)
+                } else {
+                    TextField(String(localized: "Search journal"), text: $text)
+                }
+            }
+            .textFieldStyle(.plain)
+            .submitLabel(.search)
+            .accessibilityLabel(String(localized: "Search journal"))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// Search pill plus trailing dismiss control outside the chrome (Past tab).
+struct PastJournalSearchFieldRow: View {
+    private enum Metrics {
+        /// Dismiss slot animates 0 → this width so the pill and control stay layout-locked (no faded overlap).
+        static let dismissSlotWidth: CGFloat = 44
+    }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @Binding var text: String
+    var searchFocus: FocusState<Bool>.Binding
+
+    /// Synced from focus with `withAnimation` so tap-to-focus animates; the system does not animate `FocusState`.
+    @State private var showDismissChrome = false
+
     private var isSearchFocused: Bool {
-        searchFocus?.wrappedValue ?? false
+        searchFocus.wrappedValue
     }
 
     var body: some View {
-        PastJournalSearchBarChrome {
-            HStack(spacing: 8) {
-                Group {
-                    if let searchFocus {
-                        TextField(String(localized: "Search journal"), text: $text)
-                            .focused(searchFocus)
-                    } else {
-                        TextField(String(localized: "Search journal"), text: $text)
-                    }
-                }
-                .textFieldStyle(.plain)
-                .submitLabel(.search)
-                .accessibilityLabel(String(localized: "Search journal"))
+        HStack(alignment: .center, spacing: 10) {
+            PastJournalSearchBar(text: $text, searchFocus: searchFocus)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if isSearchFocused {
-                    Button(action: dismissSearchControlTapped) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(AppTheme.reviewTextMuted)
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(String(localized: "PastSearch.dismissControl.a11yLabel"))
-                    .accessibilityHint(String(localized: "PastSearch.dismissControl.a11yHint"))
-                    .transition(.opacity.combined(with: .scale(scale: 0.88)))
+            Button(action: dismissSearchControlTapped) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(AppTheme.reviewTextMuted)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .buttonStyle(.plain)
+            .frame(width: Metrics.dismissSlotWidth, height: Metrics.dismissSlotWidth)
+            .contentShape(Rectangle())
+            .accessibilityLabel(String(localized: "PastSearch.dismissControl.a11yLabel"))
+            .accessibilityHint(String(localized: "PastSearch.dismissControl.a11yHint"))
+            .accessibilityHidden(!showDismissChrome)
+            .allowsHitTesting(showDismissChrome)
+            .frame(width: showDismissChrome ? Metrics.dismissSlotWidth : 0, alignment: .trailing)
+            .clipped()
+        }
+        .onAppear {
+            showDismissChrome = isSearchFocused
+        }
+        .onChange(of: isSearchFocused) { _, newValue in
+            if reduceMotion {
+                showDismissChrome = newValue
+            } else {
+                withAnimation(.snappy(duration: 0.22)) {
+                    showDismissChrome = newValue
                 }
             }
-            .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: isSearchFocused)
         }
     }
 
@@ -143,13 +172,13 @@ struct PastJournalSearchBar: View {
             if !trimmed.isEmpty {
                 text = ""
             }
-            searchFocus?.wrappedValue = false
+            searchFocus.wrappedValue = false
         } else {
             withAnimation(.snappy(duration: 0.22)) {
                 if !trimmed.isEmpty {
                     text = ""
                 }
-                searchFocus?.wrappedValue = false
+                searchFocus.wrappedValue = false
             }
         }
         UIApplication.shared.sendAction(
@@ -161,106 +190,119 @@ struct PastJournalSearchBar: View {
     }
 }
 
+private struct PastJournalSearchDayCard: View {
+    let day: Date
+    let sections: [(source: ReviewThemeSourceCategory, rows: [JournalSearchMatch])]
+    let onDismissSearchFocus: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(day.formatted(date: .abbreviated, time: .omitted))
+                .font(AppTheme.warmPaperHeader)
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture { onDismissSearchFocus() }
+
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(sections, id: \.source) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(section.source.localizedJournalSurfaceTitle)
+                            .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
+                            .foregroundStyle(AppTheme.reviewTextPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture { onDismissSearchFocus() }
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(section.rows) { match in
+                                NavigationLink {
+                                    JournalScreen(entryDate: match.entryDate)
+                                        .id(match.id)
+                                } label: {
+                                    Text(match.content)
+                                        .font(AppTheme.warmPaperBody)
+                                        .foregroundStyle(AppTheme.reviewTextPrimary)
+                                        .multilineTextAlignment(.leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel(rowAccessibilityLabel(day: day, match: match))
+                                .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .circular)
+                .fill(AppTheme.reviewPaper.opacity(0.72))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .circular)
+                .strokeBorder(AppTheme.reviewStandardBorder.opacity(0.42), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .circular))
+    }
+
+    private func rowAccessibilityLabel(day: Date, match: JournalSearchMatch) -> String {
+        let dayText = day.formatted(date: .abbreviated, time: .omitted)
+        return [dayText, match.source.localizedJournalSurfaceTitle, match.content].joined(separator: ", ")
+    }
+}
+
 struct PastJournalSearchResultsList: View {
-    let query: String
     let isAwaitingInput: Bool
     let matches: [JournalSearchMatch]
     let calendar: Calendar
     let onDismissSearchFocus: () -> Void
 
-    private var groupedMatches: [(day: Date, rows: [JournalSearchMatch])] {
-        PastJournalSearchGrouping.groups(matches: matches, calendar: calendar)
+    private var daySectionGroups: [(
+        day: Date,
+        sections: [(source: ReviewThemeSourceCategory, rows: [JournalSearchMatch])]
+    )] {
+        PastJournalSearchGrouping.daySections(matches: matches, calendar: calendar)
     }
 
-    private var summaryTitle: String {
-        if isAwaitingInput || query.isEmpty {
-            String(localized: "Search journal")
-        } else {
-            query
-        }
-    }
-
-    private var summarySubtitle: String {
+    private var searchEmptyStateMessage: String {
         if isAwaitingInput {
             String(localized: "PastSearch.awaitingInput.subtitle")
-        } else if matches.isEmpty {
-            String(localized: "PastSearch.noMatches.description")
         } else {
-            String(format: String(localized: "PastSearch.matchCountFormat"), matches.count)
+            String(localized: "PastSearch.noMatches.description")
         }
     }
 
     var body: some View {
         Group {
-            Section {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(summaryTitle)
-                        .font(AppTheme.warmPaperHeader)
-                        .foregroundStyle(AppTheme.reviewTextPrimary)
-                        .lineLimit(3)
-                    Text(summarySubtitle)
+            if matches.isEmpty {
+                Section {
+                    Text(searchEmptyStateMessage)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.reviewTextMuted)
-                }
-                .padding(.vertical, 2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onDismissSearchFocus()
-                }
-                .listRowInsets(PastSearchListLayout.rowInsets)
-                .listRowBackground(AppTheme.reviewBackground)
-                .listRowSeparator(.hidden)
-            } header: {
-                Text(String(localized: "Summary"))
-                    .font(AppTheme.warmPaperMeta)
-                    .foregroundStyle(AppTheme.reviewTextMuted)
-                    .textCase(nil)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onDismissSearchFocus()
-                    }
-            }
-
-            if !matches.isEmpty {
-                Section {
-                    ForEach(groupedMatches, id: \.day) { group in
-                        Section {
-                            ForEach(group.rows) { match in
-                                NavigationLink {
-                                    JournalScreen(entryDate: match.entryDate)
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text(match.source.localizedJournalSurfaceTitle)
-                                            .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-                                            .foregroundStyle(AppTheme.reviewTextPrimary)
-                                        Text(match.content)
-                                            .font(AppTheme.warmPaperBody)
-                                            .foregroundStyle(AppTheme.reviewTextPrimary)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 2)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel(rowAccessibilityLabel(day: group.day, match: match))
-                                .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
-                                .listRowInsets(PastSearchListLayout.rowInsets)
-                                .listRowSeparator(.hidden)
-                            }
-                        } header: {
-                            Text(group.day.formatted(date: .abbreviated, time: .omitted))
-                                .font(AppTheme.warmPaperMeta)
-                                .foregroundStyle(AppTheme.reviewTextMuted)
-                                .textCase(nil)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    onDismissSearchFocus()
-                                }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onDismissSearchFocus()
                         }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(AppTheme.reviewBackground)
+                }
+            } else {
+                Section {
+                    ForEach(daySectionGroups, id: \.day) { group in
+                        PastJournalSearchDayCard(
+                            day: group.day,
+                            sections: group.sections,
+                            onDismissSearchFocus: onDismissSearchFocus
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 } header: {
                     Text(String(localized: "Matching writing surfaces"))
@@ -275,10 +317,5 @@ struct PastJournalSearchResultsList: View {
                 }
             }
         }
-    }
-
-    private func rowAccessibilityLabel(day: Date, match: JournalSearchMatch) -> String {
-        let dayText = day.formatted(date: .abbreviated, time: .omitted)
-        return [dayText, match.source.localizedJournalSurfaceTitle, match.content].joined(separator: ", ")
     }
 }

@@ -6113,13 +6113,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search journal"
+            "value" : "Search"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜索日记"
+            "value" : "搜索"
           }
         }
       }
@@ -6151,7 +6151,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "换个关键词试试，或检查一下拼写。"
+            "value" : "换个词试试，或检查一下拼写。"
           }
         }
       }
@@ -6167,23 +6167,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "输入词语或短语以搜索记录。"
-          }
-        }
-      }
-    },
-    "PastSearch.matchCountFormat" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld matches"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 条匹配"
+            "value" : "在感恩记里输入词语或短语即可搜索。"
           }
         }
       }
@@ -6199,7 +6183,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "若搜索框中有内容会先清空，然后关闭键盘。"
+            "value" : "若已输入内容，会先清空再收起键盘。"
           }
         }
       }
@@ -6215,7 +6199,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "清除搜索并收起键盘"
+            "value" : "清除搜索内容并收起键盘"
           }
         }
       }

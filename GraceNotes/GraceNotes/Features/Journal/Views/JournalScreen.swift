@@ -352,11 +352,7 @@ struct JournalScreen: View {
                 handleKeyboardDidChangeFrame(notification)
             }
             .onChange(of: keyboardOverlapHeight) { oldOverlap, newOverlap in
-                if oldOverlap > 0, newOverlap == 0, isAnyJournalFieldFocused {
-                    clearJournalFocusAfterScrollDismiss()
-                }
-                guard newOverlap > 0, isAnyJournalFieldFocused else { return }
-                scheduleJournalKeyboardScroll(proxy: proxy, reason: .keyboardDidChangeFrame)
+                journalKeyboardOverlapChanged(proxy: proxy, oldOverlap: oldOverlap, newOverlap: newOverlap)
             }
             .onChange(of: isReadingNotesFocused) { _, isFocused in
                 guard isFocused else { return }
@@ -383,8 +379,26 @@ struct JournalScreen: View {
             .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
     }
 
+    private func journalKeyboardOverlapChanged(
+        proxy: ScrollViewProxy,
+        oldOverlap: CGFloat,
+        newOverlap: CGFloat
+    ) {
+        if oldOverlap > 0, newOverlap == 0, isAnyJournalFieldFocused {
+            clearJournalFocusAfterScrollDismiss()
+        }
+        guard newOverlap > 0, isAnyJournalFieldFocused else { return }
+        let jitter = abs(newOverlap - oldOverlap)
+        let significant =
+            oldOverlap == 0 || newOverlap == 0
+            || jitter >= JournalCaretVisibilityReader.keyboardOverlapJitterEpsilon
+        guard significant else { return }
+        scheduleJournalKeyboardScroll(proxy: proxy, reason: .keyboardDidChangeFrame)
+    }
+
     private func handleKeyboardDidChangeFrame(_ notification: Notification) {
-        keyboardOverlapHeight = JournalKeyboardOverlapReader.overlapHeight(from: notification)
+        let nextOverlap = JournalKeyboardOverlapReader.overlapHeight(from: notification)
+        keyboardOverlapHeight = nextOverlap
     }
 
     private func clearJournalFocusAfterScrollDismiss() {
@@ -912,6 +926,12 @@ private extension JournalScreen {
             await Task.yield()
             guard !Task.isCancelled else { return }
             guard !showPostSeedJourney else { return }
+            let comfort = JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+            let skipForCaret = JournalCaretVisibilityReader.shouldSkipAutoScroll(
+                keyboardOverlapHeight: keyboardOverlapHeight,
+                comfortMargin: comfort
+            )
+            guard !skipForCaret else { return }
             if let animation {
                 withAnimation(animation) {
                     proxy.scrollTo(scrollTarget, anchor: anchor)

@@ -86,3 +86,52 @@ struct JournalScrollBottomSafeAreaPreferenceKey: PreferenceKey {
         value = nextValue()
     }
 }
+
+/// Uses the first responder's caret (when available) so we don't call `scrollTo` when typing position is already
+/// comfortably above the keyboard — `scrollTo` anchors to entire section IDs and can over-correct on field switches.
+enum JournalCaretVisibilityReader {
+    /// Ignore sub-point fluctuations in computed keyboard overlap when the keyboard is already fully presented.
+    static let keyboardOverlapJitterEpsilon: CGFloat = 1.5
+
+    /// When `true`, skip programmatic `scrollTo`; UIKit/SwiftUI already has the caret in a comfortable position.
+    static func shouldSkipAutoScroll(keyboardOverlapHeight: CGFloat, comfortMargin: CGFloat) -> Bool {
+        guard keyboardOverlapHeight > 0,
+              let window = JournalKeyWindowReader.keyWindow() else { return false }
+        let keyboardTopY = window.bounds.height - keyboardOverlapHeight
+        let caretLowestY = caretMaxYInWindow()
+        guard let caretLowestY else { return false }
+        return caretLowestY <= keyboardTopY - comfortMargin - 0.5
+    }
+
+    private static func caretMaxYInWindow() -> CGFloat? {
+        guard let window = JournalKeyWindowReader.keyWindow(),
+              let responder = findFirstResponder(in: window) else { return nil }
+        let caretInWindow: CGRect?
+        if let textView = responder as? UITextView, let range = textView.selectedTextRange {
+            let local = textView.caretRect(for: range.end)
+            caretInWindow = textView.convert(local, to: nil)
+        } else if let textField = responder as? UITextField, let range = textField.selectedTextRange {
+            let local = textField.caretRect(for: range.end)
+            caretInWindow = textField.convert(local, to: nil)
+        } else {
+            caretInWindow = nil
+        }
+        guard let caretInWindow,
+              !caretInWindow.isNull,
+              !caretInWindow.isInfinite,
+              caretInWindow.width.isFinite,
+              caretInWindow.height.isFinite else { return nil }
+        if caretInWindow == .zero { return nil }
+        return caretInWindow.maxY
+    }
+
+    private static func findFirstResponder(in view: UIView) -> UIView? {
+        if view.isFirstResponder { return view }
+        for subview in view.subviews {
+            if let found = findFirstResponder(in: subview) {
+                return found
+            }
+        }
+        return nil
+    }
+}

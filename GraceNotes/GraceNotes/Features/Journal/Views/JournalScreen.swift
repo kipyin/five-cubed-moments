@@ -356,15 +356,15 @@ struct JournalScreen: View {
                     clearJournalFocusAfterScrollDismiss()
                 }
                 guard newOverlap > 0, isAnyJournalFieldFocused else { return }
-                scheduleJournalKeyboardScroll(proxy: proxy, reason: "keyboardDidChangeFrame")
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: .keyboardDidChangeFrame)
             }
             .onChange(of: isReadingNotesFocused) { _, isFocused in
                 guard isFocused else { return }
-                scheduleJournalKeyboardScroll(proxy: proxy, reason: "focusChanged.readingNotes")
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: .focusChanged(.readingNotes))
             }
             .onChange(of: isReflectionsFocused) { _, isFocused in
                 guard isFocused else { return }
-                scheduleJournalKeyboardScroll(proxy: proxy, reason: "focusChanged.reflections")
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: .focusChanged(.reflections))
             }
             .overlay {
                 GeometryReader { geo in
@@ -391,20 +391,24 @@ struct JournalScreen: View {
         guard !isClearingFocusAfterScrollDismiss else { return }
         isClearingFocusAfterScrollDismiss = true
         journalKeyboardScrollTask?.cancel()
-        clearAllJournalFocusBindings()
+        clearJournalFocusAndResignFirstResponder()
         DispatchQueue.main.async {
             for _ in 1...3 {
-                UIApplication.shared.sendAction(
-                    #selector(UIResponder.resignFirstResponder),
-                    to: nil,
-                    from: nil,
-                    for: nil
-                )
                 if !isAnyJournalFieldFocused { break }
-                clearAllJournalFocusBindings()
+                clearJournalFocusAndResignFirstResponder()
             }
             isClearingFocusAfterScrollDismiss = false
         }
+    }
+
+    private func clearJournalFocusAndResignFirstResponder() {
+        clearAllJournalFocusBindings()
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 
     private func clearAllJournalFocusBindings() {
@@ -655,16 +659,14 @@ private extension JournalScreen {
                newValue.count > oldValue.count {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "typing.gratitude",
-                    target: .gratitudeSection
+                    reason: .typing(.gratitudeSection)
                 )
             }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > gratitudeInputNewlineCount {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "newlineAdded.gratitude",
-                    target: .gratitudeSection
+                    reason: .newlineAdded(.gratitudeSection)
                 )
             }
             gratitudeInputNewlineCount = newCount
@@ -675,16 +677,14 @@ private extension JournalScreen {
                newValue.count > oldValue.count {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "typing.need",
-                    target: .needSection
+                    reason: .typing(.needSection)
                 )
             }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > needInputNewlineCount {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "newlineAdded.need",
-                    target: .needSection
+                    reason: .newlineAdded(.needSection)
                 )
             }
             needInputNewlineCount = newCount
@@ -695,16 +695,14 @@ private extension JournalScreen {
                newValue.count > oldValue.count {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "typing.person",
-                    target: .peopleSection
+                    reason: .typing(.peopleSection)
                 )
             }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > personInputNewlineCount {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "newlineAdded.person",
-                    target: .peopleSection
+                    reason: .newlineAdded(.peopleSection)
                 )
             }
             personInputNewlineCount = newCount
@@ -832,8 +830,7 @@ private extension JournalScreen {
                newValue.count > oldValue.count {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "typing.readingNotes",
-                    target: .readingNotes
+                    reason: .typing(.readingNotes)
                 )
             }
             }
@@ -843,8 +840,7 @@ private extension JournalScreen {
                newValue.count > oldValue.count {
                 scheduleJournalKeyboardScroll(
                     proxy: proxy,
-                    reason: "typing.reflections",
-                    target: .reflections
+                    reason: .typing(.reflections)
                 )
             }
             }
@@ -868,8 +864,7 @@ private extension JournalScreen {
                 onMultilineLineAdded: {
                     scheduleJournalKeyboardScroll(
                         proxy: proxy,
-                        reason: "newlineAdded.readingNotes",
-                        target: .readingNotes
+                        reason: .newlineAdded(.readingNotes)
                     )
                 }
             )
@@ -885,8 +880,7 @@ private extension JournalScreen {
                 onMultilineLineAdded: {
                     scheduleJournalKeyboardScroll(
                         proxy: proxy,
-                        reason: "newlineAdded.reflections",
-                        target: .reflections
+                        reason: .newlineAdded(.reflections)
                     )
                 }
             )
@@ -897,15 +891,14 @@ private extension JournalScreen {
 
     private func scheduleJournalKeyboardScroll(
         proxy: ScrollViewProxy,
-        reason: String,
-        target: JournalScrollTarget? = nil
+        reason: JournalKeyboardScrollReason
     ) {
-        let resolvedTarget = target ?? currentJournalScrollTarget()
+        let resolvedTarget = reason.explicitTarget ?? currentJournalScrollTarget()
         guard keyboardOverlapHeight > 0 else { return }
         let scrollTarget = resolvedTarget
         guard let scrollTarget else { return }
         journalKeyboardScrollTask?.cancel()
-        let usesTypingDrivenScroll = reason.hasPrefix("typing.")
+        let usesTypingDrivenScroll = reason.usesTypingDrivenScroll
         let animation: Animation? = usesTypingDrivenScroll ? nil : (reduceMotion ? nil : .easeOut(duration: 0.25))
         let anchor: UnitPoint
         switch scrollTarget {
@@ -971,17 +964,7 @@ private extension JournalScreen {
 
     func dismissAllJournalFocusIfPostSeedJourneyPresented(_ isPresented: Bool) {
         guard isPresented else { return }
-        isGratitudeInputFocused = false
-        isNeedInputFocused = false
-        isPersonInputFocused = false
-        isReadingNotesFocused = false
-        isReflectionsFocused = false
-        UIApplication.shared.sendAction(
-            #selector(UIResponder.resignFirstResponder),
-            to: nil,
-            from: nil,
-            for: nil
-        )
+        clearJournalFocusAndResignFirstResponder()
     }
 
     func scheduleSavedToPhotosToast() {

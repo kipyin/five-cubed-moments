@@ -6156,6 +6156,38 @@
         }
       }
     },
+    "PastSearch.awaitingInput.subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a word or phrase to search your journal."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入词语或短语以搜索记录。"
+          }
+        }
+      }
+    },
+    "PastSearch.matchCountFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld matches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 条匹配"
+          }
+        }
+      }
+    },
     "Start writing this week to unlock review insights." : {
       "localizations" : {
         "en" : {

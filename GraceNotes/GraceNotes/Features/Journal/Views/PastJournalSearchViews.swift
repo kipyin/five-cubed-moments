@@ -1,10 +1,6 @@
 import SwiftData
 import SwiftUI
 
-enum PastJournalSearchRoute: Hashable {
-    case journalSearch
-}
-
 enum PastJournalSearchDebouncer {
     @MainActor
     static func runDebouncedSearch(
@@ -91,33 +87,6 @@ private struct PastJournalSearchBarChrome<Content: View>: View {
     }
 }
 
-struct PastJournalSearchActivationRow: View {
-    let query: String
-
-    private var trimmed: String {
-        query.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        PastJournalSearchBarChrome {
-            if trimmed.isEmpty {
-                Text(String(localized: "Search journal"))
-                    .font(.body)
-                    .foregroundStyle(AppTheme.reviewTextMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(query)
-                    .font(.body)
-                    .foregroundStyle(AppTheme.reviewTextPrimary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "Search journal"))
-    }
-}
-
 struct PastJournalSearchBar: View {
     @Binding var text: String
     private let searchFocus: FocusState<Bool>.Binding?
@@ -145,135 +114,118 @@ struct PastJournalSearchBar: View {
     }
 }
 
-struct PastJournalSearchScreen: View {
-    @Binding var text: String
-    let calendar: Calendar
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @FocusState private var isSearchFieldFocused: Bool
-    @State private var matches: [JournalSearchMatch] = []
-
-    private var trimmedQuery: String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        List {
-            Section {
-                PastJournalSearchBar(text: $text, searchFocus: $isSearchFieldFocused)
-                    .listRowInsets(PastSearchListLayout.searchBarRowInsets)
-                    .listRowBackground(AppTheme.reviewBackground)
-                    .listRowSeparator(.hidden)
-            }
-            if !trimmedQuery.isEmpty {
-                PastJournalSearchResultsList(matches: matches, calendar: calendar)
-            }
-        }
-        .listStyle(.plain)
-        .listRowSeparator(.hidden)
-        .listSectionSeparator(.hidden, edges: .all)
-        .listRowSpacing(10)
-        .scrollContentBackground(.hidden)
-        .scrollDismissesKeyboard(.immediately)
-        .background(AppTheme.reviewBackground)
-        .navigationTitle(String(localized: "Search journal"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button(String(localized: "Cancel")) {
-                    dismiss()
-                }
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
-        }
-        .task(id: text) {
-            await PastJournalSearchDebouncer.runDebouncedSearch(
-                query: text,
-                calendar: calendar,
-                modelContext: modelContext,
-                updateMatches: { matches = $0 }
-            )
-        }
-        .onAppear {
-            restoreSearchFieldFocus()
-        }
-    }
-
-    private func restoreSearchFieldFocus() {
-        isSearchFieldFocused = true
-        Task { @MainActor in
-            await Task.yield()
-            if !isSearchFieldFocused {
-                isSearchFieldFocused = true
-            }
-        }
-    }
-}
-
 struct PastJournalSearchResultsList: View {
+    let query: String
+    let isAwaitingInput: Bool
     let matches: [JournalSearchMatch]
     let calendar: Calendar
+    let onDismissSearchFocus: () -> Void
 
     private var groupedMatches: [(day: Date, rows: [JournalSearchMatch])] {
         PastJournalSearchGrouping.groups(matches: matches, calendar: calendar)
     }
 
-    var body: some View {
-        if matches.isEmpty {
-            Section {
-                ContentUnavailableView {
-                    Label(String(localized: "No matches"), systemImage: "magnifyingglass")
-                } description: {
-                    Text(String(localized: "PastSearch.noMatches.description"))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-            }
-            .listRowInsets(PastSearchListLayout.rowInsets)
-            .listRowBackground(AppTheme.reviewBackground)
-            .listRowSeparator(.hidden)
+    private var summaryTitle: String {
+        if isAwaitingInput || query.isEmpty {
+            String(localized: "Search journal")
         } else {
+            query
+        }
+    }
+
+    private var summarySubtitle: String {
+        if isAwaitingInput {
+            String(localized: "PastSearch.awaitingInput.subtitle")
+        } else if matches.isEmpty {
+            String(localized: "PastSearch.noMatches.description")
+        } else {
+            String(format: String(localized: "PastSearch.matchCountFormat"), matches.count)
+        }
+    }
+
+    var body: some View {
+        Group {
             Section {
-                ForEach(groupedMatches, id: \.day) { group in
-                    Section {
-                        ForEach(group.rows) { match in
-                            NavigationLink {
-                                JournalScreen(entryDate: match.entryDate)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(match.source.localizedJournalSurfaceTitle)
-                                        .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-                                        .foregroundStyle(AppTheme.reviewTextPrimary)
-                                    Text(match.content)
-                                        .font(AppTheme.warmPaperBody)
-                                        .foregroundStyle(AppTheme.reviewTextPrimary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 2)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel(rowAccessibilityLabel(day: group.day, match: match))
-                            .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
-                            .listRowInsets(PastSearchListLayout.rowInsets)
-                            .listRowSeparator(.hidden)
-                        }
-                    } header: {
-                        Text(group.day.formatted(date: .abbreviated, time: .omitted))
-                            .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.reviewTextMuted)
-                            .textCase(nil)
-                    }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(summaryTitle)
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(AppTheme.reviewTextPrimary)
+                        .lineLimit(3)
+                    Text(summarySubtitle)
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
                 }
+                .padding(.vertical, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onDismissSearchFocus()
+                }
+                .listRowInsets(PastSearchListLayout.rowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
             } header: {
-                Text(String(localized: "Matching writing surfaces"))
+                Text(String(localized: "Summary"))
                     .font(AppTheme.warmPaperMeta)
                     .foregroundStyle(AppTheme.reviewTextMuted)
                     .textCase(nil)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onDismissSearchFocus()
+                    }
+            }
+
+            if !matches.isEmpty {
+                Section {
+                    ForEach(groupedMatches, id: \.day) { group in
+                        Section {
+                            ForEach(group.rows) { match in
+                                NavigationLink {
+                                    JournalScreen(entryDate: match.entryDate)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(match.source.localizedJournalSurfaceTitle)
+                                            .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
+                                            .foregroundStyle(AppTheme.reviewTextPrimary)
+                                        Text(match.content)
+                                            .font(AppTheme.warmPaperBody)
+                                            .foregroundStyle(AppTheme.reviewTextPrimary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 2)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel(rowAccessibilityLabel(day: group.day, match: match))
+                                .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
+                                .listRowInsets(PastSearchListLayout.rowInsets)
+                                .listRowSeparator(.hidden)
+                            }
+                        } header: {
+                            Text(group.day.formatted(date: .abbreviated, time: .omitted))
+                                .font(AppTheme.warmPaperMeta)
+                                .foregroundStyle(AppTheme.reviewTextMuted)
+                                .textCase(nil)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    onDismissSearchFocus()
+                                }
+                        }
+                    }
+                } header: {
+                    Text(String(localized: "Matching writing surfaces"))
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
+                        .textCase(nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onDismissSearchFocus()
+                        }
+                }
             }
         }
     }

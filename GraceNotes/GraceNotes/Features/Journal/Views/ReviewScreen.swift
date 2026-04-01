@@ -1,7 +1,9 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ReviewScreen: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
@@ -15,6 +17,8 @@ struct ReviewScreen: View {
     @State private var trendingThemeDrilldown: ReviewThemeDrilldownPayload?
     @State private var trendingBrowsePayload: TrendingBrowsePayload?
     @State private var journalSearchText = ""
+    @State private var journalSearchMatches: [JournalSearchMatch] = []
+    @FocusState private var isPastSearchFieldFocused: Bool
 
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
     private let reviewInsightsCache = ReviewInsightsCache.shared
@@ -68,6 +72,14 @@ struct ReviewScreen: View {
             .configuredCalendar()
     }
 
+    private var trimmedJournalSearchQuery: String {
+        journalSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isPastSearchMode: Bool {
+        isPastSearchFieldFocused || !trimmedJournalSearchQuery.isEmpty
+    }
+
     var body: some View {
         Group {
             if entries.isEmpty && !isUiTestingExperience {
@@ -85,8 +97,13 @@ struct ReviewScreen: View {
             await hydrateReviewInsightsFromCacheIfNeeded()
             await refreshReviewInsights()
         }
-        .navigationDestination(for: PastJournalSearchRoute.self) { _ in
-            PastJournalSearchScreen(text: $journalSearchText, calendar: calendar)
+        .task(id: journalSearchText) {
+            await PastJournalSearchDebouncer.runDebouncedSearch(
+                query: journalSearchText,
+                calendar: calendar,
+                modelContext: modelContext,
+                updateMatches: { journalSearchMatches = $0 }
+            )
         }
         .sheet(item: $mostRecurringThemeDrilldown) { payload in
             ThemeDrilldownSheet(payload: payload)
@@ -109,24 +126,35 @@ struct ReviewScreen: View {
     private var emptyStateWithSearch: some View {
         List {
             pastSearchBarSection
-            Section {
-                ContentUnavailableView {
-                    Label(String(localized: "No entries yet"), systemImage: "doc.text")
-                } description: {
-                    Text(String(localized: "Start with today."))
+            if !isPastSearchMode {
+                Section {
+                    ContentUnavailableView {
+                        Label(String(localized: "No entries yet"), systemImage: "doc.text")
+                    } description: {
+                        Text(String(localized: "Start with today."))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+            } else {
+                PastJournalSearchResultsList(
+                    query: trimmedJournalSearchQuery,
+                    isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
+                    matches: journalSearchMatches,
+                    calendar: calendar,
+                    onDismissSearchFocus: dismissPastSearchFocus
+                )
             }
-            .listRowInsets(PastTabListLayout.cardRowInsets)
-            .listRowBackground(AppTheme.reviewBackground)
-            .listRowSeparator(.hidden)
         }
         .listStyle(.plain)
         .listRowSeparator(.hidden)
         .listSectionSeparator(.hidden, edges: .all)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .background(AppTheme.reviewBackground)
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
@@ -136,13 +164,24 @@ struct ReviewScreen: View {
     private var historyList: some View {
         List {
             pastSearchBarSection
-            insightsSection
+            if !isPastSearchMode {
+                insightsSection
+            } else {
+                PastJournalSearchResultsList(
+                    query: trimmedJournalSearchQuery,
+                    isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
+                    matches: journalSearchMatches,
+                    calendar: calendar,
+                    onDismissSearchFocus: dismissPastSearchFocus
+                )
+            }
         }
         .listStyle(.plain)
         .listRowSeparator(.hidden)
         .listSectionSeparator(.hidden, edges: .all)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .background(AppTheme.reviewBackground)
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
@@ -151,14 +190,10 @@ struct ReviewScreen: View {
 
     private var pastSearchBarSection: some View {
         Section {
-            NavigationLink(value: PastJournalSearchRoute.journalSearch) {
-                PastJournalSearchActivationRow(query: journalSearchText)
-            }
-            .buttonStyle(.plain)
-            .navigationLinkIndicatorVisibility(.hidden)
-            .listRowInsets(PastTabListLayout.searchBarRowInsets)
-            .listRowBackground(AppTheme.reviewBackground)
-            .listRowSeparator(.hidden)
+            PastJournalSearchBar(text: $journalSearchText, searchFocus: $isPastSearchFieldFocused)
+                .listRowInsets(PastTabListLayout.searchBarRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
         }
     }
 
@@ -222,6 +257,16 @@ struct ReviewScreen: View {
 }
 
 private extension ReviewScreen {
+    func dismissPastSearchFocus() {
+        isPastSearchFieldFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
     @MainActor
     func refreshReviewInsights() async {
         guard !entries.isEmpty else {

@@ -12,6 +12,8 @@ struct EditableTextSection: View {
     let minHeight: CGFloat
     let onboardingState: JournalOnboardingSectionState
     let inputFocus: FocusState<Bool>.Binding?
+    /// When set, `ScrollViewReader` targets the text editor only (not guidance chrome or title).
+    let keyboardScrollAnchorID: JournalScrollTarget?
     /// Called when a newline is inserted (Return) so the parent can scroll multiline editors above the keyboard.
     let onMultilineLineAdded: (() -> Void)?
 
@@ -24,6 +26,7 @@ struct EditableTextSection: View {
         minHeight: CGFloat = 120,
         onboardingState: JournalOnboardingSectionState = .standard,
         inputFocus: FocusState<Bool>.Binding? = nil,
+        keyboardScrollAnchorID: JournalScrollTarget? = nil,
         onMultilineLineAdded: (() -> Void)? = nil
     ) {
         self.title = title
@@ -34,6 +37,7 @@ struct EditableTextSection: View {
         self.minHeight = minHeight
         self.onboardingState = onboardingState
         self.inputFocus = inputFocus
+        self.keyboardScrollAnchorID = keyboardScrollAnchorID
         self.onMultilineLineAdded = onMultilineLineAdded
     }
 
@@ -76,12 +80,25 @@ struct EditableTextSection: View {
                         onMultilineLineAdded()
                     }
                     storedNewlineCount = newCount
+                    Task { @MainActor in
+                        await Task.yield()
+                        JournalCaretVisibilityReader.nudgeFirstResponderUITextViewCaretIntoVisibleContent()
+                    }
                 }
         }
         .onAppear {
             storedNewlineCount = text.filter { $0 == "\n" }.count
         }
         .journalOnboardingSectionStyle(onboardingState)
+    }
+
+    @ViewBuilder
+    private func keyboardScrollAnchoredEditor<Content: View>(_ content: Content) -> some View {
+        if let keyboardScrollAnchorID {
+            content.id(keyboardScrollAnchorID)
+        } else {
+            content
+        }
     }
 
     @ViewBuilder
@@ -109,9 +126,9 @@ struct EditableTextSection: View {
                 )
             )
         if let inputFocus {
-            editor.focused(inputFocus)
+            keyboardScrollAnchoredEditor(editor).focused(inputFocus)
         } else {
-            editor
+            keyboardScrollAnchoredEditor(editor)
         }
     }
 }

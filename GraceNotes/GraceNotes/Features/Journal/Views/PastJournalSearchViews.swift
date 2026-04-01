@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 enum PastJournalSearchDebouncer {
     @MainActor
@@ -71,6 +72,7 @@ private struct PastJournalSearchBarChrome<Content: View>: View {
             Image(systemName: "magnifyingglass")
                 .font(.body.weight(.medium))
                 .foregroundStyle(AppTheme.reviewTextMuted)
+                .accessibilityHidden(true)
             content()
         }
         .padding(.horizontal, 14)
@@ -88,6 +90,8 @@ private struct PastJournalSearchBarChrome<Content: View>: View {
 }
 
 struct PastJournalSearchBar: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Binding var text: String
     private let searchFocus: FocusState<Bool>.Binding?
 
@@ -96,21 +100,64 @@ struct PastJournalSearchBar: View {
         self.searchFocus = searchFocus
     }
 
+    private var isSearchFocused: Bool {
+        searchFocus?.wrappedValue ?? false
+    }
+
     var body: some View {
         PastJournalSearchBarChrome {
-            Group {
-                if let searchFocus {
-                    TextField(String(localized: "Search journal"), text: $text)
-                        .focused(searchFocus)
-                } else {
-                    TextField(String(localized: "Search journal"), text: $text)
+            HStack(spacing: 8) {
+                Group {
+                    if let searchFocus {
+                        TextField(String(localized: "Search journal"), text: $text)
+                            .focused(searchFocus)
+                    } else {
+                        TextField(String(localized: "Search journal"), text: $text)
+                    }
+                }
+                .textFieldStyle(.plain)
+                .submitLabel(.search)
+                .accessibilityLabel(String(localized: "Search journal"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if isSearchFocused {
+                    Button(action: dismissSearchControlTapped) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(AppTheme.reviewTextMuted)
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(localized: "PastSearch.dismissControl.a11yLabel"))
+                    .accessibilityHint(String(localized: "PastSearch.dismissControl.a11yHint"))
+                    .transition(.opacity.combined(with: .scale(scale: 0.88)))
                 }
             }
-            .textFieldStyle(.plain)
-            .submitLabel(.search)
-            .accessibilityLabel(String(localized: "Search journal"))
+            .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: isSearchFocused)
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    private func dismissSearchControlTapped() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if reduceMotion {
+            if !trimmed.isEmpty {
+                text = ""
+            }
+            searchFocus?.wrappedValue = false
+        } else {
+            withAnimation(.snappy(duration: 0.22)) {
+                if !trimmed.isEmpty {
+                    text = ""
+                }
+                searchFocus?.wrappedValue = false
+            }
+        }
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 

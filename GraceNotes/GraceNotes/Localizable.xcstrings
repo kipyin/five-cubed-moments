@@ -6188,6 +6188,38 @@
         }
       }
     },
+    "PastSearch.dismissControl.a11yHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clears the search field when it is not empty, then closes the keyboard."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "若搜索框中有内容会先清空，然后关闭键盘。"
+          }
+        }
+      }
+    },
+    "PastSearch.dismissControl.a11yLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search and dismiss keyboard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除搜索并收起键盘"
+          }
+        }
+      }
+    },
     "Start writing this week to unlock review insights." : {
       "localizations" : {
         "en" : {

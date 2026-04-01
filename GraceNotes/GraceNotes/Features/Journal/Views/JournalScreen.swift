@@ -3,7 +3,7 @@ import SwiftData
 import UIKit
 import Combine
 
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length
 // Keeping interaction helpers in this file preserves `private` on `@State` / `@AppStorage` / `@FocusState`;
 // Swift does not allow another file's `extension` to see those members.
 
@@ -182,6 +182,7 @@ struct JournalScreen: View {
     /// Bottom safe area of the scroll view (tab bar / home indicator; may track keyboard when visible).
     @State private var journalScrollBottomSafeArea: CGFloat = 0
     @State private var journalKeyboardScrollTask: Task<Void, Never>?
+    @State private var isClearingFocusAfterScrollDismiss = false
     @State private var tutorialProgress = JournalTutorialProgress()
     @State private var showPostSeedJourney = false
     @State private var postSeedJourneySkipsCongratulations = false
@@ -346,28 +347,24 @@ struct JournalScreen: View {
     private func journalScrollViewWithKeyboardTracking(content: some View, proxy: ScrollViewProxy) -> some View {
         content
             .onReceive(
-                NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+                NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
             ) { notification in
-                keyboardOverlapHeight = JournalKeyboardOverlapReader.overlapHeight(from: notification)
+                handleKeyboardDidChangeFrame(notification)
             }
-            .onChange(of: keyboardOverlapHeight) { _, newOverlap in
+            .onChange(of: keyboardOverlapHeight) { oldOverlap, newOverlap in
+                if oldOverlap > 0, newOverlap == 0, isAnyJournalFieldFocused {
+                    clearJournalFocusAfterScrollDismiss()
+                }
                 guard newOverlap > 0, isAnyJournalFieldFocused else { return }
-                scheduleJournalKeyboardScroll(proxy: proxy)
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: "keyboardDidChangeFrame")
             }
-            .onChange(of: isGratitudeInputFocused) { _, _ in
-                scheduleJournalKeyboardScroll(proxy: proxy)
+            .onChange(of: isReadingNotesFocused) { _, isFocused in
+                guard isFocused else { return }
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: "focusChanged.readingNotes")
             }
-            .onChange(of: isNeedInputFocused) { _, _ in
-                scheduleJournalKeyboardScroll(proxy: proxy)
-            }
-            .onChange(of: isPersonInputFocused) { _, _ in
-                scheduleJournalKeyboardScroll(proxy: proxy)
-            }
-            .onChange(of: isReadingNotesFocused) { _, _ in
-                scheduleJournalKeyboardScroll(proxy: proxy)
-            }
-            .onChange(of: isReflectionsFocused) { _, _ in
-                scheduleJournalKeyboardScroll(proxy: proxy)
+            .onChange(of: isReflectionsFocused) { _, isFocused in
+                guard isFocused else { return }
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: "focusChanged.reflections")
             }
             .overlay {
                 GeometryReader { geo in
@@ -385,6 +382,39 @@ struct JournalScreen: View {
             .scrollContentBackground(.hidden)
             .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
     }
+
+    private func handleKeyboardDidChangeFrame(_ notification: Notification) {
+        keyboardOverlapHeight = JournalKeyboardOverlapReader.overlapHeight(from: notification)
+    }
+
+    private func clearJournalFocusAfterScrollDismiss() {
+        guard !isClearingFocusAfterScrollDismiss else { return }
+        isClearingFocusAfterScrollDismiss = true
+        journalKeyboardScrollTask?.cancel()
+        clearAllJournalFocusBindings()
+        DispatchQueue.main.async {
+            for _ in 1...3 {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
+                if !isAnyJournalFieldFocused { break }
+                clearAllJournalFocusBindings()
+            }
+            isClearingFocusAfterScrollDismiss = false
+        }
+    }
+
+    private func clearAllJournalFocusBindings() {
+        isGratitudeInputFocused = false
+        isNeedInputFocused = false
+        isPersonInputFocused = false
+        isReadingNotesFocused = false
+        isReflectionsFocused = false
+    }
+
 }
 
 private extension JournalScreen {
@@ -540,8 +570,15 @@ private extension JournalScreen {
     /// Extra bottom padding so multiline editors can scroll above the keyboard with a comfort margin.
     private var journalKeyboardExtraScrollPadding: CGFloat {
         guard keyboardOverlapHeight > 0 else { return 0 }
-        let uncovered = max(0, keyboardOverlapHeight - journalScrollBottomSafeArea)
-        return uncovered + JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+        if isMultilineNotesFieldFocused {
+            let uncovered = max(0, keyboardOverlapHeight - journalScrollBottomSafeArea)
+            return uncovered + JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+        }
+        if isAnyChipInputFocused {
+            // Keep chip editor caret a little above keyboard without the large uncovered-padding jump.
+            return JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+        }
+        return 0
     }
 
     /// Single backdrop behind the journal column: taps on “empty” scroll space dismiss inline editing.
@@ -605,28 +642,70 @@ private extension JournalScreen {
     func journalSentenceSections(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
             gratitudesSequentialSection
+                .id(JournalScrollTarget.gratitudeSection)
             needsSequentialSection
+                .id(JournalScrollTarget.needSection)
             peopleSequentialSection
+                .id(JournalScrollTarget.peopleSection)
         }
         .padding(.top, AppTheme.spacingTight)
-        .onChange(of: gratitudeInput) { _, newValue in
+        .onChange(of: gratitudeInput) { oldValue, newValue in
+            if isGratitudeInputFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "typing.gratitude",
+                    target: .gratitudeSection
+                )
+            }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > gratitudeInputNewlineCount {
-                scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "newlineAdded.gratitude",
+                    target: .gratitudeSection
+                )
             }
             gratitudeInputNewlineCount = newCount
         }
-        .onChange(of: needInput) { _, newValue in
+        .onChange(of: needInput) { oldValue, newValue in
+            if isNeedInputFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "typing.need",
+                    target: .needSection
+                )
+            }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > needInputNewlineCount {
-                scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "newlineAdded.need",
+                    target: .needSection
+                )
             }
             needInputNewlineCount = newCount
         }
-        .onChange(of: personInput) { _, newValue in
+        .onChange(of: personInput) { oldValue, newValue in
+            if isPersonInputFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "typing.person",
+                    target: .peopleSection
+                )
+            }
             let newCount = newValue.filter { $0 == "\n" }.count
             if newCount > personInputNewlineCount {
-                scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "newlineAdded.person",
+                    target: .peopleSection
+                )
             }
             personInputNewlineCount = newCount
         }
@@ -744,6 +823,35 @@ private extension JournalScreen {
     }
 
     func journalNotesSections(proxy: ScrollViewProxy) -> some View {
+        journalNotesSectionsStack(proxy: proxy)
+            .onChange(of: viewModel.readingNotes) { oldValue, newValue in
+            // Outer scroll keeps the notes field above the keyboard; bounded `TextEditor` height keeps the
+            // section from growing without limit (avoids pinning the caret off the top of the screen).
+            if isReadingNotesFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "typing.readingNotes",
+                    target: .readingNotes
+                )
+            }
+            }
+            .onChange(of: viewModel.reflections) { oldValue, newValue in
+            if isReflectionsFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: "typing.reflections",
+                    target: .reflections
+                )
+            }
+            }
+    }
+
+    @ViewBuilder
+    private func journalNotesSectionsStack(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
             EditableTextSection(
                 title: String(localized: "Reading Notes"),
@@ -758,7 +866,11 @@ private extension JournalScreen {
                 onboardingState: onboardingPresentation.state(for: .readingNotes),
                 inputFocus: $isReadingNotesFocused,
                 onMultilineLineAdded: {
-                    scheduleJournalKeyboardScroll(proxy: proxy, target: .readingNotes)
+                    scheduleJournalKeyboardScroll(
+                        proxy: proxy,
+                        reason: "newlineAdded.readingNotes",
+                        target: .readingNotes
+                    )
                 }
             )
             .id(JournalScrollTarget.readingNotes)
@@ -771,7 +883,11 @@ private extension JournalScreen {
                 onboardingState: onboardingPresentation.state(for: .reflections),
                 inputFocus: $isReflectionsFocused,
                 onMultilineLineAdded: {
-                    scheduleJournalKeyboardScroll(proxy: proxy, target: .reflections)
+                    scheduleJournalKeyboardScroll(
+                        proxy: proxy,
+                        reason: "newlineAdded.reflections",
+                        target: .reflections
+                    )
                 }
             )
             .id(JournalScrollTarget.reflections)
@@ -779,28 +895,46 @@ private extension JournalScreen {
         .padding(.top, AppTheme.spacingTight)
     }
 
-    private func scheduleJournalKeyboardScroll(proxy: ScrollViewProxy, target: JournalScrollTarget? = nil) {
+    private func scheduleJournalKeyboardScroll(
+        proxy: ScrollViewProxy,
+        reason: String,
+        target: JournalScrollTarget? = nil
+    ) {
+        let resolvedTarget = target ?? currentJournalScrollTarget()
         guard keyboardOverlapHeight > 0 else { return }
-        let scrollTarget = target ?? currentJournalScrollTarget()
+        let scrollTarget = resolvedTarget
         guard let scrollTarget else { return }
         journalKeyboardScrollTask?.cancel()
-        let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.25)
+        let usesTypingDrivenScroll = reason.hasPrefix("typing.")
+        let animation: Animation? = usesTypingDrivenScroll ? nil : (reduceMotion ? nil : .easeOut(duration: 0.25))
+        let anchor: UnitPoint
+        switch scrollTarget {
+        case .gratitudeSection:
+            anchor = usesTypingDrivenScroll ? .bottom : .center
+        case .needSection, .peopleSection:
+            anchor = .bottom
+        default:
+            anchor = .bottom
+        }
         journalKeyboardScrollTask = Task { @MainActor in
             await Task.yield()
             guard !Task.isCancelled else { return }
             guard !showPostSeedJourney else { return }
             if let animation {
                 withAnimation(animation) {
-                    proxy.scrollTo(scrollTarget, anchor: .bottom)
+                    proxy.scrollTo(scrollTarget, anchor: anchor)
                 }
             } else {
-                proxy.scrollTo(scrollTarget, anchor: .bottom)
+                proxy.scrollTo(scrollTarget, anchor: anchor)
             }
         }
     }
 
     private func currentJournalScrollTarget() -> JournalScrollTarget? {
         if isGratitudeInputFocused || isNeedInputFocused || isPersonInputFocused {
+            if isGratitudeInputFocused { return .gratitudeSection }
+            if isNeedInputFocused { return .needSection }
+            if isPersonInputFocused { return .peopleSection }
             return .sentenceSections
         }
         if isReadingNotesFocused { return .readingNotes }
@@ -1045,6 +1179,10 @@ private extension JournalScreen {
             isPersonInputFocused ||
             isReadingNotesFocused ||
             isReflectionsFocused
+    }
+
+    var isMultilineNotesFieldFocused: Bool {
+        isReadingNotesFocused || isReflectionsFocused
     }
 
     var onboardingSuggestionContext: JournalOnboardingSuggestionContext {
@@ -1505,12 +1643,14 @@ private extension JournalScreen {
 
     func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
         guard !showPostSeedJourney else { return }
+        guard !isClearingFocusAfterScrollDismiss else { return }
         // Apply focus immediately so keyboard spin-up starts without waiting a turn.
         focus.wrappedValue = true
 
         Task { @MainActor in
             await Task.yield()
             guard !showPostSeedJourney else { return }
+            guard !isClearingFocusAfterScrollDismiss else { return }
             if !focus.wrappedValue {
                 focus.wrappedValue = true
             }
@@ -1651,4 +1791,4 @@ private extension JournalScreen {
         }
     }
 }
-// swiftlint:enable file_length
+// swiftlint:enable file_length type_body_length

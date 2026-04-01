@@ -4,6 +4,9 @@ import UIKit
 /// Stable `ScrollViewReader` targets for Today journal keyboard avoidance.
 enum JournalScrollTarget: String, CaseIterable {
     case sentenceSections
+    case gratitudeSection
+    case needSection
+    case peopleSection
     case readingNotes
     case reflections
 }
@@ -14,6 +17,20 @@ enum JournalKeyboardScrollMetrics {
         let lineHeight = UIFont.preferredFont(forTextStyle: .body).lineHeight
         let scaled = lineHeight + AppTheme.spacingTight
         return max(AppTheme.spacingRegular, scaled)
+    }
+
+    /// Caps Reading Notes / Reflections `TextEditor` height so long text scrolls inside the control.
+    /// The outer journal `ScrollView` can then avoid pinning the whole section with `scrollTo` on every keystroke,
+    /// which was pushing the caret off the top while the field bottom stayed above the keyboard.
+    static func notesTextEditorMaxHeight() -> CGFloat {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow) else {
+            return 320
+        }
+        let height = window.bounds.height
+        return min(480, max(200, height * 0.36))
     }
 }
 

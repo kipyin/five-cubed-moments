@@ -91,6 +91,7 @@ struct EditableTextSection: View {
             .foregroundStyle(palette.textPrimary)
             .scrollContentBackground(.hidden)
             .frame(minHeight: minHeight)
+            .frame(maxHeight: JournalKeyboardScrollMetrics.notesTextEditorMaxHeight())
             .warmPaperInputStyle()
             .disabled(onboardingState.isLocked)
             .accessibilityLabel(

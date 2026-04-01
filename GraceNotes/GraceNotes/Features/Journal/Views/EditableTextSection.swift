@@ -3,6 +3,7 @@ import SwiftUI
 /// A section with a title and multiline TextEditor. Used for Reading Notes and Reflections.
 struct EditableTextSection: View {
     @Environment(\.todayJournalPalette) private var palette
+    @State private var storedNewlineCount = 0
     let title: String
     let guidanceTitle: String?
     let guidanceMessage: String?
@@ -69,14 +70,16 @@ struct EditableTextSection: View {
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(onboardingState.titleColor(palette: palette))
             textEditor
-                .onChange(of: text) { oldValue, newValue in
-                    guard let onMultilineLineAdded else { return }
-                    let oldCount = oldValue.filter { $0 == "\n" }.count
+                .onChange(of: text) { _, newValue in
                     let newCount = newValue.filter { $0 == "\n" }.count
-                    if newCount > oldCount {
+                    if let onMultilineLineAdded, newCount > storedNewlineCount {
                         onMultilineLineAdded()
                     }
+                    storedNewlineCount = newCount
                 }
+        }
+        .onAppear {
+            storedNewlineCount = text.filter { $0 == "\n" }.count
         }
         .journalOnboardingSectionStyle(onboardingState)
     }

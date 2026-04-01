@@ -181,6 +181,7 @@ struct JournalScreen: View {
     @State private var keyboardOverlapHeight: CGFloat = 0
     /// Bottom safe area of the scroll view (tab bar / home indicator; may track keyboard when visible).
     @State private var journalScrollBottomSafeArea: CGFloat = 0
+    @State private var journalKeyboardScrollTask: Task<Void, Never>?
     @State private var tutorialProgress = JournalTutorialProgress()
     @State private var showPostSeedJourney = false
     @State private var postSeedJourneySkipsCongratulations = false
@@ -203,6 +204,9 @@ struct JournalScreen: View {
     @State private var gratitudeInput = ""
     @State private var needInput = ""
     @State private var personInput = ""
+    @State private var gratitudeInputNewlineCount = 0
+    @State private var needInputNewlineCount = 0
+    @State private var personInputNewlineCount = 0
 
     @State private var editingGratitudeIndex: Int?
     @State private var editingNeedIndex: Int?
@@ -605,20 +609,26 @@ private extension JournalScreen {
             peopleSequentialSection
         }
         .padding(.top, AppTheme.spacingTight)
-        .onChange(of: gratitudeInput) { oldValue, newValue in
-            if newlineCountIncreased(from: oldValue, to: newValue) {
+        .onChange(of: gratitudeInput) { _, newValue in
+            let newCount = newValue.filter { $0 == "\n" }.count
+            if newCount > gratitudeInputNewlineCount {
                 scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
             }
+            gratitudeInputNewlineCount = newCount
         }
-        .onChange(of: needInput) { oldValue, newValue in
-            if newlineCountIncreased(from: oldValue, to: newValue) {
+        .onChange(of: needInput) { _, newValue in
+            let newCount = newValue.filter { $0 == "\n" }.count
+            if newCount > needInputNewlineCount {
                 scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
             }
+            needInputNewlineCount = newCount
         }
-        .onChange(of: personInput) { oldValue, newValue in
-            if newlineCountIncreased(from: oldValue, to: newValue) {
+        .onChange(of: personInput) { _, newValue in
+            let newCount = newValue.filter { $0 == "\n" }.count
+            if newCount > personInputNewlineCount {
                 scheduleJournalKeyboardScroll(proxy: proxy, target: .sentenceSections)
             }
+            personInputNewlineCount = newCount
         }
     }
 
@@ -733,12 +743,6 @@ private extension JournalScreen {
         )
     }
 
-    private func newlineCountIncreased(from oldValue: String, to newValue: String) -> Bool {
-        let oldCount = oldValue.filter { $0 == "\n" }.count
-        let newCount = newValue.filter { $0 == "\n" }.count
-        return newCount > oldCount
-    }
-
     func journalNotesSections(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
             EditableTextSection(
@@ -779,9 +783,11 @@ private extension JournalScreen {
         guard keyboardOverlapHeight > 0 else { return }
         let scrollTarget = target ?? currentJournalScrollTarget()
         guard let scrollTarget else { return }
+        journalKeyboardScrollTask?.cancel()
         let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.25)
-        Task { @MainActor in
+        journalKeyboardScrollTask = Task { @MainActor in
             await Task.yield()
+            guard !Task.isCancelled else { return }
             guard !showPostSeedJourney else { return }
             if let animation {
                 withAnimation(animation) {

@@ -36,6 +36,13 @@ final class JournalUITests: XCTestCase {
         app.textViews[identifier]
     }
 
+    /// XCTest does not expose `hasKeyboardFocus` on `XCUIElement` for iOS targets; KVC matches
+    /// the accessibility value when the software keyboard UI is absent (e.g. hardware keyboard).
+    private func hasVisibleKeyboardOrFocusedEditor(_ editor: XCUIElement, in app: XCUIApplication) -> Bool {
+        if app.keyboards.firstMatch.exists { return true }
+        return (editor.value(forKey: "hasKeyboardFocus") as? Bool) ?? false
+    }
+
     @MainActor
     private func openInlineEditor(
         stripId: String,
@@ -525,7 +532,7 @@ final class JournalUITests: XCTestCase {
             "Inline editor should remain on-screen after long input."
         )
         XCTAssertTrue(
-            app.keyboards.firstMatch.exists || editor.hasKeyboardFocus,
+            hasVisibleKeyboardOrFocusedEditor(editor, in: app),
             "Expected keyboard or focused editor after long multiline input."
         )
     }

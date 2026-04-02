@@ -25,8 +25,8 @@ struct SequentialSectionView: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    /// When set (e.g. UI tests), strips use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
-    let stripAccessibilityIdentifierPrefix: String?
+    /// When set (e.g. UI tests), entry rows use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
+    let entryAccessibilityIdentifierPrefix: String?
     /// When set (e.g. UI tests), the section (+) control exposes this `accessibilityIdentifier`.
     let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
@@ -69,7 +69,7 @@ struct SequentialSectionView: View {
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
-        stripAccessibilityIdentifierPrefix: String? = nil,
+        entryAccessibilityIdentifierPrefix: String? = nil,
         addItemAccessibilityIdentifier: String? = nil,
         onboardingState: JournalOnboardingSectionState = .standard,
         isTransitioning: Bool = false,
@@ -99,7 +99,7 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
-        self.stripAccessibilityIdentifierPrefix = stripAccessibilityIdentifierPrefix
+        self.entryAccessibilityIdentifierPrefix = entryAccessibilityIdentifierPrefix
         self.addItemAccessibilityIdentifier = addItemAccessibilityIdentifier
         self.onboardingState = onboardingState
         self.isTransitioning = isTransitioning
@@ -170,7 +170,7 @@ struct SequentialSectionView: View {
             placeholder: placeholder,
             slotCount: slotCount,
             inputAccessibilityIdentifier: inputAccessibilityIdentifier,
-            stripAccessibilityIdentifierPrefix: stripAccessibilityIdentifierPrefix,
+            entryAccessibilityIdentifierPrefix: entryAccessibilityIdentifierPrefix,
             addItemAccessibilityIdentifier: addItemAccessibilityIdentifier,
             onboardingState: onboardingState,
             isTransitioning: isTransitioning,

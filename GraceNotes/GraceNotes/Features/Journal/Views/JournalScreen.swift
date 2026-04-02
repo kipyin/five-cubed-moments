@@ -732,8 +732,8 @@ private extension JournalScreen {
             placeholder: String(localized: "What's one thing you're grateful for?"),
             slotCount: JournalViewModel.slotCount,
             inputAccessibilityIdentifier: "Gratitude 1",
-            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                ? "JournalGratitudeStrip"
+            entryAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalGratitudeEntry"
                 : nil,
             addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                 ? "JournalSectionAdd.gratitude"
@@ -769,8 +769,8 @@ private extension JournalScreen {
             placeholder: String(localized: "What do you need today?"),
             slotCount: JournalViewModel.slotCount,
             inputAccessibilityIdentifier: "Need 1",
-            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                ? "JournalNeedStrip"
+            entryAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalNeedEntry"
                 : nil,
             addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                 ? "JournalSectionAdd.need"
@@ -807,8 +807,8 @@ private extension JournalScreen {
             placeholder: String(localized: "Who are you thinking of today?"),
             slotCount: JournalViewModel.slotCount,
             inputAccessibilityIdentifier: "Person 1",
-            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                ? "JournalPersonStrip"
+            entryAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalPersonEntry"
                 : nil,
             addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
                 ? "JournalSectionAdd.person"
@@ -1377,10 +1377,10 @@ private extension JournalScreen {
         let inputFocus: FocusState<Bool>.Binding
         let move: (Int, Int) -> Bool
         let remove: (Int) -> Bool
-        let operations: StripSectionOperations
+        let operations: EntrySectionOperations
 
-        var stripInteractionContext: JournalStripInteractionCoordinator.SectionContext {
-            JournalStripInteractionCoordinator.SectionContext(
+        var entryInteractionContext: JournalEntryInteractionCoordinator.SectionContext {
+            JournalEntryInteractionCoordinator.SectionContext(
                 input: input,
                 editingIndex: editingIndex,
                 isTransitioning: isTransitioning,
@@ -1407,7 +1407,7 @@ private extension JournalScreen {
             inputFocus: $isGratitudeInputFocused,
             move: { from, toOffset in viewModel.moveGratitude(from: from, to: toOffset) },
             remove: { index in viewModel.removeGratitude(at: index) },
-            operations: StripSectionOperations(
+            operations: EntrySectionOperations(
                 updateImmediate: { index, text in
                     viewModel.updateGratitudeImmediate(at: index, fullText: text)
                 },
@@ -1426,7 +1426,7 @@ private extension JournalScreen {
             inputFocus: $isNeedInputFocused,
             move: { from, toOffset in viewModel.moveNeed(from: from, to: toOffset) },
             remove: { index in viewModel.removeNeed(at: index) },
-            operations: StripSectionOperations(
+            operations: EntrySectionOperations(
                 updateImmediate: { index, text in
                     viewModel.updateNeedImmediate(at: index, fullText: text)
                 },
@@ -1445,7 +1445,7 @@ private extension JournalScreen {
             inputFocus: $isPersonInputFocused,
             move: { from, toOffset in viewModel.movePerson(from: from, to: toOffset) },
             remove: { index in viewModel.removePerson(at: index) },
-            operations: StripSectionOperations(
+            operations: EntrySectionOperations(
                 updateImmediate: { index, text in
                     viewModel.updatePersonImmediate(at: index, fullText: text)
                 },
@@ -1458,15 +1458,15 @@ private extension JournalScreen {
     }
     func addNewTapped(section: StripSection) {
         let adapter = stripSectionAdapter(for: section)
-        JournalStripInteractionCoordinator.addNewTapped(
-            context: adapter.stripInteractionContext,
+        JournalEntryInteractionCoordinator.addNewTapped(
+            context: adapter.entryInteractionContext,
             restoreInputFocus: restoreInputFocus
         )
     }
 
     func deleteChip(section: StripSection, index: Int) {
         let adapter = stripSectionAdapter(for: section)
-        JournalScreenStripHandling.performDelete(
+        JournalScreenEntryHandling.performDelete(
             index: index,
             remove: adapter.remove,
             input: adapter.input,
@@ -1476,7 +1476,7 @@ private extension JournalScreen {
 
     func moveChip(section: StripSection, from sourceIndex: Int, toOffset destinationOffset: Int) {
         let adapter = stripSectionAdapter(for: section)
-        JournalScreenStripHandling.performMove(
+        JournalScreenEntryHandling.performMove(
             from: sourceIndex,
             to: destinationOffset,
             move: adapter.move,
@@ -1486,8 +1486,8 @@ private extension JournalScreen {
 
     func chipTapped(section: StripSection, index: Int) {
         let adapter = stripSectionAdapter(for: section)
-        JournalStripInteractionCoordinator.stripTapped(
-            context: adapter.stripInteractionContext,
+        JournalEntryInteractionCoordinator.entryTapped(
+            context: adapter.entryInteractionContext,
             tapIndex: index,
             restoreInputFocus: restoreInputFocus
         )
@@ -1498,7 +1498,7 @@ private extension JournalScreen {
         let wasEditingExistingItem = adapter.editingIndex.wrappedValue != nil
         let shouldClearAddMorphAfterSubmit =
             adapter.editingIndex.wrappedValue == nil && isAddMorphComposerVisible(for: section)
-        let didSubmit = JournalScreenStripHandling.submitStripSection(
+        let didSubmit = JournalScreenEntryHandling.submitEntrySection(
             editingIndex: adapter.editingIndex,
             input: adapter.input,
             operations: adapter.operations,
@@ -1544,7 +1544,7 @@ private extension JournalScreen {
                 return
             }
         }
-        let didSubmit = JournalScreenStripHandling.submitStripSection(
+        let didSubmit = JournalScreenEntryHandling.submitEntrySection(
             editingIndex: adapter.editingIndex,
             input: adapter.input,
             operations: adapter.operations,

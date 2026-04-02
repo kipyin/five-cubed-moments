@@ -21,7 +21,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    let stripAccessibilityIdentifierPrefix: String?
+    let entryAccessibilityIdentifierPrefix: String?
     let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
@@ -113,7 +113,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 )
             }
             if showMorphAddSlot, let addNew = onAddNew {
-                SequentialSectionStripRow.AddSentenceMorphSlot(
+                SequentialSectionEntryRow.AddSentenceMorphSlot(
                     sectionTitle: title,
                     addButtonTitle: addButtonTitle,
                     addButtonAccessibilityHint: addButtonAccessibilityHint,
@@ -284,7 +284,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
 
     @ViewBuilder
     private func stripView(for item: Entry, at index: Int) -> some View {
-        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let stripIdentifierPrefix = entryAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
         let strip = makeSentenceStrip(for: item, index: index, stripIdentifierPrefix: stripIdentifierPrefix)
 
         if let onMoveItem, !isInlineEditingActive {
@@ -300,13 +300,13 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 }
                 .onDrop(
                     of: [UTType.text],
-                    delegate: SequentialSectionStripRow.StripReorderDropDelegate(
+                    delegate: SequentialSectionEntryRow.EntryReorderDropDelegate(
                         targetIndex: index,
                         items: items,
                         draggingItemID: $draggingItemID,
                         hoverTargetItemID: $itemReorderHoverTargetItemID,
                         reduceMotion: reduceMotion,
-                        onMoveStrip: onMoveItem
+                        onMoveEntry: onMoveItem
                     )
                 )
         } else {
@@ -316,7 +316,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
 
     @ViewBuilder
     private func inlineEditorRow(for item: Entry, at index: Int) -> some View {
-        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let stripIdentifierPrefix = entryAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
         let editorIdentifier = stripIdentifierPrefix.map { "\($0).editor" }
         let isMorphing = morphingItemID == item.id
 

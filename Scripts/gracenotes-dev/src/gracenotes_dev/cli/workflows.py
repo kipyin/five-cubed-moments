@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Annotated
@@ -472,7 +473,15 @@ def run(
     ] = False,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-v", help="Show full xcodebuild logs."),
+        typer.Option(
+            "--verbose",
+            help=(
+                "Stream xcodebuild/simctl to the terminal (full tool logs). "
+                "Default still shows step progress, but captures tool output on success. "
+                "No short -v flag (avoids accidental verbose runs). "
+                "You can also set GRACE_RUN_STREAM_TOOL_OUTPUT=1."
+            ),
+        ),
     ] = False,
 ) -> None:
     """Build, install, and launch Grace Notes on an iOS Simulator or connected device."""
@@ -480,6 +489,12 @@ def run(
     repo_root = cli_core._repo_root()
     cfg = cli_core._load_config(repo_root)
     rows = simulator.load_available_ios_devices()
+    stream_via_env = os.environ.get("GRACE_RUN_STREAM_TOOL_OUTPUT", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    run_quiet_output = (not verbose) and (not stream_via_env)
     if interactive:
         cli_core._require_interactive_cli(cfg=cfg, command_name="grace run --interactive")
         (
@@ -558,7 +573,7 @@ def run(
             configuration=launch_configuration,
             derived_data_path=derived_data_path,
         )
-        cli_core._run(argv, cwd=repo_root, check=True, verbose=verbose)
+        cli_core._run(argv, cwd=repo_root, check=True, verbose=verbose, silent=run_quiet_output)
         return " ".join(argv)
 
     if xcode_helpers.is_physical_ios_destination(resolved_destination):
@@ -583,6 +598,8 @@ def run(
                 xcode_helpers.devicectl_install_app_argv(device=device_udid, app_path=app_path),
                 cwd=repo_root,
                 check=True,
+                silent=run_quiet_output,
+                verbose=verbose,
             )
             return f"{app_path.name} -> {device_udid}"
 
@@ -595,6 +612,8 @@ def run(
                 ),
                 cwd=repo_root,
                 check=True,
+                verbose=verbose,
+                silent=run_quiet_output,
             )
             detail = completed.stdout.strip() if completed.stdout else ""
             if expanded_args:
@@ -633,8 +652,20 @@ def run(
 
     def boot_step() -> str:
         boot, bootstatus = xcode_helpers.simctl_boot_sequence_argv_udid(udid)
-        cli_core._run(boot, cwd=repo_root, check=False)
-        cli_core._run(bootstatus, cwd=repo_root, check=False)
+        cli_core._run(
+            boot,
+            cwd=repo_root,
+            check=False,
+            silent=run_quiet_output,
+            verbose=verbose,
+        )
+        cli_core._run(
+            bootstatus,
+            cwd=repo_root,
+            check=False,
+            silent=run_quiet_output,
+            verbose=verbose,
+        )
         return udid
 
     def install_step() -> str:
@@ -648,6 +679,8 @@ def run(
             xcode_helpers.simctl_install_argv(app_path=app_path, device=udid),
             cwd=repo_root,
             check=True,
+            silent=run_quiet_output,
+            verbose=verbose,
         )
         return f"{app_path.name} -> {udid}"
 
@@ -660,6 +693,8 @@ def run(
             ),
             cwd=repo_root,
             check=True,
+            verbose=verbose,
+            silent=run_quiet_output,
         )
         detail = completed.stdout.strip() if completed.stdout else ""
         if expanded_args:
@@ -677,4 +712,5 @@ def run(
             cli_core.TheaterStep(f"Launch {resolved_bundle_id}", launch_step),
         ],
     )
+    # Always show theater for `grace run`; quiet mode only captures subprocesses (no tool flood).
     cli_core._run_theater(steps)

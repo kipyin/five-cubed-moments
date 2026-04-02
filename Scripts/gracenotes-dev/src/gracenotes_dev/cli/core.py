@@ -6,6 +6,7 @@ import importlib.metadata
 import io
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -57,10 +58,18 @@ def _stdout_console() -> Console:
 
 
 def _cli_version() -> str:
+    """Distribution version plus loaded package path (confirms editable vs site-packages)."""
     try:
-        return importlib.metadata.version("gracenotes-dev")
+        ver = importlib.metadata.version("gracenotes-dev")
     except importlib.metadata.PackageNotFoundError:
-        return "unknown"
+        ver = "unknown"
+    try:
+        import gracenotes_dev as _pkg
+
+        loc = Path(_pkg.__file__).resolve().parent
+        return f"{ver} ({loc})"
+    except Exception:
+        return ver
 
 
 def _q_select(*args: object, **kwargs: object) -> object:
@@ -168,10 +177,24 @@ def _rich_theater_enabled() -> bool:
     return _supports_rich_output(sys.stdout) and _supports_rich_output(sys.stderr)
 
 
-def _run_theater(steps: list[TheaterStep]) -> float:
+def _emit_captured_command_failure(
+    completed: subprocess.CompletedProcess[str], argv: list[str]
+) -> None:
+    """Print a failed command's stderr/stdout when output was captured."""
+    console = _stderr_console()
+    console.print(f"Command failed ({completed.returncode}): {shlex.join(argv)}")
+    err = (completed.stderr or "").strip()
+    out = (completed.stdout or "").strip()
+    if err:
+        console.print(err)
+    if out:
+        console.print(out)
+
+
+def _run_theater(steps: list[TheaterStep], *, terse: bool = False) -> float:
     started_all = time.perf_counter()
     total = len(steps)
-    use_rich_theater = _rich_theater_enabled()
+    use_rich_theater = _rich_theater_enabled() and not terse
     for index, step in enumerate(steps, start=1):
         started_step = time.perf_counter()
         try:
@@ -211,22 +234,24 @@ def _run_theater(steps: list[TheaterStep]) -> float:
                 )
             raise
         elapsed = time.perf_counter() - started_step
-        if use_rich_theater:
-            _stdout_console().print(
-                _step_text(
-                    index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
-                ),
-            )
-        else:
-            _stdout_console().print(
-                _step_line(
-                    index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
-                ),
-            )
-        if detail:
-            _stdout_console().print(f"      {detail}")
+        if not terse:
+            if use_rich_theater:
+                _stdout_console().print(
+                    _step_text(
+                        index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
+                    ),
+                )
+            else:
+                _stdout_console().print(
+                    _step_line(
+                        index=index, total=total, title=step.title, outcome="ok", elapsed=elapsed
+                    ),
+                )
+            if detail:
+                _stdout_console().print(f"      {detail}")
     total_elapsed = time.perf_counter() - started_all
-    _stdout_console().print(f"Done. Total wall time {total_elapsed:.2f}s")
+    if not terse:
+        _stdout_console().print(f"Done. Total wall time {total_elapsed:.2f}s")
     return total_elapsed
 
 
@@ -529,13 +554,25 @@ def _xcodebuild_show_full_logs(*, verbose: bool) -> bool:
     return not sys.stdout.isatty()
 
 
-def _prepare_xcodebuild_argv(argv: list[str], *, verbose: bool) -> list[str]:
-    if _xcodebuild_show_full_logs(verbose=verbose):
-        return list(argv)
-    if len(argv) >= 2 and argv[0] == "xcodebuild":
-        if "-downloadPlatform" in argv or "-importPlatform" in argv:
-            return list(argv)
-    return xcode_helpers.with_quiet_flag(argv, quiet=True)
+def _prepare_xcodebuild_argv(
+    argv: list[str], *, verbose: bool, silent: bool = False
+) -> list[str]:
+    """Insert ``-quiet`` for xcodebuild when logs should stay concise.
+
+    ``silent=True`` (captured ``grace run`` steps) always uses ``-quiet`` unless ``verbose``.
+    """
+    args = list(argv)
+    if len(args) >= 2 and args[0] == "xcodebuild":
+        if "-downloadPlatform" in args or "-importPlatform" in args:
+            return args
+        if verbose:
+            return args
+        if silent:
+            return xcode_helpers.with_quiet_flag(args, quiet=True)
+        if _xcodebuild_show_full_logs(verbose=verbose):
+            return args
+        return xcode_helpers.with_quiet_flag(args, quiet=True)
+    return args
 
 
 def _run(
@@ -544,10 +581,21 @@ def _run(
     cwd: Path,
     check: bool = True,
     verbose: bool = False,
+    silent: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose)
+    prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose, silent=silent)
+    use_capture = silent
     try:
-        completed = subprocess.run(prepared_argv, cwd=str(cwd), check=False, text=True)
+        if use_capture:
+            completed = subprocess.run(
+                prepared_argv,
+                cwd=str(cwd),
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+        else:
+            completed = subprocess.run(prepared_argv, cwd=str(cwd), check=False, text=True)
     except FileNotFoundError:
         _fail(
             code=3,
@@ -556,6 +604,8 @@ def _run(
             likely_cause="The command is not installed or not available in PATH for this shell.",
         )
     if check and completed.returncode != 0:
+        if use_capture:
+            _emit_captured_command_failure(completed, prepared_argv)
         raise typer.Exit(code=completed.returncode)
     return completed
 
@@ -566,8 +616,9 @@ def _run_capture(
     cwd: Path,
     check: bool = True,
     verbose: bool = False,
+    silent: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose)
+    prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose, silent=silent)
     try:
         completed = subprocess.run(
             prepared_argv,
@@ -584,8 +635,7 @@ def _run_capture(
             likely_cause="The command is not installed or not available in PATH for this shell.",
         )
     if check and completed.returncode != 0:
-        if completed.stderr:
-            _stderr_console().print(completed.stderr.strip())
+        _emit_captured_command_failure(completed, prepared_argv)
         raise typer.Exit(code=completed.returncode)
     return completed
 

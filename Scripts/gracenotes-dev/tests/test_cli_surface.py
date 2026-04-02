@@ -62,7 +62,10 @@ class CLISurfaceTest(unittest.TestCase):
             result = runner.invoke(app, ["--version"])
 
         self.assertEqual(result.exit_code, 0)
-        self.assertEqual(result.output.strip(), "9.9.9")
+        out = result.output.strip()
+        self.assertTrue(out.startswith("9.9.9"), msg=out)
+        # Rich may soft-wrap long paths; compare without line breaks.
+        self.assertIn("gracenotes_dev", out.replace("\n", ""))
 
     def test_sim_help_includes_required_subcommands(self) -> None:
         runner = CliRunner()
@@ -542,6 +545,7 @@ class CLISurfaceTest(unittest.TestCase):
             cwd: Path,
             check: bool = True,
             verbose: bool = False,
+            silent: bool = False,
         ) -> subprocess.CompletedProcess[str]:
             capture_run.append(list(argv))
             return subprocess.CompletedProcess(argv, 0, "", "")
@@ -551,6 +555,8 @@ class CLISurfaceTest(unittest.TestCase):
             *,
             cwd: Path,
             check: bool = True,
+            verbose: bool = False,
+            silent: bool = False,
         ) -> subprocess.CompletedProcess[str]:
             capture_capture.append(list(argv))
             return subprocess.CompletedProcess(argv, 0, "com.gracenotes.GraceNotes: 12345", "")
@@ -593,6 +599,110 @@ class CLISurfaceTest(unittest.TestCase):
         )
         install_lines = [a for a in capture_run if a[:4] == ["xcrun", "simctl", "install", "u1"]]
         self.assertEqual(len(install_lines), 1)
+
+    def test_run_silent_build_even_when_ci_env_set(self) -> None:
+        """``grace run`` stays quiet by default even when ``CI`` is set (common in IDEs)."""
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+        ]
+        xcode_silents: list[bool] = []
+
+        def fake_run(
+            argv: list[str],
+            *,
+            cwd: Path,
+            check: bool = True,
+            verbose: bool = False,
+            silent: bool = False,
+        ) -> subprocess.CompletedProcess[str]:
+            if argv[:1] == ["xcodebuild"]:
+                xcode_silents.append(silent)
+            return subprocess.CompletedProcess(argv, 0, "", "")
+
+        def fake_capture(
+            argv: list[str],
+            *,
+            cwd: Path,
+            check: bool = True,
+            verbose: bool = False,
+            silent: bool = False,
+        ) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(argv, 0, "pid: 1", "")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_app = Path(tmp) / "GraceNotes.app"
+            fake_app.mkdir()
+            with mock.patch.dict(os.environ, {"CI": "true"}):
+                with mock.patch.object(cli_core, "_repo_root", return_value=repo_root):
+                    with mock.patch.object(cli_core, "_require_macos_xcode"):
+                        with mock.patch.object(
+                            simulator, "load_available_ios_devices", return_value=rows
+                        ):
+                            with mock.patch.object(
+                                cli.xcode_helpers, "built_app_path", return_value=fake_app
+                            ):
+                                with mock.patch.object(cli_core, "_run", side_effect=fake_run):
+                                    with mock.patch.object(
+                                        cli_core, "_run_capture", side_effect=fake_capture
+                                    ):
+                                        runner = CliRunner()
+                                        result = runner.invoke(app, ["run"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        self.assertEqual(xcode_silents, [True])
+
+    def test_run_stream_env_disables_quiet_build(self) -> None:
+        """GRACE_RUN_STREAM_TOOL_OUTPUT opts into live tool logs (silent=False on build)."""
+        repo_root = Path(__file__).resolve().parents[3]
+        rows = [
+            {"name": "iPhone 17 Pro", "runtime_version": "26.0", "runtime_key": "k1", "udid": "u1"},
+        ]
+        xcode_silents: list[bool] = []
+
+        def fake_run(
+            argv: list[str],
+            *,
+            cwd: Path,
+            check: bool = True,
+            verbose: bool = False,
+            silent: bool = False,
+        ) -> subprocess.CompletedProcess[str]:
+            if argv[:1] == ["xcodebuild"]:
+                xcode_silents.append(silent)
+            return subprocess.CompletedProcess(argv, 0, "", "")
+
+        def fake_capture(
+            argv: list[str],
+            *,
+            cwd: Path,
+            check: bool = True,
+            verbose: bool = False,
+            silent: bool = False,
+        ) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(argv, 0, "pid: 1", "")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_app = Path(tmp) / "GraceNotes.app"
+            fake_app.mkdir()
+            with mock.patch.dict(os.environ, {"GRACE_RUN_STREAM_TOOL_OUTPUT": "1"}):
+                with mock.patch.object(cli_core, "_repo_root", return_value=repo_root):
+                    with mock.patch.object(cli_core, "_require_macos_xcode"):
+                        with mock.patch.object(
+                            simulator, "load_available_ios_devices", return_value=rows
+                        ):
+                            with mock.patch.object(
+                                cli.xcode_helpers, "built_app_path", return_value=fake_app
+                            ):
+                                with mock.patch.object(cli_core, "_run", side_effect=fake_run):
+                                    with mock.patch.object(
+                                        cli_core, "_run_capture", side_effect=fake_capture
+                                    ):
+                                        runner = CliRunner()
+                                        result = runner.invoke(app, ["run"])
+
+        self.assertEqual(result.exit_code, 0, msg=result.output)
+        self.assertEqual(xcode_silents, [False])
 
     def test_matrix_test_resets_simulators_before_each_destination(self) -> None:
         repo_root = Path(__file__).resolve().parents[3]
@@ -880,6 +990,19 @@ class CLISurfaceTest(unittest.TestCase):
             ["xcodebuild", "-downloadPlatform", "iOS", "-exportPath", "/tmp/out"],
         )
         self.assertEqual(import_argv, ["xcodebuild", "-importPlatform", "/tmp/runtime.dmg"])
+
+    def test_prepare_xcodebuild_argv_silent_adds_quiet_even_when_non_tty_and_ci(self) -> None:
+        """Captured ``grace run`` builds use ``-quiet`` regardless of TTY / CI heuristics."""
+        non_tty = mock.Mock()
+        non_tty.isatty.return_value = False
+        with mock.patch.dict(os.environ, {"CI": "true"}, clear=False):
+            with mock.patch.object(sys, "stdout", non_tty):
+                argv = cli._prepare_xcodebuild_argv(
+                    ["xcodebuild", "build"],
+                    verbose=False,
+                    silent=True,
+                )
+        self.assertEqual(argv, ["xcodebuild", "-quiet", "build"])
 
     def test_config_set_updates_value_in_toml(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

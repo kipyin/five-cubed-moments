@@ -79,22 +79,41 @@ private struct GrowthStageDrillDownSheet: View {
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.reviewTextPrimary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 2)
+                } header: {
+                    Text(String(localized: "Summary"))
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
+                        .textCase(nil)
                 }
-                Section(String(localized: "Review history growth drilldown dates section")) {
+
+                Section {
                     ForEach(matchingDays, id: \.self) { day in
-                        Text(day.formatted(date: .abbreviated, time: .omitted))
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.reviewTextPrimary)
-                            .accessibilityLabel(
-                                day.formatted(date: .complete, time: .omitted)
-                            )
+                        NavigationLink {
+                            JournalScreen(entryDate: day)
+                        } label: {
+                            Text(day.formatted(date: .abbreviated, time: .omitted))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.reviewTextPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 2)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(day.formatted(date: .complete, time: .omitted))
+                        .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
                     }
+                } header: {
+                    Text(String(localized: "Review history growth drilldown dates section"))
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
+                        .textCase(nil)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.reviewBackground)
             .navigationTitle(growthStageDisplayTitle(for: level))
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "Done")) {
                         dismiss()
                     }
@@ -174,23 +193,34 @@ private struct SectionEntriesDrillDownSheet: View {
                                 localizedSectionTitle(for: section)
                             )
                         )
+                        .font(AppTheme.warmPaperBody)
+                        .foregroundStyle(AppTheme.reviewTextMuted)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List(contributingEntries, id: \.id) { entry in
-                        Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.reviewTextPrimary)
-                            .accessibilityLabel(
-                                entry.entryDate.formatted(date: .complete, time: .omitted)
-                            )
+                        NavigationLink {
+                            JournalScreen(entryDate: entry.entryDate)
+                        } label: {
+                            Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.reviewTextPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 2)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(
+                            entry.entryDate.formatted(date: .complete, time: .omitted)
+                        )
+                        .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
                     }
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .background(AppTheme.reviewBackground)
             .navigationTitle(localizedSectionTitle(for: section))
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "Done")) {
                         dismiss()
                     }

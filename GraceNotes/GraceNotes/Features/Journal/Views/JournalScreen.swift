@@ -3,7 +3,7 @@ import SwiftData
 import UIKit
 import Combine
 
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length
 // Keeping interaction helpers in this file preserves `private` on `@State` / `@AppStorage` / `@FocusState`;
 // Swift does not allow another file's `extension` to see those members.
 
@@ -177,6 +177,12 @@ struct JournalScreen: View {
     @State private var unlockToastMilestone: JournalUnlockMilestoneHighlight = .none
     @State private var journalScrollOffsetY: CGFloat = 0
     @State private var unlockToastScrollBaseline: CGFloat?
+    /// UIKit keyboard overlap with the key window; drives extra scroll padding and scroll-to-visible.
+    @State private var keyboardOverlapHeight: CGFloat = 0
+    /// Bottom safe area of the scroll view (tab bar / home indicator; may track keyboard when visible).
+    @State private var journalScrollBottomSafeArea: CGFloat = 0
+    @State private var journalKeyboardScrollTask: Task<Void, Never>?
+    @State private var isClearingFocusAfterScrollDismiss = false
     @State private var tutorialProgress = JournalTutorialProgress()
     @State private var showPostSeedJourney = false
     @State private var postSeedJourneySkipsCongratulations = false
@@ -199,6 +205,9 @@ struct JournalScreen: View {
     @State private var gratitudeInput = ""
     @State private var needInput = ""
     @State private var personInput = ""
+    @State private var gratitudeInputNewlineCount = 0
+    @State private var needInputNewlineCount = 0
+    @State private var personInputNewlineCount = 0
 
     @State private var editingGratitudeIndex: Int?
     @State private var editingNeedIndex: Int?
@@ -291,75 +300,191 @@ struct JournalScreen: View {
     }
 
     private var journalScrollContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
-                Group {
-                    DateSectionView(
-                        completionLevel: viewModel.completionLevel,
-                        celebratingLevel: celebratingLevel,
-                        gratitudesCount: viewModel.gratitudes.count,
-                        needsCount: viewModel.needs.count,
-                        peopleCount: viewModel.people.count
-                    )
+        ScrollViewReader { proxy in
+            journalScrollView(proxy: proxy)
+        }
+    }
 
-                    journalTutorialHintIfNeeded
-                    journalOnboardingSuggestionIfNeeded
-                }
-                .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
+    @ViewBuilder
+    private func journalScrollView(proxy: ScrollViewProxy) -> some View {
+        journalScrollViewWithModifiers(
+            content: ScrollView {
+                journalScrollMainColumn(proxy: proxy)
+            },
+            proxy: proxy
+        )
+    }
+
+    @ViewBuilder
+    private func journalScrollViewWithModifiers(content: some View, proxy: ScrollViewProxy) -> some View {
+        journalScrollViewWithKeyboardTracking(
+            content: journalScrollViewWithChrome(content: content),
+            proxy: proxy
+        )
+    }
+
+    @ViewBuilder
+    private func journalScrollViewWithChrome(content: some View) -> some View {
+        content
+            .background(
+                JournalNavigationBarTapProbe(isEnabled: isAnyInlineChipEditing) { context in
+                    guard context.isNavigationChrome else { return }
                     dismissInlineChipEditingSession()
                 }
-
-                journalSentenceSections
-
-                journalNotesSections
-
-                if let saveErrorMessage = viewModel.saveErrorMessage {
-                    Text(saveErrorMessage)
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(todayPalette.journalError)
-                }
-
-                if isAnyInlineChipEditing {
-                    Color.clear
-                        .frame(minHeight: SequentialSectionInlineLayout.inlineEditBottomTapCatcherMinHeight)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissInlineChipEditingSession()
-                        }
+            )
+            .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
+            .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
+                journalScrollOffsetY = offsetY
+                if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
+                    if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
+                        dismissUnlockToastIfNeeded()
+                    }
                 }
             }
-            .padding(.horizontal, AppTheme.todayHorizontalPadding)
-            .padding(.top, AppTheme.todayTopPadding)
-            .padding(.bottom, contentBottomPadding)
-            .background(journalScrollOffsetReader)
-            .background(journalInlineScrollBackdropDismiss)
-            .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
-                dismissUnlockToastIfNeeded()
-            }
-        }
-        .background(
-            JournalNavigationBarTapProbe(isEnabled: isAnyInlineChipEditing) { context in
-                guard context.isNavigationChrome else { return }
-                dismissInlineChipEditingSession()
-            }
-        )
-        .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
-        .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
-            journalScrollOffsetY = offsetY
-            if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
-                if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
-                    dismissUnlockToastIfNeeded()
-                }
-            }
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .scrollContentBackground(.hidden)
-        .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
     }
+
+    @ViewBuilder
+    private func journalScrollViewWithKeyboardTracking(content: some View, proxy: ScrollViewProxy) -> some View {
+        content
+            .onReceive(
+                NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
+            ) { notification in
+                handleKeyboardDidChangeFrame(notification)
+            }
+            .onChange(of: keyboardOverlapHeight) { oldOverlap, newOverlap in
+                journalKeyboardOverlapChanged(proxy: proxy, oldOverlap: oldOverlap, newOverlap: newOverlap)
+            }
+            .onChange(of: isReadingNotesFocused) { _, isFocused in
+                guard isFocused else { return }
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: .focusChanged(.readingNotes))
+            }
+            .onChange(of: isReflectionsFocused) { _, isFocused in
+                guard isFocused else { return }
+                scheduleJournalKeyboardScroll(proxy: proxy, reason: .focusChanged(.reflections))
+            }
+            .overlay {
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: JournalScrollBottomSafeAreaPreferenceKey.self,
+                        value: geo.safeAreaInsets.bottom
+                    )
+                }
+                .allowsHitTesting(false)
+            }
+            .onPreferenceChange(JournalScrollBottomSafeAreaPreferenceKey.self) { inset in
+                journalScrollBottomSafeArea = inset
+            }
+            .scrollDismissesKeyboard(.immediately)
+            .scrollContentBackground(.hidden)
+            .background(todayPalette.background.ignoresSafeArea(edges: [.top, .bottom]))
+    }
+
+    private func journalKeyboardOverlapChanged(
+        proxy: ScrollViewProxy,
+        oldOverlap: CGFloat,
+        newOverlap: CGFloat
+    ) {
+        if oldOverlap > 0, newOverlap == 0, isAnyJournalFieldFocused {
+            clearJournalFocusAfterScrollDismiss()
+        }
+        guard newOverlap > 0, isAnyJournalFieldFocused else { return }
+        guard JournalKeyboardScrollCoordinator.shouldScheduleScrollAfterOverlapChange(
+            oldOverlap: oldOverlap,
+            newOverlap: newOverlap
+        ) else { return }
+        scheduleJournalKeyboardScroll(proxy: proxy, reason: .keyboardDidChangeFrame)
+    }
+
+    private func handleKeyboardDidChangeFrame(_ notification: Notification) {
+        let nextOverlap = JournalKeyboardOverlapReader.overlapHeight(from: notification)
+        keyboardOverlapHeight = nextOverlap
+    }
+
+    private func clearJournalFocusAfterScrollDismiss() {
+        guard !isClearingFocusAfterScrollDismiss else { return }
+        isClearingFocusAfterScrollDismiss = true
+        journalKeyboardScrollTask?.cancel()
+        clearJournalFocusAndResignFirstResponder()
+        DispatchQueue.main.async {
+            for _ in 1...3 {
+                if !isAnyJournalFieldFocused { break }
+                clearJournalFocusAndResignFirstResponder()
+            }
+            isClearingFocusAfterScrollDismiss = false
+        }
+    }
+
+    private func clearJournalFocusAndResignFirstResponder() {
+        clearAllJournalFocusBindings()
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
+    private func clearAllJournalFocusBindings() {
+        isGratitudeInputFocused = false
+        isNeedInputFocused = false
+        isPersonInputFocused = false
+        isReadingNotesFocused = false
+        isReflectionsFocused = false
+    }
+
 }
 
 private extension JournalScreen {
+    @ViewBuilder
+    func journalScrollMainColumn(proxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
+            Group {
+                DateSectionView(
+                    completionLevel: viewModel.completionLevel,
+                    celebratingLevel: celebratingLevel,
+                    gratitudesCount: viewModel.gratitudes.count,
+                    needsCount: viewModel.needs.count,
+                    peopleCount: viewModel.people.count
+                )
+
+                journalTutorialHintIfNeeded
+                journalOnboardingSuggestionIfNeeded
+            }
+            .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
+                dismissInlineChipEditingSession()
+            }
+
+            journalSentenceSections(proxy: proxy)
+                .id(JournalScrollTarget.sentenceSections)
+
+            journalNotesSections(proxy: proxy)
+
+            if let saveErrorMessage = viewModel.saveErrorMessage {
+                Text(saveErrorMessage)
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(todayPalette.journalError)
+            }
+
+            if isAnyInlineChipEditing {
+                Color.clear
+                    .frame(minHeight: SequentialSectionInlineLayout.inlineEditBottomTapCatcherMinHeight)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissInlineChipEditingSession()
+                    }
+            }
+        }
+        .padding(.horizontal, AppTheme.todayHorizontalPadding)
+        .padding(.top, AppTheme.todayTopPadding)
+        .padding(.bottom, contentBottomPadding)
+        .background(journalScrollOffsetReader)
+        .background(journalInlineScrollBackdropDismiss)
+        .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
+            dismissUnlockToastIfNeeded()
+        }
+    }
+
     var effectiveTodayAppearance: JournalAppearanceMode {
         if entryDate != nil { return .standard }
         return JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
@@ -456,7 +581,21 @@ private extension JournalScreen {
     }
 
     var contentBottomPadding: CGFloat {
-        AppTheme.todayBottomPadding + bottomSpacingAdjustment
+        AppTheme.todayBottomPadding + bottomSpacingAdjustment + journalKeyboardExtraScrollPadding
+    }
+
+    /// Extra bottom padding so multiline editors can scroll above the keyboard with a comfort margin.
+    private var journalKeyboardExtraScrollPadding: CGFloat {
+        guard keyboardOverlapHeight > 0 else { return 0 }
+        if isMultilineNotesFieldFocused {
+            let uncovered = max(0, keyboardOverlapHeight - journalScrollBottomSafeArea)
+            return uncovered + JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+        }
+        if isAnyChipInputFocused {
+            // Keep chip editor caret a little above keyboard without the large uncovered-padding jump.
+            return JournalKeyboardScrollMetrics.comfortMarginAboveKeyboard()
+        }
+        return 0
     }
 
     /// Single backdrop behind the journal column: taps on “empty” scroll space dismiss inline editing.
@@ -517,116 +656,215 @@ private extension JournalScreen {
         }
     }
 
-    var journalSentenceSections: some View {
+    func journalSentenceSections(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todayClusterSpacing) {
-            SequentialSectionView(
-                title: String(localized: "Gratitudes"),
-                addButtonTitle: viewModel.gratitudes.isEmpty
-                    ? String(localized: "Add gratitude")
-                    : String(localized: "Add another gratitude"),
-                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
-                guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
-                guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
-                guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .gratitude)?
-                    .messageSecondary,
-                items: viewModel.gratitudes,
-                placeholder: String(localized: "What's one thing you're grateful for?"),
-                slotCount: JournalViewModel.slotCount,
-                inputAccessibilityIdentifier: "Gratitude 1",
-                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalGratitudeStrip"
-                    : nil,
-                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalSectionAdd.gratitude"
-                    : nil,
-                onboardingState: onboardingPresentation.state(for: .gratitude),
-                isTransitioning: isGratitudeTransitioning,
-                inputText: $gratitudeInput,
-                editingIndex: editingGratitudeIndex,
-                inputFocus: $isGratitudeInputFocused,
-                onSubmit: submitGratitude,
-                onItemTap: { index in chipTapped(section: .gratitude, index: index) },
-                onMoveItem: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
-                onDeleteItem: { index in deleteChip(section: .gratitude, index: index) },
-                onAddNew: { addNewTapped(section: .gratitude) },
-                isAddMorphComposerVisible: $isGratitudeAddMorphComposerVisible,
-                ambientInlineEditingActive: isAnyInlineChipEditing,
-                sectionHostsInlineFocus: editingGratitudeIndex != nil || isGratitudeAddMorphComposerVisible,
-                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
-            )
-
-            SequentialSectionView(
-                title: String(localized: "Needs"),
-                addButtonTitle: viewModel.needs.isEmpty
-                    ? String(localized: "Add need")
-                    : String(localized: "Add another need"),
-                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
-                guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
-                guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
-                items: viewModel.needs,
-                placeholder: String(localized: "What do you need today?"),
-                slotCount: JournalViewModel.slotCount,
-                inputAccessibilityIdentifier: "Need 1",
-                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalNeedStrip"
-                    : nil,
-                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalSectionAdd.need"
-                    : nil,
-                onboardingState: onboardingPresentation.state(for: .need),
-                isTransitioning: isNeedTransitioning,
-                inputText: $needInput,
-                editingIndex: editingNeedIndex,
-                inputFocus: $isNeedInputFocused,
-                onSubmit: submitNeed,
-                onItemTap: { index in chipTapped(section: .need, index: index) },
-                onMoveItem: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
-                onDeleteItem: { index in deleteChip(section: .need, index: index) },
-                onAddNew: { addNewTapped(section: .need) },
-                isAddMorphComposerVisible: $isNeedAddMorphComposerVisible,
-                ambientInlineEditingActive: isAnyInlineChipEditing,
-                sectionHostsInlineFocus: editingNeedIndex != nil || isNeedAddMorphComposerVisible,
-                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
-            )
-
-            SequentialSectionView(
-                title: String(localized: "People in Mind"),
-                addButtonTitle: viewModel.people.isEmpty
-                    ? String(localized: "Add person")
-                    : String(localized: "Add another person"),
-                addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
-                guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
-                guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
-                items: viewModel.people,
-                placeholder: String(localized: "Who are you thinking of today?"),
-                slotCount: JournalViewModel.slotCount,
-                inputAccessibilityIdentifier: "Person 1",
-                stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalPersonStrip"
-                    : nil,
-                addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
-                    ? "JournalSectionAdd.person"
-                    : nil,
-                onboardingState: onboardingPresentation.state(for: .person),
-                isTransitioning: isPersonTransitioning,
-                inputText: $personInput,
-                editingIndex: editingPersonIndex,
-                inputFocus: $isPersonInputFocused,
-                onSubmit: submitPerson,
-                onItemTap: { index in chipTapped(section: .person, index: index) },
-                onMoveItem: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
-                onDeleteItem: { index in deleteChip(section: .person, index: index) },
-                onAddNew: { addNewTapped(section: .person) },
-                isAddMorphComposerVisible: $isPersonAddMorphComposerVisible,
-                ambientInlineEditingActive: isAnyInlineChipEditing,
-                sectionHostsInlineFocus: editingPersonIndex != nil || isPersonAddMorphComposerVisible,
-                onRequestDismissInlineEditing: { dismissInlineChipEditingSession() }
-            )
+            gratitudesSequentialSection
+            needsSequentialSection
+            peopleSequentialSection
         }
         .padding(.top, AppTheme.spacingTight)
+        .onChange(of: gratitudeInput) { oldValue, newValue in
+            scheduleChipKeyboardScrollOnTextChange(
+                .init(
+                    proxy: proxy,
+                    isInputFocused: isGratitudeInputFocused,
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    scrollTarget: .gratitudeSection
+                ),
+                storedNewlineCount: &gratitudeInputNewlineCount
+            )
+        }
+        .onChange(of: needInput) { oldValue, newValue in
+            scheduleChipKeyboardScrollOnTextChange(
+                .init(
+                    proxy: proxy,
+                    isInputFocused: isNeedInputFocused,
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    scrollTarget: .needInputArea
+                ),
+                storedNewlineCount: &needInputNewlineCount
+            )
+        }
+        .onChange(of: personInput) { oldValue, newValue in
+            scheduleChipKeyboardScrollOnTextChange(
+                .init(
+                    proxy: proxy,
+                    isInputFocused: isPersonInputFocused,
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    scrollTarget: .peopleInputArea
+                ),
+                storedNewlineCount: &personInputNewlineCount
+            )
+        }
     }
 
-    var journalNotesSections: some View {
+    private struct SentenceChipTextChange {
+        let proxy: ScrollViewProxy
+        let isInputFocused: Bool
+        let oldValue: String
+        let newValue: String
+        let scrollTarget: JournalScrollTarget
+    }
+
+    private func scheduleChipKeyboardScrollOnTextChange(
+        _ change: SentenceChipTextChange,
+        storedNewlineCount: inout Int
+    ) {
+        if change.isInputFocused, keyboardOverlapHeight > 0, change.newValue.count > change.oldValue.count {
+            scheduleJournalKeyboardScroll(proxy: change.proxy, reason: .typing(change.scrollTarget))
+        }
+        let newCount = change.newValue.filter { $0 == "\n" }.count
+        if newCount > storedNewlineCount {
+            scheduleJournalKeyboardScroll(proxy: change.proxy, reason: .newlineAdded(change.scrollTarget))
+        }
+        storedNewlineCount = newCount
+    }
+
+    private var gratitudesSequentialSection: some View {
+        SequentialSectionView(
+            title: String(localized: "Gratitudes"),
+            addButtonTitle: viewModel.gratitudes.isEmpty
+                ? String(localized: "Add gratitude")
+                : String(localized: "Add another gratitude"),
+            addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
+            guidanceTitle: onboardingPresentation.sectionGuidance(for: .gratitude)?.title,
+            guidanceMessage: onboardingPresentation.sectionGuidance(for: .gratitude)?.message,
+            guidanceMessageSecondary: onboardingPresentation.sectionGuidance(for: .gratitude)?
+                .messageSecondary,
+            items: viewModel.gratitudes,
+            placeholder: String(localized: "What's one thing you're grateful for?"),
+            slotCount: JournalViewModel.slotCount,
+            inputAccessibilityIdentifier: "Gratitude 1",
+            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalGratitudeStrip"
+                : nil,
+            addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalSectionAdd.gratitude"
+                : nil,
+            onboardingState: onboardingPresentation.state(for: .gratitude),
+            isTransitioning: isGratitudeTransitioning,
+            inputText: $gratitudeInput,
+            editingIndex: editingGratitudeIndex,
+            inputFocus: $isGratitudeInputFocused,
+            onSubmit: submitGratitude,
+            onItemTap: { index in chipTapped(section: .gratitude, index: index) },
+            onMoveItem: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
+            onDeleteItem: { index in deleteChip(section: .gratitude, index: index) },
+            onAddNew: { addNewTapped(section: .gratitude) },
+            isAddMorphComposerVisible: $isGratitudeAddMorphComposerVisible,
+            ambientInlineEditingActive: isAnyInlineChipEditing,
+            sectionHostsInlineFocus: editingGratitudeIndex != nil || isGratitudeAddMorphComposerVisible,
+            onRequestDismissInlineEditing: { dismissInlineChipEditingSession() },
+            keyboardScrollAnchorID: .gratitudeSection
+        )
+    }
+
+    private var needsSequentialSection: some View {
+        SequentialSectionView(
+            title: String(localized: "Needs"),
+            addButtonTitle: viewModel.needs.isEmpty
+                ? String(localized: "Add need")
+                : String(localized: "Add another need"),
+            addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
+            guidanceTitle: onboardingPresentation.sectionGuidance(for: .need)?.title,
+            guidanceMessage: onboardingPresentation.sectionGuidance(for: .need)?.message,
+            items: viewModel.needs,
+            placeholder: String(localized: "What do you need today?"),
+            slotCount: JournalViewModel.slotCount,
+            inputAccessibilityIdentifier: "Need 1",
+            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalNeedStrip"
+                : nil,
+            addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalSectionAdd.need"
+                : nil,
+            onboardingState: onboardingPresentation.state(for: .need),
+            isTransitioning: isNeedTransitioning,
+            inputText: $needInput,
+            editingIndex: editingNeedIndex,
+            inputFocus: $isNeedInputFocused,
+            onSubmit: submitNeed,
+            onItemTap: { index in chipTapped(section: .need, index: index) },
+            onMoveItem: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
+            onDeleteItem: { index in deleteChip(section: .need, index: index) },
+            onAddNew: { addNewTapped(section: .need) },
+            isAddMorphComposerVisible: $isNeedAddMorphComposerVisible,
+            ambientInlineEditingActive: isAnyInlineChipEditing,
+            sectionHostsInlineFocus: editingNeedIndex != nil || isNeedAddMorphComposerVisible,
+            onRequestDismissInlineEditing: { dismissInlineChipEditingSession() },
+            keyboardScrollAnchorID: .needInputArea
+        )
+    }
+
+    private var peopleSequentialSection: some View {
+        SequentialSectionView(
+            title: String(localized: "People in Mind"),
+            addButtonTitle: viewModel.people.isEmpty
+                ? String(localized: "Add person")
+                : String(localized: "Add another person"),
+            addButtonAccessibilityHint: String(localized: "Opens a text field so you can add another item."),
+            showsTrailingChevronOnAddRow: false,
+            guidanceTitle: onboardingPresentation.sectionGuidance(for: .person)?.title,
+            guidanceMessage: onboardingPresentation.sectionGuidance(for: .person)?.message,
+            items: viewModel.people,
+            placeholder: String(localized: "Who are you thinking of today?"),
+            slotCount: JournalViewModel.slotCount,
+            inputAccessibilityIdentifier: "Person 1",
+            stripAccessibilityIdentifierPrefix: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalPersonStrip"
+                : nil,
+            addItemAccessibilityIdentifier: ProcessInfo.graceNotesIsRunningUITests
+                ? "JournalSectionAdd.person"
+                : nil,
+            onboardingState: onboardingPresentation.state(for: .person),
+            isTransitioning: isPersonTransitioning,
+            inputText: $personInput,
+            editingIndex: editingPersonIndex,
+            inputFocus: $isPersonInputFocused,
+            onSubmit: submitPerson,
+            onItemTap: { index in chipTapped(section: .person, index: index) },
+            onMoveItem: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
+            onDeleteItem: { index in deleteChip(section: .person, index: index) },
+            onAddNew: { addNewTapped(section: .person) },
+            isAddMorphComposerVisible: $isPersonAddMorphComposerVisible,
+            ambientInlineEditingActive: isAnyInlineChipEditing,
+            sectionHostsInlineFocus: editingPersonIndex != nil || isPersonAddMorphComposerVisible,
+            onRequestDismissInlineEditing: { dismissInlineChipEditingSession() },
+            keyboardScrollAnchorID: .peopleInputArea
+        )
+    }
+
+    func journalNotesSections(proxy: ScrollViewProxy) -> some View {
+        journalNotesSectionsStack(proxy: proxy)
+            .onChange(of: viewModel.readingNotes) { oldValue, newValue in
+            // Outer scroll keeps the notes field above the keyboard; bounded `TextEditor` height keeps the
+            // section from growing without limit (avoids pinning the caret off the top of the screen).
+            if isReadingNotesFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: .typing(.readingNotes)
+                )
+            }
+            }
+            .onChange(of: viewModel.reflections) { oldValue, newValue in
+            if isReflectionsFocused,
+               keyboardOverlapHeight > 0,
+               newValue.count > oldValue.count {
+                scheduleJournalKeyboardScroll(
+                    proxy: proxy,
+                    reason: .typing(.reflections)
+                )
+            }
+            }
+    }
+
+    @ViewBuilder
+    private func journalNotesSectionsStack(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todayNotesSpacing) {
             EditableTextSection(
                 title: String(localized: "Reading Notes"),
@@ -639,7 +877,14 @@ private extension JournalScreen {
                     set: { viewModel.updateReadingNotes($0) }
                 ),
                 onboardingState: onboardingPresentation.state(for: .readingNotes),
-                inputFocus: $isReadingNotesFocused
+                inputFocus: $isReadingNotesFocused,
+                keyboardScrollAnchorID: .readingNotes,
+                onMultilineLineAdded: {
+                    scheduleJournalKeyboardScroll(
+                        proxy: proxy,
+                        reason: .newlineAdded(.readingNotes)
+                    )
+                }
             )
             EditableTextSection(
                 title: String(localized: "Reflections"),
@@ -648,10 +893,49 @@ private extension JournalScreen {
                     set: { viewModel.updateReflections($0) }
                 ),
                 onboardingState: onboardingPresentation.state(for: .reflections),
-                inputFocus: $isReflectionsFocused
+                inputFocus: $isReflectionsFocused,
+                keyboardScrollAnchorID: .reflections,
+                onMultilineLineAdded: {
+                    scheduleJournalKeyboardScroll(
+                        proxy: proxy,
+                        reason: .newlineAdded(.reflections)
+                    )
+                }
             )
         }
         .padding(.top, AppTheme.spacingTight)
+    }
+
+    private func scheduleJournalKeyboardScroll(
+        proxy: ScrollViewProxy,
+        reason: JournalKeyboardScrollReason
+    ) {
+        let resolvedTarget = reason.explicitTarget ?? currentJournalScrollTarget()
+        guard keyboardOverlapHeight > 0 else { return }
+        guard let scrollTarget = resolvedTarget else { return }
+        JournalKeyboardScrollCoordinator.scheduleScrollAdjust(
+            request: JournalKeyboardScrollRequest(
+                proxy: proxy,
+                reason: reason,
+                scrollTarget: scrollTarget,
+                keyboardOverlapHeight: keyboardOverlapHeight,
+                reduceMotion: reduceMotion,
+                showPostSeedJourney: showPostSeedJourney
+            ),
+            existingTask: &journalKeyboardScrollTask
+        )
+    }
+
+    private func currentJournalScrollTarget() -> JournalScrollTarget? {
+        if isGratitudeInputFocused || isNeedInputFocused || isPersonInputFocused {
+            if isGratitudeInputFocused { return .gratitudeSection }
+            if isNeedInputFocused { return .needInputArea }
+            if isPersonInputFocused { return .peopleInputArea }
+            return .sentenceSections
+        }
+        if isReadingNotesFocused { return .readingNotes }
+        if isReflectionsFocused { return .reflections }
+        return nil
     }
 
     var journalToastOverlay: some View {
@@ -683,17 +967,7 @@ private extension JournalScreen {
 
     func dismissAllJournalFocusIfPostSeedJourneyPresented(_ isPresented: Bool) {
         guard isPresented else { return }
-        isGratitudeInputFocused = false
-        isNeedInputFocused = false
-        isPersonInputFocused = false
-        isReadingNotesFocused = false
-        isReflectionsFocused = false
-        UIApplication.shared.sendAction(
-            #selector(UIResponder.resignFirstResponder),
-            to: nil,
-            from: nil,
-            for: nil
-        )
+        clearJournalFocusAndResignFirstResponder()
     }
 
     func scheduleSavedToPhotosToast() {
@@ -891,6 +1165,10 @@ private extension JournalScreen {
             isPersonInputFocused ||
             isReadingNotesFocused ||
             isReflectionsFocused
+    }
+
+    var isMultilineNotesFieldFocused: Bool {
+        isReadingNotesFocused || isReflectionsFocused
     }
 
     var onboardingSuggestionContext: JournalOnboardingSuggestionContext {
@@ -1351,12 +1629,14 @@ private extension JournalScreen {
 
     func restoreInputFocus(_ focus: FocusState<Bool>.Binding) {
         guard !showPostSeedJourney else { return }
+        guard !isClearingFocusAfterScrollDismiss else { return }
         // Apply focus immediately so keyboard spin-up starts without waiting a turn.
         focus.wrappedValue = true
 
         Task { @MainActor in
             await Task.yield()
             guard !showPostSeedJourney else { return }
+            guard !isClearingFocusAfterScrollDismiss else { return }
             if !focus.wrappedValue {
                 focus.wrappedValue = true
             }
@@ -1497,4 +1777,4 @@ private extension JournalScreen {
         }
     }
 }
-// swiftlint:enable file_length
+// swiftlint:enable file_length type_body_length

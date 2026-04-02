@@ -256,19 +256,10 @@ struct MostRecurringBrowseSheetContainer: View {
 
 struct TrendingBrowseSheetContainer: View {
     let buckets: ReviewTrendingBuckets
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             TrendingThemesBrowseView(buckets: buckets)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(String(localized: "Done")) {
-                            dismiss()
-                        }
-                        .accessibilityIdentifier("TrendingBrowseSheetDone")
-                    }
-                }
         }
     }
 }
@@ -433,6 +424,7 @@ struct MostRecurringBrowseRowModel: Identifiable {
 
 struct TrendingThemesBrowseView: View {
     let buckets: ReviewTrendingBuckets
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
@@ -449,6 +441,15 @@ struct TrendingThemesBrowseView: View {
         .scrollContentBackground(.hidden)
         .background(AppTheme.reviewBackground)
         .navigationTitle(String(localized: "Trending"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(String(localized: "Done")) {
+                    dismiss()
+                }
+                .accessibilityIdentifier("TrendingBrowseSheetDone")
+            }
+        }
     }
 
     private func trendingSection(title: String, themes: [ReviewMovementTheme]) -> some View {

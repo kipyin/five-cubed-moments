@@ -1,5 +1,6 @@
 import XCTest
 
+// swiftlint:disable type_body_length
 /// UI tests use `-ui-testing`. To reset journal tutorial flags (issue #60), add
 /// `-reset-journal-tutorial` to `launchArguments` before `launch()`.
 final class JournalUITests: XCTestCase {
@@ -33,6 +34,35 @@ final class JournalUITests: XCTestCase {
     /// Today’s journal composers use `UITextView`; XCUI exposes them as TextView, not TextField.
     private func journalTextView(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
         app.textViews[identifier]
+    }
+
+    /// XCTest does not expose `hasKeyboardFocus` on `XCUIElement` for iOS targets; KVC matches
+    /// the accessibility value when the software keyboard UI is absent (e.g. hardware keyboard).
+    private func hasVisibleKeyboardOrFocusedEditor(_ editor: XCUIElement, in app: XCUIApplication) -> Bool {
+        if app.keyboards.firstMatch.exists { return true }
+        return (editor.value(forKey: "hasKeyboardFocus") as? Bool) ?? false
+    }
+
+    @MainActor
+    private func openInlineEditor(
+        stripId: String,
+        editorId: String,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        let strip = app.buttons[stripId]
+        XCTAssertTrue(strip.waitForExistence(timeout: 6), "Expected strip \(stripId) to exist.")
+        let editor = journalTextView(editorId, in: app)
+        for attempt in 0..<3 {
+            if !strip.isHittable {
+                app.swipeUp()
+            }
+            strip.tap()
+            if editor.waitForExistence(timeout: attempt == 0 ? 2 : 4) {
+                return editor
+            }
+        }
+        XCTFail("Expected inline editor \(editorId) after tapping strip \(stripId).")
+        return editor
     }
 
     @MainActor
@@ -395,23 +425,117 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(firstStrip.waitForExistence(timeout: 5))
         XCTAssertTrue(secondStrip.waitForExistence(timeout: 5))
 
-        firstStrip.tap()
-        let firstEditor = journalTextView("JournalGratitudeStrip.0.editor", in: app)
-        XCTAssertTrue(firstEditor.waitForExistence(timeout: 5))
+        let firstEditor = openInlineEditor(
+            stripId: "JournalGratitudeStrip.0",
+            editorId: "JournalGratitudeStrip.0.editor",
+            in: app
+        )
         firstEditor.typeText(" UPDATED")
 
-        secondStrip.tap()
-        let secondEditor = journalTextView("JournalGratitudeStrip.1.editor", in: app)
-        XCTAssertTrue(secondEditor.waitForExistence(timeout: 5))
+        let secondEditor = openInlineEditor(
+            stripId: "JournalGratitudeStrip.1",
+            editorId: "JournalGratitudeStrip.1.editor",
+            in: app
+        )
         XCTAssertEqual(secondEditor.value as? String, "Second gratitude sentence")
 
-        firstStrip.tap()
-        let firstEditorReopened = journalTextView("JournalGratitudeStrip.0.editor", in: app)
-        XCTAssertTrue(firstEditorReopened.waitForExistence(timeout: 5))
+        let firstEditorReopened = openInlineEditor(
+            stripId: "JournalGratitudeStrip.0",
+            editorId: "JournalGratitudeStrip.0.editor",
+            in: app
+        )
         let firstValue = firstEditorReopened.value as? String ?? ""
         XCTAssertTrue(
             firstValue.contains("UPDATED"),
             "Expected first strip edits to persist after focusing another strip."
         )
     }
+
+    @MainActor
+    func test_todayScreen_needInlineEditor_canSwitchBetweenRowsWithKeyboard() {
+        let app = launchApp()
+        addGratitude("Starter for needs keyboard test", in: app)
+        addNeed("First need line", in: app)
+
+        let addNeedBtn = app.buttons["JournalSectionAdd.need"].firstMatch
+        XCTAssertTrue(addNeedBtn.waitForExistence(timeout: 6))
+        addNeedBtn.tap()
+
+        let needField = journalTextView("Need 1", in: app)
+        XCTAssertTrue(needField.waitForExistence(timeout: 5))
+        needField.tap()
+        needField.typeText("Second need draft")
+        let returnKey = app.keyboards.buttons["Return"]
+        if returnKey.exists, returnKey.isHittable {
+            returnKey.tap()
+        } else {
+            needField.typeText("\n")
+        }
+        XCTAssertTrue(
+            app.buttons["JournalNeedStrip.1"].waitForExistence(timeout: 10),
+            "Expected second need strip after submitting draft."
+        )
+
+        let firstEditor = openInlineEditor(
+            stripId: "JournalNeedStrip.0",
+            editorId: "JournalNeedStrip.0.editor",
+            in: app
+        )
+        firstEditor.typeText(" edited")
+
+        _ = openInlineEditor(
+            stripId: "JournalNeedStrip.1",
+            editorId: "JournalNeedStrip.1.editor",
+            in: app
+        )
+
+        let firstReopened = openInlineEditor(
+            stripId: "JournalNeedStrip.0",
+            editorId: "JournalNeedStrip.0.editor",
+            in: app
+        )
+        XCTAssertTrue(
+            (firstReopened.value as? String)?.contains("edited") == true,
+            "Expected first need edits after focusing another strip."
+        )
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForExistence(timeout: 4),
+            "Keyboard should stay available when switching need rows during inline editing."
+        )
+    }
+
+    @MainActor
+    func test_todayScreen_gratitudeInlineEditor_longMultilineInput_staysEditable() {
+        let app = launchApp()
+        addGratitude("Seed for long multiline test", in: app)
+
+        let editor = openInlineEditor(
+            stripId: "JournalGratitudeStrip.0",
+            editorId: "JournalGratitudeStrip.0.editor",
+            in: app
+        )
+        let chunk = "One two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen. "
+        var body = ""
+        for _ in 0 ..< 12 {
+            body += chunk
+        }
+        editor.typeText(body)
+
+        let value = editor.value as? String ?? ""
+        XCTAssertGreaterThan(
+            value.count,
+            400,
+            "Expected long wrapped input to remain in the inline editor."
+        )
+        XCTAssertTrue(
+            editor.waitForExistence(timeout: 2),
+            "Inline editor should remain on-screen after long input."
+        )
+        XCTAssertTrue(
+            hasVisibleKeyboardOrFocusedEditor(editor, in: app),
+            "Expected keyboard or focused editor after long multiline input."
+        )
+    }
 }
+
+// swiftlint:enable type_body_length

@@ -379,6 +379,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld fuller days" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -481,6 +484,7 @@
       }
     },
     "2 weeks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -497,6 +501,7 @@
       }
     },
     "4 weeks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -513,6 +518,7 @@
       }
     },
     "8 weeks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -629,54 +635,6 @@
         }
       }
     },
-    "Add gratitude" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add gratitude"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记一件感恩的事"
-          }
-        }
-      }
-    },
-    "Add need" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add need"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记一件需要的事"
-          }
-        }
-      }
-    },
-    "Add person" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add person"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记一位牵挂的人"
-          }
-        }
-      }
-    },
     "Add another gratitude" : {
       "localizations" : {
         "en" : {
@@ -738,6 +696,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 %@ 中再添加一句内容"
+          }
+        }
+      }
+    },
+    "Add gratitude" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add gratitude"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记一件感恩的事"
+          }
+        }
+      }
+    },
+    "Add need" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add need"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记一件需要的事"
           }
         }
       }
@@ -804,6 +794,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在任一部分多写几条，小步最容易坚持。需要提示时，也可以随时点按上方状态。"
+          }
+        }
+      }
+    },
+    "Add person" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add person"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记一位牵挂的人"
           }
         }
       }
@@ -1123,6 +1129,9 @@
         }
       }
     },
+    "Bloom" : {
+
+    },
     "Both %1$@ and %2$@ showed up more than once in your week." : {
       "localizations" : {
         "en" : {
@@ -1424,7 +1433,6 @@
       }
     },
     "Completion this week" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2911,22 +2919,6 @@
         }
       }
     },
-    "Growth stages" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Growth stages"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完成度分布"
-          }
-        }
-      }
-    },
     "Growing" : {
       "localizations" : {
         "en" : {
@@ -2939,6 +2931,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "枝条初成"
+          }
+        }
+      }
+    },
+    "Growth stages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Growth stages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成度分布"
           }
         }
       }
@@ -3901,6 +3909,7 @@
       }
     },
     "Open journal entry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4042,6 +4051,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "过去七天节奏"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.allJournal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "all entries to date"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部手记至今"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastNMonths" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last %lld months"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 个月"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastNWeeks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last %lld weeks"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 周"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastNYears" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last %lld years"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 年"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastOneMonth" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last month"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近一个月"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastOneWeek" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近一周"
+          }
+        }
+      }
+    },
+    "PastStatisticsInterval.phrase.lastOneYear" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the last year"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近一年"
           }
         }
       }
@@ -4842,6 +4963,22 @@
         }
       }
     },
+    "Review.mostRecurring.drilldown.subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentioned %1$lld times across %2$@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共出现 %1$lld 次（%2$@）。"
+          }
+        }
+      }
+    },
     "Revisit when you are ready" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4974,6 +5111,22 @@
         }
       }
     },
+    "Section Distribution" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section mix"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录分布"
+          }
+        }
+      }
+    },
     "Sections for gratitude, needs, and people-in-mind help you begin without overthinking." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5025,22 +5178,6 @@
         }
       }
     },
-    "Section Distribution" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Section mix"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记录分布"
-          }
-        }
-      }
-    },
     "Selected" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5070,73 +5207,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "设置"
-          }
-        }
-      }
-    },
-    "Settings.ai.a11y.enableForConnectionCheck" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn on Summarize and Insights to check connection status."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先开启摘要与洞察，以检查连接状态。"
-          }
-        }
-      }
-    },
-    "Settings.ai.sectionTitle" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Online summary"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "联网摘要"
-          }
-        }
-      }
-    },
-    "Settings.ai.toggleLabel" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Summarize and Insights"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "摘要与洞察"
-          }
-        }
-      }
-    },
-    "Settings.help.sectionTitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮助"
           }
         }
       }
@@ -5333,146 +5403,69 @@
         }
       }
     },
-    "PastStatisticsInterval.phrase.allJournal" : {
+    "Settings.ai.a11y.enableForConnectionCheck" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "all entries to date"
+            "value" : "Turn on Summarize and Insights to check connection status."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部手记至今"
+            "value" : "请先开启摘要与洞察，以检查连接状态。"
           }
         }
       }
     },
-    "PastStatisticsInterval.phrase.lastNMonths" : {
+    "Settings.ai.sectionTitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "the last %lld months"
+            "value" : "Online summary"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近 %lld 个月"
+            "value" : "联网摘要"
           }
         }
       }
     },
-    "PastStatisticsInterval.phrase.lastNWeeks" : {
+    "Settings.ai.toggleLabel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "the last %lld weeks"
+            "value" : "Summarize and Insights"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近 %lld 周"
+            "value" : "摘要与洞察"
           }
         }
       }
     },
-    "PastStatisticsInterval.phrase.lastNYears" : {
+    "Settings.help.sectionTitle" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "the last %lld years"
+            "value" : "Help"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近 %lld 年"
-          }
-        }
-      }
-    },
-    "PastStatisticsInterval.phrase.lastOneMonth" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "the last month"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一个月"
-          }
-        }
-      }
-    },
-    "PastStatisticsInterval.phrase.lastOneWeek" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "the last week"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一周"
-          }
-        }
-      }
-    },
-    "PastStatisticsInterval.phrase.lastOneYear" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "the last year"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一年"
-          }
-        }
-      }
-    },
-    "Review.mostRecurring.drilldown.subtitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mentioned %1$lld times across %2$@."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共出现 %1$lld 次（%2$@）。"
-          }
-        }
-      }
-    },
-    "ThemeDrilldown.openEntry.a11yHint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opens the journal entry for that day."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开该日期的手记。"
+            "value" : "帮助"
           }
         }
       }
@@ -5543,6 +5536,7 @@
       }
     },
     "Settings.todayJournalAppearance.modeLabel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5559,6 +5553,7 @@
       }
     },
     "Settings.todayJournalAppearance.sectionTitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6405,6 +6400,22 @@
         }
       }
     },
+    "ThemeDrilldown.openEntry.a11yHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the journal entry for that day."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开该日期的手记。"
+          }
+        }
+      }
+    },
     "This only changes the short label." : {
       "localizations" : {
         "en" : {
@@ -6817,6 +6828,7 @@
       }
     },
     "Viewing window" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6898,6 +6910,7 @@
       }
     },
     "Week starts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7327,6 +7340,7 @@
       }
     },
     "Write today's reflection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

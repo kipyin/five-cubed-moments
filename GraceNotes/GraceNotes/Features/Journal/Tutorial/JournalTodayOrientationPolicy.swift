@@ -19,7 +19,7 @@ enum JournalTodayOrientationPolicy {
         var isRunningUITests: Bool
         var hasSeenAppTour: Bool
         var hasCompletedGuidedJournal: Bool
-        var hasAtLeastOneInEachChipSection: Bool
+        var hasAtLeastOneEntryInEachSection: Bool
     }
 
     /// - Returns: Outcome when the full-screen App Tour should be presented; `nil` otherwise.
@@ -29,7 +29,7 @@ enum JournalTodayOrientationPolicy {
         return AppTourTrigger.evaluate(
             hasSeenAppTour: inputs.hasSeenAppTour,
             hasCompletedGuidedJournal: inputs.hasCompletedGuidedJournal,
-            hasAtLeastOneInEachChipSection: inputs.hasAtLeastOneInEachChipSection
+            hasAtLeastOneEntryInEachSection: inputs.hasAtLeastOneEntryInEachSection
         )
     }
 
@@ -40,11 +40,11 @@ enum JournalTodayOrientationPolicy {
         newLevel: JournalCompletionLevel,
         hasSeenAppTour: Bool,
         milestoneHighlight: JournalUnlockMilestoneHighlight,
-        hasAtLeastOneInEachChipSection: Bool
+        hasAtLeastOneEntryInEachSection: Bool
     ) -> Bool {
         guard milestoneHighlight == .none else { return false }
         guard isTodayEntry, newLevel == .sprout, !hasSeenAppTour else { return false }
-        guard hasAtLeastOneInEachChipSection else { return false }
+        guard hasAtLeastOneEntryInEachSection else { return false }
         return true
     }
 }

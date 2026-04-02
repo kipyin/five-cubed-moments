@@ -130,7 +130,7 @@ final class JournalViewModel {
         entry.reflections = reflections.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.updatedAt = nowProvider()
         // First time the user reaches harvest (all chip slots); cleared if chips drop below 5/5/5.
-        entry.completedAt = entry.hasHarvestChips ? (entry.completedAt ?? nowProvider()) : nil
+        entry.completedAt = entry.hasReachedBloom ? (entry.completedAt ?? nowProvider()) : nil
 
         do {
             try context.save()
@@ -177,34 +177,34 @@ final class JournalViewModel {
     /// True when today's entry has all fifteen chips filled (Harvest / full grid).
     var completedToday: Bool {
         guard journalEntry != nil else { return false }
-        return isChipsFullGridComplete
+        return hasReachedBloom
     }
 
     /// Total chip slots across gratitudes, needs, and people (5 x 3 = 15).
-    var chipsFullGridSlotCount: Int {
+    var sectionEntryCapacity: Int {
         JournalViewModel.slotCount * 3
     }
 
     /// Number of chips currently filled across gratitudes, needs, and people.
-    var chipsFilledCount: Int {
+    var filledEntryCount: Int {
         gratitudes.count + needs.count + people.count
     }
 
     /// Whether all chip slots are filled, regardless of notes/reflections completion.
-    var isChipsFullGridComplete: Bool {
+    var hasReachedBloom: Bool {
         gratitudes.count >= JournalViewModel.slotCount &&
             needs.count >= JournalViewModel.slotCount &&
             people.count >= JournalViewModel.slotCount
     }
 
     /// Localized progress text for the chips-only milestone.
-    var chipsProgressText: String {
+    var entryCapacityProgressText: String {
         let formatKey = String(localized: "%d of %d")
         return String(
             format: formatKey,
             locale: Locale.current,
-            chipsFilledCount,
-            chipsFullGridSlotCount
+            filledEntryCount,
+            sectionEntryCapacity
         )
     }
 
@@ -217,8 +217,8 @@ final class JournalViewModel {
     }
 
     /// True when gratitudes, needs, and people each have at least one chip (milestone 1/1/1 minimum).
-    var hasAtLeastOneInEachChipSection: Bool {
-        Journal.minChipSectionCount(
+    var hasAtLeastOneEntryInEachSection: Bool {
+        Journal.minimumEntryCountAcrossSections(
             gratitudesCount: gratitudes.count,
             needsCount: needs.count,
             peopleCount: people.count

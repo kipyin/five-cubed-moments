@@ -113,33 +113,33 @@ final class JournalCompletionLevelTests: XCTestCase {
         XCTAssertEqual(level, .bloom)
     }
 
-    func test_hasHarvestChips_alignsWithBloomLevel_withOrWithoutNotes() throws {
+    func test_hasReachedBloom_alignsWithCompletionLevel_withOrWithoutNotes() throws {
         let context = try makeInMemoryContext()
         let items = (1...Journal.slotCount).map { Entry(fullText: "x\($0)") }
-        let harvestOnly = Journal(
+        let bloomOnly = Journal(
             gratitudes: items,
             needs: items,
             people: items,
             readingNotes: "",
             reflections: ""
         )
-        let harvestWithNotes = Journal(
+        let bloomWithNotes = Journal(
             gratitudes: items,
             needs: items,
             people: items,
             readingNotes: "Notes",
             reflections: "Reflections"
         )
-        context.insert(harvestOnly)
-        context.insert(harvestWithNotes)
+        context.insert(bloomOnly)
+        context.insert(bloomWithNotes)
         try context.save()
 
-        XCTAssertTrue(harvestOnly.hasHarvestChips)
-        XCTAssertTrue(harvestOnly.isComplete)
-        XCTAssertEqual(harvestOnly.completionLevel, .bloom)
+        XCTAssertTrue(bloomOnly.hasReachedBloom)
+        XCTAssertTrue(bloomOnly.isComplete)
+        XCTAssertEqual(bloomOnly.completionLevel, .bloom)
 
-        XCTAssertTrue(harvestWithNotes.hasHarvestChips)
-        XCTAssertEqual(harvestWithNotes.completionLevel, .bloom)
+        XCTAssertTrue(bloomWithNotes.hasReachedBloom)
+        XCTAssertEqual(bloomWithNotes.completionLevel, .bloom)
     }
 
     func test_tutorialCompletionRank_isMonotonic() {

@@ -71,7 +71,7 @@ final class JournalRepositoryTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func test_hasUserReachedFullHarvest_trueWhenCompletedAtSet() throws {
+    func test_hasUserEverReachedBloom_trueWhenCompletedAtSet() throws {
         let context = try makeInMemoryContext()
         let repo = JournalRepository(calendar: calendar)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -85,10 +85,10 @@ final class JournalRepositoryTests: XCTestCase {
         context.insert(entry)
         try context.save()
 
-        XCTAssertTrue(try repo.hasUserReachedFullHarvest(context: context))
+        XCTAssertTrue(try repo.hasUserEverReachedBloom(context: context))
     }
 
-    func test_hasUserReachedFullHarvest_trueWhenLegacyFullWithoutCompletedAt() throws {
+    func test_hasUserEverReachedBloom_trueWhenLegacyFullWithoutCompletedAt() throws {
         let context = try makeInMemoryContext()
         let repo = JournalRepository(calendar: calendar)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -102,10 +102,10 @@ final class JournalRepositoryTests: XCTestCase {
         context.insert(entry)
         try context.save()
 
-        XCTAssertTrue(try repo.hasUserReachedFullHarvest(context: context))
+        XCTAssertTrue(try repo.hasUserEverReachedBloom(context: context))
     }
 
-    func test_hasUserReachedFullHarvest_falseWhenNoHarvest() throws {
+    func test_hasUserEverReachedBloom_falseWhenNeverBloom() throws {
         let context = try makeInMemoryContext()
         let repo = JournalRepository(calendar: calendar)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
@@ -119,7 +119,7 @@ final class JournalRepositoryTests: XCTestCase {
         context.insert(entry)
         try context.save()
 
-        XCTAssertFalse(try repo.hasUserReachedFullHarvest(context: context))
+        XCTAssertFalse(try repo.hasUserEverReachedBloom(context: context))
     }
 
     func test_searchMatches_returnsChipAndNotesLines() throws {

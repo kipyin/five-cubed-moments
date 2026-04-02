@@ -25,7 +25,7 @@ struct StreakCalculator {
         let today = calendar.startOfDay(for: now)
         let basicByDay = buildCompletionByDay(entries: entries) { $0.hasMeaningfulContent }
         // "Perfect" = Harvest: all fifteen chips. `completedAt` alone must not inflate this streak.
-        let perfectByDay = buildCompletionByDay(entries: entries) { $0.hasHarvestChips }
+        let perfectByDay = buildCompletionByDay(entries: entries) { $0.hasReachedBloom }
 
         return StreakSummary(
             basicCurrent: currentStreakLength(byDay: basicByDay, today: today),

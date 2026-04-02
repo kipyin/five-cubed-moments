@@ -30,7 +30,7 @@ struct JournalRepository {
 
     /// True when the user has reached Full/Harvest at least once.
     /// Prefers `completedAt` (cheap query), then scans for legacy rows without that field.
-    func hasUserReachedFullHarvest(context: ModelContext) throws -> Bool {
+    func hasUserEverReachedBloom(context: ModelContext) throws -> Bool {
         var completedDescriptor = FetchDescriptor<Journal>(
             predicate: #Predicate<Journal> { entry in
                 entry.completedAt != nil
@@ -123,7 +123,7 @@ struct JournalRepository {
     ) {
         let dayStart = calendar.startOfDay(for: entry.entryDate)
 
-        func appendStripLine(item: Entry, source: ReviewThemeSourceCategory) {
+        func appendMatchingEntry(item: Entry, source: ReviewThemeSourceCategory) {
             guard matches.count < maxRows else { return }
             let full = item.fullText
             guard Self.textContains(trimmedQuery, in: full) else { return }
@@ -153,13 +153,13 @@ struct JournalRepository {
         }
 
         for item in entry.gratitudes ?? [] {
-            appendStripLine(item: item, source: .gratitudes)
+            appendMatchingEntry(item: item, source: .gratitudes)
         }
         for item in entry.needs ?? [] {
-            appendStripLine(item: item, source: .needs)
+            appendMatchingEntry(item: item, source: .needs)
         }
         for item in entry.people ?? [] {
-            appendStripLine(item: item, source: .people)
+            appendMatchingEntry(item: item, source: .people)
         }
 
         let notes = entry.readingNotes

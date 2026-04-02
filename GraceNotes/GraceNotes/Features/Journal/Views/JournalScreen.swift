@@ -621,7 +621,7 @@ private extension JournalScreen {
            let hintKind = JournalTutorialHintPresentation.hintKind(
             entryDate: entryDate,
             completionLevel: viewModel.completionLevel,
-            chipsFilledCount: viewModel.chipsFilledCount,
+            filledEntryCount: viewModel.filledEntryCount,
             dismissedSproutGuidance: dismissedSproutGuidance,
             dismissedBloomGuidance: dismissedBloomGuidance
         ) {
@@ -1086,7 +1086,7 @@ private extension JournalScreen {
             newLevel: newLevel,
             hasSeenAppTour: hasSeenAppTour,
             milestoneHighlight: milestoneOutcome.milestoneHighlight,
-            hasAtLeastOneInEachChipSection: viewModel.hasAtLeastOneInEachChipSection
+            hasAtLeastOneEntryInEachSection: viewModel.hasAtLeastOneEntryInEachSection
         )
         if !suppress {
             presentUnlockToast(for: newLevel, milestoneHighlight: milestoneOutcome.milestoneHighlight)
@@ -1100,7 +1100,7 @@ private extension JournalScreen {
             newLevel: newLevel,
             hasSeenAppTour: hasSeenAppTour,
             milestoneHighlight: .none,
-            hasAtLeastOneInEachChipSection: viewModel.hasAtLeastOneInEachChipSection
+            hasAtLeastOneEntryInEachSection: viewModel.hasAtLeastOneEntryInEachSection
         )
         if !suppress {
             presentUnlockToast(for: newLevel, milestoneHighlight: .none)
@@ -1229,7 +1229,7 @@ private extension JournalScreen {
             isRunningUITests: ProcessInfo.graceNotesIsRunningUITests,
             hasSeenAppTour: hasSeenAppTour,
             hasCompletedGuidedJournal: hasCompletedGuidedJournal,
-            hasAtLeastOneInEachChipSection: viewModel.hasAtLeastOneInEachChipSection
+            hasAtLeastOneEntryInEachSection: viewModel.hasAtLeastOneEntryInEachSection
         )
     }
 

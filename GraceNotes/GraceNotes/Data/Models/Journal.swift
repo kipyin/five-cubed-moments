@@ -82,16 +82,16 @@ final class Journal {
     }
 
     /// All chip slots filled (5 gratitudes, 5 needs, 5 people). Notes and reflections do not change it.
-    var hasHarvestChips: Bool {
-        Self.hasAllFifteenChips(
+    var hasReachedBloom: Bool {
+        Self.entriesIndicateBloom(
             gratitudesCount: (gratitudes ?? []).count,
             needsCount: (needs ?? []).count,
             peopleCount: (people ?? []).count
         )
     }
 
-    /// Same as ``hasHarvestChips``. Older call sites use this name for History and persistence.
-    var isComplete: Bool { hasHarvestChips }
+    /// Same as ``hasReachedBloom``. Older call sites use this name for History and persistence.
+    var isComplete: Bool { hasReachedBloom }
 
     var completionLevel: JournalCompletionLevel {
         Self.completionLevel(
@@ -101,7 +101,7 @@ final class Journal {
         )
     }
 
-    static func hasAllFifteenChips(
+    static func entriesIndicateBloom(
         gratitudesCount: Int,
         needsCount: Int,
         peopleCount: Int
@@ -112,7 +112,7 @@ final class Journal {
     }
 
     /// Minimum count across the three chip sections (weakest section).
-    static func minChipSectionCount(
+    static func minimumEntryCountAcrossSections(
         gratitudesCount: Int,
         needsCount: Int,
         peopleCount: Int
@@ -159,7 +159,7 @@ final class Journal {
     }
 
     /// True when each chip section has at least one item (milestone “1/1/1”, independent of status name).
-    var hasAtLeastOneInEachChipSection: Bool {
+    var hasAtLeastOneEntryInEachSection: Bool {
         let gratitudesCount = (gratitudes ?? []).count
         let needsCount = (needs ?? []).count
         let peopleCount = (people ?? []).count

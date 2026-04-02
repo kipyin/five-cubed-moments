@@ -12,7 +12,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 isRunningUITests: false,
                 hasSeenAppTour: false,
                 hasCompletedGuidedJournal: false,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
         XCTAssertNil(outcome)
@@ -25,7 +25,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 isRunningUITests: true,
                 hasSeenAppTour: false,
                 hasCompletedGuidedJournal: false,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
         XCTAssertNil(outcome)
@@ -35,7 +35,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         let expected = AppTourTrigger.evaluate(
             hasSeenAppTour: false,
             hasCompletedGuidedJournal: true,
-            hasAtLeastOneInEachChipSection: true
+            hasAtLeastOneEntryInEachSection: true
         )
         let actual = JournalTodayOrientationPolicy.appTourOutcome(
             for: .init(
@@ -43,7 +43,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 isRunningUITests: false,
                 hasSeenAppTour: false,
                 hasCompletedGuidedJournal: true,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
         XCTAssertEqual(actual?.skipsCongratulationsPage, expected?.skipsCongratulationsPage)
@@ -56,7 +56,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 isRunningUITests: false,
                 hasSeenAppTour: false,
                 hasCompletedGuidedJournal: false,
-                hasAtLeastOneInEachChipSection: false
+                hasAtLeastOneEntryInEachSection: false
             )
         )
         XCTAssertNil(outcome)
@@ -71,7 +71,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .sprout,
                 hasSeenAppTour: false,
                 milestoneHighlight: .none,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
     }
@@ -83,7 +83,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .sprout,
                 hasSeenAppTour: false,
                 milestoneHighlight: .none,
-                hasAtLeastOneInEachChipSection: false
+                hasAtLeastOneEntryInEachSection: false
             )
         )
     }
@@ -95,7 +95,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .sprout,
                 hasSeenAppTour: false,
                 milestoneHighlight: .none,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
     }
@@ -107,7 +107,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .twig,
                 hasSeenAppTour: false,
                 milestoneHighlight: .none,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
     }
@@ -119,7 +119,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .sprout,
                 hasSeenAppTour: true,
                 milestoneHighlight: .none,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
     }
@@ -131,7 +131,7 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
                 newLevel: .sprout,
                 hasSeenAppTour: false,
                 milestoneHighlight: .firstOneOneOne,
-                hasAtLeastOneInEachChipSection: true
+                hasAtLeastOneEntryInEachSection: true
             )
         )
     }

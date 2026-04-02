@@ -359,7 +359,7 @@ private extension SettingsScreen {
     func backfillBloomUnlockIfNeeded() {
         guard !hasCelebratedFirstBloom else { return }
         let repository = JournalRepository()
-        guard (try? repository.hasUserReachedFullHarvest(context: modelContext)) == true else { return }
+        guard (try? repository.hasUserEverReachedBloom(context: modelContext)) == true else { return }
         hasCelebratedFirstBloom = true
     }
 }

@@ -9,7 +9,7 @@ enum JournalTutorialHintPresentation {
     static func hintKind(
         entryDate: Date?,
         completionLevel: JournalCompletionLevel,
-        chipsFilledCount: Int,
+        filledEntryCount: Int,
         dismissedSproutGuidance: Bool,
         dismissedBloomGuidance: Bool
     ) -> JournalTutorialHintKind? {
@@ -19,7 +19,7 @@ enum JournalTutorialHintPresentation {
         }
         let fifteenSlots = JournalViewModel.slotCount * 3
         if completionLevel == .sprout || completionLevel == .twig || completionLevel == .leaf,
-           chipsFilledCount < fifteenSlots,
+           filledEntryCount < fifteenSlots,
            !dismissedBloomGuidance {
             return .bloom
         }

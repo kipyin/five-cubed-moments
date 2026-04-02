@@ -6,7 +6,7 @@ final class JournalTutorialHintPresentationTests: XCTestCase {
         let kind = JournalTutorialHintPresentation.hintKind(
             entryDate: nil,
             completionLevel: .leaf,
-            chipsFilledCount: 10,
+            filledEntryCount: 10,
             dismissedSproutGuidance: true,
             dismissedBloomGuidance: false
         )
@@ -18,7 +18,7 @@ final class JournalTutorialHintPresentationTests: XCTestCase {
         let kind = JournalTutorialHintPresentation.hintKind(
             entryDate: nil,
             completionLevel: .leaf,
-            chipsFilledCount: fifteenSlots,
+            filledEntryCount: fifteenSlots,
             dismissedSproutGuidance: true,
             dismissedBloomGuidance: false
         )

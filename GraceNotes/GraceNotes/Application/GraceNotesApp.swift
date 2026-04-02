@@ -31,6 +31,7 @@ struct GraceNotesApp: App {
 
         if !isRunningUnitTests {
             JournalTutorialStorageKeys.migrateLegacyKeysIfNeeded(using: .standard)
+            JournalAppearanceMode.migrateLegacySummerRawValueIfNeeded(defaults: .standard)
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
             JournalOnboardingProgress.migrateLegacyAppTourSeenFlagIfNeeded(using: .standard)
@@ -153,13 +154,13 @@ struct GraceNotesApp: App {
     }
 
     private var mainTabView: some View {
-        let isSummerAtmosphereGlobal =
-            (JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard) == .summer
+        let isBloomAtmosphereGlobal =
+            JournalAppearanceMode.resolveStored(rawValue: journalTodayAppearanceRaw) == .bloom
 
-        // App-wide Summer paper, leaves, and forced light scheme are intentional (#125):
+        // App-wide Bloom paper, leaves, and forced light scheme are intentional (#125):
         // Past/Settings stay visually cohesive with Today.
         return ZStack {
-            if isSummerAtmosphereGlobal {
+            if isBloomAtmosphereGlobal {
                 SummerPaperBackgroundView()
             }
 
@@ -185,12 +186,12 @@ struct GraceNotesApp: App {
                 .tag(AppTab.settings)
             }
 
-            if isSummerAtmosphereGlobal {
-                GlobalSummerLeavesOverlayLayer()
+            if isBloomAtmosphereGlobal {
+                GlobalBloomLeavesOverlayLayer()
             }
         }
-        .environment(\.journalSummerAtmosphereHosted, isSummerAtmosphereGlobal)
-        .preferredColorScheme(isSummerAtmosphereGlobal ? .light : nil)
+        .environment(\.journalBloomAtmosphereHosted, isBloomAtmosphereGlobal)
+        .preferredColorScheme(isBloomAtmosphereGlobal ? .light : nil)
     }
 
     @MainActor
@@ -233,7 +234,7 @@ private struct DeferredReviewRoot: View {
     }
 }
 
-private struct GlobalSummerLeavesOverlayLayer: View {
+private struct GlobalBloomLeavesOverlayLayer: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {

@@ -60,7 +60,7 @@ Use this vocabulary in README, issues, PRs, and **new** Swift identifiers. Issue
    - **Completion symbol** — The visual glyph for that stage.
    - **Completion badge** — Symbol + name. Say **badge**, not pill.
 10. **Bloom** — All **five Entries** filled in **each** Section (fifteen Entries total). Same as `.bloom` and what **perfect** streak and first-run milestones use for “all fifteen.”
-11. **Bloom Mode** — The Today appearance option with warm styling and motion (**not** “Summer mode”). **Swift:** rename from `JournalAppearanceMode.summer` / related identifiers in #144; until then, code may still say `summer` in places.
+11. **Bloom Mode** — The Today appearance option with warm styling and motion (**not** “Summer mode”). Persisted as `JournalAppearanceMode.bloom` (`UserDefaults` may still contain legacy `"summer"` until migration runs once at launch).
 
 ### Simplified Chinese (user-facing)
 

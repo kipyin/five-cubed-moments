@@ -162,7 +162,26 @@ final class JournalDataImportServiceTests: XCTestCase {
 
     func test_decode_readsChipLabelKeyIntoEntryLabel() throws {
         let json = """
-        {"schemaVersion":2,"exportedAt":"1970-01-01T00:00:00Z","entries":[{"id":"00000000-0000-0000-0000-000000000001","entryDate":"1970-01-01T00:00:00Z","gratitudes":[{"id":"00000000-0000-0000-0000-000000000002","fullText":"Hi","chipLabel":"From chip key"}],"needs":[],"people":[],"readingNotes":"","reflections":"","createdAt":"1970-01-01T00:00:00Z","updatedAt":"1970-01-01T00:00:00Z","completedAt":null}]}
+        {
+          "schemaVersion": 2,
+          "exportedAt": "1970-01-01T00:00:00Z",
+          "entries": [{
+            "id": "00000000-0000-0000-0000-000000000001",
+            "entryDate": "1970-01-01T00:00:00Z",
+            "gratitudes": [{
+              "id": "00000000-0000-0000-0000-000000000002",
+              "fullText": "Hi",
+              "chipLabel": "From chip key"
+            }],
+            "needs": [],
+            "people": [],
+            "readingNotes": "",
+            "reflections": "",
+            "createdAt": "1970-01-01T00:00:00Z",
+            "updatedAt": "1970-01-01T00:00:00Z",
+            "completedAt": null
+          }]
+        }
         """
         let data = try XCTUnwrap(json.data(using: .utf8))
         let archive = try importService.decodeArchive(data)

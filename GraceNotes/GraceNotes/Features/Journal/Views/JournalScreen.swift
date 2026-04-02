@@ -153,7 +153,7 @@ private extension View {
 struct JournalScreen: View {
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.journalSummerAtmosphereHosted) private var journalSummerAtmosphereHosted
+    @Environment(\.journalBloomAtmosphereHosted) private var journalBloomAtmosphereHosted
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -224,10 +224,10 @@ struct JournalScreen: View {
     var body: some View {
         let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
         ZStack {
-            if effectiveTodayAppearance == .summer, !journalSummerAtmosphereHosted {
+            if effectiveTodayAppearance == .bloom, !journalBloomAtmosphereHosted {
                 SummerPaperBackgroundView()
             }
-            if effectiveTodayAppearance == .summer, !journalSummerAtmosphereHosted {
+            if effectiveTodayAppearance == .bloom, !journalBloomAtmosphereHosted {
                 SummerLeavesOverlaySeam(reduceMotion: reduceMotion)
             }
             journalScrollContent
@@ -248,7 +248,7 @@ struct JournalScreen: View {
             }
         }
         .toolbarBackground(
-            effectiveTodayAppearance == .summer ? .hidden : .automatic,
+            effectiveTodayAppearance == .bloom ? .hidden : .automatic,
             for: .navigationBar
         )
         .sheet(item: $shareableImage) { item in
@@ -481,7 +481,7 @@ private extension JournalScreen {
 
     var effectiveTodayAppearance: JournalAppearanceMode {
         if entryDate != nil { return .standard }
-        return JournalAppearanceMode(rawValue: journalTodayAppearanceRaw) ?? .standard
+        return JournalAppearanceMode.resolveStored(rawValue: journalTodayAppearanceRaw)
     }
 
     var todayPalette: TodayJournalPalette {

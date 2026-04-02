@@ -54,4 +54,62 @@ final class PastDrilldownCalendarLayoutTests: XCTestCase {
         }
         XCTAssertEqual(weeks.count, 1)
     }
+
+    func test_weekdaySymbolsOrdered_rotatesWithFirstWeekday() {
+        var sundayFirst = Calendar(identifier: .gregorian)
+        sundayFirst.firstWeekday = 1
+        sundayFirst.timeZone = TimeZone(secondsFromGMT: 0)!
+        sundayFirst.locale = Locale(identifier: "en_US_POSIX")
+        let sunOrder = ReviewHistoryDrilldownCalendarLayout.weekdaySymbolsOrdered(calendar: sundayFirst)
+        XCTAssertFalse(sunOrder.isEmpty)
+        XCTAssertEqual(sunOrder.first, sundayFirst.shortWeekdaySymbols.first)
+
+        var mondayFirst = Calendar(identifier: .gregorian)
+        mondayFirst.firstWeekday = 2
+        mondayFirst.timeZone = TimeZone(secondsFromGMT: 0)!
+        mondayFirst.locale = Locale(identifier: "en_US_POSIX")
+        let monOrder = ReviewHistoryDrilldownCalendarLayout.weekdaySymbolsOrdered(calendar: mondayFirst)
+        XCTAssertEqual(monOrder.count, sunOrder.count)
+        let mondaySymbols = mondayFirst.shortWeekdaySymbols
+        XCTAssertGreaterThanOrEqual(mondaySymbols.count, 2)
+        XCTAssertEqual(monOrder.first, mondaySymbols[1])
+        XCTAssertEqual(Set(monOrder), Set(sunOrder))
+    }
+
+    /// January 1, 2026 is a Thursday (US: weekday 5 when Sunday is 1). Leading empty cells should match `firstWeekday`.
+    func test_continuousRows_leadingPadding_respectsFirstWeekday() {
+        let lower = gregorianCalendar(firstWeekday: 1)
+            .date(from: DateComponents(year: 2026, month: 1, day: 1))!
+        let upper = gregorianCalendar(firstWeekday: 1)
+            .date(from: DateComponents(year: 2026, month: 1, day: 8))!
+        let calSunday = gregorianCalendar(firstWeekday: 1)
+        let rowsSun = ReviewHistoryDrilldownCalendarLayout.continuousRows(
+            displayRange: lower ..< upper,
+            calendar: calSunday
+        )
+        guard case .week(_, let firstWeekSun) = rowsSun.first(where: {
+            if case .week = $0 { return true }
+            return false
+        }) else {
+            XCTFail("Expected a week row")
+            return
+        }
+        let leadingSun = firstWeekSun.prefix(while: { $0 == nil }).count
+        XCTAssertEqual(leadingSun, 4)
+
+        let calMonday = gregorianCalendar(firstWeekday: 2)
+        let rowsMon = ReviewHistoryDrilldownCalendarLayout.continuousRows(
+            displayRange: lower ..< upper,
+            calendar: calMonday
+        )
+        guard case .week(_, let firstWeekMon) = rowsMon.first(where: {
+            if case .week = $0 { return true }
+            return false
+        }) else {
+            XCTFail("Expected a week row")
+            return
+        }
+        let leadingMon = firstWeekMon.prefix(while: { $0 == nil }).count
+        XCTAssertEqual(leadingMon, 3)
+    }
 }

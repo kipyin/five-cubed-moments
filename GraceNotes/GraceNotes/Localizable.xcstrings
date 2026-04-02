@@ -5780,6 +5780,38 @@
         }
       }
     },
+    "PastDrilldown.calendarDay.noMatch.a11yHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching journal entry for this history view."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在当前历史视图中，这一天没有匹配的手记。"
+          }
+        }
+      }
+    },
+    "PastDrilldown.calendarWeekdaysRow.a11y": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekday columns, left to right: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "星期列（从左到右）：%@"
+          }
+        }
+      }
+    },
     "Start writing this week to unlock review insights.": {
       "localizations": {
         "en": {

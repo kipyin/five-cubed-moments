@@ -170,7 +170,13 @@ struct ReviewHistoryDrilldownCalendarGrid: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .accessibilityHidden(true)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(
+                String(
+                    format: String(localized: "PastDrilldown.calendarWeekdaysRow.a11y"),
+                    orderedWeekdaySymbols.joined(separator: ", ")
+                )
+            )
 
             LazyVStack(alignment: .leading, spacing: 10) {
                 ForEach(rows) { row in
@@ -216,7 +222,8 @@ struct ReviewHistoryDrilldownCalendarGrid: View {
                 .accessibilityHint(String(localized: "ThemeDrilldown.openEntry.a11yHint"))
             } else {
                 dayNumberLabel(dayNumber: dayNumber, emphasized: false, outsideWindow: !inWindow)
-                    .accessibilityHidden(true)
+                    .accessibilityLabel(dayStart.formatted(date: .complete, time: .omitted))
+                    .accessibilityHint(String(localized: "PastDrilldown.calendarDay.noMatch.a11yHint"))
             }
         } else {
             Color.clear

@@ -69,7 +69,7 @@ struct JournalDataExportService {
 }
 
 struct JournalDataExportArchive: Codable, Equatable {
-    /// v2: strip-only items. v1: same import path; items may include legacy `chipLabel` / `isTruncated`.
+    /// v2: strip-only items. v1: same import path; items may include legacy `chipLabel` / `entryLabel` / `isTruncated`.
     static let currentSchemaVersion = 2
     static let supportedImportSchemaVersions: Set<Int> = [1, 2]
 
@@ -95,28 +95,32 @@ struct JournalDataExportItem: Equatable {
     let id: UUID
     let fullText: String
     /// Legacy pre–strip-only exports; ignored when mapping to `Entry`.
-    let chipLabel: String?
+    let entryLabel: String?
     /// Legacy pre–strip-only exports; ignored when mapping to `Entry`.
     let isTruncated: Bool?
 
-    init(id: UUID, fullText: String, chipLabel: String? = nil, isTruncated: Bool? = nil) {
+    init(id: UUID, fullText: String, entryLabel: String? = nil, isTruncated: Bool? = nil) {
         self.id = id
         self.fullText = fullText
-        self.chipLabel = chipLabel
+        self.entryLabel = entryLabel
         self.isTruncated = isTruncated
     }
 }
 
 extension JournalDataExportItem: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, fullText, chipLabel, isTruncated
+        case id, fullText, entryLabel, chipLabel, isTruncated
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         fullText = try container.decode(String.self, forKey: .fullText)
-        chipLabel = try container.decodeIfPresent(String.self, forKey: .chipLabel)
+        if let label = try container.decodeIfPresent(String.self, forKey: .entryLabel) {
+            entryLabel = label
+        } else {
+            entryLabel = try container.decodeIfPresent(String.self, forKey: .chipLabel)
+        }
         isTruncated = try container.decodeIfPresent(Bool.self, forKey: .isTruncated)
     }
 
@@ -124,7 +128,7 @@ extension JournalDataExportItem: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(fullText, forKey: .fullText)
-        try container.encodeIfPresent(chipLabel, forKey: .chipLabel)
+        try container.encodeIfPresent(entryLabel, forKey: .entryLabel)
         try container.encodeIfPresent(isTruncated, forKey: .isTruncated)
     }
 }

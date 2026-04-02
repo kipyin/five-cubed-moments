@@ -389,16 +389,6 @@ struct PastJournalSearchResultsList: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     }
-                } header: {
-                    Text(String(localized: "Matching writing surfaces"))
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.reviewTextMuted)
-                        .textCase(nil)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onDismissSearchFocus()
-                        }
                 }
             }
         }

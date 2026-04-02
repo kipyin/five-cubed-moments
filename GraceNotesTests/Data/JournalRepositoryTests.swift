@@ -170,6 +170,38 @@ final class JournalRepositoryTests: XCTestCase {
         XCTAssertTrue(empty.isEmpty)
     }
 
+    func test_searchMatches_chipMatchUsesFullTextWhenLabelDiffers_andIdIsStable() throws {
+        let context = try makeInMemoryContext()
+        let repo = JournalRepository(calendar: calendar)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let entryId = UUID(uuidString: "A0A0A0A0-BBBB-4CCC-8DDD-111122223333")!
+        let itemId = UUID(uuidString: "B1B1B1B1-BBBB-4CCC-8DDD-111122223333")!
+        let entry = JournalEntry(
+            id: entryId,
+            entryDate: day,
+            gratitudes: [JournalItem(fullText: "Thankful for morning coffee", chipLabel: "Thanks", id: itemId)],
+            needs: [],
+            people: [],
+            readingNotes: "",
+            reflections: "",
+            createdAt: day,
+            updatedAt: day
+        )
+        context.insert(entry)
+        try context.save()
+
+        let matches = try repo.searchMatches(query: "coffee", context: context, maxRows: 50)
+        XCTAssertEqual(matches.count, 1)
+        XCTAssertEqual(matches[0].source, .gratitudes)
+        XCTAssertEqual(matches[0].content, "Thankful for morning coffee")
+
+        let expectedId = "\(entryId.uuidString)|gratitudes|\(itemId.uuidString)"
+        XCTAssertEqual(matches[0].id, expectedId)
+
+        let again = try repo.searchMatches(query: "coffee", context: context, maxRows: 50)
+        XCTAssertEqual(again[0].id, matches[0].id)
+    }
+
     func test_searchMatches_respectsMaxRows() throws {
         let context = try makeInMemoryContext()
         let repo = JournalRepository(calendar: calendar)

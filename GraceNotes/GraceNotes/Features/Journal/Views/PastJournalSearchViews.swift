@@ -8,27 +8,42 @@ enum PastJournalSearchDebouncer {
         query: String,
         calendar: Calendar,
         modelContext: ModelContext,
-        updateMatches: @MainActor @escaping ([JournalSearchMatch]) -> Void
+        isTrimmedQueryStillCurrent: @escaping @MainActor (String) -> Bool,
+        updateMatches: @escaping @MainActor ([JournalSearchMatch]) -> Void
     ) async {
-        let snapshot = query
-        try? await Task.sleep(nanoseconds: 250_000_000)
-        guard !Task.isCancelled else { return }
-        guard snapshot == query else { return }
-
-        let trimmed = snapshot.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
+        let trimmedEarly = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedEarly.isEmpty {
             updateMatches([])
             return
         }
 
-        let repository = JournalRepository(calendar: calendar)
         do {
-            let results = try repository.searchMatches(query: trimmed, context: modelContext)
-            guard !Task.isCancelled else { return }
-            guard snapshot == query else { return }
-            updateMatches(results)
+            try await Task.sleep(nanoseconds: 250_000_000)
         } catch {
-            guard snapshot == query else { return }
+            return
+        }
+
+        guard !Task.isCancelled else { return }
+        guard isTrimmedQueryStillCurrent(trimmedEarly) else { return }
+
+        let container = modelContext.container
+        let cal = calendar
+        let trimmed = trimmedEarly
+
+        do {
+            let results = try await Task.detached(priority: .userInitiated) {
+                let backgroundContext = ModelContext(container)
+                let repository = JournalRepository(calendar: cal)
+                return try repository.searchMatches(query: trimmed, context: backgroundContext, maxRows: 200)
+            }.value
+
+            guard !Task.isCancelled else { return }
+            guard isTrimmedQueryStillCurrent(trimmed) else { return }
+            updateMatches(results)
+        } catch is CancellationError {
+            return
+        } catch {
+            guard isTrimmedQueryStillCurrent(trimmed) else { return }
             updateMatches([])
         }
     }
@@ -217,7 +232,6 @@ private struct PastJournalSearchDayCard: View {
                             ForEach(section.rows) { match in
                                 NavigationLink {
                                     JournalScreen(entryDate: match.entryDate)
-                                        .id(match.id)
                                 } label: {
                                     Text(match.content)
                                         .font(AppTheme.warmPaperBody)

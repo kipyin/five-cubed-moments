@@ -102,6 +102,9 @@ struct ReviewScreen: View {
                 query: journalSearchText,
                 calendar: calendar,
                 modelContext: modelContext,
+                isTrimmedQueryStillCurrent: { expectedTrimmed in
+                    journalSearchText.trimmingCharacters(in: .whitespacesAndNewlines) == expectedTrimmed
+                },
                 updateMatches: { journalSearchMatches = $0 }
             )
         }

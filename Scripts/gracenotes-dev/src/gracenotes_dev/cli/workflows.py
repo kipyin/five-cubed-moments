@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Annotated
@@ -58,7 +59,7 @@ def build(
         typer.Option("--verbose", "-v", help="Show full xcodebuild logs."),
     ] = False,
 ) -> None:
-    """Build the Grace Notes app for an iOS Simulator destination."""
+    """Build the Grace Notes app for a Simulator or physical device destination."""
     cli_core._require_macos_xcode()
     repo_root = cli_core._repo_root()
     cfg = cli_core._load_config(repo_root)
@@ -244,6 +245,18 @@ def test(
             problem=f"`{kind}` is not one of all, unit, ui, or smoke.",
             try_commands=("grace test --help",),
             retry_command="grace test --kind all",
+        )
+    effective_destination = (destination or cfg.destination or "").strip()
+    if simulator.user_destination_requests_physical_ios(effective_destination):
+        cli_core._fail(
+            code=2,
+            title="Physical device unsupported for tests",
+            problem="`grace test` targets the iOS Simulator only in this release.",
+            likely_cause=(
+                "Physical devices are supported for `grace build` and `grace run` "
+                "(see README); use a `device@os` or platform=iOS Simulator destination for tests."
+            ),
+            try_commands=("grace sim list", "grace test --destination 'iPhone 17 Pro@latest'"),
         )
     if matrix and selected_kind == "smoke":
         cli_core._fail(
@@ -460,14 +473,28 @@ def run(
     ] = False,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-v", help="Show full xcodebuild logs."),
+        typer.Option(
+            "--verbose",
+            help=(
+                "Stream xcodebuild/simctl to the terminal (full tool logs). "
+                "Default still shows step progress, but captures tool output on success. "
+                "No short -v flag (avoids accidental verbose runs). "
+                "You can also set GRACE_RUN_STREAM_TOOL_OUTPUT=1."
+            ),
+        ),
     ] = False,
 ) -> None:
-    """Build, install, and launch Grace Notes on a Simulator."""
+    """Build, install, and launch Grace Notes on an iOS Simulator or connected device."""
     cli_core._require_macos_xcode()
     repo_root = cli_core._repo_root()
     cfg = cli_core._load_config(repo_root)
     rows = simulator.load_available_ios_devices()
+    stream_via_env = os.environ.get("GRACE_RUN_STREAM_TOOL_OUTPUT", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    run_quiet_output = (not verbose) and (not stream_via_env)
     if interactive:
         cli_core._require_interactive_cli(cfg=cfg, command_name="grace run --interactive")
         (
@@ -533,6 +560,80 @@ def run(
             ),
         )
 
+    steps: list[cli_core.TheaterStep] = []
+
+    def resolve_step() -> str:
+        return resolved_destination
+
+    def build_step() -> str:
+        argv = xcode_helpers.build_argv(
+            project=repo_root / cfg.project,
+            scheme=resolved_scheme,
+            resolved_destination=resolved_destination,
+            configuration=launch_configuration,
+            derived_data_path=derived_data_path,
+        )
+        cli_core._run(argv, cwd=repo_root, check=True, verbose=verbose, silent=run_quiet_output)
+        return " ".join(argv)
+
+    if xcode_helpers.is_physical_ios_destination(resolved_destination):
+        device_udid = simulator.physical_udid_from_resolved_destination(resolved_destination) or ""
+        if not device_udid:
+            cli_core._fail(
+                code=3,
+                title="Physical device destination incomplete",
+                problem=f"Could not read device id from `{resolved_destination}`.",
+                likely_cause="Expected platform=iOS,id=<UDID> after resolution.",
+                try_commands=("grace sim list --physical",),
+            )
+
+        def install_device_step() -> str:
+            app_path = xcode_helpers.built_app_path(
+                derived_data_path,
+                configuration=launch_configuration,
+                product_stem=product_stem,
+                resolved_destination=resolved_destination,
+            )
+            cli_core._run(
+                xcode_helpers.devicectl_install_app_argv(device=device_udid, app_path=app_path),
+                cwd=repo_root,
+                check=True,
+                silent=run_quiet_output,
+                verbose=verbose,
+            )
+            return f"{app_path.name} -> {device_udid}"
+
+        def launch_device_step() -> str | None:
+            completed = cli_core._run_capture(
+                xcode_helpers.devicectl_process_launch_argv(
+                    device=device_udid,
+                    bundle_id=resolved_bundle_id,
+                    app_args=expanded_args,
+                ),
+                cwd=repo_root,
+                check=True,
+                verbose=verbose,
+                silent=run_quiet_output,
+            )
+            detail = completed.stdout.strip() if completed.stdout else ""
+            if expanded_args:
+                suffix = f"args: {' '.join(expanded_args)}"
+                merged = f"{detail} | {suffix}" if detail else suffix
+                return merged
+            return detail or None
+
+        build_title = f"Build ({launch_configuration}, {resolved_scheme})"
+        steps.extend(
+            [
+                cli_core.TheaterStep("Resolve destination", resolve_step),
+                cli_core.TheaterStep(build_title, build_step),
+                cli_core.TheaterStep("Install (device)", install_device_step),
+                cli_core.TheaterStep(f"Launch {resolved_bundle_id}", launch_device_step),
+            ],
+        )
+        cli_core._run_theater(steps)
+        return
+
     device_row = simulator.row_for_resolved_destination(resolved_destination, rows)
     udid = (device_row or {}).get("udid", "").strip()
     if not udid:
@@ -549,38 +650,37 @@ def run(
             try_commands=("grace sim list", "xcrun simctl list devices available"),
         )
 
-    steps: list[cli_core.TheaterStep] = []
-
-    def resolve_step() -> str:
-        return resolved_destination
-
     def boot_step() -> str:
         boot, bootstatus = xcode_helpers.simctl_boot_sequence_argv_udid(udid)
-        cli_core._run(boot, cwd=repo_root, check=False)
-        cli_core._run(bootstatus, cwd=repo_root, check=False)
-        return udid
-
-    def build_step() -> str:
-        argv = xcode_helpers.build_argv(
-            project=repo_root / cfg.project,
-            scheme=resolved_scheme,
-            resolved_destination=resolved_destination,
-            configuration=launch_configuration,
-            derived_data_path=derived_data_path,
+        cli_core._run(
+            boot,
+            cwd=repo_root,
+            check=False,
+            silent=run_quiet_output,
+            verbose=verbose,
         )
-        cli_core._run(argv, cwd=repo_root, check=True, verbose=verbose)
-        return " ".join(argv)
+        cli_core._run(
+            bootstatus,
+            cwd=repo_root,
+            check=False,
+            silent=run_quiet_output,
+            verbose=verbose,
+        )
+        return udid
 
     def install_step() -> str:
         app_path = xcode_helpers.built_app_path(
             derived_data_path,
             configuration=launch_configuration,
             product_stem=product_stem,
+            resolved_destination=resolved_destination,
         )
         cli_core._run(
             xcode_helpers.simctl_install_argv(app_path=app_path, device=udid),
             cwd=repo_root,
             check=True,
+            silent=run_quiet_output,
+            verbose=verbose,
         )
         return f"{app_path.name} -> {udid}"
 
@@ -593,6 +693,8 @@ def run(
             ),
             cwd=repo_root,
             check=True,
+            verbose=verbose,
+            silent=run_quiet_output,
         )
         detail = completed.stdout.strip() if completed.stdout else ""
         if expanded_args:
@@ -610,4 +712,5 @@ def run(
             cli_core.TheaterStep(f"Launch {resolved_bundle_id}", launch_step),
         ],
     )
+    # Always show theater for `grace run`; quiet mode only captures subprocesses (no tool flood).
     cli_core._run_theater(steps)

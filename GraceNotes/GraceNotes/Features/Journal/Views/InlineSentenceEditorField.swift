@@ -54,8 +54,17 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
             uiView.text = text
         }
 
+        // UIKit can end editing (scroll-dismiss, keyboard hide) before SwiftUI flips @FocusState.
+        // Without this guard, updateUIView keeps re-calling becomeFirstResponder while isFocused is
+        // still true, causing begin/end churn and repeated keyboard notifications.
+        if !isFocused {
+            context.coordinator.suppressBecomeUntilSwiftUIDropsFocus = false
+        }
+
         if isFocused, uiView.isFirstResponder == false {
-            uiView.becomeFirstResponder()
+            if !context.coordinator.suppressBecomeUntilSwiftUIDropsFocus {
+                uiView.becomeFirstResponder()
+            }
         } else if !isFocused || isInteractionEnabled == false, uiView.isFirstResponder {
             uiView.resignFirstResponder()
         }
@@ -94,15 +103,20 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate {
         var parent: InlineSentenceEditorTextView
 
+        /// Set when UIKit reports editing ended; cleared when SwiftUI reports `isFocused == false` or on begin.
+        var suppressBecomeUntilSwiftUIDropsFocus = false
+
         init(parent: InlineSentenceEditorTextView) {
             self.parent = parent
         }
 
         func textViewDidBeginEditing(_: UITextView) {
+            suppressBecomeUntilSwiftUIDropsFocus = false
             parent.setFocused?(true)
         }
 
         func textViewDidEndEditing(_: UITextView) {
+            suppressBecomeUntilSwiftUIDropsFocus = true
             parent.setFocused?(false)
         }
 

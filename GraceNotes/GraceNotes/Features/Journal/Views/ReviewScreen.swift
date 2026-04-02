@@ -2,6 +2,22 @@ import SwiftUI
 import SwiftData
 import UIKit
 
+/// Single active “browse all” presentation. Two separate `sheet(item:)` branches can race on some
+/// runtimes (e.g. iOS 18 + small devices), showing the recurring sheet when opening Trending browse.
+private enum ReviewBrowseSheet: Identifiable {
+    case mostRecurring(MostRecurringBrowsePayload)
+    case trending(TrendingBrowsePayload)
+
+    var id: UUID {
+        switch self {
+        case .mostRecurring(let payload):
+            return payload.id
+        case .trending(let payload):
+            return payload.id
+        }
+    }
+}
+
 struct ReviewScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
@@ -13,12 +29,12 @@ struct ReviewScreen: View {
     @State private var isLoadingInsights = false
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
     @State private var mostRecurringThemeDrilldown: ReviewThemeDrilldownPayload?
-    @State private var mostRecurringBrowsePayload: MostRecurringBrowsePayload?
+    @State private var browseSheet: ReviewBrowseSheet?
     @State private var trendingThemeDrilldown: ReviewThemeDrilldownPayload?
-    @State private var trendingBrowsePayload: TrendingBrowsePayload?
     @State private var journalSearchText = ""
     @State private var journalSearchMatches: [JournalSearchMatch] = []
     @FocusState private var isPastSearchFieldFocused: Bool
+    @EnvironmentObject private var appNavigation: AppNavigationModel
 
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
     private let reviewInsightsCache = ReviewInsightsCache.shared
@@ -80,6 +96,38 @@ struct ReviewScreen: View {
         isPastSearchFieldFocused || !trimmedJournalSearchQuery.isEmpty
     }
 
+    private var mostRecurringBrowseBinding: Binding<MostRecurringBrowsePayload?> {
+        Binding(
+            get: {
+                guard case .mostRecurring(let payload) = browseSheet else { return nil }
+                return payload
+            },
+            set: { newValue in
+                if let newValue {
+                    browseSheet = .mostRecurring(newValue)
+                } else if case .mostRecurring = browseSheet {
+                    browseSheet = nil
+                }
+            }
+        )
+    }
+
+    private var trendingBrowseBinding: Binding<TrendingBrowsePayload?> {
+        Binding(
+            get: {
+                guard case .trending(let payload) = browseSheet else { return nil }
+                return payload
+            },
+            set: { newValue in
+                if let newValue {
+                    browseSheet = .trending(newValue)
+                } else if case .trending = browseSheet {
+                    browseSheet = nil
+                }
+            }
+        )
+    }
+
     var body: some View {
         Group {
             if entries.isEmpty && !isUiTestingExperience {
@@ -111,19 +159,26 @@ struct ReviewScreen: View {
         .sheet(item: $mostRecurringThemeDrilldown) { payload in
             ThemeDrilldownSheet(payload: payload)
         }
-        .sheet(item: $mostRecurringBrowsePayload) { payload in
-            MostRecurringBrowseSheetContainer(
-                themes: payload.themes,
-                referenceDate: payload.referenceDate,
-                calendar: payload.calendar
-            )
-        }
         .sheet(item: $trendingThemeDrilldown) { payload in
             ThemeDrilldownSheet(payload: payload)
         }
-        .sheet(item: $trendingBrowsePayload) { payload in
-            TrendingBrowseSheetContainer(buckets: payload.buckets)
-        }
+        .sheet(item: $browseSheet, onDismiss: {
+            browseSheet = nil
+        }, content: { sheet in
+            Group {
+                switch sheet {
+                case .mostRecurring(let payload):
+                    MostRecurringBrowseSheetContainer(
+                        themes: payload.themes,
+                        referenceDate: payload.referenceDate,
+                        calendar: payload.calendar
+                    )
+                case .trending(let payload):
+                    TrendingBrowseSheetContainer(buckets: payload.buckets)
+                }
+            }
+            .id(sheet.id)
+        })
     }
 
     private var emptyStateWithSearch: some View {
@@ -230,7 +285,7 @@ struct ReviewScreen: View {
 
             ReviewMostRecurringCard(
                 themeDrilldown: $mostRecurringThemeDrilldown,
-                browseAllPayload: $mostRecurringBrowsePayload,
+                browseAllPayload: mostRecurringBrowseBinding,
                 insights: reviewInsights,
                 isLoading: isLoadingInsights
             )
@@ -240,7 +295,7 @@ struct ReviewScreen: View {
 
             ReviewTrendingCard(
                 themeDrilldown: $trendingThemeDrilldown,
-                browseAllPayload: $trendingBrowsePayload,
+                browseAllPayload: trendingBrowseBinding,
                 insights: reviewInsights,
                 isLoading: isLoadingInsights
             )

@@ -3,6 +3,7 @@ import SwiftUI
 /// A section with a title and multiline TextEditor. Used for Reading Notes and Reflections.
 struct EditableTextSection: View {
     @Environment(\.todayJournalPalette) private var palette
+    @State private var storedNewlineCount = 0
     let title: String
     let guidanceTitle: String?
     let guidanceMessage: String?
@@ -11,6 +12,10 @@ struct EditableTextSection: View {
     let minHeight: CGFloat
     let onboardingState: JournalOnboardingSectionState
     let inputFocus: FocusState<Bool>.Binding?
+    /// When set, `ScrollViewReader` targets the text editor only (not guidance chrome or title).
+    let keyboardScrollAnchorID: JournalScrollTarget?
+    /// Called when a newline is inserted (Return) so the parent can scroll multiline editors above the keyboard.
+    let onMultilineLineAdded: (() -> Void)?
 
     init(
         title: String,
@@ -20,7 +25,9 @@ struct EditableTextSection: View {
         text: Binding<String>,
         minHeight: CGFloat = 120,
         onboardingState: JournalOnboardingSectionState = .standard,
-        inputFocus: FocusState<Bool>.Binding? = nil
+        inputFocus: FocusState<Bool>.Binding? = nil,
+        keyboardScrollAnchorID: JournalScrollTarget? = nil,
+        onMultilineLineAdded: (() -> Void)? = nil
     ) {
         self.title = title
         self.guidanceTitle = guidanceTitle
@@ -30,6 +37,8 @@ struct EditableTextSection: View {
         self.minHeight = minHeight
         self.onboardingState = onboardingState
         self.inputFocus = inputFocus
+        self.keyboardScrollAnchorID = keyboardScrollAnchorID
+        self.onMultilineLineAdded = onMultilineLineAdded
     }
 
     var body: some View {
@@ -65,8 +74,31 @@ struct EditableTextSection: View {
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(onboardingState.titleColor(palette: palette))
             textEditor
+                .onChange(of: text) { _, newValue in
+                    let newCount = newValue.filter { $0 == "\n" }.count
+                    if let onMultilineLineAdded, newCount > storedNewlineCount {
+                        onMultilineLineAdded()
+                    }
+                    storedNewlineCount = newCount
+                    Task { @MainActor in
+                        await Task.yield()
+                        JournalCaretVisibilityReader.nudgeFirstResponderUITextViewCaretIntoVisibleContent()
+                    }
+                }
+        }
+        .onAppear {
+            storedNewlineCount = text.filter { $0 == "\n" }.count
         }
         .journalOnboardingSectionStyle(onboardingState)
+    }
+
+    @ViewBuilder
+    private func keyboardScrollAnchoredEditor<Content: View>(_ content: Content) -> some View {
+        if let keyboardScrollAnchorID {
+            content.id(keyboardScrollAnchorID)
+        } else {
+            content
+        }
     }
 
     @ViewBuilder
@@ -76,6 +108,7 @@ struct EditableTextSection: View {
             .foregroundStyle(palette.textPrimary)
             .scrollContentBackground(.hidden)
             .frame(minHeight: minHeight)
+            .frame(maxHeight: JournalKeyboardScrollMetrics.notesTextEditorMaxHeight())
             .warmPaperInputStyle()
             .disabled(onboardingState.isLocked)
             .accessibilityLabel(
@@ -93,9 +126,9 @@ struct EditableTextSection: View {
                 )
             )
         if let inputFocus {
-            editor.focused(inputFocus)
+            keyboardScrollAnchoredEditor(editor).focused(inputFocus)
         } else {
-            editor
+            keyboardScrollAnchoredEditor(editor)
         }
     }
 }

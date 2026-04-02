@@ -48,7 +48,7 @@ Main tabs: **Today** (journaling), **Past** (history and insights), **Settings**
 
 ## Requirements
 
-- Xcode 26 or later (defaults in [`gracenotes-dev.toml`](gracenotes-dev.toml) use iPhone 17 Pro @ `OS=latest`—the newest installed iOS runtime for that device—and the test matrix includes iPhone SE (3rd generation) @ 18.5; use an older Xcode only if you override those settings to match what that Xcode installs)
+- Xcode 26 or later (defaults in [`gracenotes-dev.toml`](gracenotes-dev.toml) use iPhone 17 Pro @ `OS=latest` and **iPhone SE (3rd generation) @ iOS 18.5** for the SE test/smoke matrix—override in TOML if your Xcode installs differ)
 - iOS 17+ (app deployment target; see the Xcode project)
 
 ## Getting Started
@@ -87,10 +87,11 @@ python3 -m unittest discover -s Scripts/gracenotes-dev/tests
 - `grace ci` – Default CI profile from `gracenotes-dev.toml` (`defaults.default_ci_profile`, **`lint-build`**: lint and simulator build on iPhone 17 Pro). Use **`grace ci --profile lint-build-test`** or **`test-all`** when you need lint + tests locally.
 - `grace interactive` – TTY menu to pick a CI profile, then run it (use `grace ci --profile …` in CI or when stdin is not a terminal).
 - `grace ci --profile test-all` – Lint, reset simulators, then full tests (no separate build step; close to the old lint + reset + test gate).
-- `grace ci --profile full` – Lint, tests on iPhone 17 Pro, UI smoke on iPhone SE (3rd generation) per `gracenotes-dev.toml`.
+- `grace ci --profile full` – Lint, tests on iPhone 17 Pro, UI smoke on iPhone SE (3rd generation) @ iOS **18.5** per `gracenotes-dev.toml`.
 - `grace sim runtime install` / `grace sim runtime list` / `grace sim runtime delete …` – Install and manage simulator runtimes (then use `grace sim list` to confirm destination availability).
 - `grace sim list` / `grace sim resolve SPEC` / `grace sim reset` – Destinations and simulator hygiene.
 - `grace run` – Build, install, and launch on a booted simulator; use `--preset` and `--` to pass [app process arguments](GraceNotes/GraceNotes/Application/GraceNotesApp.swift).
+- **Planned:** assisted workflow when a simulator destination is missing, plus `grace build` / `grace run` on a physical device — tracking in [#175](https://github.com/kipyin/grace-notes/issues/175).
 
 Examples:
 
@@ -121,8 +122,8 @@ Workflows: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (lint + build 
 
 | When | What runs |
 |------|-----------|
-| **Pull request → `main`** | **Lint & build (iPhone 17 Pro)** — `grace ci` (default profile **`lint-build`**; no tests). **`CI_SIMULATOR_PRO`** is **iPhone 17 Pro @ `OS=latest`** (newest installed runtime for that device on the runner; SE (3rd generation) smoke remains iOS 18.5). |
-| **Push → `main`** | **Main push — lint, test, UI smoke** — `grace ci --profile full` (lint, full tests on **iPhone 17 Pro**, UI smoke on **iPhone SE (3rd generation)** per config). Smoke: `GraceNotesSmokeUITests.testSmokeLaunch`. Skipped when the push SHA is the **`merge_commit_sha`** of a PR merged into **`main`** and that PR is labeled **`no-ci`** (avoids unrelated PRs on the same commit). |
+| **Pull request → `main`** | **Lint & build (iPhone 17 Pro)** — `grace ci` (default profile **`lint-build`**; no tests). **`CI_SIMULATOR_PRO`** is **iPhone 17 Pro @ `OS=latest`**. **`CI_SIMULATOR_XR`** (reserved for **`full`** / matrix jobs that need SE) is **iPhone SE (3rd generation) @ iOS 18.5**. |
+| **Push → `main`** | **Main push — lint, test, UI smoke** — `grace ci --profile full` (lint, full tests on **iPhone 17 Pro**, UI smoke on **iPhone SE (3rd generation) @ iOS 18.5** per config). Smoke: `GraceNotesSmokeUITests.testSmokeLaunch`. Skipped when the push SHA is the **`merge_commit_sha`** of a PR merged into **`main`** and that PR is labeled **`no-ci`** (avoids unrelated PRs on the same commit). |
 | **Pull request + label `full-ci`** | **PR full-ci — lint, test, UI smoke** — `grace ci --profile full`. Re-runs on new commits while the label is present. |
 
 The **`full-ci`** and **`no-ci`** labels must exist in the GitHub repo (Issues → Labels). Adjust **`CI_SIMULATOR_PRO`** / **`CI_SIMULATOR_XR`** in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`gracenotes-dev.toml`](gracenotes-dev.toml) if Apple or runner images change.

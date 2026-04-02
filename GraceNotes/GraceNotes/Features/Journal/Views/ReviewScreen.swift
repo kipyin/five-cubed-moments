@@ -31,6 +31,7 @@ struct ReviewScreen: View {
     @State private var mostRecurringThemeDrilldown: ReviewThemeDrilldownPayload?
     @State private var browseSheet: ReviewBrowseSheet?
     @State private var trendingThemeDrilldown: ReviewThemeDrilldownPayload?
+    @State private var historyDrillDown: ReviewHistoryDrillDownPayload?
     @State private var journalSearchText = ""
     @State private var journalSearchMatches: [JournalSearchMatch] = []
     @FocusState private var isPastSearchFieldFocused: Bool
@@ -179,6 +180,15 @@ struct ReviewScreen: View {
             }
             .id(sheet.id)
         })
+        .sheet(item: $historyDrillDown) { payload in
+            ReviewHistoryDrillDownSheetContainer(
+                payload: payload,
+                entries: entries,
+                calendar: calendar,
+                referenceDate: Date(),
+                pastStatisticsInterval: pastStatisticsInterval
+            )
+        }
     }
 
     private var emptyStateWithSearch: some View {
@@ -267,6 +277,11 @@ struct ReviewScreen: View {
                 .listRowSeparator(.hidden)
 
                 ReviewHistoryGrowthStagesPanel(
+                    historyDrillDown: $historyDrillDown,
+                    entries: entries,
+                    calendar: calendar,
+                    referenceDate: Date(),
+                    pastStatisticsInterval: pastStatisticsInterval,
                     insights: reviewInsights,
                     isLoading: isLoadingInsights
                 )
@@ -275,6 +290,11 @@ struct ReviewScreen: View {
                 .listRowSeparator(.hidden)
 
                 ReviewHistorySectionDistributionPanel(
+                    historyDrillDown: $historyDrillDown,
+                    entries: entries,
+                    calendar: calendar,
+                    referenceDate: Date(),
+                    pastStatisticsInterval: pastStatisticsInterval,
                     insights: reviewInsights,
                     isLoading: isLoadingInsights
                 )

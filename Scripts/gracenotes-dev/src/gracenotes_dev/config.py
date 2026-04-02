@@ -23,9 +23,9 @@ DEFAULT_CI_PROFILE = "lint-build"
 
 # CI pins (override if runtimes differ)
 CI_SIMULATOR_PRO = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
-CI_SIMULATOR_XR = "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest"
+CI_SIMULATOR_XR = "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.5"
 
-TEST_DESTINATION_MATRIX = "iPhone SE (3rd generation)@latest;iPhone 17 Pro@latest"
+TEST_DESTINATION_MATRIX = "iPhone SE (3rd generation)@18.5;iPhone 17 Pro@latest"
 
 ISOLATED_DERIVED_DATA = "/tmp/GraceNotes-TestDerivedData"
 

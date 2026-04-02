@@ -62,11 +62,11 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         XCTAssertNil(outcome)
     }
 
-    // MARK: - shouldSuppressSeedUnlockToast
+    // MARK: - shouldSuppressSproutUnlockToast
 
-    func test_shouldSuppressSeedUnlockToast_todayAtStarted_tripleOne_notSeenPostSeed_suppresses() {
+    func test_shouldSuppressSproutUnlockToast_todayAtStarted_tripleOne_notSeenTour_suppresses() {
         XCTAssertTrue(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: true,
                 newLevel: .sprout,
                 hasSeenAppTour: false,
@@ -76,9 +76,9 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         )
     }
 
-    func test_shouldSuppressSeedUnlockToast_todayAtStarted_firstChipOnly_doesNotSuppress() {
+    func test_shouldSuppressSproutUnlockToast_todayAtStarted_firstEntryOnly_doesNotSuppress() {
         XCTAssertFalse(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: true,
                 newLevel: .sprout,
                 hasSeenAppTour: false,
@@ -88,9 +88,9 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         )
     }
 
-    func test_shouldSuppressSeedUnlockToast_notToday_doesNotSuppress() {
+    func test_shouldSuppressSproutUnlockToast_notToday_doesNotSuppress() {
         XCTAssertFalse(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: false,
                 newLevel: .sprout,
                 hasSeenAppTour: false,
@@ -100,9 +100,9 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         )
     }
 
-    func test_shouldSuppressSeedUnlockToast_nonStartedLevel_doesNotSuppress() {
+    func test_shouldSuppressSproutUnlockToast_nonSproutLevel_doesNotSuppress() {
         XCTAssertFalse(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: true,
                 newLevel: .twig,
                 hasSeenAppTour: false,
@@ -112,9 +112,9 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         )
     }
 
-    func test_shouldSuppressSeedUnlockToast_alreadySeenPostSeed_doesNotSuppress() {
+    func test_shouldSuppressSproutUnlockToast_alreadySeenTour_doesNotSuppress() {
         XCTAssertFalse(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: true,
                 newLevel: .sprout,
                 hasSeenAppTour: true,
@@ -124,9 +124,9 @@ final class JournalTodayOrientationPolicyTests: XCTestCase {
         )
     }
 
-    func test_shouldSuppressSeedUnlockToast_milestoneWithStarted_doesNotSuppress() {
+    func test_shouldSuppressSproutUnlockToast_milestoneWithSprout_doesNotSuppress() {
         XCTAssertFalse(
-            JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+            JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
                 isTodayEntry: true,
                 newLevel: .sprout,
                 hasSeenAppTour: false,

@@ -30,6 +30,7 @@ struct GraceNotesApp: App {
         isRunningUnitTests = isXCTestSession && !isRunningUITests
 
         if !isRunningUnitTests {
+            JournalTutorialStorageKeys.migrateLegacyKeysIfNeeded(using: .standard)
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
             JournalOnboardingProgress.migrateLegacyAppTourSeenFlagIfNeeded(using: .standard)

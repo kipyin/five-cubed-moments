@@ -194,8 +194,8 @@ struct JournalScreen: View {
     @AppStorage(JournalOnboardingStorageKeys.openedICloudSuggestion)
     private var openedICloudSuggestion = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedSeedGuidance) private var dismissedSeedGuidance = false
-    @AppStorage(JournalTutorialStorageKeys.dismissedHarvestGuidance) private var dismissedHarvestGuidance = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedSproutGuidance) private var dismissedSproutGuidance = false
+    @AppStorage(JournalTutorialStorageKeys.dismissedBloomGuidance) private var dismissedBloomGuidance = false
     @AppStorage(JournalAppearanceStorageKeys.todayMode)
     private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
@@ -622,15 +622,15 @@ private extension JournalScreen {
             entryDate: entryDate,
             completionLevel: viewModel.completionLevel,
             chipsFilledCount: viewModel.chipsFilledCount,
-            dismissedSeedGuidance: dismissedSeedGuidance,
-            dismissedHarvestGuidance: dismissedHarvestGuidance
+            dismissedSproutGuidance: dismissedSproutGuidance,
+            dismissedBloomGuidance: dismissedBloomGuidance
         ) {
             JournalTutorialHintView(kind: hintKind) {
                 switch hintKind {
-                case .seed:
-                    dismissedSeedGuidance = true
-                case .harvest:
-                    dismissedHarvestGuidance = true
+                case .sprout:
+                    dismissedSproutGuidance = true
+                case .bloom:
+                    dismissedBloomGuidance = true
                 }
             }
         }
@@ -1020,8 +1020,8 @@ private extension JournalScreen {
                 newNeeds: newNeedsCount,
                 newPeople: newPeopleCount,
                 hasCelebratedFirstTripleOne: tutorialProgress.hasCelebratedFirstTripleOne,
-                hasCelebratedFirstBalanced: tutorialProgress.hasCelebratedFirstBalanced,
-                hasCelebratedFirstFull: tutorialProgress.hasCelebratedFirstFull
+                hasCelebratedFirstLeaf: tutorialProgress.hasCelebratedFirstLeaf,
+                hasCelebratedFirstBloom: tutorialProgress.hasCelebratedFirstBloom
             )
         )
 
@@ -1081,7 +1081,7 @@ private extension JournalScreen {
     ) {
         tutorialProgress.applyRecording(from: milestoneOutcome)
         triggerStatusCelebration(for: newLevel)
-        let suppress = JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+        let suppress = JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
             isTodayEntry: entryDate == nil,
             newLevel: newLevel,
             hasSeenAppTour: hasSeenAppTour,
@@ -1095,7 +1095,7 @@ private extension JournalScreen {
 
     private func applyGenericRankUpUnlockToast(newLevel: JournalCompletionLevel) {
         triggerStatusCelebration(for: newLevel)
-        let suppress = JournalTodayOrientationPolicy.shouldSuppressSeedUnlockToast(
+        let suppress = JournalTodayOrientationPolicy.shouldSuppressSproutUnlockToast(
             isTodayEntry: entryDate == nil,
             newLevel: newLevel,
             hasSeenAppTour: hasSeenAppTour,
@@ -1169,7 +1169,7 @@ private extension JournalScreen {
         JournalOnboardingSuggestionContext(
             entryDate: entryDate,
             hasCelebratedFirstTripleOne: tutorialProgress.hasCelebratedFirstTripleOne,
-            hasCelebratedFirstFull: tutorialProgress.hasCelebratedFirstFull,
+            hasCelebratedFirstBloom: tutorialProgress.hasCelebratedFirstBloom,
             dismissedRemindersSuggestion: dismissedRemindersSuggestion,
             openedRemindersSuggestion: openedRemindersSuggestion,
             hasConfiguredReminderTime: hasConfiguredReminderTime,

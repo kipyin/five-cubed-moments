@@ -1,6 +1,6 @@
 # Grace Notes
 
-Structured daily reflection for gratitude, needs, and people in mind.
+Guided daily reflection for gratitude, needs, and people in mind.
 
 ## Why Grace Notes
 
@@ -16,22 +16,22 @@ The app centers three lenses that belong together:
 
 Each section is useful on its own, but the value compounds when they are read together. Repeated needs can show where something important stays unnamed or unaddressed. Gratitudes can reveal where care, provision, or progress is already present. People in Mind can show where attention, concern, and responsibility keep returning.
 
-Across a week, those parts create a more useful picture than a single mood or diary entry. You may notice that a need keeps appearing without movement, that it never shows up alongside gratitude, or that a person and a gratitude keep recurring together. Grace Notes is built to help entries add up to weekly reflection, not just accumulate in an archive.
+Across a week, those parts create a more useful picture than a single mood or generic diary page. You may notice that a need keeps appearing without movement, that it never shows up alongside gratitude, or that a person and a gratitude keep recurring together. Grace Notes is built to help **Journals** add up to weekly reflection, not just accumulate in an archive.
 
 ## Why It Feels Different
 
-Grace Notes is lightweight, private by default, and still powerful enough to surface patterns. Entries save as you type, weekly reflection summaries stay on-device, and JSON export/import keeps ownership with you. In a category crowded with cloud-first AI products, Grace Notes aims to stay useful without turning reflection into a black box or making AI a prerequisite.
+Grace Notes is lightweight, private by default, and still powerful enough to surface patterns. **Journals** save as you type, summaries on **Past** stay on-device, and JSON export/import keeps ownership with you. In a category crowded with cloud-first AI products, Grace Notes aims to stay useful without turning reflection into a black box or making AI a prerequisite.
 
 ## Features
 
-- **Today** - Structured daily entry with five lines each for Gratitudes, Needs, and People in Mind, plus reading notes and reflections. Entries auto-create and save as you type.
-  - **Sequential input** – Type a full sentence, press Enter; your full line stays easy to read on Today. Tap a line to edit inline. Each section holds up to five lines.
-- **Past** – Browse past entries by month, review the week's Reflection rhythm, and reopen saved days from the timeline.
-- **Weekly insights** – See recurring themes across sections, continuity prompts, and a deterministic weekly reflection summary generated on-device.
+- **Today** – For each calendar day the user creates a **Journal** with three **Sections** (Gratitudes, Needs, People in Mind), each with up to five **Entries**, plus **Reading Notes** and **Reflections** (together, **Notes**; a future version will merge these into one **Notes** field). Journals auto-create and save as you type.
+  - **Sequential input** – Type a full sentence, press Enter; each **Entry** stays easy to read. Tap an Entry to edit inline. Each **Section** holds up to five Entries.
+- **Past** – Browse Journals by month, see weekly rhythm and insights, and reopen saved days from the timeline. Layout uses **Cards** (for example a day **Card**, a completion / growth-stage **Card**, and other Past modules).
+- **Weekly insights** – Recurring **Themes** extracted from **Entries** (not “chips”), continuity prompts, and a deterministic weekly summary generated on-device.
 - **Privacy and ownership** – Storage is private by default, with JSON export/import for backup and ownership plus optional iCloud sync when you want it.
-- **Shareable cards** – Generate a formatted image of a day's entry and share via the iOS share sheet.
-- **Reminders and onboarding** – Optional daily reminders plus a guided first-entry path and milestone-based suggestions for reminders and iCloud.
-- **Habit support** – Streak plus tiered completion on the structured sections; perfect streak days match a full fifteen-line grid, while reading notes and reflections stay optional.
+- **Shareable cards** – Generate a formatted image of a Journal and share via the iOS share sheet.
+- **Reminders and onboarding** – Optional daily reminders plus guided first-Journal milestones and suggestions for reminders and iCloud.
+- **Habit support** – Streak plus **Completion status** on the three **Sections**; “perfect” streak days match **Bloom** (all fifteen Entries). **Notes** do not change **Completion status**.
 
 ## Release notes
 
@@ -43,26 +43,42 @@ Version history, per-build notes, and git tag shape (**`v{marketing}+{build}`**,
 
 ## Terminology (contributors)
 
-**Product English:** **entry** / **entries** (one calendar day’s journal on Today; type `JournalEntry` in code). The three structured groups are **Gratitudes**, **Needs**, and **People in Mind** (each holds up to five **lines**).
+Use this vocabulary in README, issues, PRs, and **new** Swift identifiers. Issue **#144** tracks renaming the codebase to match. Old spellings may persist only in **legacy decode / migration** code (string literals, UserDefaults migration, import of older JSON).
 
-**Simplified Chinese (user-facing copy):** Prefer **记录** for day-level entry, **部分** for each structured group, and **条** for one slot/line in a section. Avoid **句子条** in completion or tutorial wording. Do not reintroduce **Abundance** or **满溢** in customer strings.
+### Product terms (English)
 
-**Code vs UI labels:** Swift uses `JournalCompletionLevel` cases **`soil` … `bloom`**. On screen, the String Catalog maps those to the growth metaphor (**Soil → Sprout → Twig → Leaf → Bloom** in English; **静待播种 → 初露新芽 → 枝条初成 → 叶茂成形 → 花开有成** in zh-Hans). Legacy raw strings such as `empty`, `started`, `growing`, `balanced`, `full`, and `abundance` still decode into the current scale.
+1. **Journal** — What the user creates for **one calendar day** on **Today**. Do **not** call it a note, reflection, *journal entry*, or generic *entry* when you mean the day-level object. **Swift target:** `Journal` (replacing `JournalEntry`).
+2. **Today** — The main journaling tab. Say **Today**, not “today’s journal,” “today’s entry,” or “Journal” when you mean the tab.
+3. **Past** — The history and insights tab. Say **Past**, not Review, Insights, or Reflections when you mean this destination.
+4. **Section** — One of **three** on each Journal: **Gratitudes**, **Needs**, **People in Mind**. Do **not** use *structured* as an adjective for these groups.
+5. **Entry** — One of up to **five** items inside a **Section**. Do **not** call these lines, chips, strips, or sentences in new prose or identifiers. **Swift target:** name aligned with **Entry** (replacing `JournalItem`). *Note:* English **Entry** (section row) is not the same word as day-level **Journal**.
+6. **Notes** — Reading notes and reflections on a Journal. Treat them as **Notes** in docs; the app still has two fields until they merge into a single **Notes** field—avoid coupling Section **Entries** with Notes in new designs.
+7. **Theme** — On **Past**, analytics can surface **Themes** extracted from **Entries** (and related text). Do **not** call these chips.
+8. **Card** — A boxed module on **Past** (e.g. a day **Card**, growth-stage **Card**). Say **Card** in contributor prose, not generic *box*.
+9. **Completion status** — Per Journal, derived **only** from how many **Entries** are in each **Section**; **Notes** do not affect it. Implemented as `JournalCompletionLevel`. Each status has:
+   - **Completion name** — Soil, Sprout, Twig, Leaf, Bloom.
+   - **Completion symbol** — The visual glyph for that stage.
+   - **Completion badge** — Symbol + name. Say **badge**, not pill.
+10. **Bloom** — All **five Entries** filled in **each** Section (fifteen Entries total). Same as `.bloom` and what **perfect** streak and first-run milestones use for “all fifteen.”
+11. **Bloom Mode** — The Today appearance option with warm styling and motion (**not** “Summer mode”). **Swift:** rename from `JournalAppearanceMode.summer` / related identifiers in #144; until then, code may still say `summer` in places.
 
-Avoid **chip** and **strip** in new user-facing or contributor prose; identifiers and UI tests may still use them.
+### Simplified Chinese (user-facing)
 
-- **Completion status** — Derived only from line counts in the three structured sections (`JournalCompletionLevel`). Reading notes and reflections do **not** change the status.
-- **Top tier (`.bloom`)** — Five lines in each section (fifteen lines total), labeled **Bloom** / **花开有成** in the catalog. This is what **`JournalViewModel.completedToday`**, the **perfect** streak predicate, and first-run guided completion on Today use. Notes and reflections stay optional.
+Follow **`Localizable.xcstrings`**. Prefer **记录** for day-level **Journal**, **部分** for **Section**. Per-Section slots should move toward terminology consistent with **Entry** as English copy is updated. Avoid **句子条** in completion or tutorial wording. Do not reintroduce **Abundance** or **满溢** in customer strings.
 
-| Swift (`JournalCompletionLevel`) | English UI (localized value) | zh-Hans UI (localized value) | Legacy raw strings decoded from storage |
-|----------------------------------|-----------------------------|------------------------------|----------------------------------------|
+### Completion names (catalog)
+
+| `JournalCompletionLevel` | Completion name | zh-Hans (catalog) | Legacy raw strings (decode only) |
+|--------------------------|-----------------|-------------------|----------------------------------|
 | `.soil` | Soil | 静待播种 | `soil`, `empty` |
 | `.sprout` | Sprout | 初露新芽 | `sprout`, `started`, `seed` |
 | `.twig` | Twig | 枝条初成 | `twig`, `growing` |
 | `.leaf` | Leaf | 叶茂成形 | `leaf`, `balanced`, `ripening` |
 | `.bloom` | Bloom | 花开有成 | `bloom`, `full`, `harvest`, `abundance` |
 
-Main tabs: **Today** (journaling), **Past** (history and insights), **Settings**. Full-screen **App Tour** (`AppTourView` in code) can open from Today or Settings. Tour eligibility uses at least one line in each structured section (1/1/1) plus related flags (milestone copy uses **Sprout** / **初露新芽**, not the old “five cubed” naming).
+### Main tabs
+
+**Today** (journaling), **Past** (history and insights), **Settings**. The full-screen **App Tour** (`AppTourView`) can open from Today or Settings; eligibility uses at least one **Entry** in each **Section** (1/1/1) plus related flags.
 
 ## Requirements
 
@@ -74,7 +90,7 @@ Main tabs: **Today** (journaling), **Past** (history and insights), **Settings**
 1. Clone the repository.
 2. Open `GraceNotes/GraceNotes.xcodeproj` in Xcode.
 3. For code signing, select your development team in the project's Signing & Capabilities (if needed).
-4. Select a simulator or device and run (⌘R). For a preview with sample journal entries, use the *GraceNotes (Demo)* scheme.
+4. Select a simulator or device and run (⌘R). For a preview with sample **Journals**, use the *GraceNotes (Demo)* scheme.
 
 ## Automation
 
@@ -163,8 +179,8 @@ The **`full-ci`** and **`no-ci`** labels must exist in the GitHub repo (Issues �
 ## Project Structure
 
 - `GraceNotes/GraceNotes/Application` - App entry point
-- `GraceNotes/GraceNotes/Features/Journal` - Journal UI, view models, and sharing
-- `GraceNotes/GraceNotes/Data` - Models and persistence (SwiftData)
+- `GraceNotes/GraceNotes/Features/Journal` - **Today** and **Past** surfaces (UI, view models, sharing)
+- `GraceNotes/GraceNotes/Data` - Models and persistence (SwiftData); day-level model migrates to **`Journal`**, section rows to **Entry**-aligned types (#144)
 - `GraceNotes/GraceNotes/DesignSystem` - Theming and shared styling
 - `GraceNotes/GraceNotes/Services` - Summarization and app-level business services
 

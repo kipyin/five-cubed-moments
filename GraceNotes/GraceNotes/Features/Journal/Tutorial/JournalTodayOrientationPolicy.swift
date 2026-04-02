@@ -35,7 +35,7 @@ enum JournalTodayOrientationPolicy {
 
     /// Suppress the generic **Started** unlock toast when the App Tour is about to present at **1/1/1** (avoids
     /// stacking with the full-screen flow). The first line alone still shows the toast.
-    static func shouldSuppressSeedUnlockToast(
+    static func shouldSuppressSproutUnlockToast(
         isTodayEntry: Bool,
         newLevel: JournalCompletionLevel,
         hasSeenAppTour: Bool,

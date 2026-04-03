@@ -258,7 +258,13 @@ extension JournalDataImportServiceTests {
             )
         )
 
-        let summary = try importService.importData(data, context: context, calendar: calendar)
+        let summary = try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .merge,
+            mergeConflictResolution: .preferImported
+        )
 
         XCTAssertEqual(summary.insertedCount, 0)
         XCTAssertEqual(summary.updatedCount, 1)
@@ -267,6 +273,82 @@ extension JournalDataImportServiceTests {
         let entry = try XCTUnwrap(try repo.fetchEntry(for: day, context: context))
         XCTAssertEqual(entry.id, existingId)
         XCTAssertEqual((entry.gratitudes ?? []).map(\.fullText), ["New"])
+    }
+
+    func test_import_mergeThrowsWhenDeviceAndFileDifferWithoutResolution() throws {
+        let controller = try PersistenceController.makeInMemoryForTesting()
+        let context = ModelContext(controller.container)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        context.insert(
+            Journal(
+                entryDate: day,
+                gratitudes: [Entry(fullText: "Old")],
+                needs: [],
+                people: [],
+                readingNotes: "",
+                reflections: "",
+                createdAt: day,
+                updatedAt: day
+            )
+        )
+        try context.save()
+
+        let data = try encodeArchive(
+            JournalDataExportArchive(
+                schemaVersion: 1,
+                exportedAt: day,
+                entries: [
+                    makeExportEntry(
+                        id: UUID(),
+                        entryDate: day,
+                        gratitudes: [exportItem(fullText: "New")]
+                    )
+                ]
+            )
+        )
+
+        XCTAssertThrowsError(
+            try importService.importData(data, context: context, calendar: calendar)
+        ) { error in
+            XCTAssertEqual(error as? JournalDataImportError, .mergeConflicts(unresolvedDays: [day]))
+        }
+    }
+
+    func test_import_replace_removesDaysNotPresentInFile() throws {
+        let controller = try PersistenceController.makeInMemoryForTesting()
+        let context = ModelContext(controller.container)
+        let dayKeep = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let dayDrop = calendar.date(byAdding: .day, value: -3, to: dayKeep) ?? dayKeep
+        insertJournalForImportTest(context: context, day: dayKeep, gratitudeText: "LocalKeep")
+        insertJournalForImportTest(context: context, day: dayDrop, gratitudeText: "Orphan")
+        try context.save()
+
+        let data = try encodeArchive(
+            JournalDataExportArchive(
+                schemaVersion: 1,
+                exportedAt: dayKeep,
+                entries: [
+                    makeExportEntry(
+                        id: UUID(),
+                        entryDate: dayKeep,
+                        gratitudes: [exportItem(fullText: "FromFile")]
+                    )
+                ]
+            )
+        )
+
+        _ = try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .replace,
+            mergeConflictResolution: nil
+        )
+
+        let repo = JournalRepository(calendar: calendar)
+        let kept = try XCTUnwrap(try repo.fetchEntry(for: dayKeep, context: context))
+        XCTAssertEqual((kept.gratitudes ?? []).map(\.fullText), ["FromFile"])
+        XCTAssertNil(try repo.fetchEntry(for: dayDrop, context: context))
     }
 
     func test_import_persistsClampedItems() throws {
@@ -282,7 +364,13 @@ extension JournalDataImportServiceTests {
             )
         )
 
-        try importService.importData(data, context: context, calendar: calendar)
+        try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .merge,
+            mergeConflictResolution: .preferImported
+        )
 
         let repo = JournalRepository(calendar: calendar)
         let entry = try XCTUnwrap(try repo.fetchEntry(for: day, context: context))
@@ -293,6 +381,25 @@ extension JournalDataImportServiceTests {
 }
 
 extension JournalDataImportServiceTests {
+    private func insertJournalForImportTest(
+        context: ModelContext,
+        day: Date,
+        gratitudeText: String
+    ) {
+        context.insert(
+            Journal(
+                entryDate: day,
+                gratitudes: [Entry(fullText: gratitudeText)],
+                needs: [],
+                people: [],
+                readingNotes: "",
+                reflections: "",
+                createdAt: day,
+                updatedAt: day
+            )
+        )
+    }
+
     private func encodeArchive(_ archive: JournalDataExportArchive) throws -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

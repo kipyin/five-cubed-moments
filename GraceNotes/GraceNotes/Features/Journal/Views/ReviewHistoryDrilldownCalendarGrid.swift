@@ -49,12 +49,28 @@ struct ReviewHistoryDrilldownCalendarGrid: View {
     let sectionStripChipCountsByDay: [Date: Int]?
     let onMatchingDaySelected: (Date) -> Void
 
+    @State private var scrollPositionRowID: String?
+
     private var rows: [ReviewHistoryDrilldownCalendarRow] {
         ReviewHistoryDrilldownCalendarLayout.continuousRows(displayRange: displayRange, calendar: calendar)
     }
 
     private var orderedWeekdaySymbols: [String] {
         ReviewHistoryDrilldownCalendarLayout.weekdaySymbolsOrdered(calendar: calendar)
+    }
+
+    /// Week row id for the chronologically latest matching day; drives initial `scrollPosition`.
+    private var latestMatchWeekRowID: String? {
+        guard let latest = matchingDayStarts.max(),
+              let rowId = ReviewHistoryDrilldownCalendarLayout.weekRowIdContaining(
+                dayStart: latest,
+                rows: rows,
+                calendar: calendar
+              )
+        else {
+            return nil
+        }
+        return rowId
     }
 
     private var calendarDayFeatherMask: LinearGradient {
@@ -88,52 +104,34 @@ struct ReviewHistoryDrilldownCalendarGrid: View {
                 )
             )
 
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 10) {
-                        ForEach(rows) { row in
-                            Group {
-                                switch row {
-                                case .monthBanner(_, let title):
-                                    Text(title)
-                                        .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-                                        .foregroundStyle(AppTheme.reviewTextPrimary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .accessibilityAddTraits(.isHeader)
-                                case .week(_, let cells):
-                                    calendarWeekRow(cells: cells)
-                                }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    ForEach(rows) { row in
+                        Group {
+                            switch row {
+                            case .monthBanner(_, let title):
+                                Text(title)
+                                    .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
+                                    .foregroundStyle(AppTheme.reviewTextPrimary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .accessibilityAddTraits(.isHeader)
+                            case .week(_, let cells):
+                                calendarWeekRow(cells: cells)
                             }
-                            .id(row.id)
                         }
+                        .id(row.id)
                     }
-                    .padding(.bottom, Metrics.scrollContentBottomInset)
                 }
-                .frame(maxHeight: Metrics.scrollViewportHeight)
-                .mask(calendarDayFeatherMask)
-                .onAppear {
-                    scrollToLatestMatchIfNeeded(proxy: proxy)
-                }
+                .scrollTargetLayout()
+                .padding(.bottom, Metrics.scrollContentBottomInset)
+            }
+            .scrollPosition(id: $scrollPositionRowID, anchor: Metrics.scrollLatestMatchAnchor)
+            .frame(maxHeight: Metrics.scrollViewportHeight)
+            .mask(calendarDayFeatherMask)
+            .task(id: latestMatchWeekRowID) {
+                scrollPositionRowID = latestMatchWeekRowID
             }
         }
-    }
-
-    private func scrollToLatestMatchIfNeeded(proxy: ScrollViewProxy) {
-        guard let latest = matchingDayStarts.max(),
-              let rowId = ReviewHistoryDrilldownCalendarLayout.weekRowIdContaining(
-                dayStart: latest,
-                rows: rows,
-                calendar: calendar
-              )
-        else {
-            return
-        }
-        func scroll() {
-            proxy.scrollTo(rowId, anchor: Metrics.scrollLatestMatchAnchor)
-        }
-        DispatchQueue.main.async(execute: scroll)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: scroll)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24, execute: scroll)
     }
 
     private func calendarWeekRow(cells: [Date?]) -> some View {

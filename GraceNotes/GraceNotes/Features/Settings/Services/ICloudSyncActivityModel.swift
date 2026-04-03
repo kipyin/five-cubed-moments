@@ -1,7 +1,13 @@
-import CoreData
 import Foundation
 
-/// Best-effort “last time iCloud-related store activity was observed” using `NSPersistentStore` remote-change notifications.
+private extension Notification.Name {
+    /// Core Data / SwiftData posts this when CloudKit delivers remote changes.
+    static var graceNotesPersistentStoreRemoteChange: Notification.Name {
+        Notification.Name("NSPersistentStoreRemoteChange")
+    }
+}
+
+/// Best-effort “last time iCloud-related store activity was observed” using persistent-store remote-change notifications.
 @MainActor
 final class ICloudSyncActivityModel: ObservableObject {
     private static let persistedTimestampKey = "ICloudSync.lastRemoteChangeTimestamp"
@@ -20,7 +26,7 @@ final class ICloudSyncActivityModel: ObservableObject {
     func startMonitoring() {
         guard observerToken == nil else { return }
         observerToken = NotificationCenter.default.addObserver(
-            forName: NSPersistentStore.remoteChangeNotification,
+            forName: .graceNotesPersistentStoreRemoteChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in

@@ -58,7 +58,7 @@ enum ScheduledBackupPreferences {
 
     static func storeFolderBookmark(for url: URL) throws {
         let data = try url.bookmarkData(
-            options: .withSecurityScope,
+            options: [.minimalBookmark],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         )
@@ -72,7 +72,7 @@ enum ScheduledBackupPreferences {
         var isStale = false
         let url = try URL(
             resolvingBookmarkData: bookmark,
-            options: [.withSecurityScope, .withoutUI],
+            options: [.withoutUI],
             relativeTo: nil,
             bookmarkDataIsStale: &isStale
         )

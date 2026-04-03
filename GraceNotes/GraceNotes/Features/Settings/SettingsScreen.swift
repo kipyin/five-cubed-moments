@@ -13,6 +13,7 @@ struct SettingsScreen: View {
 
     @StateObject private var reminderState = ReminderSettingsFlowModel()
     @StateObject private var iCloudAccountState = ICloudAccountStatusModel()
+    @StateObject private var iCloudSyncActivity = ICloudSyncActivityModel()
     @State private var isReminderPickerExpanded = false
     @State private var isReminderToggleOn = false
     @State private var highlightedTarget: SettingsScrollTarget?
@@ -62,6 +63,7 @@ struct SettingsScreen: View {
                     isICloudSyncEnabled: $isICloudSyncEnabled,
                     iCloudAccountState: iCloudAccountState,
                     persistenceRuntimeSnapshot: persistenceRuntimeSnapshot,
+                    lastICloudSyncSubtitle: iCloudSyncSubtitle,
                     highlightedTarget: highlightedTarget,
                     openSystemSettings: { openSystemSettings() }
                 )
@@ -122,6 +124,9 @@ struct SettingsScreen: View {
                     focusSettingsTarget(target, proxy: proxy)
                 }
             }
+            .onAppear {
+                iCloudSyncActivity.startMonitoring()
+            }
             .onDisappear {
                 settingsHighlightDismissTask?.cancel()
             }
@@ -166,6 +171,18 @@ struct SettingsScreen: View {
 }
 
 private extension SettingsScreen {
+    var iCloudSyncSubtitle: String? {
+        let snapshot = persistenceRuntimeSnapshot
+        guard snapshot.storeUsesCloudKit, !snapshot.startupUsedCloudKitFallback else {
+            return nil
+        }
+        if let date = iCloudSyncActivity.lastRemoteChangeAt {
+            let formatted = date.formatted(date: .abbreviated, time: .shortened)
+            return String(format: String(localized: "DataPrivacy.iCloudSync.lastActivity.format"), formatted)
+        }
+        return String(localized: "DataPrivacy.iCloudSync.lastActivity.pending")
+    }
+
     var shouldUseCompactReminderPicker: Bool {
         dynamicTypeSize >= .accessibility1 || verticalSizeClass == .compact
     }

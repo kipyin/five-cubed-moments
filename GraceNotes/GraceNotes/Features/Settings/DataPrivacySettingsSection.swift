@@ -4,6 +4,8 @@ struct DataPrivacySettingsSection: View {
     @Binding var isICloudSyncEnabled: Bool
     @ObservedObject var iCloudAccountState: ICloudAccountStatusModel
     let persistenceRuntimeSnapshot: PersistenceRuntimeSnapshot
+    /// Shown below the iCloud sync toggle when CloudKit is the live store (best-effort remote activity).
+    let lastICloudSyncSubtitle: String?
     let highlightedTarget: SettingsScrollTarget?
     let openSystemSettings: () -> Void
 
@@ -22,6 +24,14 @@ struct DataPrivacySettingsSection: View {
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .tint(AppTheme.accent)
                         .frame(minHeight: 44)
+
+                    if isJournalOnCloudKitStore, let lastICloudSyncSubtitle {
+                        Text(lastICloudSyncSubtitle)
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.settingsTextMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
             .padding(.vertical, AppTheme.spacingTight / 2)

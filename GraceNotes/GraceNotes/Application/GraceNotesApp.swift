@@ -114,6 +114,12 @@ struct GraceNotesApp: App {
                 }
                 .modelContainer(controller.container)
                 .environment(\.persistenceRuntimeSnapshot, controller.runtimeSnapshot)
+                .modifier(
+                    ScheduledBackupSceneModifier(
+                        modelContainer: controller.container,
+                        enabled: hasCompletedOnboarding && !isRunningUITests
+                    )
+                )
         }
     }
 
@@ -230,6 +236,20 @@ private struct DeferredReviewRoot: View {
             guard isSelected, !hasOpenedReviewTab else { return }
             hasOpenedReviewTab = true
             PerformanceTrace.instant("ReviewScreen.deferredUntilSelected")
+        }
+    }
+}
+
+private struct ScheduledBackupSceneModifier: ViewModifier {
+    let modelContainer: ModelContainer
+    let enabled: Bool
+
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content.onChange(of: scenePhase) { _, phase in
+            guard enabled, phase == .active else { return }
+            Task { await ScheduledBackupRunner.runIfDue(modelContainer: modelContainer) }
         }
     }
 }

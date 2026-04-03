@@ -6,6 +6,19 @@ enum JournalDataImportError: Error, Equatable {
     case unsupportedSchemaVersion(Int)
     case fileTooLarge
     case tooManyEntries
+    case mergeConflicts(unresolvedDays: [Date])
+}
+
+enum JournalImportMode: Equatable {
+    /// Keeps on-device-only days; overlaps with the file either match or become conflicts.
+    case merge
+    /// Deletes any on-device days that are not in the file, then applies the file.
+    case replace
+}
+
+enum JournalImportMergeConflictResolution: Equatable {
+    case preferImported
+    case preferLocal
 }
 
 /// Summary of a completed import. `processedDayCount` is unique calendar days after deduplication.
@@ -28,6 +41,7 @@ struct JournalDataImportService {
     static let maxImportEntryCount = 10_000
 
     private let maxStringFieldLength = 50_000
+    private let exportMapper = JournalDataExportService()
 
     /// Shared with the file picker path so limits stay aligned. Used by tests without allocating huge `Data`.
     internal static func checkImportPayloadByteCount(_ byteCount: Int) throws {
@@ -51,22 +65,48 @@ struct JournalDataImportService {
     func importData(
         _ data: Data,
         context: ModelContext,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        mode: JournalImportMode = .merge,
+        mergeConflictResolution: JournalImportMergeConflictResolution? = nil
     ) throws -> JournalDataImportSummary {
         try Self.checkImportPayloadByteCount(data.count)
         let archive = try decodeArchive(data)
         let entries = dedupeByCalendarDayLastWins(archive.entries, calendar: calendar)
+        let repository = JournalRepository(calendar: calendar)
+
+        let conflictDays = try mergeConflictDayStarts(entries: entries, context: context, calendar: calendar)
+        if mode == .merge, !conflictDays.isEmpty, mergeConflictResolution == nil {
+            throw JournalDataImportError.mergeConflicts(unresolvedDays: conflictDays)
+        }
+
+        let skipDays: Set<Date> =
+            if mode == .merge && mergeConflictResolution == .preferLocal {
+                Set(conflictDays)
+            } else {
+                []
+            }
+
+        if mode == .replace {
+            let fileDays = Set(entries.map { calendar.startOfDay(for: $0.entryDate) })
+            let locals = try repository.fetchAllEntries(context: context)
+            for journal in locals {
+                let day = calendar.startOfDay(for: journal.entryDate)
+                if !fileDays.contains(day) {
+                    context.delete(journal)
+                }
+            }
+        }
 
         var inserted = 0
         var updated = 0
-        let repository = JournalRepository(calendar: calendar)
-
         for export in entries {
             let dayStart = calendar.startOfDay(for: export.entryDate)
+            if skipDays.contains(dayStart) {
+                continue
+            }
             let sanitized = sanitize(export)
 
             if let existing = try repository.fetchEntry(dayStart: dayStart, context: context) {
-                // Keep the existing model identity (SwiftData / CloudKit); replace content from the file.
                 existing.entryDate = dayStart
                 existing.gratitudes = sanitized.gratitudes
                 existing.needs = sanitized.needs
@@ -97,11 +137,34 @@ struct JournalDataImportService {
         }
 
         try context.save()
+        let processed = entries.filter { !skipDays.contains(calendar.startOfDay(for: $0.entryDate)) }.count
         return JournalDataImportSummary(
-            processedDayCount: entries.count,
+            processedDayCount: processed,
             insertedCount: inserted,
             updatedCount: updated
         )
+    }
+
+    /// Day starts (start-of-day) where merge mode would need a conflict decision.
+    func mergeConflictDayStarts(
+        entries: [JournalDataExportEntry],
+        context: ModelContext,
+        calendar: Calendar
+    ) throws -> [Date] {
+        let repository = JournalRepository(calendar: calendar)
+        var conflicts: [Date] = []
+        for export in entries {
+            let dayStart = calendar.startOfDay(for: export.entryDate)
+            guard let existing = try repository.fetchEntry(dayStart: dayStart, context: context) else {
+                continue
+            }
+            let filePayload = comparisonPayload(for: export)
+            let diskPayload = comparisonPayload(for: exportMapper.makeExportEntry(from: existing))
+            if filePayload != diskPayload {
+                conflicts.append(dayStart)
+            }
+        }
+        return conflicts.sorted()
     }
 
     /// Exposed for unit tests that avoid creating a `ModelContext`.
@@ -148,6 +211,18 @@ struct JournalDataImportService {
         )
     }
 
+    private func comparisonPayload(for export: JournalDataExportEntry) -> ImportComparisonPayload {
+        let sanitized = sanitize(export)
+        return ImportComparisonPayload(
+            gratitudeTexts: sanitized.gratitudes.map(\.fullText),
+            needTexts: sanitized.needs.map(\.fullText),
+            peopleTexts: sanitized.people.map(\.fullText),
+            readingNotes: sanitized.readingNotes,
+            reflections: sanitized.reflections,
+            completedAt: sanitized.completedAt
+        )
+    }
+
     private func sanitize(_ export: JournalDataExportEntry) -> SanitizedExport {
         let gratitudes = mapItems(Array(export.gratitudes.prefix(Journal.slotCount)))
         let needs = mapItems(Array(export.needs.prefix(Journal.slotCount)))
@@ -182,6 +257,15 @@ struct JournalDataImportService {
     private func normalizeNoteField(_ value: String) -> String {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return clampString(trimmed)
+    }
+
+    private struct ImportComparisonPayload: Equatable {
+        let gratitudeTexts: [String]
+        let needTexts: [String]
+        let peopleTexts: [String]
+        let readingNotes: String
+        let reflections: String
+        let completedAt: Date?
     }
 
     private struct SanitizedExport {

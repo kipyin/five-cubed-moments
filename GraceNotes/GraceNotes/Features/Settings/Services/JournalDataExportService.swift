@@ -36,7 +36,7 @@ struct JournalDataExportService {
         )
     }
 
-    private func makeExportEntry(from entry: Journal) -> JournalDataExportEntry {
+    func makeExportEntry(from entry: Journal) -> JournalDataExportEntry {
         JournalDataExportEntry(
             id: entry.id,
             entryDate: entry.entryDate,

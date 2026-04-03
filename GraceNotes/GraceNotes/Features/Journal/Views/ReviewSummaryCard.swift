@@ -341,12 +341,13 @@ struct ReviewDaysYouWrotePanel: View {
 
     /// Five completion rows for one day; weekday labels sit in ``rhythmLabelRow``.
     private func rhythmColumnChart(day: ReviewDayActivity, metrics: RhythmCurveScaledMetrics) -> some View {
-        let activeRow = levelRowIndexFromTop(for: day)
+        let displayedLevel = rhythmDisplayedCompletionLevel(for: day)
+        let activeRow = displayedLevel.map { levelRowIndexFromTop(for: $0) }
         return VStack(spacing: 3) {
             ForEach(0..<5, id: \.self) { rowFromTop in
                 ZStack {
-                    if activeRow == rowFromTop {
-                        rhythmStatusPill(for: day, metrics: metrics)
+                    if let activeRow, let level = displayedLevel, activeRow == rowFromTop {
+                        rhythmStatusPill(level: level, metrics: metrics)
                     } else {
                         rhythmInactiveRowSlot()
                     }
@@ -387,9 +388,8 @@ struct ReviewDaysYouWrotePanel: View {
         .multilineTextAlignment(.center)
     }
 
-    private func rhythmStatusPill(for day: ReviewDayActivity, metrics: RhythmCurveScaledMetrics) -> some View {
-        let level = effectiveCompletionLevel(for: day)
-        return Image(ReviewRhythmFormatting.assetName(for: level))
+    private func rhythmStatusPill(level: JournalCompletionLevel, metrics: RhythmCurveScaledMetrics) -> some View {
+        Image(ReviewRhythmFormatting.assetName(for: level))
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
@@ -408,8 +408,10 @@ struct ReviewDaysYouWrotePanel: View {
             .accessibilityHidden(true)
     }
 
-    private func effectiveCompletionLevel(for day: ReviewDayActivity) -> JournalCompletionLevel {
-        day.strongestCompletionLevel ?? .soil
+    /// Completion glyph only for calendar days with a persisted ``Journal`` row (matches Growth Stages semantics).
+    private func rhythmDisplayedCompletionLevel(for day: ReviewDayActivity) -> JournalCompletionLevel? {
+        guard day.hasPersistedEntry else { return nil }
+        return day.strongestCompletionLevel ?? .soil
     }
 
     private func accessibilityRhythmColumnId(for day: ReviewDayActivity) -> String {
@@ -417,8 +419,7 @@ struct ReviewDaysYouWrotePanel: View {
         "ReviewRhythmDay.\(Int(day.date.timeIntervalSince1970))"
     }
 
-    private func levelRowIndexFromTop(for day: ReviewDayActivity) -> Int {
-        let level = day.strongestCompletionLevel ?? .soil
+    private func levelRowIndexFromTop(for level: JournalCompletionLevel) -> Int {
         switch level {
         case .bloom:
             return 0
@@ -460,6 +461,12 @@ struct ReviewDaysYouWrotePanel: View {
             return String(
                 format: String(localized: "You reached %1$@ on %2$@."),
                 localizedCompletionStageName(for: level),
+                dateText
+            )
+        }
+        if day.hasPersistedEntry {
+            return String(
+                format: String(localized: "You wrote on %@"),
                 dateText
             )
         }

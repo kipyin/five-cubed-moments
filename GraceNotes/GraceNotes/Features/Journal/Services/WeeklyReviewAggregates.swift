@@ -306,7 +306,8 @@ private extension WeeklyReviewAggregatesBuilder {
         let rhythmHistory = buildRhythmHistory(
             allEntries: allEntries,
             currentPeriod: currentPeriod,
-            calendar: calendar
+            calendar: calendar,
+            referenceDate: referenceDate
         )
         let sectionTotals = ReviewWeekSectionTotals(
             gratitudeMentions: entries.reduce(0) { $0 + ($1.gratitudes ?? []).count },
@@ -628,12 +629,13 @@ private extension WeeklyReviewAggregatesBuilder {
         }
     }
 
-    /// Builds a dense oldest-to-newest activity sequence from the earliest journal day through the last day
-    /// of `currentPeriod` (one row per calendar day, including hollow days).
+    /// Builds a dense oldest-to-newest activity sequence from the earliest journal day through
+    /// ``min(lastDayOfReviewWeek, startOfReferenceDay)`` (one row per calendar day, including hollow days).
     private func buildRhythmHistory(
         allEntries: [Journal],
         currentPeriod: Range<Date>,
-        calendar: Calendar
+        calendar: Calendar,
+        referenceDate: Date
     ) -> [ReviewDayActivity]? {
         guard !allEntries.isEmpty else { return nil }
 
@@ -641,8 +643,11 @@ private extension WeeklyReviewAggregatesBuilder {
             from: allEntries,
             calendar: calendar
         )
-        let endDayInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound)
+        let weekLastInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound)
             ?? currentPeriod.lowerBound
+        let weekLastStart = calendar.startOfDay(for: weekLastInclusive)
+        let referenceDayStart = calendar.startOfDay(for: referenceDate)
+        let endDayInclusive = min(weekLastStart, referenceDayStart)
         guard let entryMinRaw = allEntries.map({ calendar.startOfDay(for: $0.entryDate) }).min() else {
             return nil
         }

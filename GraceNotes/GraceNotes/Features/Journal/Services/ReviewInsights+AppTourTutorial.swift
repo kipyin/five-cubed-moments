@@ -47,7 +47,7 @@ extension ReviewInsights {
                 date: dayStart,
                 hasReflectiveActivity: true,
                 strongestCompletionLevel: level == .soil ? nil : level,
-                hasPersistedEntry: false
+                hasPersistedEntry: true
             )
         }
         let mix = ReviewWeekCompletionMix(

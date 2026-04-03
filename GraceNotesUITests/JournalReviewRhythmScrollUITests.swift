@@ -24,28 +24,17 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
         return app.descendants(matching: .any).matching(predicate).firstMatch
     }
 
-    /// Oldest column is **today − 36** (wide seed). Trailing column is the **last local day of the review week**
-    /// containing today (matches uncapped dense ``rhythmHistory`` through ``ReviewInsightsPeriod``).
+    /// Oldest column is **today − 36** (wide seed). Trailing column is **today** (rhythm history does not extend
+    /// past the insights reference calendar day).
     private func rhythmDayIds() -> (oldest: String, newest: String)? {
         var calendar = Calendar.current
         calendar.firstWeekday = 1
-        let now = Date()
-        let todayStart = calendar.startOfDay(for: now)
+        let todayStart = calendar.startOfDay(for: Date())
         guard let oldestSeededDay = calendar.date(byAdding: .day, value: -36, to: todayStart) else {
             return nil
         }
-        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
-            return nil
-        }
-        let weekStart = calendar.startOfDay(for: weekInterval.start)
-        guard let weekEndExclusive = calendar.date(byAdding: .day, value: 7, to: weekStart),
-              let lastDayOfWeek = calendar.date(byAdding: .day, value: -1, to: weekEndExclusive)
-        else {
-            return nil
-        }
-        let trailingStart = calendar.startOfDay(for: lastDayOfWeek)
         let oldestId = "ReviewRhythmDay.\(Int(calendar.startOfDay(for: oldestSeededDay).timeIntervalSince1970))"
-        let newestId = "ReviewRhythmDay.\(Int(trailingStart.timeIntervalSince1970))"
+        let newestId = "ReviewRhythmDay.\(Int(todayStart.timeIntervalSince1970))"
         return (oldestId, newestId)
     }
 

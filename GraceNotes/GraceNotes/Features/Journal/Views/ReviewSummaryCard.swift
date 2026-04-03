@@ -16,18 +16,18 @@ struct ReviewDaysYouWrotePanel: View {
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
     let insights: ReviewInsights?
     let isLoading: Bool
-    /// When set, persisted rhythm days open via this callback (Past tab sheet).
+    /// When set, rhythm columns open via this callback (Past tab sheet).
     /// When `nil`, uses push `NavigationLink` to `JournalScreen`.
-    var onPersistedDaySelected: ((Date) -> Void)?
+    var onRhythmDaySelected: ((Date) -> Void)?
 
     init(
         insights: ReviewInsights?,
         isLoading: Bool,
-        onPersistedDaySelected: ((Date) -> Void)? = nil
+        onRhythmDaySelected: ((Date) -> Void)? = nil
     ) {
         self.insights = insights
         self.isLoading = isLoading
-        self.onPersistedDaySelected = onPersistedDaySelected
+        self.onRhythmDaySelected = onRhythmDaySelected
     }
 
     var body: some View {
@@ -63,7 +63,8 @@ struct ReviewDaysYouWrotePanel: View {
         }
     }
 
-    /// Seven consecutive local days ending on ``referenceNow`` (typically “today”), merged with rhythm payloads.
+    /// Merges ``rawDays`` into one ``ReviewDayActivity`` per local calendar day (last duplicate wins),
+    /// sorted oldest → newest. ``referenceNow`` is only used for the empty `rawDays` interval anchor.
     static func rollingRhythmDaysForDisplay(
         _ rawDays: [ReviewDayActivity],
         referenceNow: Date,
@@ -73,35 +74,28 @@ struct ReviewDaysYouWrotePanel: View {
         displayInterval: Range<Date>
     ) {
         let refStart = calendar.startOfDay(for: referenceNow)
-        guard let oldestRaw = calendar.date(byAdding: .day, value: -6, to: refStart),
-              let endExclusive = calendar.date(byAdding: .day, value: 1, to: refStart)
-        else {
+        guard !rawDays.isEmpty else {
             return ([], refStart..<refStart)
         }
-        let oldestStart = calendar.startOfDay(for: oldestRaw)
-        let displayInterval = oldestStart..<endExclusive
         var byDay: [Date: ReviewDayActivity] = [:]
         for day in rawDays {
             let dayKey = calendar.startOfDay(for: day.date)
             byDay[dayKey] = day
         }
-        var result: [ReviewDayActivity] = []
-        for offset in 0..<7 {
-            guard let dayStart = calendar.date(byAdding: .day, value: offset, to: oldestStart) else { continue }
-            let normalizedDay = calendar.startOfDay(for: dayStart)
-            if let existing = byDay[normalizedDay] {
-                result.append(existing)
-            } else {
-                result.append(
-                    ReviewDayActivity(
-                        date: normalizedDay,
-                        hasReflectiveActivity: false,
-                        hasPersistedEntry: false
-                    )
-                )
-            }
+        let sortedKeys = byDay.keys.sorted()
+        let days: [ReviewDayActivity] = sortedKeys.compactMap { byDay[$0] }
+        guard let first = days.first,
+              let last = days.last,
+              let displayEndExclusive = calendar.date(
+                  byAdding: .day,
+                  value: 1,
+                  to: calendar.startOfDay(for: last.date)
+              )
+        else {
+            return ([], refStart..<refStart)
         }
-        return (result, displayInterval)
+        let displayInterval = calendar.startOfDay(for: first.date)..<displayEndExclusive
+        return (days, displayInterval)
     }
 
     private var reviewRhythmCalendar: Calendar {
@@ -109,6 +103,7 @@ struct ReviewDaysYouWrotePanel: View {
             .configuredCalendar()
     }
 
+    @ViewBuilder
     private func rhythmHistoryCurve(for insights: ReviewInsights) -> some View {
         let stats = insights.weekStats
         let rawDays = stats.rhythmHistory ?? stats.activity
@@ -119,17 +114,33 @@ struct ReviewDaysYouWrotePanel: View {
             referenceNow: referenceNow,
             calendar: calendar
         )
-        let metrics = RhythmCurveScaledMetrics(dynamicTypeSize: dynamicTypeSize)
-        let pinStart = days.first.map { calendar.startOfDay(for: $0.date) } ?? insights.weekStart
-        let pinIdentity = ReviewRhythmScrollPinIdentity(weekStart: pinStart, days: days)
-        return rhythmHistoryScrollSection(
-            days: days,
-            displayInterval: displayInterval,
-            referenceNow: referenceNow,
-            rhythmCalendar: calendar,
-            metrics: metrics,
-            pinIdentity: pinIdentity
+        if days.isEmpty {
+            rhythmStripEmptyState()
+        } else {
+            let metrics = RhythmCurveScaledMetrics(dynamicTypeSize: dynamicTypeSize)
+            let pinStart = days.first.map { calendar.startOfDay(for: $0.date) } ?? insights.weekStart
+            let pinIdentity = ReviewRhythmScrollPinIdentity(weekStart: pinStart, days: days)
+            rhythmHistoryScrollSection(
+                days: days,
+                displayInterval: displayInterval,
+                referenceNow: referenceNow,
+                rhythmCalendar: calendar,
+                metrics: metrics,
+                pinIdentity: pinIdentity
+            )
+        }
+    }
+
+    private func rhythmStripEmptyState() -> some View {
+        let message = String(
+            localized: "No journaling days to show here yet. After you write, they will appear in this strip."
         )
+        return Text(message)
+            .font(AppTheme.warmPaperBody)
+            .foregroundStyle(AppTheme.reviewTextMuted)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .accessibilityLabel(message)
     }
 
     @ViewBuilder
@@ -236,39 +247,31 @@ struct ReviewDaysYouWrotePanel: View {
             }
 
         Group {
-            if day.hasPersistedEntry {
-                if let onPersistedDaySelected {
-                    Button {
-                        onPersistedDaySelected(day.date)
-                    } label: {
-                        column
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    NavigationLink {
-                        JournalScreen(entryDate: day.date)
-                    } label: {
-                        column
-                    }
-                    .buttonStyle(.plain)
+            if let onRhythmDaySelected {
+                Button {
+                    onRhythmDaySelected(day.date)
+                } label: {
+                    column
                 }
+                .buttonStyle(.plain)
             } else {
-                column
+                NavigationLink {
+                    JournalScreen(entryDate: day.date)
+                } label: {
+                    column
+                }
+                .buttonStyle(.plain)
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(activityAccessibilityLabel(for: day))
-        .accessibilityHint(rhythmColumnAccessibilityHint(for: day))
+        .accessibilityHint(rhythmColumnAccessibilityHint())
         .accessibilityIdentifier(accessibilityRhythmColumnId(for: day))
         .id(day.date)
     }
 
-    private func rhythmColumnAccessibilityHint(for day: ReviewDayActivity) -> String {
-        if day.hasPersistedEntry {
-            String(localized: "Opens the journal entry for that day.")
-        } else {
-            String(localized: "No saved journal entry for this day.")
-        }
+    private func rhythmColumnAccessibilityHint() -> String {
+        String(localized: "Opens the journal entry for that day.")
     }
 
     /// Weekday / M·d labels aligned under columns (below column fills).

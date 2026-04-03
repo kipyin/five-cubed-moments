@@ -628,8 +628,8 @@ private extension WeeklyReviewAggregatesBuilder {
         }
     }
 
-    /// Builds a longer oldest-to-newest activity sequence ending on the last day of `currentPeriod`,
-    /// capped for performance.
+    /// Builds a dense oldest-to-newest activity sequence from the earliest journal day through the last day
+    /// of `currentPeriod` (one row per calendar day, including hollow days).
     private func buildRhythmHistory(
         allEntries: [Journal],
         currentPeriod: Range<Date>,
@@ -643,9 +643,10 @@ private extension WeeklyReviewAggregatesBuilder {
         )
         let endDayInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound)
             ?? currentPeriod.lowerBound
-        let entryMin = allEntries.map { calendar.startOfDay(for: $0.entryDate) }.min()
-        let capBack = calendar.date(byAdding: .day, value: -179, to: endDayInclusive) ?? endDayInclusive
-        let startDay = max(capBack, entryMin ?? capBack)
+        guard let entryMinRaw = allEntries.map({ calendar.startOfDay(for: $0.entryDate) }).min() else {
+            return nil
+        }
+        let startDay = entryMinRaw
         guard startDay <= endDayInclusive else { return nil }
 
         let rangeEndExclusive = calendar.date(byAdding: .day, value: 1, to: endDayInclusive) ?? currentPeriod.upperBound

@@ -24,18 +24,29 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
         return app.descendants(matching: .any).matching(predicate).firstMatch
     }
 
-    /// Identifiers for the leftmost and rightmost days in ``ReviewDaysYouWrotePanel/rollingRhythmDaysForDisplay``
-    /// (seven local days ending on today). The wide UI-test seed still spans 36 days so every column has data.
-    private func rhythmDayIds() -> (oldest: String, today: String)? {
-        let calendar = Calendar.current
-        let todayStart = calendar.startOfDay(for: Date())
-        guard let oldestInStrip = calendar.date(byAdding: .day, value: -6, to: todayStart) else {
+    /// Oldest column is **today − 36** (wide seed). Trailing column is the **last local day of the review week**
+    /// containing today (matches uncapped dense ``rhythmHistory`` through ``ReviewInsightsPeriod``).
+    private func rhythmDayIds() -> (oldest: String, newest: String)? {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 1
+        let now = Date()
+        let todayStart = calendar.startOfDay(for: now)
+        guard let oldestSeededDay = calendar.date(byAdding: .day, value: -36, to: todayStart) else {
             return nil
         }
-        let oldestStart = calendar.startOfDay(for: oldestInStrip)
-        let oldestId = "ReviewRhythmDay.\(Int(oldestStart.timeIntervalSince1970))"
-        let todayId = "ReviewRhythmDay.\(Int(todayStart.timeIntervalSince1970))"
-        return (oldestId, todayId)
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
+            return nil
+        }
+        let weekStart = calendar.startOfDay(for: weekInterval.start)
+        guard let weekEndExclusive = calendar.date(byAdding: .day, value: 7, to: weekStart),
+              let lastDayOfWeek = calendar.date(byAdding: .day, value: -1, to: weekEndExclusive)
+        else {
+            return nil
+        }
+        let trailingStart = calendar.startOfDay(for: lastDayOfWeek)
+        let oldestId = "ReviewRhythmDay.\(Int(calendar.startOfDay(for: oldestSeededDay).timeIntervalSince1970))"
+        let newestId = "ReviewRhythmDay.\(Int(trailingStart.timeIntervalSince1970))"
+        return (oldestId, newestId)
     }
 
     @MainActor
@@ -57,7 +68,7 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
             return
         }
         let oldestColumn = rhythmColumn(app: app, identifier: ids.oldest)
-        let todayColumn = rhythmColumn(app: app, identifier: ids.today)
+        let newestColumn = rhythmColumn(app: app, identifier: ids.newest)
 
         XCTAssertTrue(oldestColumn.waitForExistence(timeout: 10), "Expected oldest rhythm column.")
 
@@ -67,7 +78,7 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
         }
 
         XCTAssertTrue(oldestColumn.isHittable, "Oldest column should be on screen after swiping.")
-        XCTAssertFalse(todayColumn.isHittable, "Today should be off-screen while viewing oldest in portrait.")
+        XCTAssertFalse(newestColumn.isHittable, "Newest column should be off-screen while viewing oldest in portrait.")
 
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(scroll.waitForExistence(timeout: 3))
@@ -75,13 +86,13 @@ final class JournalReviewRhythmScrollUITests: XCTestCase {
         XCTAssertTrue(scroll.waitForExistence(timeout: 3))
 
         let oldestAfter = rhythmColumn(app: app, identifier: ids.oldest)
-        let todayAfter = rhythmColumn(app: app, identifier: ids.today)
+        let newestAfter = rhythmColumn(app: app, identifier: ids.newest)
         XCTAssertTrue(oldestAfter.waitForExistence(timeout: 5))
-        XCTAssertTrue(todayAfter.waitForExistence(timeout: 5))
+        XCTAssertTrue(newestAfter.waitForExistence(timeout: 5))
 
-        if todayAfter.isHittable, !oldestAfter.isHittable {
+        if newestAfter.isHittable, !oldestAfter.isHittable {
             let message = """
-            Reg #131: after orientation, only today is reachable — strip snapped to trailing \
+            Reg #131: after orientation, only the newest day is reachable — strip snapped to trailing \
             while user had scrolled to oldest days.
             """
             XCTFail(message)

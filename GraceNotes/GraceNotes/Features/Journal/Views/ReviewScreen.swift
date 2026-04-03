@@ -301,7 +301,7 @@ struct ReviewScreen: View {
                 ReviewDaysYouWrotePanel(
                     insights: reviewInsights,
                     isLoading: isLoadingInsights,
-                    onPersistedDaySelected: presentJournalDaySheet
+                    onRhythmDaySelected: presentJournalDaySheet
                 )
                 .listRowInsets(PastTabListLayout.cardRowInsets)
                 .listRowBackground(AppTheme.reviewBackground)

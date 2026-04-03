@@ -288,23 +288,25 @@ private struct SectionEntriesDrilldownSheet: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ReviewHistoryDrilldownCalendarGrid(
-                        matchingDayStarts: sectionMatchingDayStarts,
-                        journalDaysInHistoryWindow: historyJournalDays,
-                        historyDayRange: historyDayRange,
-                        displayRange: displayRange,
-                        calendar: drilldownCalendar,
-                        growthStageForMatchedDays: nil,
-                        sectionStripChipCountsByDay: sectionStripChipCountsByDay,
-                        onMatchingDaySelected: { day in
-                            journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
-                                dayStart: day,
-                                calendar: drilldownCalendar
-                            )
-                        }
-                    )
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    List {
+                        ReviewHistoryDrilldownCalendarGrid(
+                            matchingDayStarts: sectionMatchingDayStarts,
+                            journalDaysInHistoryWindow: historyJournalDays,
+                            historyDayRange: historyDayRange,
+                            displayRange: displayRange,
+                            calendar: drilldownCalendar,
+                            growthStageForMatchedDays: nil,
+                            sectionStripChipCountsByDay: sectionStripChipCountsByDay,
+                            onMatchingDaySelected: { day in
+                                journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
+                                    dayStart: day,
+                                    calendar: drilldownCalendar
+                                )
+                            }
+                        )
+                        .padding(.vertical, 4)
+                    }
+                    .scrollContentBackground(.hidden)
                 }
             }
             .background(AppTheme.reviewBackground)

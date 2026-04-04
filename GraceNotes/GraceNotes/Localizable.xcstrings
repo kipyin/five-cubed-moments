@@ -5703,7 +5703,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "开启摘要与洞察后，应用会基于你的记录生成「过去」里的洞察。"
+            "value": "开启摘要与洞察后，感恩记会根据你的记录，在「过去」生成洞察。"
           }
         }
       }
@@ -7623,13 +7623,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When you want a little help with short labels or Review, you can explore summarization options in Settings."
+            "value": "When you want a little help with short labels or Past insights, you can explore summarization options in Settings."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "若想为短标签或「回顾」多要一点帮助，可以到「设置」里查看摘要与洞察相关选项。"
+            "value": "若想为短标签或「过去」里的洞察多要一点帮助，可到「设置」查看摘要与洞察。"
           }
         }
       }
@@ -9068,13 +9068,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sample only. Your real Past insights card may include more sections when Summarize and Insights is on. Gray lines in the live card are follow-up prompts. Answer in Reflections on Today, or in your next entry."
+            "value": "Sample only. When Summarize and Insights is on, the insights card on Past may include more sections than this preview. Gray lines on the live card are follow-up prompts. Answer in Reflections on Today, or in your next entry."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "仅为示例。开启「摘要与洞察」后，真实的「过去」洞察卡片可能还有更多栏目。实卡里的灰色小字是跟进提示，想写时可以在「今天」的反思里接几句，或在下一篇记录里回应。"
+            "value": "仅为示例。开启「摘要与洞察」后，你在「过去」看到的洞察卡片可能还有更多栏目。真实卡片里的灰色小字是跟进提示，你也可以随后在「今天」的反思里接着写，或在下一条记录里回应。"
           }
         }
       }

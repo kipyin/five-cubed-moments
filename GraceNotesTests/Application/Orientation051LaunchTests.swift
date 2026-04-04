@@ -27,12 +27,12 @@ final class Orientation051LaunchTests: XCTestCase {
         AppLaunchVersionTracker.applyLaunch(
             defaults: defaults,
             currentMarketingVersionOverride: "0.5.0",
-            currentBundleVersionOverride: 8
+            currentBundleVersionOverride: 9
         )
         XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
         XCTAssertNil(defaults.object(forKey: legacyPendingBranch))
         XCTAssertEqual(defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion), "0.5.0")
-        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 8)
+        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 9)
     }
 
     func test_applyLaunch_upgradeFromOlderVersion_doesNotClearGuidedOrSetPending051() {
@@ -43,13 +43,13 @@ final class Orientation051LaunchTests: XCTestCase {
         AppLaunchVersionTracker.applyLaunch(
             defaults: defaults,
             currentMarketingVersionOverride: "0.5.0",
-            currentBundleVersionOverride: 8
+            currentBundleVersionOverride: 9
         )
 
         XCTAssertNil(defaults.object(forKey: legacyPendingUpgrade))
         XCTAssertTrue(defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal))
         XCTAssertEqual(defaults.string(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion), "0.5.0")
-        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 8)
+        XCTAssertEqual(defaults.integer(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion), 9)
     }
 
     func test_migrateLegacy_whenUpgradePending_normalizesGuidedAndBranch_thenRemovesUpgradeOnly() {

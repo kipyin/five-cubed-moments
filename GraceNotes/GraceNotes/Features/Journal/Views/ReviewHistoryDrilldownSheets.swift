@@ -155,20 +155,26 @@ private struct GrowthStageDrilldownSheet: View {
         NavigationStack {
             Group {
                 if matchingDayStarts.isEmpty {
-                    ContentUnavailableView {
-                        Label(
-                            String(localized: "Review history growth drilldown calendar empty title"),
-                            systemImage: "calendar"
-                        )
-                    } description: {
-                        Text(String(localized: "Review history growth drilldown calendar empty description"))
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.reviewTextMuted)
+                    VStack(spacing: 12) {
+                        growthStageCriterionCaption
+                        ContentUnavailableView {
+                            Label(
+                                String(localized: "Review history growth drilldown calendar empty title"),
+                                systemImage: "calendar"
+                            )
+                        } description: {
+                            Text(String(localized: "Review history growth drilldown calendar empty description"))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.reviewTextMuted)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 } else {
                     ReviewHistoryDrilldownPeekContainer(
-                        above: Color.clear.frame(height: 0),
+                        above: growthStageCriterionCaption,
                         abovePeekHeight: $abovePeekHeight,
                         grid: { peek in
                             ReviewHistoryDrilldownCalendarGrid(
@@ -197,22 +203,16 @@ private struct GrowthStageDrilldownSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    VStack(spacing: 4) {
-                        HStack(spacing: 10) {
-                            ReviewGrowthStageSkylineGlyph(level: level, dynamicTypeSize: dynamicTypeSize)
-                            Text(growthStageDisplayTitle(for: level))
-                                .font(AppTheme.warmPaperBody.weight(.semibold))
-                                .foregroundStyle(AppTheme.reviewTextPrimary)
-                        }
-                        Text(growthStageCriterion(for: level))
-                            .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.reviewTextMuted)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.85)
-                            .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        ReviewGrowthStageSkylineGlyph(level: level, dynamicTypeSize: dynamicTypeSize)
+                        Text(growthStageDisplayTitle(for: level))
+                            .font(AppTheme.warmPaperBody.weight(.semibold))
+                            .foregroundStyle(AppTheme.reviewTextPrimary)
                     }
-                    .accessibilityElement(children: .combine)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        "\(growthStageDisplayTitle(for: level)). \(growthStageCriterion(for: level))"
+                    )
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "Done")) {
@@ -224,6 +224,19 @@ private struct GrowthStageDrilldownSheet: View {
                 JournalScreen(entryDate: item.date)
             }
         }
+    }
+
+    /// Criterion lives here (not in ``ToolbarItem/placement/principal``) so it can wrap without clipping the nav bar.
+    private var growthStageCriterionCaption: some View {
+        Text(growthStageCriterion(for: level))
+            .font(AppTheme.warmPaperMeta)
+            .foregroundStyle(AppTheme.reviewTextMuted)
+            .multilineTextAlignment(.center)
+            .lineLimit(3)
+            .minimumScaleFactor(0.85)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
     }
 
     private func growthStageDisplayTitle(for level: JournalCompletionLevel) -> String {

@@ -12,12 +12,21 @@ final class PastDrilldownCalendarLayoutTests: XCTestCase {
 
     /// Month banners in the feathered drill-down viewport must sit below the top fade so short
     /// (single-month) grids stay legible.
-    func test_drilldownCalendarGrid_topScrollInset_coversTopFeatherBand() {
+    func test_drilldownCalendarGrid_topScrollInset_coversTopFeatherBand_atPreferredViewport() {
         let viewport = ReviewHistoryDrilldownCalendarGrid.Metrics.scrollViewportHeight
         let featherTop = viewport * ReviewHistoryDrilldownCalendarGrid.Metrics.featherOpaqueStartsAt
-        XCTAssertGreaterThanOrEqual(
-            ReviewHistoryDrilldownCalendarGrid.Metrics.scrollContentTopInset + 0.5,
-            featherTop
+        let inset = ReviewHistoryDrilldownCalendarGrid.scrollContentTopInset(forViewportHeight: viewport)
+        XCTAssertGreaterThanOrEqual(inset + 0.5, featherTop)
+    }
+
+    func test_drilldownCalendarGrid_topScrollInset_scalesWithViewportHeight() {
+        let shortViewport: CGFloat = 220
+        let featherStart = ReviewHistoryDrilldownCalendarGrid.Metrics.featherOpaqueStartsAt
+        let expectedInset = (shortViewport * featherStart).rounded(.up)
+        XCTAssertEqual(
+            ReviewHistoryDrilldownCalendarGrid.scrollContentTopInset(forViewportHeight: shortViewport),
+            expectedInset,
+            accuracy: 0.001
         )
     }
 
@@ -235,5 +244,32 @@ final class PastDrilldownCalendarLayoutTests: XCTestCase {
             calendar: cal
         )
         XCTAssertEqual(countsOlderFirst[dayStart], 1)
+    }
+
+    func test_peekMetrics_clampedViewport_growsWithRemainingAbovePreferred() {
+        let preferred = ReviewHistoryDrilldownCalendarGrid.Metrics.scrollViewportHeight
+        let extra: CGFloat = 80
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: preferred + extra)
+        XCTAssertEqual(clamped, preferred + extra, accuracy: 0.001)
+    }
+
+    func test_peekMetrics_clampedViewport_doesNotInflateWhenRemainingSmallerThanNotionalMinimum() {
+        let minimum = ReviewHistoryDrilldownPeekMetrics.minimumViewportHeight
+        let remaining = minimum - 10
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: remaining)
+        XCTAssertEqual(clamped, remaining, accuracy: 0.001)
+    }
+
+    func test_peekMetrics_clampedViewport_clampsNegativeRemainingToZero() {
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: -40)
+        XCTAssertEqual(clamped, 0, accuracy: 0.001)
+    }
+
+    func test_peekMetrics_clampedViewport_usesRemainingWhenBetweenMinAndPreferred() {
+        let minimum = ReviewHistoryDrilldownPeekMetrics.minimumViewportHeight
+        let preferred = ReviewHistoryDrilldownCalendarGrid.Metrics.scrollViewportHeight
+        let target: CGFloat = minimum + (preferred - minimum) * 0.5
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: target)
+        XCTAssertEqual(clamped, target, accuracy: 0.001)
     }
 }

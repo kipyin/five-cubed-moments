@@ -1,5 +1,83 @@
 import SwiftUI
 
+private struct ReviewHistoryDrilldownAbovePeekHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct MeasureHeightModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ReviewHistoryDrilldownAbovePeekHeightKey.self,
+                    value: proxy.size.height
+                )
+            }
+        )
+    }
+}
+
+extension View {
+    fileprivate func reviewHistoryDrilldownMeasureAbovePeekHeight() -> some View {
+        modifier(MeasureHeightModifier())
+    }
+}
+
+/// Layout values shared by ``ReviewHistoryDrilldownPeekContainer``'s height math and its ``VStack`` (keep in sync).
+private enum ReviewHistoryDrilldownPeekContainerLayout {
+    /// Must match ``VStack`` `spacing` between `above` and `grid` when there is real header content.
+    static let aboveToGridSpacing: CGFloat = 12
+    /// Single value passed to ``View/padding(_:_:)`` for vertical padding on the ``VStack``.
+    static let verticalPadding: CGFloat = 8
+    /// Top + bottom padding total (derived from ``verticalPadding``).
+    static var verticalPaddingTotal: CGFloat { verticalPadding * 2 }
+}
+
+/// Single scroll owner for drill-down: only ``ReviewHistoryDrilldownCalendarGrid``'s `ScrollView` moves.
+private struct ReviewHistoryDrilldownPeekContainer<Above: View, GridContent: View>: View {
+    let above: Above
+    @Binding var abovePeekHeight: CGFloat
+    /// Spacing between measured `above` and the calendar; use `0` when `above` is a zero-height placeholder.
+    let aboveAndGridSpacing: CGFloat
+    /// Builds the feathered calendar; receives clamped peek height from ``GeometryReader``.
+    let grid: (CGFloat) -> GridContent
+
+    init(
+        above: Above,
+        abovePeekHeight: Binding<CGFloat>,
+        aboveAndGridSpacing: CGFloat = ReviewHistoryDrilldownPeekContainerLayout.aboveToGridSpacing,
+        grid: @escaping (CGFloat) -> GridContent
+    ) {
+        self.above = above
+        _abovePeekHeight = abovePeekHeight
+        self.aboveAndGridSpacing = aboveAndGridSpacing
+        self.grid = grid
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let remaining = proxy.size.height
+                - abovePeekHeight
+                - ReviewHistoryDrilldownPeekContainerLayout.verticalPaddingTotal
+                - aboveAndGridSpacing
+            let peek = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: remaining)
+
+            VStack(alignment: .leading, spacing: aboveAndGridSpacing) {
+                above
+                    .reviewHistoryDrilldownMeasureAbovePeekHeight()
+                grid(peek)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, ReviewHistoryDrilldownPeekContainerLayout.verticalPadding)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .onPreferenceChange(ReviewHistoryDrilldownAbovePeekHeightKey.self) { abovePeekHeight = $0 }
+        }
+    }
+}
+
 enum ReviewHistoryDrilldownPayload: Identifiable, Equatable {
     case growthStage(JournalCompletionLevel)
     case section(ReviewStatsSectionKind)
@@ -49,6 +127,7 @@ private struct GrowthStageDrilldownSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var journalNavigationDay: ReviewHistoryDrilldownJournalNavigationDay?
+    @State private var abovePeekHeight: CGFloat = 0
 
     let level: JournalCompletionLevel
     private let matchingDayStarts: Set<Date>
@@ -99,60 +178,54 @@ private struct GrowthStageDrilldownSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Text(growthStageCriterion(for: level))
-                        .font(AppTheme.warmPaperBody)
-                        .foregroundStyle(AppTheme.reviewTextPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, 2)
-                } header: {
-                    Text(String(localized: "Summary"))
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.reviewTextMuted)
-                        .textCase(nil)
-                }
-
-                Section {
-                    if matchingDayStarts.isEmpty {
-                        ContentUnavailableView {
-                            Label(
-                                String(localized: "Review history growth drilldown calendar empty title"),
-                                systemImage: "calendar"
-                            )
-                        } description: {
-                            Text(String(localized: "Review history growth drilldown calendar empty description"))
-                                .font(AppTheme.warmPaperBody)
-                                .foregroundStyle(AppTheme.reviewTextMuted)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                    } else {
-                        ReviewHistoryDrilldownCalendarGrid(
-                            matchingDayStarts: matchingDayStarts,
-                            journalDaysInHistoryWindow: historyJournalDays,
-                            historyDayRange: historyDayRange,
-                            displayRange: displayRange,
-                            calendar: drilldownCalendar,
-                            growthStageForMatchedDays: level,
-                            sectionStripChipCountsByDay: nil,
-                            onMatchingDaySelected: { day in
-                                journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
-                                    dayStart: day,
-                                    calendar: drilldownCalendar
+            Group {
+                if matchingDayStarts.isEmpty {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            growthStageCriterionCaption
+                            ContentUnavailableView {
+                                Label(
+                                    String(localized: "Review history growth drilldown calendar empty title"),
+                                    systemImage: "calendar"
                                 )
+                            } description: {
+                                Text(String(localized: "Review history growth drilldown calendar empty description"))
+                                    .font(AppTheme.warmPaperBody)
+                                    .foregroundStyle(AppTheme.reviewTextMuted)
                             }
-                        )
-                        .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
                     }
-                } header: {
-                    Text(String(localized: "Review history growth drilldown dates section"))
-                        .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.reviewTextMuted)
-                        .textCase(nil)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ReviewHistoryDrilldownPeekContainer(
+                        above: growthStageCriterionCaption,
+                        abovePeekHeight: $abovePeekHeight,
+                        grid: { peek in
+                            ReviewHistoryDrilldownCalendarGrid(
+                                matchingDayStarts: matchingDayStarts,
+                                journalDaysInHistoryWindow: historyJournalDays,
+                                historyDayRange: historyDayRange,
+                                displayRange: displayRange,
+                                calendar: drilldownCalendar,
+                                growthStageForMatchedDays: level,
+                                sectionStripChipCountsByDay: nil,
+                                scrollViewportHeight: peek,
+                                onMatchingDaySelected: { day in
+                                    journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
+                                        dayStart: day,
+                                        calendar: drilldownCalendar
+                                    )
+                                }
+                            )
+                            .padding(.vertical, 4)
+                        }
+                    )
                 }
             }
-            .scrollContentBackground(.hidden)
             .background(AppTheme.reviewBackground)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -164,6 +237,10 @@ private struct GrowthStageDrilldownSheet: View {
                             .font(AppTheme.warmPaperBody.weight(.semibold))
                             .foregroundStyle(AppTheme.reviewTextPrimary)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        "\(growthStageDisplayTitle(for: level)). \(growthStageCriterion(for: level))"
+                    )
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "Done")) {
@@ -175,6 +252,19 @@ private struct GrowthStageDrilldownSheet: View {
                 JournalScreen(entryDate: item.date)
             }
         }
+    }
+
+    /// Criterion lives here (not in ``ToolbarItem/placement/principal``) so it can wrap without clipping the nav bar.
+    private var growthStageCriterionCaption: some View {
+        Text(growthStageCriterion(for: level))
+            .font(AppTheme.warmPaperMeta)
+            .foregroundStyle(AppTheme.reviewTextMuted)
+            .multilineTextAlignment(.center)
+            .lineLimit(3)
+            .minimumScaleFactor(0.85)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
     }
 
     private func growthStageDisplayTitle(for level: JournalCompletionLevel) -> String {
@@ -288,25 +378,30 @@ private struct SectionEntriesDrilldownSheet: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List {
-                        ReviewHistoryDrilldownCalendarGrid(
-                            matchingDayStarts: sectionMatchingDayStarts,
-                            journalDaysInHistoryWindow: historyJournalDays,
-                            historyDayRange: historyDayRange,
-                            displayRange: displayRange,
-                            calendar: drilldownCalendar,
-                            growthStageForMatchedDays: nil,
-                            sectionStripChipCountsByDay: sectionStripChipCountsByDay,
-                            onMatchingDaySelected: { day in
-                                journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
-                                    dayStart: day,
-                                    calendar: drilldownCalendar
-                                )
-                            }
-                        )
-                        .padding(.vertical, 4)
-                    }
-                    .scrollContentBackground(.hidden)
+                    ReviewHistoryDrilldownPeekContainer(
+                        above: Color.clear.frame(height: 0),
+                        abovePeekHeight: .constant(0),
+                        aboveAndGridSpacing: 0,
+                        grid: { peek in
+                            ReviewHistoryDrilldownCalendarGrid(
+                                matchingDayStarts: sectionMatchingDayStarts,
+                                journalDaysInHistoryWindow: historyJournalDays,
+                                historyDayRange: historyDayRange,
+                                displayRange: displayRange,
+                                calendar: drilldownCalendar,
+                                growthStageForMatchedDays: nil,
+                                sectionStripChipCountsByDay: sectionStripChipCountsByDay,
+                                scrollViewportHeight: peek,
+                                onMatchingDaySelected: { day in
+                                    journalNavigationDay = ReviewHistoryDrilldownJournalNavigationDay(
+                                        dayStart: day,
+                                        calendar: drilldownCalendar
+                                    )
+                                }
+                            )
+                            .padding(.vertical, 4)
+                        }
+                    )
                 }
             }
             .background(AppTheme.reviewBackground)

@@ -4,9 +4,13 @@
 
 Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Store); git tags **`v0.5.0+{build}`**. GitHub milestones **0.5.2**, **0.5.3**, etc. name **scope lanes**, not separate marketing versions — see **README.md** (Roadmap) and GitHub milestones. Older docs or issues may still mention interim labels (**0.5.1**, **0.5.2**); **ship truth** is **0.5.0 + build** below.
 
-### Build 9 — 2026-04-03
+### Build 9 — 2026-04-04
 
 Marketing **0.5.0** / bundle **9** (git tag **`v0.5.0+9`** at release).
+
+### Changed
+
+- Settings (**#200**): Data / import-export surfaces show **file names**, **scheduled backup folder** titles, and **file-like** JSON names in export history (system monospaced text via `AppTheme` tokens); localized labels and prose stay Warm Paper. Localized error sentences in history stay serif.
 
 ### Fixed
 

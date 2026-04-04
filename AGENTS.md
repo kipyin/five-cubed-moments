@@ -6,7 +6,7 @@
 
 **Grace Notes** is a native iOS journaling app (SwiftUI + SwiftData). It is a single Xcode project with zero third-party dependencies. See `README.md` for features and project structure.
 
-**Release versioning (summary):** Prefer a **fixed marketing version** per roadmap line with **incrementing build** for each TestFlight/App Store binary; git tags **`v{marketing}+{build}`** (e.g. `v0.5.0+8`). Full convention: `.agents/skills/vc/SKILL.md` → **Versioning**.
+**Release versioning (summary):** Prefer a **fixed marketing version** per roadmap line with **incrementing build** for each TestFlight/App Store binary; git tags **`v{marketing}+{build}`** (e.g. `v0.5.0+9`). Full convention: `.agents/skills/vc/SKILL.md` → **Versioning**.
 
 ### Platform constraint
 

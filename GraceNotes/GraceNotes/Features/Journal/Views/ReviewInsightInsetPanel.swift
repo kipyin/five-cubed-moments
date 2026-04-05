@@ -13,6 +13,8 @@ struct ReviewInsightInsetPanel<Content: View>: View {
     let panelChrome: ReviewInsightPanelChrome
     let titleTrailingText: String?
     let onTitleTap: (() -> Void)?
+    /// When the title is a button, optional VoiceOver hint (e.g. rhythm chrome). Omit when reused without a drilldown.
+    let titleAccessibilityHint: String?
     let content: Content
 
     init(
@@ -20,12 +22,14 @@ struct ReviewInsightInsetPanel<Content: View>: View {
         panelChrome: ReviewInsightPanelChrome = .standard,
         titleTrailingText: String? = nil,
         onTitleTap: (() -> Void)? = nil,
+        titleAccessibilityHint: String? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.panelChrome = panelChrome
         self.titleTrailingText = titleTrailingText
         self.onTitleTap = onTitleTap
+        self.titleAccessibilityHint = titleAccessibilityHint
         self.content = content()
     }
 
@@ -47,7 +51,8 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                     .foregroundStyle(AppTheme.reviewTextPrimary)
             }
             .buttonStyle(PastTappablePressStyle())
-            .accessibilityHint(String(localized: "Review history rhythm chrome title a11y hint"))
+            .accessibilityAddTraits(.isHeader)
+            .optionalAccessibilityHint(titleAccessibilityHint)
         } else {
             Text(title)
                 .font(AppTheme.warmPaperBody.weight(.semibold))
@@ -109,5 +114,16 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                 .strokeBorder(AppTheme.border.opacity(strokeOpacity), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .circular))
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func optionalAccessibilityHint(_ hint: String?) -> some View {
+        if let hint {
+            accessibilityHint(hint)
+        } else {
+            self
+        }
     }
 }

@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 private struct ReviewInsightPanelBodies {
     let observation: String
@@ -58,16 +57,14 @@ struct ReviewDaysYouWrotePanel: View {
         }
     }
 
-    private func rhythmPastTapHaptic() {
-        guard !reduceMotion else { return }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-    }
-
     private func weekRhythmPanel(for insights: ReviewInsights) -> some View {
         ReviewInsightInsetPanel(
             title: String(localized: "Reflection rhythm"),
             panelChrome: .standard,
-            onTitleTap: onRhythmChromeTap
+            onTitleTap: onRhythmChromeTap,
+            titleAccessibilityHint: onRhythmChromeTap == nil
+                ? nil
+                : String(localized: "Review history rhythm chrome title a11y hint")
         ) {
             rhythmHistoryCurve(for: insights)
         }
@@ -155,17 +152,15 @@ struct ReviewDaysYouWrotePanel: View {
             localized: "No journaling days to show here yet. After you write, they will appear in this strip."
         )
         if let tap = onRhythmChromeTap {
-            Text(message)
-                .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.reviewTextMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
-                .accessibilityLabel(message)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    rhythmPastTapHaptic()
-                    tap()
-                }
+            Button(action: tap) {
+                Text(message)
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.reviewTextMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(PastTappablePressStyle())
+            .accessibilityLabel(message)
         } else {
             Text(message)
                 .font(AppTheme.warmPaperBody)
@@ -190,14 +185,13 @@ struct ReviewDaysYouWrotePanel: View {
             VStack(alignment: .leading, spacing: 0) {
                 rhythmChartStrip(days: days, metrics: metrics)
                 if let tap = onRhythmChromeTap {
-                    Color.clear
-                        .frame(height: 6)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            rhythmPastTapHaptic()
-                            tap()
-                        }
-                        .accessibilityHidden(true)
+                    Button(action: tap) {
+                        Color.clear
+                            .frame(height: 6)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PastTappablePressStyle())
+                    .accessibilityHidden(true)
                 } else {
                     Color.clear
                         .frame(height: 6)
@@ -442,6 +436,7 @@ struct ReviewDaysYouWrotePanel: View {
                 )
             }
             .buttonStyle(PastTappablePressStyle())
+            .accessibilityHidden(true)
         } else {
             rhythmColumnLabelText(
                 date: date,

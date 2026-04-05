@@ -178,7 +178,6 @@ private struct JournalingDaysDrilldownSheet: View {
                 if historyJournalDays.isEmpty {
                     ScrollView {
                         VStack(spacing: 12) {
-                            journalingDaysCaption
                             ContentUnavailableView {
                                 Label(
                                     String(localized: "Review history journaling days drilldown empty title"),

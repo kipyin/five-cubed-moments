@@ -1,5 +1,6 @@
 {
   "sourceLanguage": "en",
+  "version": "1.0",
   "strings": {
     "accessibility.multilineEditorLabel": {
       "localizations": {

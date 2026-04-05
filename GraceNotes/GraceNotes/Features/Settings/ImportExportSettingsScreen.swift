@@ -342,9 +342,14 @@ struct ImportExportSettingsScreen: View {
             .navigationTitle(String(localized: "settings.dataPrivacy.importExport.section.history"))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.done")) {
+                    Button {
                         showExportHistorySheet = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(AppTheme.warmPaperBody.weight(.semibold))
+                            .foregroundStyle(AppTheme.settingsTextPrimary)
                     }
+                    .accessibilityLabel(String(localized: "common.done"))
                 }
             }
         }

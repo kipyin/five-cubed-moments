@@ -48,7 +48,7 @@ struct PastToolbarDoneButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(String(localized: "Done"))
+            Text(String(localized: "common.done"))
                 .font(AppTheme.warmPaperBody.weight(.semibold))
                 .foregroundStyle(foreground)
         }

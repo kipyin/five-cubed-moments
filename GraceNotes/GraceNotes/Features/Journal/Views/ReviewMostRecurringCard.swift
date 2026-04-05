@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReviewMostRecurringCard: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
@@ -112,7 +113,7 @@ struct ReviewMostRecurringCard: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 8)
-                ReviewCountBadge(value: theme.totalCount.formatted(), accent: AppTheme.reviewAccent)
+                ReviewCountBadge(value: theme.totalCount.formatted(), accent: interactionAccent.reviewAccent)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -148,7 +149,7 @@ struct ReviewMostRecurringCard: View {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
         }
-        .foregroundStyle(AppTheme.reviewAccent)
+        .foregroundStyle(interactionAccent.reviewAccent)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

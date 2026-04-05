@@ -14,6 +14,8 @@ struct TodayJournalPalette: Equatable {
     var pendingOutline: Color
     var activeEditingAccent: Color
     var activeEditingAccentStrong: Color
+    /// Interaction chrome accent (add row, guidance); driven by ``AccentPreference`` when resolved from journal.
+    var interactionAccentText: Color
     var quickCheckInBackground: Color
     var quickCheckInBorder: Color
     var quickCheckInText: Color
@@ -47,6 +49,7 @@ struct TodayJournalPalette: Equatable {
         pendingOutline: AppTheme.journalPendingOutline,
         activeEditingAccent: AppTheme.journalActiveEditingAccent,
         activeEditingAccentStrong: AppTheme.journalActiveEditingAccentStrong,
+        interactionAccentText: AppTheme.accentText,
         quickCheckInBackground: AppTheme.journalQuickCheckInBackground,
         quickCheckInBorder: AppTheme.journalQuickCheckInBorder,
         quickCheckInText: AppTheme.journalQuickCheckInText,
@@ -80,6 +83,7 @@ struct TodayJournalPalette: Equatable {
         pendingOutline: summerHex(0x7A6E62),
         activeEditingAccent: summerHex(0x9A5C45),
         activeEditingAccentStrong: summerHex(0x6B3D2E),
+        interactionAccentText: summerHex(0x8A4A34),
         quickCheckInBackground: AppTheme.journalQuickCheckInBackground,
         quickCheckInBorder: AppTheme.journalQuickCheckInBorder,
         quickCheckInText: AppTheme.journalQuickCheckInText,
@@ -99,11 +103,19 @@ struct TodayJournalPalette: Equatable {
         sectionPaperOpacity: 0.72
     )
 
-    static func resolve(mode: JournalAppearanceMode) -> TodayJournalPalette {
+    static func resolve(mode: JournalAppearanceMode, accent: InteractionAccentPalette? = nil) -> TodayJournalPalette {
+        var base: TodayJournalPalette
         switch mode {
-        case .standard: return .standard
-        case .bloom: return .bloom
+        case .standard:
+            base = .standard
+        case .bloom:
+            base = .bloom
         }
+        guard let accent else { return base }
+        base.activeEditingAccent = accent.activeEditingAccent
+        base.activeEditingAccentStrong = accent.activeEditingAccentStrong
+        base.interactionAccentText = accent.accentText
+        return base
     }
 }
 

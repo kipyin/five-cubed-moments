@@ -21,6 +21,8 @@ struct GraceNotesApp: App {
     @AppStorage(FirstRunOnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
     @AppStorage(JournalAppearanceStorageKeys.todayMode)
     private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
+    @AppStorage(JournalAppearanceStorageKeys.accentPreference)
+    private var accentPreferenceRaw = AccentPreference.terracotta.rawValue
 
     init() {
         let startupTrace = PerformanceTrace.begin("App.init")
@@ -74,7 +76,13 @@ struct GraceNotesApp: App {
                 }
             }
             .environment(\.font, AppTheme.outfitUI)
+            .environment(\.interactionAccentPalette, resolvedInteractionAccentPalette)
         }
+    }
+
+    private var resolvedInteractionAccentPalette: InteractionAccentPalette {
+        let preference = AccentPreference.resolveStored(rawValue: accentPreferenceRaw)
+        return InteractionAccentPalette.resolve(preference)
     }
 
     @ViewBuilder
@@ -82,7 +90,7 @@ struct GraceNotesApp: App {
         mainTabView
             .background(AppTheme.background)
             .toolbarBackground(AppTheme.background, for: .tabBar)
-            .tint(AppTheme.accent)
+            .tint(resolvedInteractionAccentPalette.accent)
             .environmentObject(appNavigation)
             .modelContainer(controller.container)
             .environment(\.persistenceRuntimeSnapshot, controller.runtimeSnapshot)
@@ -107,7 +115,7 @@ struct GraceNotesApp: App {
             readyContent
                 .background(AppTheme.background)
                 .toolbarBackground(AppTheme.background, for: .tabBar)
-                .tint(AppTheme.accent)
+                .tint(resolvedInteractionAccentPalette.accent)
                 .environmentObject(appNavigation)
                 .task {
                     await runDeferredStartupTasksIfNeeded(using: controller)

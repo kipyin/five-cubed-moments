@@ -24,7 +24,7 @@ extension JournalOnboardingSectionState {
         case .standard, .available:
             return palette.textPrimary
         case .active:
-            return AppTheme.accentText
+            return palette.interactionAccentText
         case .locked:
             return palette.textMuted
         }

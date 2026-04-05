@@ -71,7 +71,7 @@ struct SentenceStripView: View {
                             .font(AppTheme.outfitSemiboldCaption)
                     }
                     .font(AppTheme.outfitSemiboldSubheadline)
-                    .foregroundStyle(AppTheme.accentText)
+                    .foregroundStyle(palette.interactionAccentText)
                     .padding(.leading, AppTheme.spacingRegular)
                     .frame(minHeight: 44, alignment: .leading)
                 }

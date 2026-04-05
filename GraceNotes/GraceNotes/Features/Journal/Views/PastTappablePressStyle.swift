@@ -42,6 +42,7 @@ struct PastToolbarDoneButtonStyle: ButtonStyle {
 }
 
 struct PastToolbarDoneButton: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let action: () -> Void
     var appearance: PastToolbarDoneAppearance = .review
     var accessibilityIdentifier: String?
@@ -59,7 +60,7 @@ struct PastToolbarDoneButton: View {
     private var foreground: Color {
         switch appearance {
         case .review:
-            AppTheme.reviewAccent
+            interactionAccent.reviewAccent
         case .journal:
             AppTheme.journalTextPrimary
         }

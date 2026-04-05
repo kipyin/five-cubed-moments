@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Growth stages (history skyline)
 
@@ -187,7 +188,7 @@ private struct ReviewHistoryGrowthSkyline: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ReviewHistoryInsightBarPressStyle())
             .disabled(count == 0)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(columnAccessibilityLabel)
@@ -367,7 +368,7 @@ private struct ReviewHistorySectionStrip: View {
                             }
                             .frame(width: segmentWidths[index], height: stripHeight)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ReviewHistoryInsightBarPressStyle())
                         .accessibilityLabel(
                             String(
                                 format: String(localized: "%1$@, %2$d"),
@@ -411,7 +412,7 @@ private struct ReviewHistorySectionStrip: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ReviewHistoryInsightBarPressStyle())
                     .accessibilityLabel(
                         String(
                             format: String(localized: "%1$@, %2$d"),
@@ -479,6 +480,24 @@ enum ReviewCompletionLevelFormatting {
         case .bloom:
             String(localized: "Review growth stage accessibility Full")
         }
+    }
+}
+
+// MARK: - Press feedback (issue #198)
+
+/// Subtle press feedback for Past history insight bars.
+struct ReviewHistoryInsightBarPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.92 : 1.0)
+            .animation(reduceMotion ? .none : .easeInOut(duration: 0.12), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+                guard isPressed, !wasPressed, !reduceMotion else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
     }
 }
 

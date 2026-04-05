@@ -303,7 +303,10 @@ extension ReviewScreen {
                 ReviewDaysYouWrotePanel(
                     insights: reviewInsights,
                     isLoading: isLoadingInsights,
-                    onRhythmDaySelected: presentJournalDaySheet
+                    onRhythmDaySelected: presentJournalDaySheet,
+                    onRhythmChromeTap: {
+                        historyDrilldown = .journalingDays
+                    }
                 )
                 .listRowInsets(PastTabListLayout.cardRowInsets)
                 .listRowBackground(AppTheme.reviewBackground)

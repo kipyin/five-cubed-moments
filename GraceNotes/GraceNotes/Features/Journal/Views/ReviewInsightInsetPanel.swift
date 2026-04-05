@@ -12,17 +12,20 @@ struct ReviewInsightInsetPanel<Content: View>: View {
     let title: String
     let panelChrome: ReviewInsightPanelChrome
     let titleTrailingText: String?
+    let onTitleTap: (() -> Void)?
     let content: Content
 
     init(
         title: String,
         panelChrome: ReviewInsightPanelChrome = .standard,
         titleTrailingText: String? = nil,
+        onTitleTap: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.panelChrome = panelChrome
         self.titleTrailingText = titleTrailingText
+        self.onTitleTap = onTitleTap
         self.content = content()
     }
 
@@ -35,11 +38,22 @@ struct ReviewInsightInsetPanel<Content: View>: View {
         }
     }
 
-    private var titleText: some View {
-        Text(title)
-            .font(AppTheme.warmPaperBody.weight(.semibold))
-            .foregroundStyle(AppTheme.reviewTextPrimary)
-            .accessibilityAddTraits(.isHeader)
+    @ViewBuilder
+    private var titlePrimary: some View {
+        if let onTitleTap {
+            Button(action: onTitleTap) {
+                Text(title)
+                    .font(AppTheme.warmPaperBody.weight(.semibold))
+                    .foregroundStyle(AppTheme.reviewTextPrimary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(String(localized: "Review history rhythm chrome title a11y hint"))
+        } else {
+            Text(title)
+                .font(AppTheme.warmPaperBody.weight(.semibold))
+                .foregroundStyle(AppTheme.reviewTextPrimary)
+                .accessibilityAddTraits(.isHeader)
+        }
     }
 
     @ViewBuilder
@@ -47,7 +61,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
         if let trailing = titleTrailingText, !trailing.isEmpty {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 4) {
-                    titleText
+                    titlePrimary
                     Text(trailing)
                         .font(AppTheme.warmPaperMeta)
                         .foregroundStyle(AppTheme.reviewTextMuted)
@@ -56,7 +70,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
             } else {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        titleText
+                        titlePrimary
                         Spacer(minLength: 8)
                         Text(trailing)
                             .font(AppTheme.warmPaperMeta)
@@ -66,7 +80,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                             .lineLimit(2)
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        titleText
+                        titlePrimary
                         Text(trailing)
                             .font(AppTheme.warmPaperMeta)
                             .foregroundStyle(AppTheme.reviewTextMuted)
@@ -74,7 +88,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                 }
             }
         } else {
-            titleText
+            titlePrimary
         }
     }
 

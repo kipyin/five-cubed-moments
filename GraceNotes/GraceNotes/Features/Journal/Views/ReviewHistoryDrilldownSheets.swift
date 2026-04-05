@@ -236,6 +236,7 @@ private struct JournalingDaysDrilldownSheet: View {
                     Button(String(localized: "Done")) {
                         dismiss()
                     }
+                    .buttonStyle(PastTappablePressStyle())
                     .accessibilityIdentifier("ReviewHistoryJournalingDaysDrilldownDone")
                 }
             }
@@ -383,6 +384,7 @@ private struct GrowthStageDrilldownSheet: View {
                     Button(String(localized: "Done")) {
                         dismiss()
                     }
+                    .buttonStyle(PastTappablePressStyle())
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in
@@ -554,6 +556,7 @@ private struct SectionEntriesDrilldownSheet: View {
                     Button(String(localized: "Done")) {
                         dismiss()
                     }
+                    .buttonStyle(PastTappablePressStyle())
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in

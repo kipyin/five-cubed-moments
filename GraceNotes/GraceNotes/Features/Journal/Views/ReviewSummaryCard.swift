@@ -58,6 +58,11 @@ struct ReviewDaysYouWrotePanel: View {
         }
     }
 
+    private func rhythmPastTapHaptic() {
+        guard !reduceMotion else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+
     private func weekRhythmPanel(for insights: ReviewInsights) -> some View {
         ReviewInsightInsetPanel(
             title: String(localized: "Reflection rhythm"),
@@ -157,7 +162,10 @@ struct ReviewDaysYouWrotePanel: View {
                 .padding(.vertical, 8)
                 .accessibilityLabel(message)
                 .contentShape(Rectangle())
-                .onTapGesture { tap() }
+                .onTapGesture {
+                    rhythmPastTapHaptic()
+                    tap()
+                }
         } else {
             Text(message)
                 .font(AppTheme.warmPaperBody)
@@ -185,7 +193,10 @@ struct ReviewDaysYouWrotePanel: View {
                     Color.clear
                         .frame(height: 6)
                         .contentShape(Rectangle())
-                        .onTapGesture { tap() }
+                        .onTapGesture {
+                            rhythmPastTapHaptic()
+                            tap()
+                        }
                         .accessibilityHidden(true)
                 } else {
                     Color.clear
@@ -261,7 +272,7 @@ struct ReviewDaysYouWrotePanel: View {
             Button(action: tap) {
                 Color.clear.frame(width: metrics.chartHorizontalPadding)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PastTappablePressStyle())
             .accessibilityHidden(true)
         } else {
             Color.clear
@@ -300,14 +311,14 @@ struct ReviewDaysYouWrotePanel: View {
                 } label: {
                     column
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PastTappablePressStyle())
             } else {
                 NavigationLink {
                     JournalScreen(entryDate: day.date)
                 } label: {
                     column
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PastTappablePressStyle())
             }
         }
         .accessibilityElement(children: .ignore)
@@ -430,7 +441,7 @@ struct ReviewDaysYouWrotePanel: View {
                     rhythmCalendar: rhythmCalendar
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PastTappablePressStyle())
         } else {
             rhythmColumnLabelText(
                 date: date,

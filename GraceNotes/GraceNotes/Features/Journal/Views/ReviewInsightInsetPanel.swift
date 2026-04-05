@@ -46,7 +46,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                     .font(AppTheme.warmPaperBody.weight(.semibold))
                     .foregroundStyle(AppTheme.reviewTextPrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PastTappablePressStyle())
             .accessibilityHint(String(localized: "Review history rhythm chrome title a11y hint"))
         } else {
             Text(title)

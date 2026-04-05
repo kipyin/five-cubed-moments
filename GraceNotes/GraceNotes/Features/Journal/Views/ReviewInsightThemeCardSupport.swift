@@ -196,6 +196,7 @@ struct MostRecurringBrowseSheetContainer: View {
                         Button(String(localized: "Done")) {
                             dismiss()
                         }
+                        .buttonStyle(PastTappablePressStyle())
                         .accessibilityIdentifier("MostRecurringBrowseSheetDone")
                     }
                 }
@@ -274,6 +275,7 @@ struct MostRecurringThemesBrowseView: View {
                         )
                     }
                 }
+                .buttonStyle(PastTappablePressStyle())
                 .accessibilityIdentifier("MostRecurringThemeBrowseRow.\(row.accessibilityId)")
             }
         } header: {
@@ -396,6 +398,7 @@ struct TrendingThemesBrowseView: View {
                 Button(String(localized: "Done")) {
                     dismiss()
                 }
+                .buttonStyle(PastTappablePressStyle())
                 .accessibilityIdentifier("TrendingBrowseSheetDone")
             }
         }
@@ -422,6 +425,7 @@ struct TrendingThemesBrowseView: View {
                         )
                     }
                 }
+                .buttonStyle(PastTappablePressStyle())
                 .accessibilityLabel(
                     reviewTrendingThemeRowAccessibilityLabel(
                         label: theme.label,
@@ -543,7 +547,7 @@ struct ThemeDrilldownView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.vertical, 2)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(PastTappablePressStyle())
                                     .accessibilityElement(children: .combine)
                                     .accessibilityLabel(
                                         themeDrilldownRowAccessibilityLabel(day: group.day, evidence: evidence)
@@ -574,6 +578,7 @@ struct ThemeDrilldownView: View {
                         Button(String(localized: "Done")) {
                             dismiss()
                         }
+                        .buttonStyle(PastTappablePressStyle())
                     }
                 }
             }

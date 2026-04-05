@@ -447,6 +447,7 @@ private struct ReviewJournalDaySheetHost: View {
                         Button(String(localized: "Done")) {
                             dismiss()
                         }
+                        .buttonStyle(PastTappablePressStyle())
                     }
                 }
         }

@@ -29,6 +29,8 @@ struct ImportExportSettingsScreen: View {
     @State private var scheduledFolderError: String?
     @State private var showScheduledFolderError = false
     @State private var showExportHistorySheet = false
+    /// Pushes the backup-file list using the same chevron as other settings rows (not `NavigationLink` disclosure).
+    @State private var showBackupFolderFileList = false
 
     private let dataExportService = JournalDataExportService()
     private let dataImportService = JournalDataImportService()
@@ -141,17 +143,15 @@ struct ImportExportSettingsScreen: View {
                 .disabled(isExportingData || isImportingData)
 
                 Group {
-                    NavigationLink {
-                        BackupFolderImportFileListView { url in
-                            pendingImportURL = url
-                            showImportReview = true
-                        }
+                    Button {
+                        showBackupFolderFileList = true
                     } label: {
                         settingsRow(
                             label: String(localized: "DataPrivacy.importExport.import.fromBackupFolder"),
-                            showTrailingChevron: false
+                            showTrailingChevron: true
                         )
                     }
+                    .buttonStyle(.plain)
                 }
                 .disabled(scheduledFolderMissing)
                 .modifier(BackupFolderLinkHint(showDisabledHint: scheduledFolderMissing))
@@ -166,6 +166,14 @@ struct ImportExportSettingsScreen: View {
             .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
             .scrollContentBackground(.hidden)
             .background(AppTheme.settingsBackground)
+            .navigationDestination(isPresented: $showBackupFolderFileList) {
+                BackupFolderImportFileListView { url in
+                    pendingImportURL = url
+                    importMode = .merge
+                    showBackupFolderFileList = false
+                    showImportReview = true
+                }
+            }
 
             JSONImportFileImporterAnchor(isPresented: $showImportPicker) { result in
                 switch result {
@@ -441,7 +449,7 @@ private extension ImportExportSettingsScreen {
                     .foregroundStyle(AppTheme.settingsTextPrimary)
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(AppTheme.settingsTechnicalBody)
+                        .font(AppTheme.settingsTechnicalMeta)
                         .foregroundStyle(AppTheme.settingsTextMuted)
                         .lineLimit(2)
                 }

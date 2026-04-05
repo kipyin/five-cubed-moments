@@ -1939,7 +1939,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这份备份里的日历日太多，无法一次性导入。"
+            "value": "这份备份里记录的天数太多，无法一次性导入。"
           }
         }
       }
@@ -1955,7 +1955,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增 %lld 个日历日，替换 %lld 个已有日历日。"
+            "value": "新写入 %lld 天，覆盖 %lld 天已有内容。"
           }
         }
       }
@@ -2659,7 +2659,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "会保留只存在于本机的日期。若某天在本机和备份文件里内容不同，需要你选择保留哪一边。"
+            "value": "本机有、备份里没有的日子会保留。若同一天在本机和备份里内容不一致，需要你选保留哪一边。"
           }
         }
       }
@@ -2675,7 +2675,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "会删掉文件里没有的本机日期，再按文件写入每一天。"
+            "value": "会删掉备份里未包含的本机记录，再按备份写入每一天。"
           }
         }
       }

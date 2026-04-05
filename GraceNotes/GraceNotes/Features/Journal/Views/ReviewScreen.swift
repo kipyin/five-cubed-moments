@@ -444,10 +444,10 @@ private struct ReviewJournalDaySheetHost: View {
             JournalScreen(entryDate: entryDate)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(String(localized: "Done")) {
-                            dismiss()
-                        }
-                        .buttonStyle(PastTappablePressStyle())
+                        PastToolbarDoneButton(
+                            action: { dismiss() },
+                            appearance: .journal
+                        )
                     }
                 }
         }

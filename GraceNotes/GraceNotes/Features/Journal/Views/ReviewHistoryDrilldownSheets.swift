@@ -233,11 +233,10 @@ private struct JournalingDaysDrilldownSheet: View {
                         .accessibilityIdentifier("ReviewHistoryJournalingDaysDrilldownTitle")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "Done")) {
-                        dismiss()
-                    }
-                    .buttonStyle(PastTappablePressStyle())
-                    .accessibilityIdentifier("ReviewHistoryJournalingDaysDrilldownDone")
+                    PastToolbarDoneButton(
+                        action: { dismiss() },
+                        accessibilityIdentifier: "ReviewHistoryJournalingDaysDrilldownDone"
+                    )
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in
@@ -381,10 +380,7 @@ private struct GrowthStageDrilldownSheet: View {
                     )
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "Done")) {
-                        dismiss()
-                    }
-                    .buttonStyle(PastTappablePressStyle())
+                    PastToolbarDoneButton(action: { dismiss() })
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in
@@ -553,10 +549,7 @@ private struct SectionEntriesDrilldownSheet: View {
                         .foregroundStyle(AppTheme.reviewTextPrimary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "Done")) {
-                        dismiss()
-                    }
-                    .buttonStyle(PastTappablePressStyle())
+                    PastToolbarDoneButton(action: { dismiss() })
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in

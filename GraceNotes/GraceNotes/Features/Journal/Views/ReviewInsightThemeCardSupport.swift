@@ -193,11 +193,10 @@ struct MostRecurringBrowseSheetContainer: View {
             MostRecurringThemesBrowseView(themes: themes, referenceDate: referenceDate, calendar: calendar)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(String(localized: "Done")) {
-                            dismiss()
-                        }
-                        .buttonStyle(PastTappablePressStyle())
-                        .accessibilityIdentifier("MostRecurringBrowseSheetDone")
+                        PastToolbarDoneButton(
+                            action: { dismiss() },
+                            accessibilityIdentifier: "MostRecurringBrowseSheetDone"
+                        )
                     }
                 }
         }
@@ -395,11 +394,10 @@ struct TrendingThemesBrowseView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(String(localized: "Done")) {
-                    dismiss()
-                }
-                .buttonStyle(PastTappablePressStyle())
-                .accessibilityIdentifier("TrendingBrowseSheetDone")
+                PastToolbarDoneButton(
+                    action: { dismiss() },
+                    accessibilityIdentifier: "TrendingBrowseSheetDone"
+                )
             }
         }
     }
@@ -575,10 +573,7 @@ struct ThemeDrilldownView: View {
             .toolbar {
                 if includeDoneButton {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(String(localized: "Done")) {
-                            dismiss()
-                        }
-                        .buttonStyle(PastTappablePressStyle())
+                        PastToolbarDoneButton(action: { dismiss() })
                     }
                 }
             }

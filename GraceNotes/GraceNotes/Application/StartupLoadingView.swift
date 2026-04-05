@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct StartupLoadingView: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
+
     enum State {
         case loading(message: String, isReassurance: Bool)
         case retryableFailure(message: String)
@@ -52,7 +54,7 @@ struct StartupLoadingView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
-                .background(AppTheme.accent)
+                .background(interactionAccent.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal, 24)
                 .disabled(isRetrying)

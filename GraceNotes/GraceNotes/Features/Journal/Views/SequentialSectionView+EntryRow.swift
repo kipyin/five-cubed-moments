@@ -73,7 +73,7 @@ enum SequentialSectionEntryRow {
             HStack(spacing: AppTheme.spacingTight) {
                 Image(systemName: "plus.circle.fill")
                     .font(AppTheme.outfitRegularTitle3)
-                    .foregroundStyle(AppTheme.accentText)
+                    .foregroundStyle(palette.interactionAccentText)
                 Text(title)
                 .font(AppTheme.warmPaperMetaEmphasis)
                 .foregroundStyle(palette.textPrimary)

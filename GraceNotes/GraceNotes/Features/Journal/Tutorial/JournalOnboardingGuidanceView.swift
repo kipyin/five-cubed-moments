@@ -2,6 +2,7 @@ import SwiftUI
 
 struct JournalOnboardingGuidanceView: View {
     @Environment(\.todayJournalPalette) private var palette
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let title: String
     let message: String
 
@@ -9,7 +10,7 @@ struct JournalOnboardingGuidanceView: View {
         VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
             Text(title)
                 .font(AppTheme.warmPaperMetaEmphasis)
-                .foregroundStyle(AppTheme.accentText)
+                .foregroundStyle(interactionAccent.accentText)
 
             Text(message)
                 .font(AppTheme.warmPaperBody)

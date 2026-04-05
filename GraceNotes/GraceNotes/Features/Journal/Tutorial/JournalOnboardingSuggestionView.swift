@@ -2,6 +2,7 @@ import SwiftUI
 
 struct JournalOnboardingSuggestionView: View {
     @Environment(\.todayJournalPalette) private var palette
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let title: String
     let message: String
     let primaryActionTitle: String
@@ -14,7 +15,7 @@ struct JournalOnboardingSuggestionView: View {
             VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
                 Text(title)
                     .font(AppTheme.warmPaperMetaEmphasis)
-                    .foregroundStyle(AppTheme.accentText)
+                    .foregroundStyle(interactionAccent.accentText)
 
                 Text(message)
                     .font(AppTheme.warmPaperBody)
@@ -28,16 +29,16 @@ struct JournalOnboardingSuggestionView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppTheme.accent)
-                .foregroundStyle(AppTheme.onAccent)
+                .tint(interactionAccent.accent)
+                .foregroundStyle(interactionAccent.onAccent)
 
                 Button(action: onSecondaryAction) {
                     Text(secondaryActionTitle)
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.bordered)
-                .tint(AppTheme.accentText)
-                .foregroundStyle(AppTheme.accentText)
+                .tint(interactionAccent.accentText)
+                .foregroundStyle(interactionAccent.accentText)
             }
             .font(AppTheme.warmPaperBody)
         }

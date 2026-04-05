@@ -214,6 +214,7 @@ struct TrendingBrowseSheetContainer: View {
 }
 
 struct MostRecurringThemesBrowseView: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let themes: [ReviewMostRecurringTheme]
     let referenceDate: Date
     let calendar: Calendar
@@ -270,7 +271,7 @@ struct MostRecurringThemesBrowseView: View {
                         Spacer(minLength: 8)
                         ReviewCountBadge(
                             value: row.mentionCount.formatted(),
-                            accent: AppTheme.reviewAccent
+                            accent: interactionAccent.reviewAccent
                         )
                     }
                 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SettingsTargetHighlightModifier: ViewModifier {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let isHighlighted: Bool
 
     func body(content: Content) -> some View {
@@ -16,7 +17,7 @@ struct SettingsTargetHighlightModifier: ViewModifier {
             .overlay {
                 if isHighlighted {
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .stroke(AppTheme.accent, lineWidth: 1)
+                        .stroke(interactionAccent.accent, lineWidth: 1)
                 }
             }
     }

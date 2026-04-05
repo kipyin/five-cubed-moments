@@ -22,7 +22,3 @@ enum JournalAppearanceMode: String, CaseIterable, Identifiable {
         defaults.set(JournalAppearanceMode.bloom.rawValue, forKey: key)
     }
 }
-
-enum JournalAppearanceStorageKeys {
-    static let todayMode = "journalTodayAppearanceMode"
-}

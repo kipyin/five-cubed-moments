@@ -234,7 +234,6 @@ private struct JournalingDaysDrilldownSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     PastToolbarDoneButton(
                         action: { dismiss() },
-                        symbol: .xmark,
                         accessibilityIdentifier: "ReviewHistoryJournalingDaysDrilldownDone"
                     )
                 }
@@ -380,7 +379,7 @@ private struct GrowthStageDrilldownSheet: View {
                     )
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    PastToolbarDoneButton(action: { dismiss() }, symbol: .xmark)
+                    PastToolbarDoneButton(action: { dismiss() })
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in
@@ -549,7 +548,7 @@ private struct SectionEntriesDrilldownSheet: View {
                         .foregroundStyle(AppTheme.reviewTextPrimary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    PastToolbarDoneButton(action: { dismiss() }, symbol: .xmark)
+                    PastToolbarDoneButton(action: { dismiss() })
                 }
             }
             .navigationDestination(item: $journalNavigationDay) { item in

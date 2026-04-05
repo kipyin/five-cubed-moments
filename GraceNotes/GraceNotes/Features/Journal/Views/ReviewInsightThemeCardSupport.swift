@@ -195,7 +195,6 @@ struct MostRecurringBrowseSheetContainer: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         PastToolbarDoneButton(
                             action: { dismiss() },
-                            symbol: .xmark,
                             accessibilityIdentifier: "MostRecurringBrowseSheetDone"
                         )
                     }
@@ -397,7 +396,6 @@ struct TrendingThemesBrowseView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 PastToolbarDoneButton(
                     action: { dismiss() },
-                    symbol: .xmark,
                     accessibilityIdentifier: "TrendingBrowseSheetDone"
                 )
             }
@@ -575,7 +573,7 @@ struct ThemeDrilldownView: View {
             .toolbar {
                 if includeDoneButton {
                     ToolbarItem(placement: .topBarTrailing) {
-                        PastToolbarDoneButton(action: { dismiss() }, symbol: .xmark)
+                        PastToolbarDoneButton(action: { dismiss() })
                     }
                 }
             }

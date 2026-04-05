@@ -35,6 +35,36 @@ final class ICloudSyncLastActivityFormattingTests: XCTestCase {
         XCTAssertEqual(phrase, "5 hours and 35 minutes ago")
     }
 
+    func test_within24Hours_oneHourOneMinute_usesCompoundSingularHoursMinutes() {
+        let last = frozenNow.addingTimeInterval(-(1 * 3600 + 1 * 60))
+        let phrase = ICloudSyncLastActivityFormatting.formattedActivityTime(
+            lastActivity: last,
+            referenceNow: frozenNow,
+            localizationLocale: englishUS
+        )
+        XCTAssertEqual(phrase, "1 hour and 1 minute ago")
+    }
+
+    func test_within24Hours_oneHourFiveMinutes_usesCompoundSingularHourPluralMinutes() {
+        let last = frozenNow.addingTimeInterval(-(1 * 3600 + 5 * 60))
+        let phrase = ICloudSyncLastActivityFormatting.formattedActivityTime(
+            lastActivity: last,
+            referenceNow: frozenNow,
+            localizationLocale: englishUS
+        )
+        XCTAssertEqual(phrase, "1 hour and 5 minutes ago")
+    }
+
+    func test_within24Hours_twoHoursOneMinute_usesCompoundPluralHoursSingularMinute() {
+        let last = frozenNow.addingTimeInterval(-(2 * 3600 + 1 * 60))
+        let phrase = ICloudSyncLastActivityFormatting.formattedActivityTime(
+            lastActivity: last,
+            referenceNow: frozenNow,
+            localizationLocale: englishUS
+        )
+        XCTAssertEqual(phrase, "2 hours and 1 minute ago")
+    }
+
     func test_exactlyTwentyFourHoursFromReference_usesAbsoluteAbbreviatedStyle() {
         let last = frozenNow.addingTimeInterval(-24 * 3600)
         let got = ICloudSyncLastActivityFormatting.formattedActivityTime(

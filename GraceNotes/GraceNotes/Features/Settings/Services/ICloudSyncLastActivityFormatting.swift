@@ -93,8 +93,43 @@ enum ICloudSyncLastActivityFormatting {
             )
         }
 
+        return compoundHoursMinutesPhrase(hours: hours, minutes: minutes, locale: locale)
+    }
+
+    private static func compoundHoursMinutesPhrase(hours: Int, minutes: Int, locale: Locale) -> String {
+        let hourIsPlural = hours != 1
+        let minuteIsPlural = minutes != 1
+        if !hourIsPlural && !minuteIsPlural {
+            return localized(
+                "DataPrivacy.iCloudSync.lastActivity.relative.hoursMinutes.singularSingular",
+                locale: locale
+            )
+        }
+        if !hourIsPlural && minuteIsPlural {
+            return String(
+                format: localized(
+                    "DataPrivacy.iCloudSync.lastActivity.relative.hoursMinutes.singularPlural",
+                    locale: locale
+                ),
+                locale: locale,
+                minutes
+            )
+        }
+        if hourIsPlural && !minuteIsPlural {
+            return String(
+                format: localized(
+                    "DataPrivacy.iCloudSync.lastActivity.relative.hoursMinutes.pluralSingular",
+                    locale: locale
+                ),
+                locale: locale,
+                hours
+            )
+        }
         return String(
-            format: localized("DataPrivacy.iCloudSync.lastActivity.relative.hoursMinutes", locale: locale),
+            format: localized(
+                "DataPrivacy.iCloudSync.lastActivity.relative.hoursMinutes.pluralPlural",
+                locale: locale
+            ),
             locale: locale,
             hours,
             minutes

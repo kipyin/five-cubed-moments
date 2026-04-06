@@ -1209,13 +1209,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share…"
+            "value": "Share"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "共享…"
+            "value": "共享"
           }
         }
       }
@@ -4583,32 +4583,32 @@
     },
     "sharing.style.paperWarm": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Warm paper" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暖色纸面" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Grace Notes" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "感恩记" } }
       }
     },
     "sharing.style.editorialMist": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Editorial mist" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "雾面编辑" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Editorial" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "报刊" } }
       }
     },
     "sharing.style.sunriseGradient": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Sunrise" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "日出渐变" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Embellished" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "华丽" } }
       }
     },
     "sharing.composer.title": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Share entry" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "分享记录" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Share image" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "分享图片" } }
       }
     },
     "sharing.composer.share": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Share…" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "分享…" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Share" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "分享" } }
       }
     },
     "sharing.composer.styleHeading": {
@@ -4620,19 +4620,19 @@
     "sharing.composer.hintRedact": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Tap a line to hide or show it. Hidden lines appear as a neutral bar on the shared image." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "点按某一行可隐藏或显示；隐藏后在分享图中显示为中性色条。" } }
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "点按某一行即可隐藏或显示。隐藏内容在分享图中会变成中性色条。" } }
       }
     },
     "sharing.composer.hintSections": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Use the eye control next to a section title to include or exclude it. Excluded sections show a short preview stub here only." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "点按栏目标题旁的“眼睛”图标可包含或排除该栏目；被排除的栏目仅在此预览中显示简短提示。" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Use the control next to a section title to exclude or restore it. Excluded sections show a short placeholder here only." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "点按栏目标题右侧的按钮，可从分享图中排除或重新加入该栏目；被排除的栏目只会在此预览中显示一行提示。" } }
       }
     },
     "sharing.composer.watermark": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Grace Notes footer" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "页脚“感恩记”标识" } }
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "页脚「感恩记」" } }
       }
     },
     "sharing.composer.completionBadge": {
@@ -4643,8 +4643,8 @@
     },
     "sharing.stub.excluded": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Not included — tap the section header to restore." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未包含 — 点按栏目标题可恢复。" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Not included. Tap the section header to add it back." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未包含。点按栏目标题可重新加入。" } }
       }
     },
     "sharing.composer.previewA11y": {

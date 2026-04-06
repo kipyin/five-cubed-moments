@@ -73,36 +73,26 @@ struct JournalShareCardView: View {
     @ViewBuilder
     private var dateBlock: some View {
         let style = payload.style
-        switch style {
-        case .sunriseGradient:
-            VStack(alignment: .leading, spacing: 10) {
-                Text(payload.dateFormatted)
-                    .font(style.dateFont)
-                    .foregroundStyle(style.bodyInk)
-                    .fixedSize(horizontal: false, vertical: true)
-                if style.showsAccentRuleUnderDate {
-                    accentRule(height: style.topAccentHeight())
-                }
-                if payload.showCompletionBadge {
-                    completionBadge
-                }
-            }
-        case .paperWarm, .editorialMist:
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(payload.dateFormatted)
                     .font(style.dateFont)
                     .foregroundStyle(style.bodyInk)
                     .fixedSize(horizontal: false, vertical: true)
                 if payload.showCompletionBadge {
+                    Spacer(minLength: 8)
                     completionBadge
                 }
+            }
+            if style.showsAccentRuleUnderDate {
+                accentRule(height: style.topAccentHeight())
             }
         }
     }
 
     private var completionBadge: some View {
         JournalCompletionPill(completionLevel: payload.completionLevel, celebratingLevel: nil)
-            .scaleEffect(0.68)
+            .scaleEffect(0.92)
             .accessibilityLabel(String(localized: "sharing.a11y.completionBadge"))
     }
 
@@ -135,9 +125,11 @@ struct JournalShareCardView: View {
                 Button {
                     onSectionToggle(section.kind)
                 } label: {
-                    Image(systemName: section.isPreviewStub ? "eye.slash" : "eye")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(style.sectionTitleInk.opacity(0.85))
+                    Image(systemName: section.isPreviewStub ? "plus" : "xmark")
+                        .font(.caption.weight(.regular))
+                        .foregroundStyle(style.sectionControlInk)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(
@@ -163,7 +155,7 @@ struct JournalShareCardView: View {
                     onLineTap(identity)
                 } label: {
                     Text(display)
-                        .font(AppTheme.warmPaperBody)
+                        .font(payload.style.bodyFont)
                         .foregroundStyle(ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,7 +165,7 @@ struct JournalShareCardView: View {
                 .accessibilityHint(String(localized: "sharing.a11y.lineTapToHide"))
             } else {
                 Text(display)
-                    .font(AppTheme.warmPaperBody)
+                    .font(payload.style.bodyFont)
                     .foregroundStyle(ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -192,7 +184,7 @@ struct JournalShareCardView: View {
             }
         case .previewStub(let message):
             Text(message)
-                .font(AppTheme.warmPaperMeta)
+                .font(payload.style.metaFont)
                 .italic()
                 .foregroundStyle(payload.style.stubInk)
                 .fixedSize(horizontal: false, vertical: true)

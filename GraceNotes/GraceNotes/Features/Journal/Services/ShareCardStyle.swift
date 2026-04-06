@@ -1,6 +1,9 @@
 import SwiftUI
 
 /// Named presets for the exported share card bitmap (maps to `AppTheme` tokens).
+///
+/// Three typographic personas: Grace Notes default (warm serif journal), editorial magazine
+/// (Outfit headlines + IBM Plex Serif body), and embellished (Spectral on the sunrise gradient).
 enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
     case paperWarm
     case editorialMist
@@ -43,7 +46,8 @@ enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
         case .paperWarm, .editorialMist:
             AppTheme.textPrimary
         case .sunriseGradient:
-            AppTheme.fullFifteenText
+            // Slightly darker than `fullFifteenText` for contrast on warm gradient stops (WCAG AA).
+            Color(red: 0.39, green: 0.25, blue: 0.15)
         }
     }
 
@@ -55,16 +59,19 @@ enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
         case .editorialMist:
             AppTheme.textMuted
         case .sunriseGradient:
-            AppTheme.fullFifteenText
+            Color(red: 0.39, green: 0.25, blue: 0.15)
         }
     }
 
+    /// Date row.
     var dateFont: Font {
         switch self {
-        case .paperWarm, .editorialMist:
+        case .paperWarm:
             AppTheme.warmPaperHeader
-        case .sunriseGradient:
+        case .editorialMist:
             Font.custom("Outfit-SemiBold", size: 20, relativeTo: .title3)
+        case .sunriseGradient:
+            Font.custom("Spectral-SemiBold", size: 22, relativeTo: .title3)
         }
     }
 
@@ -76,7 +83,31 @@ enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
         case .editorialMist:
             AppTheme.outfitSemiboldSubheadline
         case .sunriseGradient:
-            AppTheme.outfitSemiboldSubheadline
+            Font.custom("Spectral-SemiBold", size: 18, relativeTo: .headline)
+        }
+    }
+
+    /// Body lines (list items and prose).
+    var bodyFont: Font {
+        switch self {
+        case .paperWarm:
+            AppTheme.warmPaperBody
+        case .editorialMist:
+            Font.custom("IBMPlexSerif-Regular", size: 17, relativeTo: .body)
+        case .sunriseGradient:
+            Font.custom("Spectral-Regular", size: 17, relativeTo: .body)
+        }
+    }
+
+    /// Footer watermark, stub hints, and secondary metadata (composer may override footer font).
+    var metaFont: Font {
+        switch self {
+        case .paperWarm:
+            AppTheme.warmPaperMeta
+        case .editorialMist:
+            Font.custom("IBMPlexSerif-Regular", size: 15, relativeTo: .footnote)
+        case .sunriseGradient:
+            Font.custom("Spectral-Regular", size: 15, relativeTo: .footnote)
         }
     }
 
@@ -87,7 +118,7 @@ enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
         case .editorialMist:
             AppTheme.textMuted.opacity(0.72)
         case .sunriseGradient:
-            AppTheme.fullFifteenMetaText.opacity(0.88)
+            AppTheme.fullFifteenMetaText.opacity(0.92)
         }
     }
 
@@ -96,7 +127,17 @@ enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
         case .paperWarm, .editorialMist:
             AppTheme.textMuted
         case .sunriseGradient:
-            AppTheme.fullFifteenMetaText.opacity(0.9)
+            AppTheme.fullFifteenMetaText.opacity(0.95)
+        }
+    }
+
+    /// Muted ink for section include/exclude control (xmark / plus).
+    var sectionControlInk: Color {
+        switch self {
+        case .paperWarm, .editorialMist:
+            AppTheme.textMuted
+        case .sunriseGradient:
+            AppTheme.fullFifteenMetaText.opacity(0.82)
         }
     }
 

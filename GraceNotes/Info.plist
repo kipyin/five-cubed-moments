@@ -16,6 +16,10 @@
 		<string>Fonts/SourceSerif4-Variable.ttf</string>
 		<string>Fonts/Outfit-Regular.ttf</string>
 		<string>Fonts/Outfit-SemiBold.ttf</string>
+		<string>Fonts/IBMPlexSerif-Regular.ttf</string>
+		<string>Fonts/IBMPlexSerif-SemiBold.ttf</string>
+		<string>Fonts/Spectral-Regular.ttf</string>
+		<string>Fonts/Spectral-SemiBold.ttf</string>
 	</array>
 </dict>
 </plist>

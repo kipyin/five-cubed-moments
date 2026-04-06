@@ -48,7 +48,7 @@ struct EditableTextSection: View {
                     if let guidanceTitle, !guidanceTitle.isEmpty {
                         Text(guidanceTitle)
                             .font(AppTheme.warmPaperMetaEmphasis)
-                            .foregroundStyle(AppTheme.accentText)
+                            .foregroundStyle(palette.interactionAccentText)
                     }
                     Text(guidanceMessage)
                         .font(AppTheme.warmPaperBody)

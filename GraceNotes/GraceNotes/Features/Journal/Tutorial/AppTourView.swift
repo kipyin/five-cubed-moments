@@ -13,6 +13,7 @@ struct AppTourView: View {
     @Environment(\.accessibilityReduceMotion) var accessibilityReduceMotion
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.interactionAccentPalette) var interactionAccent
 
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) var isICloudSyncEnabled = false
 
@@ -101,6 +102,7 @@ private enum AppTourPathTitleMetricsKey: PreferenceKey {
 
 /// One row of the path strip: timeline dot is vertically centered on the **title** line only (not the criterion).
 private struct AppTourPathStepRow: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let index: Int
     let stepCount: Int
     let title: String
@@ -152,12 +154,16 @@ private struct AppTourPathStepRow: View {
                     if !titleSystemImage.isEmpty {
                         Image(systemName: titleSystemImage)
                             .font(isHighlighted ? AppTheme.warmPaperMetaEmphasis : AppTheme.warmPaperMeta)
-                            .foregroundStyle(isHighlighted ? AppTheme.reviewAccent : AppTheme.settingsTextMuted)
+                            .foregroundStyle(
+                                isHighlighted ? interactionAccent.reviewAccent : AppTheme.settingsTextMuted
+                            )
                             .accessibilityHidden(true)
                     }
                     Text(title)
                         .font(isHighlighted ? AppTheme.warmPaperMetaEmphasis : AppTheme.warmPaperMeta)
-                        .foregroundStyle(isHighlighted ? AppTheme.reviewAccent : AppTheme.settingsTextMuted)
+                        .foregroundStyle(
+                            isHighlighted ? interactionAccent.reviewAccent : AppTheme.settingsTextMuted
+                        )
                 }
                 .background {
                     GeometryReader { geometry in
@@ -242,6 +248,7 @@ private struct AppTourPathStepRow: View {
 }
 
 struct AppTourPathStrip: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let highlightedLevel: JournalCompletionLevel
 
     private static let orderedLevels: [JournalCompletionLevel] = [
@@ -311,14 +318,14 @@ struct AppTourPathStrip: View {
 
     private func dotFill(for level: JournalCompletionLevel) -> Color {
         if level == highlightedLevel {
-            return AppTheme.reviewAccent.opacity(0.35)
+            return interactionAccent.reviewAccent.opacity(0.35)
         }
         return AppTheme.journalBackground
     }
 
     private func dotBorder(for level: JournalCompletionLevel) -> Color {
         if level == highlightedLevel {
-            return AppTheme.reviewAccent
+            return interactionAccent.reviewAccent
         }
         return AppTheme.journalBorder
     }
@@ -380,6 +387,7 @@ struct AppTourInsightsPreview: View {
 // MARK: - iCloud card (parity with Data & Privacy)
 
 struct AppTourICloudCard: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @Binding var isICloudSyncEnabled: Bool
     @ObservedObject var iCloudAccountState: ICloudAccountStatusModel
     let persistenceRuntimeSnapshot: PersistenceRuntimeSnapshot
@@ -398,7 +406,7 @@ struct AppTourICloudCard: View {
                     Toggle(String(localized: "iCloud sync"), isOn: $isICloudSyncEnabled)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
-                        .tint(AppTheme.reviewAccent)
+                        .tint(interactionAccent.reviewAccent)
                         .frame(minHeight: 44)
                 }
             }

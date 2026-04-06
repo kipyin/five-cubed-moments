@@ -3,6 +3,7 @@ import UIKit
 
 struct SettingsScreen: View {
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @EnvironmentObject private var appNavigation: AppNavigationModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
@@ -241,7 +242,7 @@ private extension SettingsScreen {
 
             Toggle("", isOn: reminderToggleBinding)
                 .labelsHidden()
-                .tint(AppTheme.accent)
+                .tint(interactionAccent.accent)
                 .disabled(reminderState.isPermissionDenied || reminderState.isWorking)
                 .accessibilityLabel(String(localized: "Daily reminder"))
         }

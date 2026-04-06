@@ -30,6 +30,7 @@ enum JournalTutorialHintPresentation {
 /// Dismissible nudge to keep writing toward Started or Full chip milestones (issue #60).
 struct JournalTutorialHintView: View {
     @Environment(\.todayJournalPalette) private var palette
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let kind: JournalTutorialHintKind
     let onDismiss: () -> Void
 
@@ -43,7 +44,7 @@ struct JournalTutorialHintView: View {
             Button(action: onDismiss) {
                 Text(String(localized: "Got it"))
                     .font(AppTheme.warmPaperMetaEmphasis)
-                    .foregroundStyle(AppTheme.accentText)
+                    .foregroundStyle(interactionAccent.accentText)
             }
             .buttonStyle(.plain)
             .accessibilityHint(String(localized: "Dismisses this tip."))

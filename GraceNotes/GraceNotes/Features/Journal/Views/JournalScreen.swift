@@ -155,6 +155,7 @@ struct JournalScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.journalBloomAtmosphereHosted) private var journalBloomAtmosphereHosted
+    @Environment(\.interactionAccentPalette) private var interactionAccentPalette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -225,7 +226,7 @@ struct JournalScreen: View {
     @FocusState private var isReflectionsFocused: Bool
     var entryDate: Date?
     var body: some View {
-        let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+        let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance, accent: interactionAccentPalette)
         ZStack {
             if effectiveTodayAppearance == .bloom, !journalBloomAtmosphereHosted {
                 SummerPaperBackgroundView()

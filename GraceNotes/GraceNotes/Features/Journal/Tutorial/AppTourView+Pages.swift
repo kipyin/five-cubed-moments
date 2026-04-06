@@ -5,12 +5,18 @@ extension AppTourView {
         HStack(spacing: 6) {
             ForEach(firstPageIndex ... lastPageIndex, id: \.self) { index in
                 Circle()
-                    .fill(index == pageIndex ? AppTheme.reviewAccent : AppTheme.settingsTextMuted.opacity(0.35))
+                    .fill(
+                        index == pageIndex
+                            ? interactionAccent.reviewAccent
+                            : AppTheme.settingsTextMuted.opacity(0.35)
+                    )
                     .frame(width: index == pageIndex ? 8 : 6, height: index == pageIndex ? 8 : 6)
                     .overlay(
                         Circle()
                             .stroke(
-                                index == pageIndex ? AppTheme.reviewAccent.opacity(0.45) : AppTheme.border.opacity(0.5),
+                                index == pageIndex
+                                    ? interactionAccent.reviewAccent.opacity(0.45)
+                                    : AppTheme.border.opacity(0.5),
                                 lineWidth: 1
                             )
                     )

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DataPrivacySettingsSection: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @Binding var isICloudSyncEnabled: Bool
     @ObservedObject var iCloudAccountState: ICloudAccountStatusModel
     let persistenceRuntimeSnapshot: PersistenceRuntimeSnapshot
@@ -22,7 +23,7 @@ struct DataPrivacySettingsSection: View {
                     Toggle(String(localized: "iCloud sync"), isOn: $isICloudSyncEnabled)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
-                        .tint(AppTheme.accent)
+                        .tint(interactionAccent.accent)
                         .frame(minHeight: 44)
 
                     if isJournalOnCloudKitStore, let lastICloudSyncSubtitle {

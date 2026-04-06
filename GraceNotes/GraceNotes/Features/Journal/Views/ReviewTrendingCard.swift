@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReviewTrendingCard: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Binding var themeDrilldown: ReviewThemeDrilldownPayload?
@@ -163,7 +164,7 @@ struct ReviewTrendingCard: View {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
         }
-        .foregroundStyle(AppTheme.reviewAccent)
+        .foregroundStyle(interactionAccent.reviewAccent)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

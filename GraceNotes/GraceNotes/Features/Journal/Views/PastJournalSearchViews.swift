@@ -79,7 +79,6 @@ private enum PastJournalSearchHighlighting {
     /// Body size matches ``AppTheme.warmPaperBody`` (17pt, scaled for Dynamic Type).
     private static let bodyPointSize: CGFloat = 17
     private static let serifRegularPostScriptName = "SourceSerif4Roman-Regular"
-    private static let matchBackgroundFill = UIColor(AppTheme.reviewAccent).withAlphaComponent(0.15)
     private static var bodyTextColor: UIColor { UIColor(AppTheme.reviewTextPrimary) }
 
     private static func bodyUIFont(semibold: Bool) -> UIFont {
@@ -109,7 +108,7 @@ private enum PastJournalSearchHighlighting {
         return ranges
     }
 
-    static func text(content: String, highlightQuery: String) -> Text {
+    static func text(content: String, highlightQuery: String, matchBackgroundFill: UIColor) -> Text {
         let trimmed = highlightQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         let ranges: [Range<String.Index>] = if trimmed.isEmpty {
             []
@@ -263,6 +262,7 @@ struct PastJournalSearchFieldRow: View {
 }
 
 private struct PastJournalSearchDayCard: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let day: Date
     let sections: [(source: ReviewThemeSourceCategory, rows: [JournalSearchMatch])]
     let calendar: Calendar
@@ -296,7 +296,9 @@ private struct PastJournalSearchDayCard: View {
                                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                                         PastJournalSearchHighlighting.text(
                                             content: match.content,
-                                            highlightQuery: highlightQuery
+                                            highlightQuery: highlightQuery,
+                                            matchBackgroundFill: UIColor(interactionAccent.reviewAccent)
+                                                .withAlphaComponent(0.15)
                                         )
                                         .multilineTextAlignment(.leading)
                                         .fixedSize(horizontal: false, vertical: true)

@@ -5947,6 +5947,102 @@
         }
       }
     },
+    "Settings.advanced.accent.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highlight color"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高亮色"
+          }
+        }
+      }
+    },
+    "Settings.advanced.accent.footnote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies to tabs, buttons, and other controls—not the journal page background."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用于标签栏、按钮等控件，不包括日记页背景。"
+          }
+        }
+      }
+    },
+    "Settings.advanced.accent.terracotta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terracotta"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "陶土色"
+          }
+        }
+      }
+    },
+    "Settings.advanced.accent.ocean": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "海洋色"
+          }
+        }
+      }
+    },
+    "Settings.advanced.accent.plum": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plum"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "梅紫色"
+          }
+        }
+      }
+    },
+    "Settings.advanced.accent.forest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forest"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "森林绿"
+          }
+        }
+      }
+    },
     "Settings.ai.a11y.enableForConnectionCheck": {
       "extractionState": "stale",
       "localizations": {

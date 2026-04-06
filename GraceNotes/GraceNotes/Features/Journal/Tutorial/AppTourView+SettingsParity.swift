@@ -60,7 +60,7 @@ extension AppTourView {
 
             Toggle("", isOn: reminderToggleBinding)
                 .labelsHidden()
-                .tint(AppTheme.reviewAccent)
+                .tint(interactionAccent.reviewAccent)
                 .disabled(reminderState.isPermissionDenied || reminderState.isWorking)
                 .accessibilityLabel(String(localized: "Daily reminder"))
         }

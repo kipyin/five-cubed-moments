@@ -8,6 +8,7 @@ private enum PastStatisticsIntervalPickerMode: String, CaseIterable, Identifiabl
 }
 
 struct AdvancedSettingsScreen: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
     private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
     @AppStorage(PastStatisticsIntervalPreference.appStorageKey)
@@ -15,6 +16,8 @@ struct AdvancedSettingsScreen: View {
     @AppStorage(JournalTutorialStorageKeys.celebratedFirstBloom) private var hasCelebratedFirstBloom = false
     @AppStorage(JournalAppearanceStorageKeys.todayMode)
     private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
+    @AppStorage(JournalAppearanceStorageKeys.accentPreference)
+    private var accentPreferenceRaw = AccentPreference.terracotta.rawValue
 
     @State private var intervalMode: PastStatisticsIntervalPickerMode = .all
     @State private var customQuantity: Int = 4
@@ -100,9 +103,28 @@ struct AdvancedSettingsScreen: View {
                             .font(AppTheme.warmPaperBody)
                             .foregroundStyle(AppTheme.settingsTextPrimary)
                     }
-                    .tint(AppTheme.accent)
+                    .tint(interactionAccent.accent)
                     .accessibilityHint(String(localized: "Settings.todayJournalAppearance.bloomToggleA11yHint"))
                 }
+            }
+
+            Section {
+                Picker(
+                    String(localized: "Settings.advanced.accent.label"),
+                    selection: accentPreferenceBinding
+                ) {
+                    ForEach(AccentPreference.allCases) { option in
+                        Text(option.localizedTitle).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.settingsTextPrimary)
+
+                Text(String(localized: "Settings.advanced.accent.footnote"))
+                    .font(AppTheme.warmPaperMeta)
+                    .foregroundStyle(AppTheme.settingsTextMuted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
@@ -136,6 +158,13 @@ struct AdvancedSettingsScreen: View {
                     ? JournalAppearanceMode.bloom.rawValue
                     : JournalAppearanceMode.standard.rawValue
             }
+        )
+    }
+
+    private var accentPreferenceBinding: Binding<AccentPreference> {
+        Binding(
+            get: { AccentPreference.resolveStored(rawValue: accentPreferenceRaw) },
+            set: { accentPreferenceRaw = $0.rawValue }
         )
     }
 

@@ -96,8 +96,8 @@ extension AppTourView {
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppTheme.reminderPrimaryActionBackground)
-                .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                .tint(interactionAccent.primaryProminentFill)
+                .foregroundStyle(interactionAccent.primaryProminentForeground)
                 .font(AppTheme.warmPaperBody)
                 .disabled(reminderState.isWorking)
                 .accessibilityHint(String(localized: "Retry scheduling your daily reminder."))
@@ -111,8 +111,8 @@ extension AppTourView {
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.bordered)
-                .tint(AppTheme.reminderSecondaryActionTint)
-                .foregroundStyle(AppTheme.reminderSecondaryActionTint)
+                .tint(interactionAccent.secondaryControlTint)
+                .foregroundStyle(interactionAccent.secondaryControlTint)
                 .font(AppTheme.warmPaperBody)
                 .disabled(reminderState.isWorking)
                 .accessibilityHint(String(localized: "Check if notification permissions have changed."))
@@ -132,7 +132,7 @@ extension AppTourView {
             .datePickerStyle(.compact)
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(AppTheme.settingsTextPrimary)
-            .tint(AppTheme.reminderSecondaryActionTint)
+            .tint(interactionAccent.secondaryControlTint)
             .accessibilityLabel(String(localized: "Reminder time"))
             .accessibilityHint(String(localized: "Choose a reminder time."))
         } else {

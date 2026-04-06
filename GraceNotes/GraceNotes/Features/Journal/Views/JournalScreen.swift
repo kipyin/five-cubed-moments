@@ -247,6 +247,7 @@ struct JournalScreen: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(AppTheme.outfitSemiboldHeadline)
                 }
+                .tint(interactionAccentPalette.accent)
                 .accessibilityLabel(String(localized: "Share"))
                 .accessibilityIdentifier("Share")
             }

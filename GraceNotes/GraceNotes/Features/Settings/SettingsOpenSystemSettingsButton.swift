@@ -24,6 +24,7 @@ struct SettingsOpenSystemSettingsButton: View {
 }
 
 private struct OpenSystemSettingsButtonStyle: ViewModifier {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let emphasis: SettingsOpenSystemSettingsButtonEmphasis
 
     func body(content: Content) -> some View {
@@ -31,13 +32,13 @@ private struct OpenSystemSettingsButtonStyle: ViewModifier {
         case .standard:
             content
                 .buttonStyle(.bordered)
-                .tint(AppTheme.reminderSecondaryActionTint)
-                .foregroundStyle(AppTheme.reminderSecondaryActionTint)
+                .tint(interactionAccent.secondaryControlTint)
+                .foregroundStyle(interactionAccent.secondaryControlTint)
         case .prominent:
             content
                 .buttonStyle(.borderedProminent)
-                .tint(AppTheme.reminderPrimaryActionBackground)
-                .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                .tint(interactionAccent.primaryProminentFill)
+                .foregroundStyle(interactionAccent.primaryProminentForeground)
         }
     }
 }

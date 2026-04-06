@@ -40,10 +40,10 @@ extension AppTourView {
                 Button(action: finishJourney) {
                     Text(String(localized: "Done"))
                         .font(AppTheme.warmPaperBody.weight(.semibold))
-                        .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                        .foregroundStyle(interactionAccent.primaryProminentForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppTheme.spacingRegular)
-                        .background(AppTheme.reminderPrimaryActionBackground)
+                        .background(interactionAccent.primaryProminentFill)
                         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
                 }
                 .buttonStyle(WarmPaperPressStyle())
@@ -62,10 +62,10 @@ extension AppTourView {
                         label: {
                             Text(String(localized: "Next"))
                                 .font(AppTheme.warmPaperBody.weight(.semibold))
-                                .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                                .foregroundStyle(interactionAccent.primaryProminentForeground)
                                 .padding(.horizontal, AppTheme.spacingWide)
                                 .padding(.vertical, AppTheme.spacingRegular)
-                                .background(AppTheme.reminderPrimaryActionBackground)
+                                .background(interactionAccent.primaryProminentFill)
                                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
                         }
                     )

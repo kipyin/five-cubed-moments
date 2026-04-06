@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct OnboardingScreen: View {
+    @Environment(\.interactionAccentPalette) private var interactionAccent
     let onGetStarted: () -> Void
 
     var body: some View {
@@ -14,7 +15,7 @@ struct OnboardingScreen: View {
             VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
                 Text(String(localized: "Start with one gratitude, and the rest will follow."))
                     .font(AppTheme.warmPaperMetaEmphasis)
-                    .foregroundStyle(AppTheme.reminderSecondaryActionTint)
+                    .foregroundStyle(interactionAccent.secondaryControlTint)
             }
             .padding(AppTheme.spacingWide)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -28,10 +29,10 @@ struct OnboardingScreen: View {
             Button(action: onGetStarted) {
                 Text(String(localized: "Begin today's entry"))
                     .font(AppTheme.warmPaperBody.weight(.semibold))
-                    .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
+                    .foregroundStyle(interactionAccent.primaryProminentForeground)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppTheme.spacingRegular)
-                    .background(AppTheme.reminderPrimaryActionBackground)
+                    .background(interactionAccent.primaryProminentFill)
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             }
             .buttonStyle(WarmPaperPressStyle())

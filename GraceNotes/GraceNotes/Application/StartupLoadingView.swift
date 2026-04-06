@@ -28,6 +28,7 @@ struct StartupLoadingView: View {
 
             ProgressView()
                 .progressViewStyle(.circular)
+                .tint(interactionAccent.accent)
                 .opacity(isFailure ? 0 : 1)
                 .accessibilityHidden(isFailure)
 

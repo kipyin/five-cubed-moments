@@ -56,6 +56,21 @@ struct InteractionAccentPalette: Equatable {
     }
 }
 
+// MARK: - Primary / secondary chrome (Settings, onboarding, App Tour)
+
+extension InteractionAccentPalette {
+    /// Filled primary control: Try again, Begin, App Tour Next/Done custom chrome.
+    var primaryProminentFill: Color { accent }
+
+    /// Label on ``primaryProminentFill``. Adaptive so Settings light/dark stays readable on saturated fills.
+    var primaryProminentForeground: Color {
+        Color.adaptive(lightHex: 0xF8F4EF, darkHex: 0xF8F4EF)
+    }
+
+    /// Bordered secondary and date-picker tint (matches former `reminderSecondaryActionTint` role).
+    var secondaryControlTint: Color { accentText }
+}
+
 // MARK: - Color Hex (shared with Theme.swift pattern)
 
 private extension Color {

@@ -33,6 +33,8 @@ struct JournalShareComposerView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.settingsBackground.ignoresSafeArea())
             .navigationTitle(String(localized: "sharing.composer.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -80,7 +82,7 @@ struct JournalShareComposerView: View {
                 next.toggleSectionVisibility(kind)
                 draft = next
             },
-            usesFixedExportWidth: true
+            usesFixedExportWidth: false
         )
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "sharing.composer.previewA11y"))
@@ -90,11 +92,11 @@ struct JournalShareComposerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "sharing.composer.hintRedact"))
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textMuted)
+                .foregroundStyle(AppTheme.settingsTextMuted)
                 .fixedSize(horizontal: false, vertical: true)
             Text(String(localized: "sharing.composer.hintSections"))
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textMuted)
+                .foregroundStyle(AppTheme.settingsTextMuted)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -103,7 +105,7 @@ struct JournalShareComposerView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(String(localized: "sharing.composer.styleHeading"))
                 .font(AppTheme.warmPaperHeader)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.settingsTextPrimary)
             HStack(spacing: 10) {
                 ForEach(ShareCardStyle.allCases) { style in
                     styleChip(style)
@@ -116,13 +118,14 @@ struct JournalShareComposerView: View {
         VStack(alignment: .leading, spacing: 12) {
             Toggle(String(localized: "sharing.composer.watermark"), isOn: watermarkBinding)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.settingsTextPrimary)
                 .accessibilityIdentifier("ShareComposerWatermarkToggle")
             Toggle(String(localized: "sharing.composer.completionBadge"), isOn: completionBadgeBinding)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.settingsTextPrimary)
                 .accessibilityIdentifier("ShareComposerBadgeToggle")
         }
+        .tint(AppTheme.reviewAccent)
     }
 
     private var watermarkBinding: Binding<Bool> {
@@ -154,13 +157,13 @@ struct JournalShareComposerView: View {
         } label: {
             Text(style.localizedTitle)
                 .font(AppTheme.warmPaperBody)
-                .foregroundStyle(selected ? Color.white : AppTheme.textPrimary)
+                .foregroundStyle(selected ? AppTheme.reviewOnAccent : AppTheme.settingsTextPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(selected ? AppTheme.accent : AppTheme.paper)
+                .background(selected ? AppTheme.reviewAccent : AppTheme.settingsPaper)
                 .clipShape(Capsule())
                 .overlay {
-                    Capsule().stroke(AppTheme.inputBorder, lineWidth: selected ? 0 : 1)
+                    Capsule().stroke(AppTheme.shareComposerChipBorder, lineWidth: selected ? 0 : 1)
                 }
         }
         .buttonStyle(.plain)

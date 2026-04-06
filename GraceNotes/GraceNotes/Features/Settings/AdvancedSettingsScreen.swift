@@ -118,6 +118,7 @@ struct AdvancedSettingsScreen: View {
                         EmptyView()
                     }
                     .pickerStyle(.segmented)
+                    .tint(interactionAccent.accent)
                     .font(AppTheme.outfitSemiboldSubheadline)
                     .accessibilityLabel(String(localized: "Settings.advanced.accent.label"))
 

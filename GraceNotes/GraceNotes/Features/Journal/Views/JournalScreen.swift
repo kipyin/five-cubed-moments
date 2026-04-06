@@ -1272,8 +1272,6 @@ private extension JournalScreen {
             return viewModel.gratitudes.count == 1
         case .person where section == .need:
             return viewModel.needs.count == 1
-        case .person where section == .person:
-            return viewModel.people.count == 1
         default:
             return false
         }

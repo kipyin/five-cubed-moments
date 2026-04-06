@@ -194,23 +194,6 @@
         }
       }
     },
-    "sharing.numberedLine": {
-      "comment": "Generic numbered line for share cards and similar lists. %1$lld is the line number; %2$@ is the line text.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld. %2$@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld、%2$@"
-          }
-        }
-      }
-    },
     "review.prompts.nextStep": {
       "localizations": {
         "en": {
@@ -4639,6 +4622,12 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Completion badge" } },
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "完成度徽章" } }
+      }
+    },
+    "sharing.composer.darkShareCard": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dark share card" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "深色分享卡片" } }
       }
     },
     "sharing.stub.excluded": {

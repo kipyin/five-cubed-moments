@@ -7,8 +7,17 @@ struct JournalShareComposerView: View {
     let onDismiss: () -> Void
     let onShare: (UIImage) -> Void
 
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
     @State private var draft: ShareCardDraft
     @State private var showRenderError = false
+
+    /// Bloom matches main tab chrome (forced light); otherwise inherit system light/dark like the rest of the app.
+    private var appPreferredColorScheme: ColorScheme? {
+        JournalAppearanceMode.resolveStored(rawValue: journalTodayAppearanceRaw) == .bloom
+            ? .light
+            : nil
+    }
 
     init(
         basePayload: JournalExportPayload,
@@ -52,6 +61,10 @@ struct JournalShareComposerView: View {
                 }
             }
         }
+        .toolbarBackground(AppTheme.settingsBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .presentationBackground(AppTheme.settingsBackground)
+        .preferredColorScheme(appPreferredColorScheme)
         .alert(String(localized: "sharing.error.unable"), isPresented: $showRenderError) {
             Button(String(localized: "common.dismiss")) {
                 showRenderError = false
@@ -124,6 +137,10 @@ struct JournalShareComposerView: View {
                 .font(AppTheme.warmPaperBody)
                 .foregroundStyle(AppTheme.settingsTextPrimary)
                 .accessibilityIdentifier("ShareComposerBadgeToggle")
+            Toggle(String(localized: "sharing.composer.darkShareCard"), isOn: darkShareCardBinding)
+                .font(AppTheme.warmPaperBody)
+                .foregroundStyle(AppTheme.settingsTextPrimary)
+                .accessibilityIdentifier("ShareComposerDarkCardToggle")
         }
         .tint(AppTheme.reviewAccent)
     }
@@ -145,6 +162,17 @@ struct JournalShareComposerView: View {
             set: { newValue in
                 var next = draft
                 next.showCompletionBadge = newValue
+                draft = next
+            }
+        )
+    }
+
+    private var darkShareCardBinding: Binding<Bool> {
+        Binding(
+            get: { draft.shareCardUsesDarkTheme },
+            set: { newValue in
+                var next = draft
+                next.shareCardUsesDarkTheme = newValue
                 draft = next
             }
         )

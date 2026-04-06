@@ -22,7 +22,7 @@ extension ShareCardStyle {
             case .latin:
                 Font.custom("Bebas Neue", size: 42, relativeTo: .largeTitle).weight(.regular)
             case .chinese:
-                Font.system(size: 28, weight: .semibold, design: .serif)
+                Font.system(size: 28, weight: .semibold, design: .rounded)
             }
         }
     }
@@ -48,7 +48,7 @@ extension ShareCardStyle {
             case .latin:
                 Font.custom("Bebas Neue", size: 22, relativeTo: .title3).weight(.regular)
             case .chinese:
-                Font.system(size: 18, weight: .semibold, design: .serif)
+                Font.system(size: 19, weight: .semibold, design: .rounded)
             }
         }
     }
@@ -74,7 +74,7 @@ extension ShareCardStyle {
             case .latin:
                 Font.custom("Bodoni Moda", size: 15, relativeTo: .body)
             case .chinese:
-                Font.system(size: 15, weight: .regular, design: .serif)
+                Font.system(size: 16, weight: .medium, design: .rounded)
             }
         }
     }
@@ -100,7 +100,7 @@ extension ShareCardStyle {
             case .latin:
                 Font.custom("Bodoni Moda", size: 9, relativeTo: .caption2)
             case .chinese:
-                Font.system(size: 9, weight: .regular, design: .serif)
+                Font.system(size: 10, weight: .regular, design: .rounded)
             }
         }
     }

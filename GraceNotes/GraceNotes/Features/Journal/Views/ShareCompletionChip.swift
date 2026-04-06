@@ -4,14 +4,16 @@ import SwiftUI
 struct ShareCompletionChip: View {
     let completionLevel: JournalCompletionLevel
     let style: ShareCardStyle
+    /// `true` when the share card uses the classic light palette; `false` for the dark card theme.
+    var useLightCardPalette: Bool = true
 
     var body: some View {
         Text(localizedTitle)
             .font(style.completionChipLabelFont)
-            .foregroundStyle(style.completionChipTextColor)
+            .foregroundStyle(style.resolvedCompletionChipTextColor(useLightCardPalette: useLightCardPalette))
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
-            .background(style.completionChipBackgroundView())
+            .background(style.resolvedCompletionChipBackground(useLightCardPalette: useLightCardPalette))
             .clipShape(Capsule(style: .continuous))
             .accessibilityLabel(String(localized: "sharing.a11y.completionBadge"))
     }

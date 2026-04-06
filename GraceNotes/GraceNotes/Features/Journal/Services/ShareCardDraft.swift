@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Stable identity for a tappable line when refining what appears on the share image.
 enum ShareLineIdentity: Hashable, Sendable {
@@ -29,6 +30,9 @@ struct ShareCardDraft: Equatable, Sendable {
 
     var showWatermark: Bool
     var showCompletionBadge: Bool
+    /// When `true`, the share image uses the dark card palette; when `false`, the classic light card.
+    /// Default follows app appearance when the composer opens (Bloom is always treated as light).
+    var shareCardUsesDarkTheme: Bool
 
     var redactedGratitudeIndices: Set<Int>
     var redactedNeedIndices: Set<Int>
@@ -46,12 +50,23 @@ struct ShareCardDraft: Equatable, Sendable {
             showReflections: !payload.reflections.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
             showWatermark: true,
             showCompletionBadge: false,
+            shareCardUsesDarkTheme: Self.defaultShareCardUsesDarkThemeForCurrentAppAppearance(),
             redactedGratitudeIndices: [],
             redactedNeedIndices: [],
             redactedPersonIndices: [],
             redactedReadingLineIndices: [],
             redactedReflectionLineIndices: []
         )
+    }
+
+    /// Bloom forces light app chrome; otherwise use the system interface style (matches share composer sheet).
+    private static func defaultShareCardUsesDarkThemeForCurrentAppAppearance() -> Bool {
+        let raw = UserDefaults.standard.string(forKey: JournalAppearanceStorageKeys.todayMode)
+            ?? JournalAppearanceMode.standard.rawValue
+        if JournalAppearanceMode.resolveStored(rawValue: raw) == .bloom {
+            return false
+        }
+        return UITraitCollection.current.userInterfaceStyle == .dark
     }
 
     mutating func setGratitudesIncluded(_ included: Bool) {
@@ -147,6 +162,7 @@ struct ShareRenderPayload: Equatable, Sendable {
     let completionLevel: JournalCompletionLevel
     let showWatermark: Bool
     let showCompletionBadge: Bool
+    let shareCardUsesDarkTheme: Bool
     let sections: [ShareSectionRenderModel]
 }
 
@@ -182,6 +198,7 @@ enum ShareRenderPayloadBuilder {
             completionLevel: payload.completionLevel,
             showWatermark: draft.showWatermark,
             showCompletionBadge: draft.showCompletionBadge,
+            shareCardUsesDarkTheme: draft.shareCardUsesDarkTheme,
             sections: sections
         )
     }
@@ -348,7 +365,7 @@ enum ShareRenderPayloadBuilder {
                 .redacted(identity: identity(index))
             } else {
                 .visible(
-                    displayText: numberedLine(index: index, text: raw),
+                    displayText: raw,
                     identity: identity(index)
                 )
             }
@@ -371,14 +388,5 @@ enum ShareRenderPayloadBuilder {
                 )
             }
         }
-    }
-
-    private static func numberedLine(index: Int, text: String) -> String {
-        let format = String(
-            localized: "sharing.numberedLine",
-            defaultValue: "%1$lld. %2$@",
-            comment: "Generic numbered line format used for share-card list items."
-        )
-        return String(format: format, locale: Locale.current, Int64(index + 1), text)
     }
 }

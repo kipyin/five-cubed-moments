@@ -34,7 +34,7 @@ struct GraceNotesApp: App {
         if !isRunningUnitTests {
             JournalTutorialStorageKeys.migrateLegacyKeysIfNeeded(using: .standard)
             JournalAppearanceMode.migrateLegacySummerRawValueIfNeeded(defaults: .standard)
-            AccentPreference.migrateRemovedCasesIfNeeded(using: .standard)
+            AccentPreference.migrateRemovedCasesIfNeeded(defaults: .standard)
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
             JournalOnboardingProgress.migrateLegacyAppTourSeenFlagIfNeeded(using: .standard)

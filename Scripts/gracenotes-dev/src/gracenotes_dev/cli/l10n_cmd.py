@@ -555,3 +555,43 @@ def l10n_audit(
             try_commands=("cd …/grace-notes", "grace l10n audit"),
         )
     print_strings_catalog_audit(repo_root=repo_root, full=full)
+
+
+@l10n_app.command("review")
+def l10n_review_cmd(
+    notes: Annotated[
+        Path | None,
+        typer.Option(
+            "--notes",
+            help="Append-only Markdown file for notes (default: l10n-review-notes-*.md in repo root).",
+        ),
+    ] = None,
+    all_surfaces: Annotated[
+        bool,
+        typer.Option(
+            "--all",
+            help="Walk every surface in order without prompting for which to open first.",
+        ),
+    ] = False,
+) -> None:
+    """Interactive walkthrough of localized strings by product surface (en + zh-Hans); read-only.
+
+    Scans keys referenced from Swift (see ``grace l10n audit`` for catalog-only issues).
+    """
+    repo_root = xcode_helpers.repo_root_from(Path.cwd())
+    catalog = repo_root / "GraceNotes/GraceNotes/Localizable.xcstrings"
+    if not catalog.is_file():
+        cli_core._fail(
+            code=2,
+            title="Localization catalog not found",
+            problem=f"Expected catalog at {catalog}",
+            likely_cause="Run from the Grace Notes repo root (directory containing GraceNotes/).",
+            try_commands=("cd …/grace-notes", "grace l10n review"),
+        )
+    from gracenotes_dev.cli import l10n_review as l10n_review_mod
+
+    l10n_review_mod.run_l10n_review_interactive(
+        repo_root,
+        notes_path=notes,
+        walk_all=all_surfaces,
+    )

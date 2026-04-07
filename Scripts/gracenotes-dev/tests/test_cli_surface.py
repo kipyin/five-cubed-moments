@@ -109,6 +109,7 @@ class CLISurfaceTest(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0)
         self.assertIn("audit", result.output)
+        self.assertIn("review", result.output)
 
     def test_l10n_audit_help_includes_full(self) -> None:
         runner = CliRunner()

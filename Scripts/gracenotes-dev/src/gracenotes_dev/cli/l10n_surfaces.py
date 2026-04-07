@@ -127,8 +127,11 @@ def primary_surface_for_key(
 ) -> tuple[str, frozenset[str]]:
     """Return primary surface and other surfaces seen in code paths (excluding primary)."""
     natural: set[str] = set()
-    for rel in paths:
-        natural.add(surface_for_key_and_path(key, rel))
+    if paths:
+        for rel in paths:
+            natural.add(surface_for_key_and_path(key, rel))
+    else:
+        natural.add(surface_for_key_and_path(key, ""))
 
     primary: str
     if key in overrides:

@@ -60,22 +60,41 @@ def _catalog_comment(entry: dict[str, object]) -> str | None:
     return str(raw) if isinstance(raw, str) and raw.strip() else None
 
 
+def _review_audit_sets(
+    code_keys: set[str],
+    locs: dict[str, list[str]],
+    catalog_strings: dict[str, object],
+) -> tuple[set[str], set[str], set[str]]:
+    """Derive duplicate-English, multi-file, and missing-catalog flags from one Swift scan."""
+    english_to_keys: dict[str, list[str]] = defaultdict(list)
+    for key, entry in catalog_strings.items():
+        if not isinstance(entry, dict):
+            continue
+        en = _localization_unit(entry, "en")
+        if en is None or not en.strip():
+            continue
+        english_to_keys[en].append(key)
+    dup_keys: set[str] = set()
+    for keys in english_to_keys.values():
+        if len(keys) > 1:
+            dup_keys.update(keys)
+    multi_keys = {k for k in code_keys if len(set(locs.get(k, []))) > 1}
+    catalog_key_set = set(catalog_strings.keys())
+    missing_set = {k for k in code_keys if k not in catalog_key_set}
+    return dup_keys, multi_keys, missing_set
+
+
 def build_review_index(repo_root: Path) -> dict[str, tuple[LocalizedPair, ...]]:
     """Group Swift-used keys (plus dynamic template allowlist) by primary product surface."""
     overrides = l10n_surfaces.load_surface_overrides(repo_root)
     code_keys, locs = l10n_cmd.swift_localization_key_locations(repo_root)
-    report = l10n_cmd.build_strings_catalog_audit(repo_root)
     catalog_path = _catalog_file(repo_root)
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     catalog_strings = data.get("strings", {})
     if not isinstance(catalog_strings, dict):
         catalog_strings = {}
 
-    dup_keys: set[str] = set()
-    for _en, ks in report.duplicate_english_groups:
-        dup_keys.update(ks)
-    multi_keys = {k for k, _paths in report.multi_file_keys}
-    missing_set = set(report.missing_keys)
+    dup_keys, multi_keys, missing_set = _review_audit_sets(code_keys, locs, catalog_strings)
 
     keys_to_review = set(code_keys) | l10n_cmd.DYNAMIC_TEMPLATE_KEYS
 
@@ -131,11 +150,28 @@ def append_review_note(path: Path, key: str, note: str) -> None:
     """Append one markdown bullet; create file with UTC header when new or empty."""
     line = f"- **{key}** — {note}\n"
     new_file = not path.exists() or path.stat().st_size == 0
-    with path.open("a", encoding="utf-8") as fh:
-        if new_file:
-            ts = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-            fh.write(f"# grace l10n review notes ({ts})\n\n")
-        fh.write(line)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        cli_core._fail(
+            code=1,
+            title="Could not create notes directory",
+            problem=f"Could not create notes directory '{path.parent}': {exc}",
+            likely_cause="Check permissions or choose a different --notes path.",
+        )
+    try:
+        with path.open("a", encoding="utf-8") as fh:
+            if new_file:
+                ts = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+                fh.write(f"# grace l10n review notes ({ts})\n\n")
+            fh.write(line)
+    except OSError as exc:
+        cli_core._fail(
+            code=1,
+            title="Could not write review notes",
+            problem=f"Could not write review notes to '{path}': {exc}",
+            likely_cause="Check disk space and permissions.",
+        )
 
 
 def run_l10n_review_interactive(

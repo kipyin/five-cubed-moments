@@ -53,18 +53,7 @@ def _norm_rel(p: str) -> str:
 
 def surface_for_path(rel_path: str) -> str:
     """Classify a Swift source path using path-shaped rules only (for tests / path hints)."""
-    norm = _norm_rel(rel_path)
-    if "Features/Onboarding/" in norm:
-        return SURFACE_FIRST_RUN
-    if "/Tutorial/" in norm or "AppTourView" in norm:
-        return SURFACE_FIRST_RUN
-    if "Features/Settings/" in norm:
-        return SURFACE_SETTINGS
-    if any(m in norm for m in _PAST_PATH_MARKERS):
-        return SURFACE_PAST
-    if "Features/Journal/" in norm:
-        return SURFACE_TODAY
-    return SURFACE_SHARED
+    return surface_for_key_and_path("", rel_path)
 
 
 def _surface_from_prefix(key: str) -> str | None:

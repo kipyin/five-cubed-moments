@@ -19,8 +19,13 @@ class TestL10nReview(unittest.TestCase):
     def test_build_review_index_has_core_surfaces(self) -> None:
         repo_root = Path(__file__).resolve().parents[3]
         idx = l10n_review.build_review_index(repo_root)
+        self.assertIn("shared", idx)
+        shared_keys = {p.key for p in idx["shared"]}
+        self.assertIn("app.name", shared_keys)
         self.assertIn("today", idx)
-        self.assertGreater(len(idx["today"]), 10)
+        today_keys = {p.key for p in idx["today"]}
+        self.assertIn("shell.tab.today", today_keys)
+        self.assertTrue(any(k.startswith("journal.") for k in today_keys))
 
     def test_append_review_note_creates_header(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -30,6 +35,13 @@ class TestL10nReview(unittest.TestCase):
             self.assertIn("# grace l10n review notes", text)
             self.assertIn("**k1**", text)
             self.assertIn("check tone", text)
+
+    def test_append_review_note_creates_parent_dirs(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "nested" / "dir" / "notes.md"
+            l10n_review.append_review_note(path, "k1", "nested path")
+            self.assertTrue(path.is_file())
+            self.assertIn("**k1**", path.read_text(encoding="utf-8"))
 
     def test_l10n_review_refuses_non_tty(self) -> None:
         repo_root = Path(__file__).resolve().parents[3]

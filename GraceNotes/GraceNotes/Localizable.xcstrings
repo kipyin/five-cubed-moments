@@ -2119,13 +2119,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to edit this sentence."
+            "value": "Edits this sentence."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "轻点即可编辑这句话。"
+            "value": "编辑这句话。"
           }
         }
       }
@@ -2135,13 +2135,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to edit this sentence. Use Show more to preview the full text."
+            "value": "Edits this sentence. Show more expands the sentence preview."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "轻点即可编辑这句话。如需查看全文，可轻点“展开”。"
+            "value": "编辑这句话。展开可预览完整内容。"
           }
         }
       }

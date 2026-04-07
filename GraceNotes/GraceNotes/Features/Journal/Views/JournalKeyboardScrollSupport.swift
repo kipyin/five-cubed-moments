@@ -12,6 +12,8 @@ enum JournalKeyWindowReader {
 
 /// Stable `ScrollViewReader` targets for Today journal keyboard avoidance.
 enum JournalScrollTarget: String, CaseIterable {
+    /// Journal date + completion header (`DateSectionView`).
+    case completionHeader
     case sentenceSections
     case gratitudeSection
     /// Chips + composer only (not section title/guidance) so keyboard scroll aligns the field, not the whole block.
@@ -159,7 +161,7 @@ enum JournalKeyboardScrollDomain: Equatable {
         switch scrollTarget {
         case .readingNotes, .reflections:
             return .notesMultiline
-        case .gratitudeSection, .needInputArea, .peopleInputArea, .sentenceSections:
+        case .completionHeader, .gratitudeSection, .needInputArea, .peopleInputArea, .sentenceSections:
             return .sentenceChips
         }
     }

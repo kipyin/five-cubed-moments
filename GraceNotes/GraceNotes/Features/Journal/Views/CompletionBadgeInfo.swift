@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 enum CompletionBadgeInfo: Equatable {
     case empty
@@ -34,6 +34,49 @@ enum CompletionBadgeInfo: Equatable {
             return String(localized: "journal.guidance.allSectionsThreeTowardBloom")
         case .full:
             return String(localized: "journal.guidance.allSectionsCompleteToday")
+        }
+    }
+
+    var completionLevel: JournalCompletionLevel {
+        switch self {
+        case .empty:
+            return .soil
+        case .started:
+            return .sprout
+        case .growing:
+            return .twig
+        case .balanced:
+            return .leaf
+        case .full:
+            return .bloom
+        }
+    }
+
+    static func matching(_ level: JournalCompletionLevel) -> CompletionBadgeInfo {
+        switch level {
+        case .soil:
+            return .empty
+        case .sprout:
+            return .started
+        case .twig:
+            return .growing
+        case .leaf:
+            return .balanced
+        case .bloom:
+            return .full
+        }
+    }
+
+    func infoCardTintColor(using palette: TodayJournalPalette) -> Color {
+        switch self {
+        case .empty:
+            return palette.textMuted
+        case .started:
+            return palette.quickCheckInText
+        case .growing, .balanced:
+            return palette.standardText
+        case .full:
+            return palette.fullText
         }
     }
 }

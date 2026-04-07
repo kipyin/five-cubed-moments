@@ -12,9 +12,8 @@ import Combine
 private enum JournalScreenLayout {
     static let journalScrollCoordinateSpaceName = "journalMainScroll"
     static let unlockToastScrollDismissThreshold: CGFloat = 20
-    /// Once the completion header's top edge scrolls this many points above the scroll viewport's top,
-    /// show the compact bar chip (small value works with large titles and shorter journals).
-    static let stickyCompletionScrollThresholdPoints: CGFloat = 6
+    /// Global Y slack below the safe-area top: when the completion header's top is **above** this line, show the bar chip.
+    static let stickyCompletionBarGlobalSlackPoints: CGFloat = 96
 }
 
 private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
@@ -24,8 +23,8 @@ private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
     }
 }
 
-private struct JournalHeaderScrollMinYKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
+private struct JournalHeaderTopGlobalYKey: PreferenceKey {
+    static var defaultValue: CGFloat = .infinity
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
@@ -235,13 +234,15 @@ struct JournalScreen: View {
     @Namespace private var stickyCompletionMorphNamespace
     @State private var completionInfoPresentation = JournalCompletionInfoPresentation()
     @State private var completionHeaderScrollPulse: UInt = 0
-    @State private var completionHeaderMinYInScrollSpace: CGFloat = 0
+    /// Global min-Y of `DateSectionView`; `.infinity` until the first geometry read.
+    @State private var completionHeaderTopGlobalY: CGFloat = .infinity
     var entryDate: Date?
     var body: some View {
         let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
         let showStickyCompletionBar = JournalStickyCompletionVisibility.shouldShowBarIndicator(
-            scrollContentMinY: completionHeaderMinYInScrollSpace,
-            hideUntilScrolledPast: JournalScreenLayout.stickyCompletionScrollThresholdPoints
+            completionHeaderTopGlobalY: completionHeaderTopGlobalY,
+            safeAreaTopInset: journalSafeAreaTopInset,
+            headerTopPastToolbarSlackPoints: JournalScreenLayout.stickyCompletionBarGlobalSlackPoints
         )
         ZStack {
             if effectiveTodayAppearance == .bloom, !journalBloomAtmosphereHosted {
@@ -388,17 +389,6 @@ struct JournalScreen: View {
                 }
             )
             .coordinateSpace(name: JournalScreenLayout.journalScrollCoordinateSpaceName)
-            .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
-                journalScrollOffsetY = offsetY
-                if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
-                    if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
-                        dismissUnlockToastIfNeeded()
-                    }
-                }
-            }
-            .onPreferenceChange(JournalHeaderScrollMinYKey.self) { minY in
-                completionHeaderMinYInScrollSpace = minY
-            }
     }
 
     @ViewBuilder
@@ -493,11 +483,17 @@ struct JournalScreen: View {
 }
 
 private extension JournalScreen {
+    /// Key window inset — avoids `EnvironmentValues.safeAreaInsets`, which is not available on all deployment targets.
+    var journalSafeAreaTopInset: CGFloat {
+        JournalKeyWindowReader.keyWindow()?.safeAreaInsets.top ?? 0
+    }
+
     @ViewBuilder
     func journalScrollMainColumn(proxy: ScrollViewProxy) -> some View {
         let showStickyCompletionBar = JournalStickyCompletionVisibility.shouldShowBarIndicator(
-            scrollContentMinY: completionHeaderMinYInScrollSpace,
-            hideUntilScrolledPast: JournalScreenLayout.stickyCompletionScrollThresholdPoints
+            completionHeaderTopGlobalY: completionHeaderTopGlobalY,
+            safeAreaTopInset: journalSafeAreaTopInset,
+            headerTopPastToolbarSlackPoints: JournalScreenLayout.stickyCompletionBarGlobalSlackPoints
         )
         VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
             journalTodayHeaderGroup(showStickyCompletionBar: showStickyCompletionBar)
@@ -534,6 +530,17 @@ private extension JournalScreen {
         .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
             dismissUnlockToastIfNeeded()
         }
+        .onPreferenceChange(JournalScrollOffsetPreferenceKey.self) { offsetY in
+            journalScrollOffsetY = offsetY
+            if unlockToastLevel != nil, let baseline = unlockToastScrollBaseline {
+                if abs(offsetY - baseline) > JournalScreenLayout.unlockToastScrollDismissThreshold {
+                    dismissUnlockToastIfNeeded()
+                }
+            }
+        }
+        .onPreferenceChange(JournalHeaderTopGlobalYKey.self) { topGlobalY in
+            completionHeaderTopGlobalY = topGlobalY
+        }
         .onChange(of: completionHeaderScrollPulse) { _, _ in
             scrollJournalCompletionHeaderToTop(using: proxy)
         }
@@ -566,8 +573,8 @@ private extension JournalScreen {
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(
-                        key: JournalHeaderScrollMinYKey.self,
-                        value: geo.frame(in: .named(JournalScreenLayout.journalScrollCoordinateSpaceName)).minY
+                        key: JournalHeaderTopGlobalYKey.self,
+                        value: geo.frame(in: .global).minY
                     )
                 }
             )

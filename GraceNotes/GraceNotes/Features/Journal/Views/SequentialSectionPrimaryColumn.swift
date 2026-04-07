@@ -431,7 +431,7 @@ private extension SequentialSectionPrimaryColumn {
             at: now,
             lastAcceptedItemID: &lastAcceptedStripTapItemID,
             lastAcceptedDate: &lastAcceptedStripTapDate,
-            interval: 0.35
+            interval: EntryRowTapDebounce.sameRowTapDebounceInterval
         ) else { return }
 
         morphingItemID = itemID

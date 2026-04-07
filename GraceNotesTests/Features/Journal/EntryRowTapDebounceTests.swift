@@ -14,7 +14,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: firstDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertEqual(lastID, id)
@@ -34,7 +34,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: firstDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertFalse(
@@ -43,7 +43,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: secondDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertEqual(lastID, id)
@@ -55,7 +55,9 @@ final class EntryRowTapDebounceTests: XCTestCase {
         var lastDate: Date?
         let id = UUID()
         let firstDate = Date(timeIntervalSince1970: 1_000)
-        let secondDate = firstDate.addingTimeInterval(0.4)
+        let secondDate = firstDate.addingTimeInterval(
+            EntryRowTapDebounce.sameRowTapDebounceInterval + 0.05
+        )
 
         XCTAssertTrue(
             EntryRowTapDebounce.shouldProcessTap(
@@ -63,7 +65,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: firstDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertTrue(
@@ -72,7 +74,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: secondDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertEqual(lastID, id)
@@ -93,7 +95,7 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: firstDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertTrue(
@@ -102,10 +104,40 @@ final class EntryRowTapDebounceTests: XCTestCase {
                 at: secondDate,
                 lastAcceptedItemID: &lastID,
                 lastAcceptedDate: &lastDate,
-                interval: 0.35
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
             )
         )
         XCTAssertEqual(lastID, secondRowID)
         XCTAssertEqual(lastDate, secondDate)
+    }
+
+    /// If `at` moves backward (clock adjustment or test doubles), do not treat it as a rapid repeat.
+    func test_acceptsTapWhenDateMovesBackward() {
+        var lastID: UUID?
+        var lastDate: Date?
+        let id = UUID()
+        let firstDate = Date(timeIntervalSince1970: 1_000)
+        let earlierDate = firstDate.addingTimeInterval(-60)
+
+        XCTAssertTrue(
+            EntryRowTapDebounce.shouldProcessTap(
+                itemID: id,
+                at: firstDate,
+                lastAcceptedItemID: &lastID,
+                lastAcceptedDate: &lastDate,
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
+            )
+        )
+        XCTAssertTrue(
+            EntryRowTapDebounce.shouldProcessTap(
+                itemID: id,
+                at: earlierDate,
+                lastAcceptedItemID: &lastID,
+                lastAcceptedDate: &lastDate,
+                interval: EntryRowTapDebounce.sameRowTapDebounceInterval
+            )
+        )
+        XCTAssertEqual(lastID, id)
+        XCTAssertEqual(lastDate, earlierDate)
     }
 }

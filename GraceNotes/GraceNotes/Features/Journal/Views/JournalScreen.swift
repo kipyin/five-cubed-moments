@@ -12,6 +12,8 @@ import Combine
 private enum JournalScreenLayout {
     static let journalScrollCoordinateSpaceName = "journalMainScroll"
     static let unlockToastScrollDismissThreshold: CGFloat = 20
+    /// After scrolling this many points, show the compact completion control in the navigation bar.
+    static let stickyCompletionScrollThresholdPoints: CGFloat = 88
 }
 
 private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
@@ -221,9 +223,16 @@ struct JournalScreen: View {
     @FocusState private var isPersonInputFocused: Bool
     @FocusState private var isReadingNotesFocused: Bool
     @FocusState private var isReflectionsFocused: Bool
+    @Namespace private var completionInfoMorphNamespace
+    @State private var completionInfoPresentation = JournalCompletionInfoPresentation()
+    @State private var completionHeaderScrollPulse: UInt = 0
     var entryDate: Date?
     var body: some View {
         let palette = TodayJournalPalette.resolve(mode: effectiveTodayAppearance)
+        let showStickyCompletionBar = JournalStickyCompletionVisibility.shouldShowBarIndicator(
+            scrollContentMinY: journalScrollOffsetY,
+            hideUntilScrolledPast: JournalScreenLayout.stickyCompletionScrollThresholdPoints
+        )
         ZStack {
             if effectiveTodayAppearance == .bloom, !journalBloomAtmosphereHosted {
                 SummerPaperBackgroundView()
@@ -237,6 +246,27 @@ struct JournalScreen: View {
         .overlay { journalToastOverlay }
         .navigationTitle(navigationTitle)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                JournalCompletionBarChip(
+                    completionLevel: viewModel.completionLevel,
+                    gratitudesCount: viewModel.gratitudes.count,
+                    needsCount: viewModel.needs.count,
+                    peopleCount: viewModel.people.count,
+                    onTap: {
+                        let badge = CompletionBadgeInfo.matching(viewModel.completionLevel)
+                        completionInfoPresentation.completionBadgeTapped(badge, reduceMotion: reduceMotion)
+                        if showStickyCompletionBar, completionInfoPresentation.isInfoCardPresented {
+                            completionHeaderScrollPulse &+= 1
+                        }
+                    }
+                )
+                .opacity(showStickyCompletionBar ? 1 : 0)
+                .allowsHitTesting(showStickyCompletionBar)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 0.18),
+                    value: showStickyCompletionBar
+                )
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     shareTapped()
@@ -453,12 +483,15 @@ private extension JournalScreen {
         VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
             Group {
                 DateSectionView(
+                    completionInfo: completionInfoPresentation,
+                    completionInfoMorphNamespace: completionInfoMorphNamespace,
                     completionLevel: viewModel.completionLevel,
                     celebratingLevel: celebratingLevel,
                     gratitudesCount: viewModel.gratitudes.count,
                     needsCount: viewModel.needs.count,
                     peopleCount: viewModel.people.count
                 )
+                .id(JournalScrollTarget.completionHeader)
 
                 journalOnboardingSuggestionIfNeeded
             }
@@ -494,6 +527,19 @@ private extension JournalScreen {
         .background(journalInlineScrollBackdropDismiss)
         .journalDismissUnlockToastOnTapOutside(unlockToastLevel != nil) {
             dismissUnlockToastIfNeeded()
+        }
+        .onChange(of: completionHeaderScrollPulse) { _, _ in
+            scrollJournalCompletionHeaderToTop(using: proxy)
+        }
+    }
+
+    private func scrollJournalCompletionHeaderToTop(using proxy: ScrollViewProxy) {
+        if reduceMotion {
+            proxy.scrollTo(JournalScrollTarget.completionHeader, anchor: .top)
+        } else {
+            withAnimation(.easeOut(duration: 0.25)) {
+                proxy.scrollTo(JournalScrollTarget.completionHeader, anchor: .top)
+            }
         }
     }
 

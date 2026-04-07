@@ -466,7 +466,22 @@
         }
       }
     },
-    "journal.growthStage.bloom": {},
+    "journal.growthStage.bloom": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloom"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "花开有成"
+          }
+        }
+      }
+    },
     "review.insights.bothThemesMultiple": {
       "localizations": {
         "en": {

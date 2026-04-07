@@ -43,6 +43,8 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     @Binding var isAddMorphComposerVisible: Bool
     @State private var expandedItemIDs: Set<UUID> = []
     @State private var morphingItemID: UUID?
+    @State private var lastAcceptedStripTapItemID: UUID?
+    @State private var lastAcceptedStripTapDate: Date?
 
     let progressDots: ProgressDots
     /// When set, `ScrollViewReader` targets chip list + input only (not the section header).
@@ -423,6 +425,15 @@ private extension SequentialSectionPrimaryColumn {
     }
 
     func handleItemTap(index: Int, itemID: UUID) {
+        let now = Date()
+        guard EntryRowTapDebounce.shouldProcessTap(
+            itemID: itemID,
+            at: now,
+            lastAcceptedItemID: &lastAcceptedStripTapItemID,
+            lastAcceptedDate: &lastAcceptedStripTapDate,
+            interval: 0.35
+        ) else { return }
+
         morphingItemID = itemID
         if isAddMorphComposerVisible {
             withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {

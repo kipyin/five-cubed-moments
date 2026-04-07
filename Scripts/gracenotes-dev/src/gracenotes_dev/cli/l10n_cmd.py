@@ -563,7 +563,10 @@ def l10n_review_cmd(
         Path | None,
         typer.Option(
             "--notes",
-            help="Append-only Markdown file for notes (default: l10n-review-notes-*.md in repo root).",
+            help=(
+                "Append-only Markdown file for notes "
+                "(default: l10n-review-notes-*.md in repo root)."
+            ),
         ),
     ] = None,
     all_surfaces: Annotated[

@@ -16,8 +16,7 @@ from rich.text import Text
 
 from gracenotes_dev import config
 from gracenotes_dev.cli import core as cli_core
-from gracenotes_dev.cli import l10n_cmd
-from gracenotes_dev.cli import l10n_surfaces
+from gracenotes_dev.cli import l10n_cmd, l10n_surfaces
 from gracenotes_dev.cli_rich import QUESTIONARY_STYLE
 
 

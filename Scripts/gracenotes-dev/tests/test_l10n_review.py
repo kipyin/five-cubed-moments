@@ -11,10 +11,8 @@ from unittest import mock
 import typer
 from typer.testing import CliRunner
 
-from gracenotes_dev.cli import app
+from gracenotes_dev.cli import app, l10n_review, l10n_surfaces
 from gracenotes_dev.cli import core as cli_core
-from gracenotes_dev.cli import l10n_review
-from gracenotes_dev.cli import l10n_surfaces
 
 
 class TestL10nReview(unittest.TestCase):
@@ -68,8 +66,14 @@ class TestL10nReview(unittest.TestCase):
             quiet_console = mock.Mock()
             with mock.patch.object(cli_core, "_require_interactive_cli"):
                 with mock.patch.object(cli_core, "_stdout_console", return_value=quiet_console):
-                    with mock.patch.object(l10n_review.questionary, "select", side_effect=select_side_effect):
-                        with mock.patch.object(l10n_review.questionary, "text", return_value=text_mock):
+                    with mock.patch.object(
+                        l10n_review.questionary,
+                        "select",
+                        side_effect=select_side_effect,
+                    ):
+                        with mock.patch.object(
+                            l10n_review.questionary, "text", return_value=text_mock
+                        ):
                             with self.assertRaises(typer.Exit) as ctx:
                                 l10n_review.run_l10n_review_interactive(
                                     repo_root,

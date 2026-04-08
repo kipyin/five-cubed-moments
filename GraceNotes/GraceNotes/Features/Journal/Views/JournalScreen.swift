@@ -511,6 +511,16 @@ struct JournalScreen: View {
         stickyCompletionChipCollapseTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled else { return }
+            // #region agent log
+            #if DEBUG
+            StickyChipAgentDebug.log(
+                hypothesisId: "E",
+                location: "JournalScreen.scheduleStickyCompletionChipAutoCollapse",
+                message: "collapse_auto_timer_begin",
+                data: ["reduceMotion": "\(reduceMotion)"]
+            )
+            #endif
+            // #endregion
             withAnimation(JournalScreenLayout.stickyChipMorphAnimation(reduceMotion: reduceMotion)) {
                 stickyCompletionChipLabelExpanded = false
             }
@@ -519,6 +529,16 @@ struct JournalScreen: View {
     }
 
     private func expandStickyCompletionChipLabel() {
+        // #region agent log
+        #if DEBUG
+        StickyChipAgentDebug.log(
+            hypothesisId: "E",
+            location: "JournalScreen.expandStickyCompletionChipLabel",
+            message: "expand",
+            data: ["reduceMotion": "\(reduceMotion)"]
+        )
+        #endif
+        // #endregion
         withAnimation(JournalScreenLayout.stickyChipMorphAnimation(reduceMotion: reduceMotion)) {
             stickyCompletionChipLabelExpanded = true
         }
@@ -528,6 +548,16 @@ struct JournalScreen: View {
 
     private func collapseStickyCompletionChipLabel() {
         cancelStickyCompletionChipCollapseTask()
+        // #region agent log
+        #if DEBUG
+        StickyChipAgentDebug.log(
+            hypothesisId: "E",
+            location: "JournalScreen.collapseStickyCompletionChipLabel",
+            message: "collapse_manual",
+            data: ["reduceMotion": "\(reduceMotion)"]
+        )
+        #endif
+        // #endregion
         withAnimation(JournalScreenLayout.stickyChipMorphAnimation(reduceMotion: reduceMotion)) {
             stickyCompletionChipLabelExpanded = false
         }

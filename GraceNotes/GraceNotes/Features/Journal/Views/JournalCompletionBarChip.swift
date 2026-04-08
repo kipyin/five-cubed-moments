@@ -40,7 +40,7 @@ struct JournalCompletionBarChip: View {
     @ViewBuilder
     private var chipCapsuleBackground: some View {
         let capsule = Capsule(style: .continuous)
-            .fill(backgroundFill(for: completionLevel))
+            .fill(JournalCompletionTierSurface.backgroundFill(for: completionLevel, palette: palette))
 
         if #available(iOS 26, *) {
             if reduceTransparency {
@@ -98,28 +98,4 @@ struct JournalCompletionBarChip: View {
         }
     }
 
-    private func backgroundFill(for level: JournalCompletionLevel) -> AnyShapeStyle {
-        switch level {
-        case .soil:
-            return AnyShapeStyle(palette.background)
-        case .sprout:
-            return AnyShapeStyle(palette.quickCheckInBackground)
-        case .twig, .leaf:
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [palette.standardBackgroundStart, palette.standardBackgroundEnd],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        case .bloom:
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [palette.fullBackgroundStart, palette.fullBackgroundEnd],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        }
-    }
 }

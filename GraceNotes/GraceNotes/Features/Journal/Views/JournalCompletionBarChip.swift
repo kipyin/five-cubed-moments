@@ -85,6 +85,36 @@ struct JournalCompletionBarChip: View {
             .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
+        // #region agent log
+        #if DEBUG
+        .background {
+            GeometryReader { geo in
+                Color.clear
+                    .onChange(of: geo.size) { _, size in
+                        StickyChipAgentDebug.log(
+                            hypothesisId: "C",
+                            location: "JournalCompletionBarChip.labelGeometry",
+                            message: "label_size",
+                            data: [
+                                "w": String(format: "%.2f", size.width),
+                                "h": String(format: "%.2f", size.height),
+                                "expanded": "\(showsCompletionTitle)",
+                                "blur": "\(morphBlurRadius)"
+                            ]
+                        )
+                    }
+            }
+        }
+        .onChange(of: morphBlurRadius) { _, radius in
+            StickyChipAgentDebug.log(
+                hypothesisId: "B",
+                location: "JournalCompletionBarChip.blur",
+                message: "morphBlurRadius",
+                data: ["radius": String(format: "%.2f", radius)]
+            )
+        }
+        #endif
+        // #endregion
         .dynamicTypeSize(Self.toolbarChipDynamicTypeRange)
         .fixedSize(horizontal: true, vertical: true)
         .simultaneousGesture(
@@ -98,8 +128,22 @@ struct JournalCompletionBarChip: View {
         .accessibilityAction(named: String(localized: "accessibility.stickyCompletionChipShowDetailsAction")) {
             onShowCompletionInfo()
         }
-        .onChange(of: showsCompletionTitle) { _, _ in
+        .onChange(of: showsCompletionTitle) { _, newValue in
             scheduleMorphBlurPulseIfAllowed()
+            // #region agent log
+            #if DEBUG
+            StickyChipAgentDebug.log(
+                hypothesisId: "D",
+                location: "JournalCompletionBarChip.onChange.expanded",
+                message: "showsCompletionTitle_changed",
+                data: [
+                    "showsTitle": "\(newValue)",
+                    "collapsedH": "\(collapsedChipHeight)",
+                    "toolbarH": "\(toolbarControlHeight)"
+                ]
+            )
+            #endif
+            // #endregion
         }
         .onDisappear {
             morphBlurPulseTask?.cancel()
@@ -221,3 +265,32 @@ struct JournalCompletionBarChip: View {
     }
 
 }
+
+// #region agent log
+#if DEBUG
+enum StickyChipAgentDebug {
+    private static let ingestURL = URL(
+        string: "http://127.0.0.1:7480/ingest/6b1dfaaa-db34-40e4-8b30-a71cc1c45d32"
+    )!
+
+    static func log(hypothesisId: String, location: String, message: String, data: [String: String] = [:]) {
+        let payload: [String: Any] = [
+            "sessionId": "6cf017",
+            "runId": "pre-fix",
+            "hypothesisId": hypothesisId,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+        var request = URLRequest(url: ingestURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("6cf017", forHTTPHeaderField: "X-Debug-Session-Id")
+        request.httpBody = body
+        URLSession.shared.dataTask(with: request).resume()
+    }
+}
+#endif
+// #endregion

@@ -6,9 +6,12 @@ import SwiftUI
 /// On **iOS 26+**, with ``ToolbarItem/sharedBackgroundVisibility(_:)`` set to ``Visibility/hidden``, add a
 /// tier-aware shadow stack so the chip reads clearly above the bar.
 struct JournalCompletionBarChip: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.locale) private var locale
     @Environment(\.todayJournalPalette) private var palette
+
+    /// Fixed bar height from ``JournalScreen/journalToolbarControlHeight`` (matched to the share symbol row).
+    let toolbarControlHeight: CGFloat
 
     let completionLevel: JournalCompletionLevel
     let gratitudesCount: Int
@@ -16,23 +19,22 @@ struct JournalCompletionBarChip: View {
     let peopleCount: Int
     let onTap: () -> Void
 
-    @ScaledMetric(relativeTo: .body) private var tierIconLength: CGFloat = 15
-    @ScaledMetric(relativeTo: .body) private var minToolbarCapsuleHeight: CGFloat = 34
+    /// Matches the trailing share symbol row (Outfit 17pt headline scale).
+    @ScaledMetric(relativeTo: .headline) private var tierIconLength: CGFloat = 24
 
     var body: some View {
         Button(action: onTap) {
             labelCore
-                .fixedSize(horizontal: true, vertical: false)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .frame(minHeight: minToolbarCapsuleHeight)
-                .frame(maxHeight: .infinity)
+                .padding(.horizontal, 14)
+                .frame(minHeight: toolbarControlHeight, maxHeight: toolbarControlHeight)
                 .background {
                     chipCapsuleBackground
                 }
                 .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
+        // Keep the bar from vertically compressing this control (matches trailing symbol row height).
+        .fixedSize(horizontal: true, vertical: true)
         .accessibilityLabel(accessibilityLabelText)
         .accessibilityHint(String(localized: "accessibility.journalStatusMeaningHint"))
     }
@@ -61,7 +63,7 @@ struct JournalCompletionBarChip: View {
     }
 
     private var labelCore: some View {
-        HStack(spacing: AppTheme.spacingTight) {
+        HStack(alignment: .center, spacing: AppTheme.spacingTight) {
             Image(ReviewRhythmFormatting.assetName(for: completionLevel))
                 .renderingMode(.template)
                 .resizable()
@@ -69,10 +71,23 @@ struct JournalCompletionBarChip: View {
                 .frame(width: tierIconLength, height: tierIconLength)
                 .accessibilityHidden(true)
             Text(completionTitle)
-                .font(AppTheme.warmPaperMetaEmphasis)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .font(AppTheme.warmPaperToolbarChipTitle)
+                .lineLimit(1)
+                .minimumScaleFactor(toolbarCompletionTitleMinimumScaleFactor)
         }
         .foregroundStyle(labelColor)
+        .frame(maxHeight: .infinity)
+    }
+
+    /// Latin titles stay short; CJK growth-stage strings are wider. Shrinking them made the chip read
+    /// shorter than the trailing share control—prefer full type size and a wider capsule.
+    private var toolbarCompletionTitleMinimumScaleFactor: CGFloat {
+        switch locale.language.languageCode?.identifier {
+        case "zh", "ja", "ko":
+            return 1.0
+        default:
+            return 0.78
+        }
     }
 
     private var completionTitle: String {

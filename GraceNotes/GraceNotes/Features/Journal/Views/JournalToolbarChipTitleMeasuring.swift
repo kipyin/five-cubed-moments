@@ -28,8 +28,15 @@ enum JournalToolbarChipTitleMeasuring {
         return ceil(size.width)
     }
 
-    /// `+2` pt slack so SwiftUI layout does not underflow UIKit measurement at fractional pixels.
-    static func measuredToolbarChipTitleWidth(for title: String) -> CGFloat {
-        singleLineTextWidth(title, font: toolbarChipTitleUIFont(forTextStyle: .body)) + 2
+    /// `+2` pt base slack so SwiftUI layout does not underflow UIKit measurement at fractional pixels.
+    /// CJK uses system fallback fonts in SwiftUI that can exceed UIKit single-font bounds — add extra trailing room.
+    static func measuredToolbarChipTitleWidth(for title: String, locale: Locale = .current) -> CGFloat {
+        let base = singleLineTextWidth(title, font: toolbarChipTitleUIFont(forTextStyle: .body)) + 2
+        switch locale.language.languageCode?.identifier {
+        case "zh", "ja", "ko":
+            return base + 14
+        default:
+            return base
+        }
     }
 }

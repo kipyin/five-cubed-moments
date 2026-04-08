@@ -15,6 +15,9 @@ private enum JournalScreenLayout {
     /// Reveal toolbar chip when scroll passes this threshold: iOS 18+ uses `contentOffset.y` **>** this;
     /// iOS 17 uses completion-header scroll-space `minY` **<** `-this`.
     static let stickyCompletionBarScrollRevealPoints: CGFloat = 0
+    /// Toolbar chip opacity fade; inline header badge stays hidden until this elapses after hiding the chip
+    /// so the two controls do not animate as one “moving down” illusion.
+    static let stickyToolbarChipFadeDurationSeconds: TimeInterval = 0.28
 }
 
 private struct JournalScrollOffsetPreferenceKey: PreferenceKey {
@@ -192,6 +195,9 @@ struct JournalScreen: View {
     @State private var journalScrollOffsetY: CGFloat = 0
     /// Sticky toolbar chip: iOS 18+ uses ``onScrollGeometryChange``; iOS 17 uses header scroll ``minY`` preference.
     @State private var stickyCompletionRevealedByScroll = false
+    /// After the sticky chip fades out, the inline header pill may show (see ``applyStickyCompletionRevealed``).
+    @State private var inlineBadgeUnlockedAfterStickyFade = true
+    @State private var inlineStickyFadeUnlockTask: Task<Void, Never>?
     @State private var unlockToastScrollBaseline: CGFloat?
     /// UIKit keyboard overlap with the key window; drives extra scroll padding and scroll-to-visible.
     @State private var keyboardOverlapHeight: CGFloat = 0
@@ -242,14 +248,14 @@ struct JournalScreen: View {
     @State private var completionHeaderScrollPulse: UInt = 0
     var entryDate: Date?
 
-    private var stickyCompletionToolbarTransition: AnyTransition {
-        reduceMotion
-            ? .opacity
-            : .opacity.combined(with: .scale(scale: 0.94, anchor: .leading))
-    }
+    /// Standard navigation-bar control height (HIG minimum touch target; scales with Dynamic Type).
+    @ScaledMetric(relativeTo: .body) private var journalToolbarControlHeight: CGFloat = 47
+    /// Pulls the leading toolbar chip toward the safe-area edge (pt; negative = left).
+    private let stickyCompletionToolbarLeadingInset: CGFloat = -4
 
     private var stickyJournalCompletionToolbarChip: some View {
         JournalCompletionBarChip(
+            toolbarControlHeight: journalToolbarControlHeight,
             completionLevel: viewModel.completionLevel,
             gratitudesCount: viewModel.gratitudes.count,
             needsCount: viewModel.needs.count,
@@ -262,23 +268,27 @@ struct JournalScreen: View {
                 }
             }
         )
-        .transition(stickyCompletionToolbarTransition)
     }
 
     @ToolbarContentBuilder
     private var journalToolbarContent: some ToolbarContent {
-        if showStickyJournalCompletionBar {
-            if #available(iOS 26, *) {
-                ToolbarItem(placement: .topBarLeading) {
-                    // Bleed room so the capsule shadow is not clipped by toolbar bounds.
-                    stickyJournalCompletionToolbarChip
-                        .padding(10)
-                }
-                .sharedBackgroundVisibility(.hidden)
-            } else {
-                ToolbarItem(placement: .topBarLeading) {
-                    stickyJournalCompletionToolbarChip
-                }
+        if #available(iOS 26, *) {
+            // Opacity only (chip stays laid out): `if` + transition fights Liquid Glass and mid-fade layout collapse.
+            ToolbarItem(placement: .topBarLeading) {
+                stickyJournalCompletionToolbarChip
+                    .padding(.leading, stickyCompletionToolbarLeadingInset)
+                    .opacity(showStickyJournalCompletionBar ? 1 : 0)
+                    .allowsHitTesting(showStickyJournalCompletionBar)
+                    .accessibilityHidden(!showStickyJournalCompletionBar)
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarLeading) {
+                stickyJournalCompletionToolbarChip
+                    .padding(.leading, stickyCompletionToolbarLeadingInset)
+                    .opacity(showStickyJournalCompletionBar ? 1 : 0)
+                    .allowsHitTesting(showStickyJournalCompletionBar)
+                    .accessibilityHidden(!showStickyJournalCompletionBar)
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -356,6 +366,7 @@ struct JournalScreen: View {
             }
             .onDisappear {
                 statusCelebrationDismissTask?.cancel()
+                inlineStickyFadeUnlockTask?.cancel()
             }
             .onChange(of: onboardingPresentation.step) { _, newStep in
                 focusOnboardingStepIfNeeded(newStep)
@@ -421,11 +432,34 @@ struct JournalScreen: View {
 
     private func applyStickyCompletionRevealed(_ revealed: Bool) {
         guard stickyCompletionRevealedByScroll != revealed else { return }
+
+        inlineStickyFadeUnlockTask?.cancel()
+        inlineStickyFadeUnlockTask = nil
+
         if reduceMotion {
             stickyCompletionRevealedByScroll = revealed
-        } else {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                stickyCompletionRevealedByScroll = revealed
+            inlineBadgeUnlockedAfterStickyFade = true
+            return
+        }
+
+        let fadeDuration = JournalScreenLayout.stickyToolbarChipFadeDurationSeconds
+
+        if !revealed {
+            inlineBadgeUnlockedAfterStickyFade = false
+        }
+
+        var transaction = Transaction()
+        transaction.animation = .easeInOut(duration: fadeDuration)
+        withTransaction(transaction) {
+            stickyCompletionRevealedByScroll = revealed
+        }
+
+        if !revealed {
+            let nanos = UInt64(fadeDuration * 1_000_000_000)
+            inlineStickyFadeUnlockTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: nanos)
+                guard !Task.isCancelled else { return }
+                inlineBadgeUnlockedAfterStickyFade = true
             }
         }
     }
@@ -554,10 +588,15 @@ private extension JournalScreen {
         stickyCompletionRevealedByScroll
     }
 
+    /// Hidden while the sticky chip shows and briefly after it fades so two badges never overlap in motion.
+    var isInlineBadgeHiddenDuringStickyFade: Bool {
+        stickyCompletionRevealedByScroll || !inlineBadgeUnlockedAfterStickyFade
+    }
+
     @ViewBuilder
     func journalScrollMainColumn(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.todaySectionSpacing) {
-            journalTodayHeaderGroup(isInlineCompletionBadgeHidden: showStickyJournalCompletionBar)
+            journalTodayHeaderGroup(isInlineCompletionBadgeHidden: isInlineBadgeHiddenDuringStickyFade)
                 .journalDismissInlineEditOnTap(isAnyInlineChipEditing) {
                     dismissInlineChipEditingSession()
                 }

@@ -405,7 +405,10 @@ struct JournalScreen: View {
                 journalScrollMainColumn(proxy: proxy)
             }
             .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentOffset.y > JournalScreenLayout.stickyCompletionBarScrollRevealPoints
+                JournalStickyCompletionVisibility.shouldShowBarIndicator(
+                    scrollContentOffsetY: geo.contentOffset.y,
+                    scrollRevealThreshold: JournalScreenLayout.stickyCompletionBarScrollRevealPoints
+                )
             } action: { _, pastThreshold in
                 applyStickyCompletionRevealed(pastThreshold)
             }
@@ -428,7 +431,10 @@ struct JournalScreen: View {
     }
 
     private func applyStickyCompletionFromHeaderScrollMinY(_ minY: CGFloat) {
-        let revealed = minY < -JournalScreenLayout.stickyCompletionBarScrollRevealPoints
+        let revealed = JournalStickyCompletionVisibility.shouldShowBarIndicator(
+            headerMinYInScrollSpace: minY,
+            scrollRevealThreshold: JournalScreenLayout.stickyCompletionBarScrollRevealPoints
+        )
         applyStickyCompletionRevealed(revealed)
     }
 

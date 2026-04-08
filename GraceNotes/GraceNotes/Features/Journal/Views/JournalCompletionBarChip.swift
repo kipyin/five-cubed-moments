@@ -1,10 +1,5 @@
 import SwiftUI
 
-private enum JournalCompletionBarChipMorphTiming {
-    static let crossfadeOutgoingSeconds: TimeInterval = 0.13
-    static let crossfadeIncomingSeconds: TimeInterval = 0.22
-}
-
 /// Compact completion control for the navigation bar: **capsule** fill (tier colors).
 ///
 /// Shadows read poorly in toolbar chrome on **iOS 17–18** (clip / double edge), so the chip stays flat there.
@@ -16,27 +11,6 @@ struct JournalCompletionBarChip: View {
 
     /// Capsule width for expanded title; wide enough for CJK growth-stage strings at capped Dynamic Type.
     private static let expandedTitleMaxWidth: CGFloat = 400
-
-    private enum MorphBlurPulse {
-        static let peakRadius: CGFloat = 5
-        static let easeInSeconds: TimeInterval = 0.1
-        static let easeOutSeconds: TimeInterval = 0.26
-    }
-
-    private var crossfadeOutgoingDuration: TimeInterval {
-        reduceMotion ? 0.1 : JournalCompletionBarChipMorphTiming.crossfadeOutgoingSeconds
-    }
-
-    private var crossfadeIncomingDuration: TimeInterval {
-        reduceMotion ? 0.14 : JournalCompletionBarChipMorphTiming.crossfadeIncomingSeconds
-    }
-
-    /// Incoming fade waits for outgoing to mostly finish (same gap in both directions).
-    private var crossfadeIncomingDelay: TimeInterval { crossfadeOutgoingDuration }
-
-    private var crossfadeBlurLeadSeconds: TimeInterval {
-        crossfadeOutgoingDuration + crossfadeIncomingDelay
-    }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -61,9 +35,6 @@ struct JournalCompletionBarChip: View {
     /// After a long-press succeeds, UIKit may still deliver the `Button` action on finger-up; skip one cycle.
     @State private var suppressNextCollapseExpandTap = false
 
-    @State private var morphBlurRadius: CGFloat = 0
-    @State private var morphBlurPulseTask: Task<Void, Never>?
-
     /// Icon-only: slightly shorter than the share row and padded so width tracks height (near-circular capsule).
     private var collapsedChipHeight: CGFloat {
         max(toolbarControlHeight - 1, tierIconLength + 8)
@@ -77,6 +48,13 @@ struct JournalCompletionBarChip: View {
         max(0, (collapsedChipHeight - tierIconLength) / 2)
     }
 
+    private var titleRevealAnimation: Animation {
+        if reduceMotion {
+            return .easeInOut(duration: 0.18)
+        }
+        return .easeInOut(duration: 0.26)
+    }
+
     var body: some View {
         Button {
             if suppressNextCollapseExpandTap {
@@ -85,40 +63,15 @@ struct JournalCompletionBarChip: View {
             }
             onCollapseExpandTap()
         } label: {
-            // `.center` here pinned the expanded HStack by its midpoint, overlapping icon and title.
-            ZStack(alignment: .leading) {
-                collapsedChipLabel
-                    .frame(maxWidth: .infinity)
-                    .opacity(showsCompletionTitle ? 0 : 1)
-                    .animation(
-                        showsCompletionTitle
-                            ? .easeOut(duration: crossfadeOutgoingDuration)
-                            : .easeIn(duration: crossfadeIncomingDuration)
-                            .delay(crossfadeIncomingDelay),
-                        value: showsCompletionTitle
-                    )
-                    .allowsHitTesting(!showsCompletionTitle)
-                expandedChipLabel
-                    .opacity(showsCompletionTitle ? 1 : 0)
-                    .animation(
-                        showsCompletionTitle
-                            ? .easeIn(duration: crossfadeIncomingDuration)
-                            .delay(crossfadeIncomingDelay)
-                            : .easeOut(duration: crossfadeOutgoingDuration),
-                        value: showsCompletionTitle
-                    )
-                    .allowsHitTesting(showsCompletionTitle)
-            }
-            // Collapsed: clamp width so the opacity-0 expanded row cannot widen the chip (circle).
-            // Expanded: maxWidth .infinity only — avoid minWidth(collapsed), which caused 46↔97 oscillation in logs.
-            // `frame(width: nil)` + `fixedSize(horizontal: false)` squeezed the title away in the toolbar.
-            .frame(maxWidth: showsCompletionTitle ? .infinity : collapsedChipHeight)
-            .frame(height: chipHeight)
-            .blur(radius: morphBlurRadius)
-            .background {
-                chipCapsuleBackground
-            }
-            .contentShape(Capsule(style: .continuous))
+            chipLabelContent
+                // Collapsed: clamp width — title has zero layout width while hidden.
+                // Expanded: maxWidth .infinity — avoid minWidth pair that caused width oscillation in earlier builds.
+                .frame(maxWidth: showsCompletionTitle ? .infinity : collapsedChipHeight)
+                .frame(height: chipHeight)
+                .background {
+                    chipCapsuleBackground
+                }
+                .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
         // #region agent log
@@ -135,19 +88,11 @@ struct JournalCompletionBarChip: View {
                                 "w": String(format: "%.2f", size.width),
                                 "h": String(format: "%.2f", size.height),
                                 "expanded": "\(showsCompletionTitle)",
-                                "blur": "\(morphBlurRadius)"
+                                "layout": "singleIcon_textFade"
                             ]
                         )
                     }
             }
-        }
-        .onChange(of: morphBlurRadius) { _, radius in
-            StickyChipAgentDebug.log(
-                hypothesisId: "B",
-                location: "JournalCompletionBarChip.blur",
-                message: "morphBlurRadius",
-                data: ["radius": String(format: "%.2f", radius)]
-            )
         }
         #endif
         // #endregion
@@ -167,7 +112,6 @@ struct JournalCompletionBarChip: View {
             onShowCompletionInfo()
         }
         .onChange(of: showsCompletionTitle) { _, newValue in
-            scheduleMorphBlurPulseIfAllowed()
             // #region agent log
             #if DEBUG
             StickyChipAgentDebug.log(
@@ -180,39 +124,34 @@ struct JournalCompletionBarChip: View {
                     "toolbarH": "\(toolbarControlHeight)"
                 ]
             )
+            StickyChipAgentDebug.log(
+                hypothesisId: "I",
+                location: "JournalCompletionBarChip.onChange.expanded",
+                message: "text_only_crossfade",
+                data: ["blurPulse": "removed", "symbolFade": "none"]
+            )
             #endif
             // #endregion
         }
-        .onDisappear {
-            morphBlurPulseTask?.cancel()
-            morphBlurPulseTask = nil
-            morphBlurRadius = 0
-        }
     }
 
-    private var collapsedChipLabel: some View {
-        HStack {
-            Spacer(minLength: 0)
-            tierIcon
-            Spacer(minLength: 0)
-        }
-        .foregroundStyle(labelColor)
-        .padding(.horizontal, collapsedHorizontalPadding)
-        .frame(maxHeight: .infinity)
-    }
-
-    private var expandedChipLabel: some View {
+    /// One tier icon (no crossfade duplicate); only the title opacity animates.
+    private var chipLabelContent: some View {
         HStack(alignment: .center, spacing: AppTheme.spacingTight) {
             tierIcon
             Text(completionTitle)
                 .font(AppTheme.warmPaperToolbarChipTitle)
                 .lineLimit(1)
                 .minimumScaleFactor(toolbarCompletionTitleMinimumScaleFactor)
-                .frame(maxWidth: Self.expandedTitleMaxWidth, alignment: .leading)
+                .frame(maxWidth: showsCompletionTitle ? Self.expandedTitleMaxWidth : 0, alignment: .leading)
+                .clipped()
+                .opacity(showsCompletionTitle ? 1 : 0)
+                .animation(titleRevealAnimation, value: showsCompletionTitle)
                 .accessibilityHidden(true)
+                .allowsHitTesting(showsCompletionTitle)
         }
         .foregroundStyle(labelColor)
-        .padding(.horizontal, 14)
+        .padding(.horizontal, showsCompletionTitle ? 14 : collapsedHorizontalPadding)
         .frame(maxHeight: .infinity)
     }
 
@@ -223,30 +162,6 @@ struct JournalCompletionBarChip: View {
             .scaledToFit()
             .frame(width: tierIconLength, height: tierIconLength)
             .accessibilityHidden(true)
-    }
-
-    private func scheduleMorphBlurPulseIfAllowed() {
-        morphBlurPulseTask?.cancel()
-        morphBlurPulseTask = nil
-        guard !reduceMotion else {
-            morphBlurRadius = 0
-            return
-        }
-        morphBlurPulseTask = Task { @MainActor in
-            // After staggered crossfade so blur does not stack on icon/text overlap.
-            let leadNanoseconds = Int(crossfadeBlurLeadSeconds * 1_000_000_000)
-            try? await Task.sleep(nanoseconds: UInt64(leadNanoseconds))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: MorphBlurPulse.easeInSeconds)) {
-                morphBlurRadius = MorphBlurPulse.peakRadius
-            }
-            try? await Task.sleep(for: .seconds(MorphBlurPulse.easeInSeconds))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: MorphBlurPulse.easeOutSeconds)) {
-                morphBlurRadius = 0
-            }
-            morphBlurPulseTask = nil
-        }
     }
 
     @ViewBuilder
@@ -318,7 +233,7 @@ enum StickyChipAgentDebug {
     static func log(hypothesisId: String, location: String, message: String, data: [String: String] = [:]) {
         let payload: [String: Any] = [
             "sessionId": "6cf017",
-            "runId": "post-fix-3",
+            "runId": "text-fade-v1",
             "hypothesisId": hypothesisId,
             "location": location,
             "message": message,

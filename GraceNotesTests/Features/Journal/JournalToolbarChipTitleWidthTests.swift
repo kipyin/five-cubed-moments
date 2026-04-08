@@ -35,7 +35,23 @@ final class JournalToolbarChipTitleWidthTests: XCTestCase {
 
     func test_longestZhHansTitle_hasNonTrivialMeasuredWidth() {
         let title = "叶茂成形"
-        let measuredWidth = JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(for: title)
+        let measuredWidth = JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(
+            for: title,
+            locale: Locale(identifier: "zh-Hans")
+        )
         XCTAssertGreaterThan(measuredWidth, 52, "Expected Han glyphs to exceed 52pt at default body metrics")
+    }
+
+    func test_cjkLocale_addsSlackOverNonCjkLocale() {
+        let title = "叶茂成形"
+        let zhWidth = JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(
+            for: title,
+            locale: Locale(identifier: "zh-Hans")
+        )
+        let enWidth = JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(
+            for: title,
+            locale: Locale(identifier: "en")
+        )
+        XCTAssertEqual(zhWidth - enWidth, 14, accuracy: 0.001)
     }
 }

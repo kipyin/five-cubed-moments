@@ -47,11 +47,12 @@ struct JournalCompletionBarChip: View {
         min(collapsedChipHeight, 36)
     }
 
-    /// Keep icon centered inside the collapsed capsule.
-    private var collapsedChipWidth: CGFloat { collapsedChipHeight }
+    /// Icon-only capsule: match width to ``chipVisualHeight`` so the shape stays square (circle), not a wide pill.
+    private var collapsedChipWidth: CGFloat { chipVisualHeight }
 
+    /// Horizontal padding inside the capsule; derived from the **visual** span so icon fits without stretching width.
     private var chipLeadingInset: CGFloat {
-        max(0, (collapsedChipHeight - tierIconLength) / 2)
+        max(0, (chipVisualHeight - tierIconLength) / 2)
     }
 
     /// Fixed expanded width keeps the leading edge anchored in the toolbar host.
@@ -183,7 +184,7 @@ struct JournalCompletionBarChip: View {
     }
 
     private var completionTitleWidth: CGFloat {
-        JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(for: completionTitle)
+        JournalToolbarChipTitleMeasuring.measuredToolbarChipTitleWidth(for: completionTitle, locale: locale)
     }
 
     private var completionTitle: String {

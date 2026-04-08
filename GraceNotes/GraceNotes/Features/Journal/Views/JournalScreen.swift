@@ -299,20 +299,28 @@ struct JournalScreen: View {
         if #available(iOS 26, *) {
             // Opacity only (chip stays laid out): `if` + transition fights Liquid Glass and mid-fade layout collapse.
             ToolbarItem(placement: .topBarLeading) {
-                stickyJournalCompletionToolbarChip
-                    .padding(.leading, stickyCompletionToolbarLeadingInset)
-                    .opacity(showStickyJournalCompletionBar ? 1 : 0)
-                    .allowsHitTesting(showStickyJournalCompletionBar)
-                    .accessibilityHidden(!showStickyJournalCompletionBar)
+                HStack(spacing: 0) {
+                    stickyJournalCompletionToolbarChip
+                        .padding(.leading, stickyCompletionToolbarLeadingInset)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(showStickyJournalCompletionBar ? 1 : 0)
+                .allowsHitTesting(showStickyJournalCompletionBar)
+                .accessibilityHidden(!showStickyJournalCompletionBar)
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .topBarLeading) {
-                stickyJournalCompletionToolbarChip
-                    .padding(.leading, stickyCompletionToolbarLeadingInset)
-                    .opacity(showStickyJournalCompletionBar ? 1 : 0)
-                    .allowsHitTesting(showStickyJournalCompletionBar)
-                    .accessibilityHidden(!showStickyJournalCompletionBar)
+                HStack(spacing: 0) {
+                    stickyJournalCompletionToolbarChip
+                        .padding(.leading, stickyCompletionToolbarLeadingInset)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(showStickyJournalCompletionBar ? 1 : 0)
+                .allowsHitTesting(showStickyJournalCompletionBar)
+                .accessibilityHidden(!showStickyJournalCompletionBar)
             }
         }
         ToolbarItem(placement: .topBarTrailing) {

@@ -116,7 +116,9 @@ struct JournalCompletionBarChip: View {
         #endif
         // #endregion
         .dynamicTypeSize(Self.toolbarChipDynamicTypeRange)
-        .fixedSize(horizontal: true, vertical: true)
+        /// Avoid ``fixedSize(horizontal: true)`` here: it fights animated min/max width and can make the
+        /// leading toolbar item re-center each frame (visible “slide” when width snaps ~97→46 pt per logs).
+        .fixedSize(horizontal: false, vertical: true)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.45).onEnded { _ in
                 suppressNextCollapseExpandTap = true
@@ -276,7 +278,7 @@ enum StickyChipAgentDebug {
     static func log(hypothesisId: String, location: String, message: String, data: [String: String] = [:]) {
         let payload: [String: Any] = [
             "sessionId": "6cf017",
-            "runId": "pre-fix",
+            "runId": "post-fix",
             "hypothesisId": hypothesisId,
             "location": location,
             "message": message,

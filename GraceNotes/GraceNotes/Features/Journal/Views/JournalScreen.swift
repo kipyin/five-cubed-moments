@@ -294,33 +294,37 @@ struct JournalScreen: View {
         )
     }
 
+    /// Leading toolbar chrome for the sticky chip (shared iOS 26 / earlier).
+    private var stickyCompletionToolbarLeadingChrome: some View {
+        HStack(spacing: 0) {
+            stickyJournalCompletionToolbarChip
+                .padding(.leading, stickyCompletionToolbarLeadingInset)
+                // `applyStickyCompletionRevealed` used to use `withTransaction` for the bar fade; that transaction
+                // could leak into later chip width morphs (first expand / after scroll reveal felt centered on glyph).
+                .animation(nil, value: stickyCompletionRevealedByScroll)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .opacity(showStickyJournalCompletionBar ? 1 : 0)
+        .animation(
+            .easeInOut(duration: JournalScreenLayout.stickyToolbarChipFadeDurationSeconds),
+            value: stickyCompletionRevealedByScroll
+        )
+        .allowsHitTesting(showStickyJournalCompletionBar)
+        .accessibilityHidden(!showStickyJournalCompletionBar)
+    }
+
     @ToolbarContentBuilder
     private var journalToolbarContent: some ToolbarContent {
         if #available(iOS 26, *) {
             // Opacity only (chip stays laid out): `if` + transition fights Liquid Glass and mid-fade layout collapse.
             ToolbarItem(placement: .topBarLeading) {
-                HStack(spacing: 0) {
-                    stickyJournalCompletionToolbarChip
-                        .padding(.leading, stickyCompletionToolbarLeadingInset)
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .opacity(showStickyJournalCompletionBar ? 1 : 0)
-                .allowsHitTesting(showStickyJournalCompletionBar)
-                .accessibilityHidden(!showStickyJournalCompletionBar)
+                stickyCompletionToolbarLeadingChrome
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .topBarLeading) {
-                HStack(spacing: 0) {
-                    stickyJournalCompletionToolbarChip
-                        .padding(.leading, stickyCompletionToolbarLeadingInset)
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .opacity(showStickyJournalCompletionBar ? 1 : 0)
-                .allowsHitTesting(showStickyJournalCompletionBar)
-                .accessibilityHidden(!showStickyJournalCompletionBar)
+                stickyCompletionToolbarLeadingChrome
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -484,11 +488,7 @@ struct JournalScreen: View {
             inlineBadgeUnlockedAfterStickyFade = false
         }
 
-        var transaction = Transaction()
-        transaction.animation = .easeInOut(duration: fadeDuration)
-        withTransaction(transaction) {
-            stickyCompletionRevealedByScroll = revealed
-        }
+        stickyCompletionRevealedByScroll = revealed
 
         if !revealed {
             let nanos = UInt64(fadeDuration * 1_000_000_000)
@@ -543,7 +543,19 @@ struct JournalScreen: View {
             hypothesisId: "E",
             location: "JournalScreen.expandStickyCompletionChipLabel",
             message: "expand",
-            data: ["reduceMotion": "\(reduceMotion)"]
+            data: [
+                "reduceMotion": "\(reduceMotion)",
+                "stickyBarVisible": "\(showStickyJournalCompletionBar)"
+            ]
+        )
+        StickyChipAgentDebug.log(
+            hypothesisId: "L",
+            location: "JournalScreen.expandStickyCompletionChipLabel",
+            message: "expand_toolbar_context",
+            data: [
+                "revealedScroll": "\(stickyCompletionRevealedByScroll)",
+                "fadeUsesOpacityOnly": "true"
+            ]
         )
         #endif
         // #endregion

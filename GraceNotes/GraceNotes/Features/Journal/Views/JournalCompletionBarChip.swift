@@ -95,7 +95,7 @@ struct JournalCompletionBarChip: View {
                                 "w": String(format: "%.2f", size.width),
                                 "h": String(format: "%.2f", size.height),
                                 "expanded": "\(showsCompletionTitle)",
-                                "layout": "centerRetract_textPadWhenExpanded"
+                                "layout": "centerRetract_toolbarFadeIsolated"
                             ]
                         )
                     }
@@ -246,7 +246,7 @@ enum StickyChipAgentDebug {
     static func log(hypothesisId: String, location: String, message: String, data: [String: String] = [:]) {
         let payload: [String: Any] = [
             "sessionId": "6cf017",
-            "runId": "centerRetract-v1",
+            "runId": "toolbarTx-v1",
             "hypothesisId": hypothesisId,
             "location": location,
             "message": message,

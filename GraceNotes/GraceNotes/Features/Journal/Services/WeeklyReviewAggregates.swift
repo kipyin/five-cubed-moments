@@ -63,6 +63,7 @@ struct WeeklyReviewAggregatesBuilder {
     let textWeight = 1
     let minimumMostRecurringSignalCount = 2
     let textNormalizer = WeeklyInsightTextNormalizer()
+    var themeJournalLanguageResolver: any ReviewJournalThemeLanguageResolving = ReviewJournalThemeLanguageResolver()
 
     // swiftlint:disable:next function_parameter_count
     func build(
@@ -470,7 +471,7 @@ struct ThemeSurface {
 
 struct DistilledThemeAccumulator {
     let canonicalConcept: String
-    let displayLabel: String
+    var displayLabel: String
     var totalCount: Int
     var days: Set<Date>
     var evidence: [ReviewThemeSurfaceEvidence]

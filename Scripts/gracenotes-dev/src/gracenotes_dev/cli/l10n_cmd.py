@@ -23,6 +23,16 @@ from gracenotes_dev.cli.apps import l10n_app
 
 PAT_STRING = re.compile(r'String\(localized:\s*"((?:[^"\\]|\\.)*)"')
 PAT_LOCALIZED = re.compile(r'(?<![\w])localized:\s*\"((?:[^\"\\]|\\.)*)"')
+# `String(localized: LocalizedStringResource("key", ...))` and similar constructors.
+PAT_LOCALIZED_STRING_RESOURCE = re.compile(
+    r'LocalizedStringResource\(\s*"((?:[^"\\]|\\.)*)"',
+    re.MULTILINE,
+)
+# Helper wrappers like ``private static func localized(_ key: String, ...) { String(localized: ...) }``.
+PAT_LOCALIZED_HELPER_CALL = re.compile(
+    r'(?<![.\w])localized\(\s*"((?:[^"\\]|\\.)*)"',
+    re.MULTILINE,
+)
 # Keys resolved at runtime (see WeeklyInsightCandidateBuilder+Candidates.renderLocalizedTemplate).
 DYNAMIC_TEMPLATE_KEYS = frozenset(
     {
@@ -64,7 +74,7 @@ def _unescape_swift_string(inner: str) -> str:
 
 
 def swift_localization_key_locations(repo_root: Path) -> tuple[set[str], dict[str, list[str]]]:
-    """Scan GraceNotes + GraceNotesTests for ``String(localized:)`` / ``localized:`` literals."""
+    """Scan GraceNotes + GraceNotesTests for localization key string literals."""
     found: set[str] = set()
     locations: dict[str, list[str]] = defaultdict(list)
     for base in _swift_roots(repo_root):
@@ -73,7 +83,12 @@ def swift_localization_key_locations(repo_root: Path) -> tuple[set[str], dict[st
         for path in base.rglob("*.swift"):
             text = path.read_text(encoding="utf-8")
             rel = str(path.relative_to(repo_root))
-            for pattern in (PAT_STRING, PAT_LOCALIZED):
+            for pattern in (
+                PAT_STRING,
+                PAT_LOCALIZED,
+                PAT_LOCALIZED_STRING_RESOURCE,
+                PAT_LOCALIZED_HELPER_CALL,
+            ):
                 for m in pattern.finditer(text):
                     k = _unescape_swift_string(m.group(1))
                     found.add(k)

@@ -157,7 +157,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@。感恩的事 %2$d 条。需要的事 %3$d 条。牵挂的人 %4$d 条。"
+            "value": "%1$@。感恩的事 %2$d 件。需要的事 %3$d 件。牵挂的人 %4$d 位。"
           }
         }
       }
@@ -189,7 +189,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%2$d 条中的第 %1$d 条"
+            "value": "已写 %1$d，共 %2$d"
           }
         }
       }
@@ -301,23 +301,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "现在还什么都没有。随便开始写一些，就会进入「初露新芽」。"
-          }
-        }
-      }
-    },
-    "journal.guidance.addOneMoreLineAnySection": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add one more line in any section. Small steps are easier to keep. Tap the status above anytime if you want a reminder."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在任一部分多写几条，小步最容易坚持。"
+            "value": "现在还什么都没有。随便开始写一写，就会进入「初露新芽」。"
           }
         }
       }
@@ -349,7 +333,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "三个部分都已经写了三条了。继续把每个部分写到五条，就会进入「花开有成」。"
+            "value": "三个部分都已经写了三件事了。继续把每个部分写满五件事，就会进入「花开有成」。"
           }
         }
       }
@@ -365,7 +349,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "三个部分都写到五条了。今天这篇记录已经完整了。"
+            "value": "三个部分都已经写满五件事了。今天这篇记录已经很完整了。"
           }
         }
       }
@@ -429,7 +413,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "至少有一个部分已经写到三条了。等三个部分都写上三条以后，就会进入「叶茂成形」。"
+            "value": "至少有一个部分已经写了三件事。等三个部分都写满三件事以后，就会进入「叶茂成形」。"
           }
         }
       }
@@ -461,7 +445,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "开始写今天的感恩记"
+            "value": "开始今天的记录"
           }
         }
       }
@@ -685,7 +669,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "接下来可做的事"
+            "value": "接下来可以做的事情"
           }
         }
       }
@@ -829,7 +813,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "改了 iCloud 同步后，需要重新打开感恩记才会生效。"
+            "value": "修改 iCloud 同步设置后，需要重新打开感恩记才能生效。"
           }
         }
       }
@@ -2061,7 +2045,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "深度与洞察"
+            "value": "回顾与洞察"
           }
         }
       }
@@ -2078,22 +2062,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "关闭"
-          }
-        }
-      }
-    },
-    "journal.tutorial.dismissTipHint": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dismisses this tip."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "关闭这条提示。"
           }
         }
       }
@@ -2258,22 +2226,6 @@
         }
       }
     },
-    "journal.tutorial.gotIt": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Got it"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "知道了"
-          }
-        }
-      }
-    },
     "app.name": {
       "localizations": {
         "en": {
@@ -2397,7 +2349,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "让记录随你走"
+            "value": "让记录在设备间同步"
           }
         }
       }
@@ -2429,7 +2381,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在任一部分多写几条，小步最容易坚持。"
+            "value": "在任一部分多写几件事"
           }
         }
       }
@@ -2445,7 +2397,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "让感恩记跟着你走"
+            "value": "让感恩记在设备间同步"
           }
         }
       }
@@ -2669,7 +2621,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "现在为今天加一条需要的事吧。"
+            "value": "现在为今天加一件需要的事吧。"
           }
         }
       }
@@ -2861,7 +2813,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开「今天」，开始引导式第一条记录。"
+            "value": "打开「今天」，开始引导式第一篇记录。"
           }
         }
       }
@@ -3069,7 +3021,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在为你的第一条记录做准备……"
+            "value": "正在为你的第一篇记录做准备……"
           }
         }
       }
@@ -3454,7 +3406,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "暂无条目"
+            "value": "暂无记录"
           }
         }
       }
@@ -3934,7 +3886,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从一件感恩的事写起，其他的慢慢来。"
+            "value": "从一件感恩的事写起。"
           }
         }
       }
@@ -3966,7 +3918,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "今天先写下一条反思，慢慢积累成你的每周回顾。"
+            "value": "今天先写下一则反思，慢慢积累成你的每周回顾。"
           }
         }
       }
@@ -4334,7 +4286,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "与 %@ 相关的那条线，这周不止出现在一天里。"
+            "value": "这周不止一天出现了 %@。"
           }
         }
       }
@@ -4929,22 +4881,6 @@
         }
       }
     },
-    "journal.tutorial.firstGratitudeSeed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write one gratitude line to plant your first seed. Tap the status above anytime if you want a reminder."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先写一件感恩的事，把第一颗种子种下去。需要提示时，也可以随时点按上方状态。"
-          }
-        }
-      }
-    },
     "journal.editor.placeholderSection": {
       "localizations": {
         "en": {
@@ -4988,7 +4924,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "今天的记录里至少写了一条。把每个部分写到三条，就会进入「枝条初成」。"
+            "value": "今天的记录里已经至少写了一件事。把每个部分写满三件事，就会进入「枝条初成」。"
           }
         }
       }
@@ -5004,7 +4940,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这周你保持了稳定的每日节奏，每天都完成了 15 项记录。"
+            "value": "这周你保持了稳定的每日节奏，每天都达到了「花开有成」。"
           }
         }
       }
@@ -5036,7 +4972,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "今天已经达到「花开有成」。三个部分都写满五条。"
+            "value": "今天已经达到「花开有成」。三个部分都写满了五件事。"
           }
         }
       }
@@ -5052,7 +4988,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "今天已经达到「叶茂成形」。"
+            "value": "每个部分都至少写了三件事，达到了「叶茂成形」。"
           }
         }
       }
@@ -5068,7 +5004,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "今天已经达到「初露新芽」。"
+            "value": "至少写了一件事，今天达到了「初露新芽」。"
           }
         }
       }
@@ -5089,38 +5025,6 @@
         }
       }
     },
-    "journal.onboarding.balancedContinueMessage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nice work. Two more lines in each section gets you to Bloom."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "很棒！每个部分再写两条，就可以到「花开有成」。"
-          }
-        }
-      }
-    },
-    "journal.onboarding.startedContinueMessage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You've begun. Keep going until each section has three."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你已经开始了。继续写，直到每个栏目都有三条。"
-          }
-        }
-      }
-    },
     "journal.guidance.firstBloomDay": {
       "localizations": {
         "en": {
@@ -5132,7 +5036,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "第一次进入「花开有成」。每个部分都写满五条。想写时再加上阅读笔记或反思就好。"
+            "value": "这是你第一次进入「花开有成」！每个部分都已经写满五件事了。"
           }
         }
       }
@@ -5148,7 +5052,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "第一次进入「叶茂成形」。每个部分都至少有三条了，继续写向「花开有成」。"
+            "value": "这是你第一次进入「叶茂成形」！每个部分都至少写了三件事了，写满五件事就可以达到「花开有成」。"
           }
         }
       }
@@ -5180,7 +5084,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你已经开始写今天这篇感恩记了。"
+            "value": "恭喜你开始了今天的记录。"
           }
         }
       }
@@ -5276,7 +5180,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每个部分都至少写了三条，但还没有全部写满。"
+            "value": "每个部分都至少写了三件事，但还没有全部写满五件。"
           }
         }
       }
@@ -5292,7 +5196,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "感恩的事、需要的事和牵挂的人这三个部分里都还没有写下条。"
+            "value": "感恩的事、需要的事和牵挂的人这三个部分里都还没有写下任何内容。"
           }
         }
       }
@@ -5308,7 +5212,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "感恩的事、需要的事和牵挂的人都已写满五条。"
+            "value": "感恩的事、需要的事和牵挂的人都已写满五件。"
           }
         }
       }
@@ -5324,7 +5228,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "至少有一个部分已经达到三条，也至少有一个部分还不到三条。"
+            "value": "至少有一个部分已经写满三件事，也至少有一个部分还没有写到三件事。"
           }
         }
       }
@@ -5340,7 +5244,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你已经写下至少一条，而且三个部分都还不到三条。"
+            "value": "你已经写下至少一件事，而且三个部分都还没有写到三件事。"
           }
         }
       }
@@ -5356,7 +5260,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一颗小小的种子会随着你今天写下的内容慢慢长大。准备好了，就多写一点。"
+            "value": "感恩记会随着你的记录变得更加完整，每天尝试多写一些吧。"
           }
         }
       }
@@ -5372,7 +5276,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "我们经常会忘记表达感恩。可以打开每日提醒来记录当天的感恩记。"
+            "value": "我们经常会忘记记录感恩。可以打开每日提醒来记录当天的感恩记。"
           }
         }
       }

@@ -22,10 +22,12 @@ Marketing **0.5.0** / bundle **10** (git tag **`v0.5.0+10`** at release).
 - **Journal (Today):** Sticky completion chip uses **scroll hysteresis** so unlock placement does not **oscillate** at the reveal threshold; unlock card fill uses **warm paper palette** only (no system grey Materials). Refs **#225**.
 - **Share card:** Three distinct typographic presets — Grace Notes default (Playfair + Source Serif 4), **Editorial** (Outfit + IBM Plex Serif), **Embellished** (Spectral on the sunrise gradient). Watermark uses the warm paper meta font for a consistent footer; stubs use each style’s meta font. Section include/exclude uses subtle **plus** / **xmark** (44pt target). Sunrise preset text ink slightly darkened for contrast on the gradient. Bundled **IBM Plex Serif** and **Spectral** (SIL OFL); license texts alongside fonts under `GraceNotes/GraceNotes/Resources/Fonts/`.
 - **Share:** Composer and manual backup actions use the label **Share** / **分享** (no ellipsis). Share card preview places the completion badge on the **same row** as the date, **trailing**-aligned, at a **larger** scale for balance with section titles; sunrise accent rule stays below that row.
+- **Copy / localization (zh-Hans):** Review pass for onboarding, journal guidance, App Tour criteria, Past insights, and settings—more consistent **件/位** counting, calmer onboarding tone, and clearer iCloud / completion phrasing (`Localizable.xcstrings`). Removed legacy unused catalog keys that had no Swift references.
 
 #### Developer
 
 - Tests: `JournalTodayOrientationPolicyTests`, `OnboardingSuggestionEvaluatorTests`, `JournalOnboardingFlowEvaluatorTests`; `JournalStickyCompletionVisibilityTests`, `JournalUnlockFeedbackPlacementTests`; removed `JournalTutorialHintPresentationTests`. `JournalUnlockFeedback` replaces the former bottom unlock toast (`JournalUnlockToastView` removed).
+- **gracenotes-dev:** `grace l10n audit` now treats `LocalizedStringResource("…")` and `localized("…")` helper call sites as key references (fixes false “unused key” warnings for iCloud last-activity strings).
 
 ### Build 9 — 2026-04-04
 

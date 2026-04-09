@@ -74,7 +74,7 @@ brew install swiftlint
 
 **Handoffs:** Put anything the next person needs in the **PR** or **linked issue** (description or comments). This repo does not use a separate handoff folder.
 
-**Agent memory:** Skim [`MEMORY.md`](MEMORY.md) for **short, distilled** human decisions and preferences before redoing risky UI or “obvious” fixes. When the human gives a **durable** correction or product call, add **one terse line** there (see file header). Keeps context small; does not replace PR/issue discussion for load-bearing detail.
+**Agent memory:** Skim [`MEMORY.md`](MEMORY.md) before redoing risky UI or “obvious” fixes. **Update it proactively** when interaction signals warrant it—**not only** when the human says “remember this.” Triggers include **reverts**, **multiple failed iterations** on the same behavior, **frustration or repeated instructions**, and **explicit tradeoffs** (e.g. feel vs metrics). Follow [`.agents/skills/memory/SKILL.md`](.agents/skills/memory/SKILL.md): one **short** new line per lesson, dedupe against existing entries, commit with `docs(memory): …`. This is **in-session** learning (there is no background worker); the discipline is **end-of-turn** before you wrap. Keeps context small; does not replace PR/issue discussion for load-bearing detail.
 
 ## Role index (optional specialists)
 

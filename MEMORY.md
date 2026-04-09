@@ -6,6 +6,8 @@
 
 **When to append:** The human states a correction, a non-obvious product choice, or “remember this.” After **merge-level** decisions, add **one** line if it would prevent a future agent from “fixing” the wrong thing.
 
+**Proactive append (same session):** Agents should **not** wait for “update MEMORY.” If the thread had **reverts**, **≥2 wrong attempts** on the same axis, **frustration/repetition**, **restated constraints**, or an **explicit tradeoff**, distill **one** new line **before stopping**—see [`.agents/skills/memory/SKILL.md`](.agents/skills/memory/SKILL.md).
+
 **When *not* to append:** One-off task status, full PR bodies, or anything that belongs only in an issue/PR comment.
 
 ---

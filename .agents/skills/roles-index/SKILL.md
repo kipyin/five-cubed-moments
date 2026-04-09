@@ -49,6 +49,7 @@ These are **not** named handoff roles like Strategist or QA Reviewer; they are o
 
 - **`interview`** — `.agents/skills/interview/SKILL.md` — clarify requirements before large or ambiguous work.
 - **`simplify`** — `.agents/skills/simplify/SKILL.md` — assess implementation shape after delivery (PR diff or git range); does not block merge.
+- **`memory`** — `.agents/skills/memory/SKILL.md` — after frictional loops, append **one terse line** to [`MEMORY.md`](../../../MEMORY.md) so future agents inherit constraints without replaying the thread.
 
 Use the same spirit of clear outputs and handoffs as the sections above, without duplicating the full role contract when a skill file already defines its workflow.
 

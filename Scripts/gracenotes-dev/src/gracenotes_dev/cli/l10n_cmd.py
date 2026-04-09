@@ -28,7 +28,7 @@ PAT_LOCALIZED_STRING_RESOURCE = re.compile(
     r'LocalizedStringResource\(\s*"((?:[^"\\]|\\.)*)"',
     re.MULTILINE,
 )
-# Helper wrappers like ``private static func localized(_ key: String, ...) { String(localized: ...) }``.
+# Swift helpers that wrap ``String(localized:)`` (e.g. `localized(_ key: String, locale:)`).
 PAT_LOCALIZED_HELPER_CALL = re.compile(
     r'(?<![.\w])localized\(\s*"((?:[^"\\]|\\.)*)"',
     re.MULTILINE,

@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
 
+import click
 import questionary
 import tomlkit
 import typer
@@ -256,6 +257,11 @@ def _run_theater(steps: list[TheaterStep], *, terse: bool = False) -> float:
 
 
 def _repo_root() -> Path:
+    ctx = click.get_current_context(silent=True)
+    if ctx is not None and isinstance(getattr(ctx, "obj", None), dict):
+        start = ctx.obj.get("repo_root_start")
+        if start is not None:
+            return xcode_helpers.repo_root_from(Path(start))
     return xcode_helpers.repo_root_from(Path.cwd())
 
 
@@ -580,8 +586,17 @@ def _run(
     check: bool = True,
     verbose: bool = False,
     silent: bool = False,
+    dry_run: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose, silent=silent)
+    if dry_run:
+        _stdout_console().print(f"DRY-RUN: {shlex.join(prepared_argv)}")
+        return subprocess.CompletedProcess(
+            args=prepared_argv,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
     use_capture = silent
     try:
         if use_capture:
@@ -615,8 +630,17 @@ def _run_capture(
     check: bool = True,
     verbose: bool = False,
     silent: bool = False,
+    dry_run: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     prepared_argv = _prepare_xcodebuild_argv(argv, verbose=verbose, silent=silent)
+    if dry_run:
+        _stdout_console().print(f"DRY-RUN: {shlex.join(prepared_argv)}")
+        return subprocess.CompletedProcess(
+            args=prepared_argv,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
     try:
         completed = subprocess.run(
             prepared_argv,
@@ -969,6 +993,7 @@ def _run_test_once(
     kind: str,
     isolated_dd: bool,
     verbose: bool,
+    dry_run: bool = False,
 ) -> None:
     if kind == "all" and cfg.parallel_testing_unit != cfg.parallel_testing_ui:
         _run_test_once(
@@ -978,8 +1003,9 @@ def _run_test_once(
             kind="unit",
             isolated_dd=isolated_dd,
             verbose=verbose,
+            dry_run=dry_run,
         )
-        _reset_sims(repo_root)
+        _reset_sims(repo_root, dry_run=dry_run)
         _run_test_once(
             cfg=cfg,
             repo_root=repo_root,
@@ -987,6 +1013,7 @@ def _run_test_once(
             kind="ui",
             isolated_dd=isolated_dd,
             verbose=verbose,
+            dry_run=dry_run,
         )
         return
 
@@ -1000,10 +1027,10 @@ def _run_test_once(
         parallel_testing=_parallel_testing_for_kind(cfg, kind),
         legacy_skip_flags=cfg.legacy_runtime_skip_flags,
     )
-    _run(argv, cwd=repo_root, check=True, verbose=verbose)
+    _run(argv, cwd=repo_root, check=True, verbose=verbose, dry_run=dry_run)
 
 
-def _reset_sims(repo_root: Path) -> None:
+def _reset_sims(repo_root: Path, *, dry_run: bool = False) -> None:
     shutdown, erase = xcode_helpers.simctl_reset_all_argv()
-    _run(shutdown, cwd=repo_root, check=False)
-    _run(erase, cwd=repo_root, check=False)
+    _run(shutdown, cwd=repo_root, check=False, dry_run=dry_run)
+    _run(erase, cwd=repo_root, check=False, dry_run=dry_run)

@@ -232,6 +232,19 @@ enum ReviewSectionDistributionStripLayout {
         }
         return widths
     }
+
+    /// Display percentages for the section-mix strip (issue #247). Whole numbers only; rounded shares may not sum
+    /// to 100. When all counts are zero, returns `[0, 0, 0]` so each segment can show `0%` with equal thirds widths.
+    static func integerDisplayPercents(
+        gratitudeMentions: Int,
+        needMentions: Int,
+        peopleMentions: Int
+    ) -> [Int] {
+        let counts = [gratitudeMentions, needMentions, peopleMentions]
+        let total = counts.reduce(0, +)
+        guard total > 0 else { return [0, 0, 0] }
+        return counts.map { Int((Double($0) / Double(total) * 100).rounded()) }
+    }
 }
 
 /// History-scoped section line totals as a proportion strip + legend. Issue #152.
@@ -326,6 +339,11 @@ private struct ReviewHistorySectionStrip: View {
     }
 
     var body: some View {
+        let percents = ReviewSectionDistributionStripLayout.integerDisplayPercents(
+            gratitudeMentions: totals.gratitudeMentions,
+            needMentions: totals.needMentions,
+            peopleMentions: totals.peopleMentions
+        )
         VStack(alignment: .leading, spacing: 12) {
             GeometryReader { geo in
                 let width = max(geo.size.width, 1)
@@ -356,23 +374,29 @@ private struct ReviewHistorySectionStrip: View {
                                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                                             .strokeBorder(border, lineWidth: 0.85)
                                     }
-                                Text("\(item.count)")
-                                    .font(AppTheme.warmPaperMeta)
-                                    .monospacedDigit()
-                                    .foregroundStyle(AppTheme.reviewTextPrimary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.45)
-                                    .padding(.horizontal, 3)
-                                    .accessibilityHidden(true)
+                                Text(
+                                    String(
+                                        format: String(localized: "review.sectionMix.segmentPercent"),
+                                        locale: .current,
+                                        Int64(percents[index])
+                                    )
+                                )
+                                .font(AppTheme.warmPaperMeta)
+                                .monospacedDigit()
+                                .foregroundStyle(AppTheme.reviewTextPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.45)
+                                .padding(.horizontal, 3)
+                                .accessibilityHidden(true)
                             }
                             .frame(width: segmentWidths[index], height: stripHeight)
                         }
                         .buttonStyle(PastTappablePressStyle())
                         .accessibilityLabel(
-                            String(
-                                format: String(localized: "journal.share.twoColumnRow"),
-                                localizedSectionName(for: item.kind),
-                                item.count
+                            sectionMixAccessibilityLabel(
+                                kind: item.kind,
+                                count: item.count,
+                                percent: percents[index]
                             )
                         )
                         .accessibilityHint(segmentAccessibilityHint(forCount: item.count))
@@ -383,11 +407,11 @@ private struct ReviewHistorySectionStrip: View {
             .frame(height: max(26, ReviewHistoryPanelLayoutScale.stripHeight(26, dynamicTypeSize: dynamicTypeSize)))
 
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(segments.enumerated()), id: \.offset) { _, item in
+                ForEach(Array(segments.enumerated()), id: \.offset) { index, item in
                     Button {
                         onSelectSection(item.kind)
                     } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        HStack(alignment: .center, spacing: 10) {
                             Circle()
                                 .fill(ReviewSectionDistributionPalette.fill(for: item.kind))
                                 .frame(width: 10, height: 10)
@@ -400,23 +424,23 @@ private struct ReviewHistorySectionStrip: View {
                                 }
                                 .accessibilityHidden(true)
                             Text(localizedSectionName(for: item.kind))
-                                .font(AppTheme.warmPaperBody)
+                                .font(AppTheme.warmPaperMeta)
                                 .foregroundStyle(AppTheme.reviewTextPrimary)
                             Spacer(minLength: 8)
-                            Text("\(item.count)")
-                                .font(AppTheme.warmPaperMeta)
-                                .monospacedDigit()
-                                .foregroundStyle(AppTheme.reviewTextMuted)
-                                .accessibilityHidden(true)
+                            ReviewCountBadge(
+                                value: item.count.formatted(),
+                                accent: ReviewSectionDistributionPalette.countBadgeAccent(for: item.kind)
+                            )
+                            .accessibilityHidden(true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(PastTappablePressStyle())
                     .accessibilityLabel(
-                        String(
-                            format: String(localized: "journal.share.twoColumnRow"),
-                            localizedSectionName(for: item.kind),
-                            item.count
+                        sectionMixAccessibilityLabel(
+                            kind: item.kind,
+                            count: item.count,
+                            percent: percents[index]
                         )
                     )
                     .accessibilityHint(segmentAccessibilityHint(forCount: item.count))
@@ -424,6 +448,22 @@ private struct ReviewHistorySectionStrip: View {
             }
         }
         .padding(.top, 2)
+    }
+
+    private func sectionMixAccessibilityLabel(
+        kind: ReviewStatsSectionKind,
+        count: Int,
+        percent: Int
+    ) -> String {
+        let format = count == 1
+            ? String(localized: "accessibility.reviewHistory.sectionMixRow.singular")
+            : String(localized: "accessibility.reviewHistory.sectionMixRow.plural")
+        return String(
+            format: format,
+            localizedSectionName(for: kind),
+            count,
+            percent
+        )
     }
 
     private func localizedSectionName(for kind: ReviewStatsSectionKind) -> String {
@@ -458,6 +498,18 @@ enum ReviewSectionDistributionPalette {
             AppTheme.reviewStandardBorder.opacity(0.88)
         case .people:
             AppTheme.reviewQuickStartBorder.opacity(0.88)
+        }
+    }
+
+    /// Accent for `ReviewCountBadge` on section-mix legend rows (full-opacity border hue, issue #247).
+    static func countBadgeAccent(for kind: ReviewStatsSectionKind) -> Color {
+        switch kind {
+        case .gratitudes:
+            AppTheme.reviewCompleteBorder
+        case .needs:
+            AppTheme.reviewStandardBorder
+        case .people:
+            AppTheme.reviewQuickStartBorder
         }
     }
 }

@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-*No entries yet.*
+### Changed
+
+- **Past (#247):** Section mix strip shows **integer percentages** in each segment; the legend keeps **mention counts** with **meta** labels and per-section **count capsules** aligned with other insight cards.
 
 ## [0.5.0]
 

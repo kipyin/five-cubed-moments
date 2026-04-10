@@ -68,4 +68,31 @@ final class SectionDistributionStripLayoutTests: XCTestCase {
         XCTAssertEqual(onlyGratitude.reduce(0, +), usable, accuracy: 0.02)
         XCTAssertEqual(onlyNeeds.reduce(0, +), usable, accuracy: 0.02)
     }
+
+    func test_integerDisplayPercents_allZero_isThreeZeros() {
+        let percents = ReviewSectionDistributionStripLayout.integerDisplayPercents(
+            gratitudeMentions: 0,
+            needMentions: 0,
+            peopleMentions: 0
+        )
+        XCTAssertEqual(percents, [0, 0, 0])
+    }
+
+    func test_integerDisplayPercents_proportional_6_5_5() {
+        let percents = ReviewSectionDistributionStripLayout.integerDisplayPercents(
+            gratitudeMentions: 6,
+            needMentions: 5,
+            peopleMentions: 5
+        )
+        XCTAssertEqual(percents, [38, 31, 31])
+    }
+
+    func test_integerDisplayPercents_singleSection_is100AndZeros() {
+        let percents = ReviewSectionDistributionStripLayout.integerDisplayPercents(
+            gratitudeMentions: 10,
+            needMentions: 0,
+            peopleMentions: 0
+        )
+        XCTAssertEqual(percents, [100, 0, 0])
+    }
 }

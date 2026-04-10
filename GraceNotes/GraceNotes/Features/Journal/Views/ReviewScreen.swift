@@ -18,21 +18,6 @@ private enum ReviewBrowseSheet: Identifiable {
     }
 }
 
-private struct ReviewJournalDaySheetItem: Identifiable, Equatable {
-    let id: String
-    let entryDate: Date
-
-    init(dayStart: Date, calendar: Calendar) {
-        let normalized = calendar.startOfDay(for: dayStart)
-        entryDate = normalized
-        let parts = calendar.dateComponents([.year, .month, .day], from: normalized)
-        let year = parts.year ?? 0
-        let month = parts.month ?? 0
-        let day = parts.day ?? 0
-        id = "\(year)-\(month)-\(day)"
-    }
-}
-
 struct ReviewScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Journal.entryDate, order: .reverse) private var entries: [Journal]
@@ -213,12 +198,29 @@ extension ReviewScreen {
             )
         }
         .sheet(item: $journalDaySheetItem) { item in
-            ReviewJournalDaySheetHost(entryDate: item.entryDate)
+            ReviewJournalDaySheetHost(item: item, calendar: calendar)
         }
     }
 
-    private func presentJournalDaySheet(for day: Date) {
-        journalDaySheetItem = ReviewJournalDaySheetItem(dayStart: day, calendar: calendar)
+    private enum PastJournalSheetSource {
+        /// Issue #253: enables global day paging (distinct journal days, oldest → newest).
+        case rhythmStrip
+        case search
+    }
+
+    private func presentJournalDaySheet(for day: Date, source: PastJournalSheetSource) {
+        let navigable: [Date]?
+        switch source {
+        case .rhythmStrip:
+            navigable = PastJournalDayNavigation.sortedDistinctDayStarts(from: entries, calendar: calendar)
+        case .search:
+            navigable = nil
+        }
+        journalDaySheetItem = ReviewJournalDaySheetItem(
+            dayStart: day,
+            calendar: calendar,
+            navigableDayStarts: navigable
+        )
     }
 
     private var emptyStateWithSearch: some View {
@@ -244,7 +246,7 @@ extension ReviewScreen {
                     calendar: calendar,
                     highlightQuery: trimmedJournalSearchQuery,
                     onDismissSearchFocus: dismissPastSearchFocus,
-                    onOpenJournalDay: presentJournalDaySheet
+                    onOpenJournalDay: { presentJournalDaySheet(for: $0, source: .search) }
                 )
             }
         }
@@ -272,7 +274,7 @@ extension ReviewScreen {
                     calendar: calendar,
                     highlightQuery: trimmedJournalSearchQuery,
                     onDismissSearchFocus: dismissPastSearchFocus,
-                    onOpenJournalDay: presentJournalDaySheet
+                    onOpenJournalDay: { presentJournalDaySheet(for: $0, source: .search) }
                 )
             }
         }
@@ -303,7 +305,7 @@ extension ReviewScreen {
                 ReviewDaysYouWrotePanel(
                     insights: reviewInsights,
                     isLoading: isLoadingInsights,
-                    onRhythmDaySelected: presentJournalDaySheet,
+                    onRhythmDaySelected: { presentJournalDaySheet(for: $0, source: .rhythmStrip) },
                     onRhythmChromeTap: {
                         historyDrilldown = .journalingDays
                     }
@@ -432,25 +434,6 @@ extension ReviewScreen {
             weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
             pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
-    }
-}
-
-private struct ReviewJournalDaySheetHost: View {
-    let entryDate: Date
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            JournalScreen(entryDate: entryDate)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        PastToolbarDoneButton(
-                            action: { dismiss() },
-                            appearance: .journal
-                        )
-                    }
-                }
-        }
     }
 }
 

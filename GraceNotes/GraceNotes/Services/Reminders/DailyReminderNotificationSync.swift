@@ -16,12 +16,15 @@ enum DailyReminderNotificationSync {
         let stored = userDefaults.object(forKey: ReminderSettings.timeIntervalKey) as? TimeInterval
         let interval = stored ?? ReminderSettings.defaultTimeInterval
         let reminderTime = ReminderSettings.date(from: interval)
-        guard let body = try? ReminderNotificationBodyBuilder.localizedBody(
-            modelContext: modelContext,
-            reminderTime: reminderTime,
-            now: now
-        ) else {
-            return
+        let body: String
+        do {
+            body = try ReminderNotificationBodyBuilder.localizedBody(
+                modelContext: modelContext,
+                reminderTime: reminderTime,
+                now: now
+            )
+        } catch {
+            body = String(localized: String.LocalizationValue("notifications.reminder.body.fallback"))
         }
         _ = await reminderScheduler.rescheduleEnabledReminder(at: reminderTime, body: body)
     }

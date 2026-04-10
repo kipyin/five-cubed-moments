@@ -23,10 +23,9 @@ enum ReminderNotificationBodyBuilder {
         let todayEntry = try repository.fetchEntry(for: now, context: modelContext)
         let completion = ReminderNotificationBodySelector.completionFamily(for: todayEntry)
 
-        let summary = try JournalStreakSummaryRefresher.loadSummary(
-            repository: repository,
+        let summary = JournalStreakSummaryRefresher.loadSummary(
             calculator: calculator,
-            context: modelContext,
+            entries: entries,
             now: now
         )
         let streakBucket: ReminderNotificationBodySelector.StreakBucket

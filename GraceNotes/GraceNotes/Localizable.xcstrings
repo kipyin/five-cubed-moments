@@ -3379,6 +3379,38 @@
         }
       }
     },
+    "accessibility.reviewHistory.sectionMixRow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$d line mentions, %3$d percent of section mix."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@，%2$d 条行提及，占版块构成的 %3$d%%。"
+          }
+        }
+      }
+    },
+    "review.sectionMix.segmentPercent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
+          }
+        }
+      }
+    },
     "review.sectionDrilldown.emptyFormat": {
       "localizations": {
         "en": {

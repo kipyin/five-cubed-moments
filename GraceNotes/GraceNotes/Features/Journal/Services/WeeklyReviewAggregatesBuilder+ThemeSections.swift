@@ -18,6 +18,15 @@ extension WeeklyReviewAggregatesBuilder {
             return ([], ReviewTrendingBuckets(newThemes: [], upThemes: [], downThemes: []))
         }
         let trendRanges = calendarWeekComparisonPeriods(currentPeriod: currentPeriod, calendar: calendar)
+        let journalCorpus = themeJournalCorpus(
+            entries: entries,
+            mostRecurringWindow: mostRecurringWindow,
+            trendRanges: trendRanges,
+            calendar: calendar
+        )
+        let journalThemeDisplayLocale = themeJournalLanguageResolver.resolvedDisplayLocale(
+            forJournalCorpus: journalCorpus
+        )
         var map: [String: DistilledThemeAccumulator] = [:]
         var sequence = 0
 
@@ -34,7 +43,8 @@ extension WeeklyReviewAggregatesBuilder {
                     from: surface.content,
                     source: surface.source,
                     maximumCount: 3,
-                    highConfidenceOnly: true
+                    highConfidenceOnly: true,
+                    journalThemeDisplayLocale: journalThemeDisplayLocale
                 )
                 let uniqueConcepts = Dictionary(grouping: concepts, by: \.canonicalConcept)
                     .compactMap { _, candidates in candidates.max(by: { $0.score < $1.score }) }
@@ -77,35 +87,46 @@ extension WeeklyReviewAggregatesBuilder {
             into: &map,
             entries: entries,
             mostRecurringWindow: mostRecurringWindow,
-            calendar: calendar
+            calendar: calendar,
+            journalThemeDisplayLocale: journalThemeDisplayLocale
         )
 
-        let mostRecurring = map.values
+        for canonical in Array(map.keys) {
+            guard var accumulator = map[canonical] else { continue }
+            let source: ReviewThemeSourceCategory =
+                canonical == "mom" || canonical == "dad" ? .people : .gratitudes
+            accumulator.displayLabel = textNormalizer.displayLabel(
+                for: accumulator.canonicalConcept,
+                source: source,
+                journalThemeDisplayLocale: journalThemeDisplayLocale
+            )
+            map[canonical] = accumulator
+        }
+
+        let mostRecurringSorted = map.values
             .filter { $0.totalCount >= minimumMostRecurringSignalCount }
-            .map { value in
-                ReviewMostRecurringTheme(
-                    label: value.displayLabel,
-                    totalCount: value.totalCount,
-                    dayCount: value.days.count,
-                    currentWeekCount: value.currentWeekCount,
-                    previousWeekCount: value.previousWeekCount,
-                    evidence: sortedEvidence(value.evidence)
-                )
-            }
             .sorted {
                 if $0.totalCount != $1.totalCount {
                     return $0.totalCount > $1.totalCount
                 }
-                if $0.dayCount != $1.dayCount {
-                    return $0.dayCount > $1.dayCount
+                if $0.days.count != $1.days.count {
+                    return $0.days.count > $1.days.count
                 }
-                let lhsOrder = map[textNormalizer.normalizeThemeLabel($0.label)]?.firstSeenOrder ?? .max
-                let rhsOrder = map[textNormalizer.normalizeThemeLabel($1.label)]?.firstSeenOrder ?? .max
-                if lhsOrder != rhsOrder {
-                    return lhsOrder < rhsOrder
+                if $0.firstSeenOrder != $1.firstSeenOrder {
+                    return $0.firstSeenOrder < $1.firstSeenOrder
                 }
-                return $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending
+                return $0.canonicalConcept.localizedCaseInsensitiveCompare($1.canonicalConcept) == .orderedAscending
             }
+        let mostRecurring = mostRecurringSorted.map { value in
+            ReviewMostRecurringTheme(
+                label: value.displayLabel,
+                totalCount: value.totalCount,
+                dayCount: value.days.count,
+                currentWeekCount: value.currentWeekCount,
+                previousWeekCount: value.previousWeekCount,
+                evidence: sortedEvidence(value.evidence)
+            )
+        }
 
         let movementCandidates = map.values
             .compactMap { value -> ReviewMovementTheme? in
@@ -138,7 +159,8 @@ extension WeeklyReviewAggregatesBuilder {
         into map: inout [String: DistilledThemeAccumulator],
         entries: [Journal],
         mostRecurringWindow: Range<Date>,
-        calendar: Calendar
+        calendar: Calendar,
+        journalThemeDisplayLocale: Locale
     ) {
         let topLevelThemes = Array(map.keys)
         guard !topLevelThemes.isEmpty else { return }
@@ -153,7 +175,8 @@ extension WeeklyReviewAggregatesBuilder {
                         from: surface.content,
                         source: surface.source,
                         maximumCount: 4,
-                        highConfidenceOnly: false
+                        highConfidenceOnly: false,
+                        journalThemeDisplayLocale: journalThemeDisplayLocale
                     ).map(\.canonicalConcept)
                 )
                 guard !supportConcepts.isEmpty else { continue }
@@ -184,6 +207,30 @@ extension WeeklyReviewAggregatesBuilder {
     ) -> (current: Range<Date>, previous: Range<Date>) {
         let previous = ReviewInsightsPeriod.previousPeriod(before: currentPeriod, calendar: calendar)
         return (currentPeriod, previous)
+    }
+
+    func themeJournalCorpus(
+        entries: [Journal],
+        mostRecurringWindow: Range<Date>,
+        trendRanges: (current: Range<Date>, previous: Range<Date>),
+        calendar: Calendar
+    ) -> String {
+        var parts: [String] = []
+        for entry in entries {
+            let day = calendar.startOfDay(for: entry.entryDate)
+            guard mostRecurringWindow.contains(day)
+                || trendRanges.current.contains(day)
+                || trendRanges.previous.contains(day) else {
+                continue
+            }
+            for surface in structuredSurfaces(for: entry) {
+                let content = textNormalizer.trimmed(surface.content)
+                if !content.isEmpty {
+                    parts.append(content)
+                }
+            }
+        }
+        return parts.joined(separator: "\n")
     }
 
     func structuredSurfaces(for entry: Journal) -> [ThemeSurface] {

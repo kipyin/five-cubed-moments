@@ -1,7 +1,14 @@
 import Foundation
 import NaturalLanguage
 
+private enum ReviewInsightThemeStringsBundle {
+    /// Host app bundle (xcstrings) — avoids `Bundle.main` pointing at the XCTest bundle in unit tests.
+    static let resourceBundle = Bundle(for: PersistenceController.self)
+}
+
 struct WeeklyInsightTextNormalizer {
+    fileprivate static let defaultJournalThemeDisplayLocale = Locale(identifier: "en")
+
     private let conceptEngine = ReviewThemeConceptEngine(map: ReviewCuratedThemeMap.defaultMap)
 
     func extractThemesFromText(_ text: String) -> [String] {
@@ -12,18 +19,28 @@ struct WeeklyInsightTextNormalizer {
         from text: String,
         source: ReviewThemeSourceCategory,
         maximumCount: Int = 3,
-        highConfidenceOnly: Bool = true
+        highConfidenceOnly: Bool = true,
+        journalThemeDisplayLocale: Locale = Self.defaultJournalThemeDisplayLocale
     ) -> [ReviewDistilledConcept] {
         conceptEngine.distillConcepts(
             from: text,
             source: source,
             maximumCount: maximumCount,
-            highConfidenceOnly: highConfidenceOnly
+            highConfidenceOnly: highConfidenceOnly,
+            journalThemeDisplayLocale: journalThemeDisplayLocale
         )
     }
 
-    func displayLabel(for canonicalConcept: String, source: ReviewThemeSourceCategory) -> String {
-        conceptEngine.displayLabel(for: canonicalConcept, source: source)
+    func displayLabel(
+        for canonicalConcept: String,
+        source: ReviewThemeSourceCategory,
+        journalThemeDisplayLocale: Locale = Self.defaultJournalThemeDisplayLocale
+    ) -> String {
+        conceptEngine.displayLabel(
+            for: canonicalConcept,
+            source: source,
+            journalThemeDisplayLocale: journalThemeDisplayLocale
+        )
     }
 
     func themesMatch(_ needKey: String, against gratitudeKeys: Set<String>) -> Bool {
@@ -121,7 +138,8 @@ private struct ReviewThemeConceptEngine {
         from text: String,
         source: ReviewThemeSourceCategory,
         maximumCount: Int,
-        highConfidenceOnly: Bool
+        highConfidenceOnly: Bool,
+        journalThemeDisplayLocale: Locale
     ) -> [ReviewDistilledConcept] {
         let trimmedText = trimmed(text)
         guard !trimmedText.isEmpty else { return [] }
@@ -175,7 +193,11 @@ private struct ReviewThemeConceptEngine {
                 guard score >= threshold else { return nil }
                 return ReviewDistilledConcept(
                     canonicalConcept: canonical,
-                    displayLabel: displayLabel(for: canonical, source: source),
+                    displayLabel: displayLabel(
+                        for: canonical,
+                        source: source,
+                        journalThemeDisplayLocale: journalThemeDisplayLocale
+                    ),
                     score: score
                 )
             }
@@ -194,12 +216,26 @@ private struct ReviewThemeConceptEngine {
             .map { $0 }
     }
 
-    func displayLabel(for canonicalConcept: String, source: ReviewThemeSourceCategory) -> String {
+    func displayLabel(
+        for canonicalConcept: String,
+        source: ReviewThemeSourceCategory,
+        journalThemeDisplayLocale: Locale
+    ) -> String {
         if source == .people {
-            return personDisplayLabel(from: canonicalConcept)
+            return personDisplayLabel(from: canonicalConcept, journalThemeDisplayLocale: journalThemeDisplayLocale)
         }
-        if let authored = map.canonicalDisplayLabels[canonicalConcept] {
-            return authored
+        if let english = map.canonicalDisplayLabels[canonicalConcept] {
+            let key = Self.catalogKey(for: canonicalConcept)
+            let resource = LocalizedStringResource(
+                String.LocalizationValue(stringLiteral: key),
+                locale: journalThemeDisplayLocale,
+                bundle: ReviewInsightThemeStringsBundle.resourceBundle
+            )
+            let localized = String(localized: resource)
+            if localized == key {
+                return english
+            }
+            return localized
         }
         if containsHanCharacters(canonicalConcept) {
             return canonicalConcept
@@ -211,6 +247,11 @@ private struct ReviewThemeConceptEngine {
                 return String(first).uppercased() + String(word.dropFirst())
             }
             .joined(separator: " ")
+    }
+
+    private static func catalogKey(for canonicalConcept: String) -> String {
+        let slug = canonicalConcept.replacingOccurrences(of: " ", with: "_")
+        return "review.theme.\(slug)"
     }
 
     private func confidenceThreshold(for source: ReviewThemeSourceCategory) -> Int {
@@ -378,9 +419,19 @@ private struct ReviewThemeConceptEngine {
         return trimmed(collapsed)
     }
 
-    private func personDisplayLabel(from canonical: String) -> String {
-        if let authored = map.canonicalDisplayLabels[canonical] {
-            return authored
+    private func personDisplayLabel(from canonical: String, journalThemeDisplayLocale: Locale) -> String {
+        if let english = map.canonicalDisplayLabels[canonical] {
+            let key = Self.catalogKey(for: canonical)
+            let resource = LocalizedStringResource(
+                String.LocalizationValue(stringLiteral: key),
+                locale: journalThemeDisplayLocale,
+                bundle: ReviewInsightThemeStringsBundle.resourceBundle
+            )
+            let localized = String(localized: resource)
+            if localized == key {
+                return english
+            }
+            return localized
         }
         if containsHanCharacters(canonical) {
             return canonical

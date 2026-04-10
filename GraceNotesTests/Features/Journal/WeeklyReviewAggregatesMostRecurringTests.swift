@@ -15,6 +15,56 @@ final class WeeklyReviewAggregatesMostRecurringTests: XCTestCase {
 }
 
 extension WeeklyReviewAggregatesMostRecurringTests {
+    func test_buildThemeSections_usesSimplifiedChineseLabelsWhenResolverSelectsChineseLocale() throws {
+        builder.themeJournalLanguageResolver = FixedReviewJournalThemeLanguageResolver(
+            locale: Locale(identifier: "zh-Hans")
+        )
+        let referenceDate = date(year: 2026, month: 3, day: 18)
+        let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
+        let previous = ReviewInsightsPeriod.previousPeriod(before: period, calendar: calendar)
+
+        let entries = [
+            makeEntry(on: date(year: 2026, month: 3, day: 16), needs: ["Rest"]),
+            makeEntry(on: date(year: 2026, month: 3, day: 17), needs: ["recover"]),
+            makeEntry(on: date(year: 2026, month: 3, day: 18), needs: ["休息"])
+        ]
+        let aggregates = builder.build(
+            currentPeriod: period,
+            currentWeekEntries: entries.filter { period.contains($0.entryDate) },
+            previousWeekEntries: entries.filter { previous.contains($0.entryDate) },
+            allEntries: entries,
+            calendar: calendar,
+            referenceDate: referenceDate
+        )
+
+        let restTheme = try XCTUnwrap(aggregates.stats.mostRecurringThemes.first(where: { $0.label == "休息" }))
+        XCTAssertEqual(restTheme.totalCount, 3)
+    }
+
+    func test_buildThemeSections_mixedJournalCorpusStillUsesEnglishLabelsWhenResolverSelectsEnglish() throws {
+        let referenceDate = date(year: 2026, month: 3, day: 18)
+        let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
+        let previous = ReviewInsightsPeriod.previousPeriod(before: period, calendar: calendar)
+
+        let entries = [
+            makeEntry(on: date(year: 2026, month: 3, day: 16), needs: ["Rest"]),
+            makeEntry(on: date(year: 2026, month: 3, day: 17), needs: ["recover"]),
+            makeEntry(on: date(year: 2026, month: 3, day: 18), needs: ["休息"])
+        ]
+        builder.themeJournalLanguageResolver = FixedReviewJournalThemeLanguageResolver(locale: Locale(identifier: "en"))
+        let aggregates = builder.build(
+            currentPeriod: period,
+            currentWeekEntries: entries.filter { period.contains($0.entryDate) },
+            previousWeekEntries: entries.filter { previous.contains($0.entryDate) },
+            allEntries: entries,
+            calendar: calendar,
+            referenceDate: referenceDate
+        )
+
+        let restTheme = try XCTUnwrap(aggregates.stats.mostRecurringThemes.first(where: { $0.label == "Rest" }))
+        XCTAssertEqual(restTheme.totalCount, 3)
+    }
+
     func test_buildThemeSections_mostRecurringUsesCustomFourWeekWindowAndMinimumSignals() throws {
         let referenceDate = date(year: 2026, month: 3, day: 18)
         let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
@@ -450,6 +500,11 @@ extension WeeklyReviewAggregatesMostRecurringTests {
             "Expected no surfacing trends for seed data; got: \(aggregates.stats.movementThemes.map(\.label))"
         )
     }
+}
+
+private struct FixedReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
+    let locale: Locale
+    func resolvedDisplayLocale(forJournalCorpus: String) -> Locale { locale }
 }
 
 private extension WeeklyReviewAggregatesMostRecurringTests {

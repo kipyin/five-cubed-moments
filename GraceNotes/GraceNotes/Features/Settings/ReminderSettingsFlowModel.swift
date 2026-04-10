@@ -104,7 +104,8 @@ final class ReminderSettingsFlowModel: ObservableObject {
             pendingRescheduleAfterCurrentSave = false
             transientErrorMessage = nil
 
-            let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime, body: resolvedReminderBody())
+            let body = resolvedReminderBody()
+            let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime, body: body)
             switch result {
             case .scheduled:
                 persistSelectedTime()

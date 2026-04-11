@@ -219,9 +219,7 @@ def sentry_review_thread_authors(
     nodes = gh_sentry.graphql_review_threads(repo_root, owner, name, pr_number)
     logins = gh_sentry.review_thread_author_logins(nodes)
     if not logins:
-        _console().print(
-            "(no review threads or no comments; check PR number and permissions)"
-        )
+        _console().print("(no review threads or no comments; check PR number and permissions)")
         raise typer.Exit(code=0)
     for login in logins:
         print(login)

@@ -54,7 +54,8 @@ def build_pr_body(
         f"{human_section}"
         "---\n"
         "*Automated by `grace sentry`.* "
-        f"If Copilot review threads block merge, post `{approval_phrase}` from an allowlisted account.\n"
+        f"If Copilot review threads block merge, post `{approval_phrase}` "
+        "from an allowlisted account.\n"
     )
 
 
@@ -83,7 +84,8 @@ def build_pr_body_from_material(
         f"{human_section}"
         "---\n"
         "*Automated by `grace sentry`.* "
-        f"If Copilot review threads block merge, post `{approval_phrase}` from an allowlisted account.\n"
+        f"If Copilot review threads block merge, post `{approval_phrase}` "
+        "from an allowlisted account.\n"
     )
 
 

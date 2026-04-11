@@ -244,8 +244,7 @@ def run_single_iteration(
         {
             "kind": "sync_main",
             "message": (
-                f"Fetched origin/{main_branch}; primary checkout unchanged "
-                f"(was {start_branch})."
+                f"Fetched origin/{main_branch}; primary checkout unchanged (was {start_branch})."
             ),
             "main_branch": main_branch,
             "previous_branch": start_branch,
@@ -369,8 +368,8 @@ def run_single_iteration(
                     {
                         "kind": "error",
                         "message": (
-                            f"Set {settings.llm_api_key_env} (SENTRY_LLM_API_KEY_ENV) for LLM access, "
-                            "or SENTRY_FIX_PROVIDER=cursor_agent for local `agent`."
+                            f"Set {settings.llm_api_key_env} (SENTRY_LLM_API_KEY_ENV) "
+                            "for LLM access, or SENTRY_FIX_PROVIDER=cursor_agent for local `agent`."
                         ),
                     },
                 )

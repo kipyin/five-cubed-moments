@@ -33,19 +33,13 @@ class SentryMergeLogicTest(unittest.TestCase):
                 approve_phrase_present=False,
             )
         )
-        self.assertFalse(
-            can_merge(ci_ok=True, copilot_ok=False, approve_phrase_present=False)
-        )
+        self.assertFalse(can_merge(ci_ok=True, copilot_ok=False, approve_phrase_present=False))
 
     def test_approve_overrides_copilot_stuck(self) -> None:
-        self.assertTrue(
-            can_merge(ci_ok=True, copilot_ok=False, approve_phrase_present=True)
-        )
+        self.assertTrue(can_merge(ci_ok=True, copilot_ok=False, approve_phrase_present=True))
 
     def test_ci_red_blocks(self) -> None:
-        self.assertFalse(
-            can_merge(ci_ok=False, copilot_ok=True, approve_phrase_present=False)
-        )
+        self.assertFalse(can_merge(ci_ok=False, copilot_ok=True, approve_phrase_present=False))
 
 
 class SentryClassifyTest(unittest.TestCase):

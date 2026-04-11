@@ -126,7 +126,7 @@ def add_sentry_worktree(
     *,
     sink: SentryLogSink | None,
 ) -> None:
-    """Create a new worktree at ``worktree_path`` with ``new_branch`` at ``origin/{main_branch}``."""
+    """Create a worktree at ``worktree_path`` with ``new_branch`` at ``origin/{main_branch}``."""
     if sink is not None:
         sink.set_step("git worktree add")
         sink.log(f"Adding worktree at {worktree_path} (branch {new_branch}) …")

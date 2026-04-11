@@ -13,8 +13,9 @@ from typer.testing import CliRunner
 from gracenotes_dev.cli import app
 from gracenotes_dev.config import load_sentry_table
 from gracenotes_dev.sentry.classify import TouchClass, classify_paths
-from gracenotes_dev.sentry.llm_client import parse_fix_response
+from gracenotes_dev.sentry.llm_client import parse_fix_response, parse_pr_material_json
 from gracenotes_dev.sentry.merge_logic import can_merge
+from gracenotes_dev.sentry.pr_template import build_pr_body_from_material, fallback_pr_material
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import format_report, read_recent_events
 
@@ -71,6 +72,7 @@ class SentrySettingsTest(unittest.TestCase):
         self.assertEqual(s.approval_phrase, "/sentry-approve")
         self.assertEqual(s.fix_provider, "http")
         self.assertEqual(s.agent_bin, "agent")
+        self.assertEqual(s.main_branch, "main")
 
 
 class SentryTomlTest(unittest.TestCase):
@@ -97,6 +99,33 @@ class SentryTomlTest(unittest.TestCase):
             t = load_sentry_table(root)
             self.assertNotIn("api_key", t)
             self.assertEqual(t.get("fix_provider"), "http")
+
+
+class SentryPrMaterialParseTest(unittest.TestCase):
+    def test_parse_pr_material_json_from_fence(self) -> None:
+        inner = (
+            '{"title": "Fix empty state", "headline": "H", "user_impact": "U", '
+            '"what_changed": "W", "verification": "V"}'
+        )
+        raw = f"```json\n{inner}\n```\n"
+        m = parse_pr_material_json(raw)
+        self.assertEqual(m.title, "Fix empty state")
+        self.assertEqual(m.headline, "H")
+        self.assertEqual(m.verification, "V")
+
+    def test_build_pr_body_from_material_contains_sections(self) -> None:
+        m = fallback_pr_material("GraceNotes/Foo.swift")
+        body = build_pr_body_from_material(
+            m,
+            risk="Low",
+            touch=TouchClass.LOW_TOUCH,
+            needs_human_line=False,
+            approval_phrase="/x",
+        )
+        self.assertIn("## Headline", body)
+        self.assertIn("## User impact", body)
+        self.assertIn("## What changed", body)
+        self.assertIn("## Verification", body)
 
 
 class SentryParseFixTest(unittest.TestCase):

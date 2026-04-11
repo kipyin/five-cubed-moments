@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
@@ -9,7 +10,10 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+from gracenotes_dev.sentry.pr_template import PrMaterial
+
 _SWIFT_BLOCK = re.compile(r"```(?:swift)?\s*([\s\S]*?)```", re.MULTILINE)
+_JSON_FENCE = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -98,6 +102,111 @@ def build_fix_user_prompt(relative_path: str, file_content: str) -> str:
         "containing the complete new file contents (entire file, not a diff).\n\n"
         f"---BEGIN FILE---\n{file_content}\n---END FILE---"
     )
+
+
+def _clip_text(s: str, max_chars: int) -> str:
+    if len(s) <= max_chars:
+        return s
+    return s[:max_chars] + "\n… [truncated]"
+
+
+def _unified_diff_excerpt(old: str, new: str, path: str, *, max_lines: int = 120) -> str:
+    lines = list(
+        difflib.unified_diff(
+            old.splitlines(True),
+            new.splitlines(True),
+            fromfile=f"a/{path}",
+            tofile=f"b/{path}",
+        )
+    )
+    if len(lines) > max_lines:
+        return "".join(lines[:max_lines]) + "… [diff truncated]\n"
+    return "".join(lines)
+
+
+PR_MATERIAL_SYSTEM = (
+    MACOS_XCODE_PREAMBLE + " "
+    "You write GitHub pull request descriptions for Grace Notes. "
+    "Be concrete: what was wrong or weak, why it matters to users or reliability, "
+    "and what the change does in plain language. "
+    "Reply with ONLY a single JSON object (no markdown outside JSON). "
+    "Use American English. Keys: "
+    '"title" (short PR title, imperative, ≤72 chars), '
+    '"headline" (one line, product-focused), '
+    '"user_impact" (1–3 sentences), '
+    '"what_changed" (short paragraphs; no raw code), '
+    '"verification" (how a reviewer can validate, e.g. grace ci).'
+)
+
+
+def build_pr_material_user_prompt(relative_path: str, old_content: str, new_content: str) -> str:
+    old_c = _clip_text(old_content, 14_000)
+    new_c = _clip_text(new_content, 14_000)
+    diff_excerpt = _unified_diff_excerpt(old_content, new_content, relative_path)
+    return (
+        f"File: `{relative_path}`\n\n"
+        "The sentry automation already applied a full-file Swift replacement. "
+        "Using the diff and file excerpts below, write the JSON object described "
+        "in your instructions.\n\n"
+        "## Unified diff (excerpt)\n\n"
+        f"```diff\n{diff_excerpt}\n```\n\n"
+        "## Previous file (excerpt)\n\n"
+        f"```swift\n{old_c}\n```\n\n"
+        "## New file (excerpt)\n\n"
+        f"```swift\n{new_c}\n```\n"
+    )
+
+
+def parse_pr_material_json(text: str) -> PrMaterial:
+    t = text.strip()
+    m = _JSON_FENCE.search(t)
+    blob = m.group(1).strip() if m else t
+    if not blob.lstrip().startswith("{"):
+        raise ValueError("PR material response did not contain JSON")
+    data = json.loads(blob)
+    title = str(data.get("title", "")).strip()
+    headline = str(data.get("headline", "")).strip()
+    user_impact = str(data.get("user_impact", "")).strip()
+    what_changed = str(data.get("what_changed", "")).strip()
+    verification = str(data.get("verification", "")).strip()
+    if not title or not headline:
+        raise ValueError("PR material JSON missing title or headline")
+    return PrMaterial(
+        title=title,
+        headline=headline,
+        user_impact=user_impact or "See diff on this PR.",
+        what_changed=what_changed or "Swift file updated in one automated pass.",
+        verification=verification or "Run `grace ci` on macOS.",
+    )
+
+
+def propose_pr_material_http(
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    relative_path: str,
+    old_content: str,
+    new_content: str,
+    timeout_sec: int = 120,
+) -> PrMaterial:
+    """Ask the chat model for PR title + narrative JSON."""
+    user = build_pr_material_user_prompt(relative_path, old_content, new_content)
+    messages = [
+        {"role": "system", "content": PR_MATERIAL_SYSTEM},
+        {"role": "user", "content": user},
+    ]
+    result = _chat_completion(
+        base_url=base_url,
+        api_key=api_key,
+        model=model,
+        messages=messages,
+        timeout_sec=timeout_sec,
+    )
+    try:
+        return parse_pr_material_json(result.content)
+    except (json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError(f"Invalid PR material JSON: {exc}") from exc
 
 
 def classify_touch_llm(

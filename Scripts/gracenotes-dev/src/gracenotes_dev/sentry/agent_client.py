@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shlex
 import shutil
 import subprocess
@@ -9,9 +10,13 @@ from pathlib import Path
 
 from gracenotes_dev.sentry.llm_client import (
     MACOS_XCODE_PREAMBLE,
+    PR_MATERIAL_SYSTEM,
     build_fix_user_prompt,
+    build_pr_material_user_prompt,
     parse_fix_response,
+    parse_pr_material_json,
 )
+from gracenotes_dev.sentry.pr_template import PrMaterial
 
 
 def _split_args(raw: str) -> tuple[str, ...]:
@@ -69,6 +74,42 @@ def propose_swift_fix_via_agent(
     try:
         return parse_fix_response(combined)
     except RuntimeError as exc:
+        raise RuntimeError(
+            f"{exc} Exit {proc.returncode}. Output (truncated): {combined[:2000]!r}"
+        ) from exc
+
+
+def propose_pr_material_via_agent(
+    *,
+    repo_root: Path,
+    agent_bin: str,
+    prefix_args: tuple[str, ...],
+    extra_args: tuple[str, ...],
+    relative_path: str,
+    old_content: str,
+    new_content: str,
+    timeout_sec: int,
+) -> PrMaterial:
+    """Second ``agent`` invocation: PR title + JSON narrative for gh-style body."""
+    resolved = resolve_agent_path(agent_bin)
+    body = build_pr_material_user_prompt(relative_path, old_content, new_content)
+    prompt = f"{PR_MATERIAL_SYSTEM}\n\n{body}"
+    argv = [resolved, *prefix_args, *extra_args, prompt]
+    try:
+        proc = subprocess.run(
+            argv,
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"agent PR-draft command timed out after {timeout_sec}s") from exc
+
+    combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    try:
+        return parse_pr_material_json(combined)
+    except (ValueError, json.JSONDecodeError) as exc:
         raise RuntimeError(
             f"{exc} Exit {proc.returncode}. Output (truncated): {combined[:2000]!r}"
         ) from exc

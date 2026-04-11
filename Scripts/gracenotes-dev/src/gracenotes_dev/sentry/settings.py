@@ -191,6 +191,7 @@ class SentrySettings:
     agent_prefix_args: tuple[str, ...]
     agent_extra_args: tuple[str, ...]
     agent_timeout_sec: int
+    main_branch: str
 
     @classmethod
     def from_repo(cls, repo_root: Path) -> SentrySettings:
@@ -253,6 +254,7 @@ class SentrySettings:
                 "agent_timeout_sec",
                 900,
             ),
+            main_branch=_merge_str("SENTRY_MAIN_BRANCH", tom, "main_branch", "main"),
         )
 
     @classmethod

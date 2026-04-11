@@ -11,13 +11,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from gracenotes_dev.sentry import github as gh_api
-from gracenotes_dev.sentry.agent_client import propose_swift_fix_via_agent
+from gracenotes_dev.sentry.agent_client import (
+    propose_pr_material_via_agent,
+    propose_swift_fix_via_agent,
+)
+from gracenotes_dev.sentry.branch_ops import current_branch, restore_branch, sync_main_from_origin
 from gracenotes_dev.sentry.classify import classify_paths, is_high_touch
 from gracenotes_dev.sentry.git_remote import git_remote_owner_repo
-from gracenotes_dev.sentry.llm_client import api_key_from_env, propose_swift_fix
+from gracenotes_dev.sentry.llm_client import (
+    api_key_from_env,
+    propose_pr_material_http,
+    propose_swift_fix,
+)
 from gracenotes_dev.sentry.log_sink import SentryLogSink
 from gracenotes_dev.sentry.merge_logic import can_merge
-from gracenotes_dev.sentry.pr_template import build_pr_body, risk_label_for_touch
+from gracenotes_dev.sentry.pr_template import (
+    PrMaterial,
+    build_pr_body_from_material,
+    fallback_pr_material,
+    risk_label_for_touch,
+)
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import append_event
 
@@ -95,6 +108,84 @@ def _cleanup_failed_branch(repo_root: Path, branch: str, main_branch: str = "mai
         pass
 
 
+def _line_delta(old: str, new: str) -> dict[str, int]:
+    o, n = old.splitlines(), new.splitlines()
+    return {"old_lines": len(o), "new_lines": len(n), "delta_lines": len(n) - len(o)}
+
+
+def _draft_pr_material(
+    repo_root: Path,
+    settings: SentrySettings,
+    rel: str,
+    old_content: str,
+    new_content: str,
+    sink: SentryLogSink | None,
+) -> PrMaterial:
+    """LLM or second agent call for gh-style PR title/body; falls back to template on failure."""
+    if sink is not None:
+        sink.set_step("PR description (LLM/agent)")
+        sink.log("Drafting PR title and body from the code change …")
+    _emit(
+        repo_root,
+        sink,
+        {
+            "kind": "pr_draft_invoke",
+            "path": rel,
+            "message": "Starting PR description step (same provider family as the fix).",
+        },
+    )
+    try:
+        if settings.fix_provider == "cursor_agent":
+            material = propose_pr_material_via_agent(
+                repo_root=repo_root,
+                agent_bin=settings.agent_bin,
+                prefix_args=settings.agent_prefix_args,
+                extra_args=settings.agent_extra_args,
+                relative_path=rel,
+                old_content=old_content,
+                new_content=new_content,
+                timeout_sec=settings.agent_timeout_sec,
+            )
+        else:
+            base_url = settings.llm_base_url or "https://api.openai.com/v1"
+            api_key = api_key_from_env(settings.llm_api_key_env)
+            if not api_key:
+                raise RuntimeError("no LLM API key for PR description step")
+            material = propose_pr_material_http(
+                base_url=base_url,
+                api_key=api_key,
+                model=settings.llm_model,
+                relative_path=rel,
+                old_content=old_content,
+                new_content=new_content,
+            )
+    except (RuntimeError, ValueError, OSError) as exc:
+        _emit(
+            repo_root,
+            sink,
+            {
+                "kind": "note",
+                "message": f"PR description used fallback template: {exc}",
+                "path": rel,
+            },
+        )
+        material = fallback_pr_material(rel)
+    _emit(
+        repo_root,
+        sink,
+        {
+            "kind": "pr_draft",
+            "path": rel,
+            "title": material.title,
+            "headline": material.headline[:500],
+            "user_impact": material.user_impact[:1200],
+            "what_changed": material.what_changed[:1200],
+            "verification": material.verification[:500],
+        },
+    )
+    return material
+
+
 def run_single_iteration(
     repo_root: Path,
     settings: SentrySettings,
@@ -120,12 +211,37 @@ def run_single_iteration(
         )
         return 1
 
+    start_branch = current_branch(repo_root)
+    main_branch = settings.main_branch
+
+    try:
+        sync_main_from_origin(repo_root, main_branch, sink=sink)
+    except RuntimeError as exc:
+        _emit(repo_root, sink, {"kind": "error", "message": str(exc)})
+        restore_branch(repo_root, start_branch, main_branch)
+        return 1
+
+    _emit(
+        repo_root,
+        sink,
+        {
+            "kind": "sync_main",
+            "message": (
+                f"On {main_branch} (fast-forwarded from origin); "
+                f"previous branch was {start_branch}."
+            ),
+            "main_branch": main_branch,
+            "previous_branch": start_branch,
+        },
+    )
+
     paths = list_gracenotes_swift_files(repo_root)
     rel = _pick_random(paths)
     if not rel:
         if sink is not None:
             sink.set_step("pick file")
         _emit(repo_root, sink, {"kind": "skip", "message": "No GraceNotes Swift files found."})
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     if sink is not None:
@@ -144,15 +260,33 @@ def run_single_iteration(
             sink,
             {
                 "kind": "dry_run",
-                "message": f"Would propose fix for {rel} (provider={mode})",
+                "message": (
+                    f"Would run fix on {rel} from {main_branch} tip (provider={mode}); "
+                    "would draft PR via same provider after a change."
+                ),
                 "path": rel,
             },
         )
+        restore_branch(repo_root, start_branch, main_branch)
         return 0
 
+    _emit(
+        repo_root,
+        sink,
+        {
+            "kind": "fix_invoke",
+            "path": rel,
+            "provider": settings.fix_provider,
+            "message": (
+                "Invoking fix provider (cursor agent or HTTP LLM) with the Swift file from "
+                f"{main_branch}."
+            ),
+        },
+    )
     if settings.fix_provider == "cursor_agent":
         if sink is not None:
             sink.set_step("fix (cursor agent)")
+            sink.log("Invoking local `agent` CLI for Swift fix (see events.jsonl: fix_invoke).")
         try:
             new_src = propose_swift_fix_via_agent(
                 repo_root=repo_root,
@@ -165,10 +299,12 @@ def run_single_iteration(
             )
         except (FileNotFoundError, OSError, RuntimeError) as exc:
             _emit(repo_root, sink, {"kind": "error", "message": str(exc), "path": rel})
+            restore_branch(repo_root, start_branch, main_branch)
             return 1
     else:
         if sink is not None:
             sink.set_step("fix (LLM)")
+            sink.log("Invoking HTTP LLM for Swift fix (see events.jsonl: fix_invoke).")
         base_url = settings.llm_base_url or "https://api.openai.com/v1"
         api_key = api_key_from_env(settings.llm_api_key_env)
         if not api_key:
@@ -183,6 +319,7 @@ def run_single_iteration(
                     ),
                 },
             )
+            restore_branch(repo_root, start_branch, main_branch)
             return 2
         try:
             new_src = propose_swift_fix(
@@ -194,6 +331,7 @@ def run_single_iteration(
             )
         except RuntimeError as exc:
             _emit(repo_root, sink, {"kind": "error", "message": str(exc), "path": rel})
+            restore_branch(repo_root, start_branch, main_branch)
             return 1
 
     if not new_src.strip():
@@ -202,7 +340,22 @@ def run_single_iteration(
             sink,
             {"kind": "skip", "message": "Fix step returned NO_CHANGE", "path": rel},
         )
+        restore_branch(repo_root, start_branch, main_branch)
         return 0
+
+    stats = _line_delta(content, new_src)
+    _emit(
+        repo_root,
+        sink,
+        {
+            "kind": "fix_result",
+            "path": rel,
+            "message": "Fix provider returned new Swift source (see pr_draft for narrative).",
+            **stats,
+        },
+    )
+
+    material = _draft_pr_material(repo_root, settings, rel, content, new_src, sink)
 
     touch = classify_paths([rel])
     high_touch = is_high_touch(touch)
@@ -210,13 +363,9 @@ def run_single_iteration(
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     branch = f"sentry/auto-{ts}"
-    title = f"Sentry: update {Path(rel).name}"
-
-    body = build_pr_body(
-        summary_bullets=[
-            f"Adjust `{rel}` from automated sentry pass.",
-            "Validation: `grace ci` on macOS.",
-        ],
+    title = material.title
+    body = build_pr_body_from_material(
+        material,
         risk=risk_label_for_touch(touch),
         touch=touch,
         needs_human_line=needs_human,
@@ -234,7 +383,8 @@ def run_single_iteration(
         _git_output(repo_root, "commit", "-m", f"sentry: refine {rel}")
     except subprocess.CalledProcessError as exc:
         _emit(repo_root, sink, {"kind": "error", "message": f"git commit failed: {exc}"})
-        _cleanup_failed_branch(repo_root, branch)
+        _cleanup_failed_branch(repo_root, branch, main_branch)
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     if sink is not None:
@@ -251,7 +401,8 @@ def run_single_iteration(
             _git_output(repo_root, "checkout", "--", rel)
         except subprocess.CalledProcessError:
             pass
-        _cleanup_failed_branch(repo_root, branch)
+        _cleanup_failed_branch(repo_root, branch, main_branch)
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     if sink is not None:
@@ -261,7 +412,8 @@ def run_single_iteration(
         _git_output(repo_root, "push", "-u", "origin", branch)
     except subprocess.CalledProcessError as exc:
         _emit(repo_root, sink, {"kind": "error", "message": f"git push failed: {exc}"})
-        _cleanup_failed_branch(repo_root, branch)
+        _cleanup_failed_branch(repo_root, branch, main_branch)
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     if sink is not None:
@@ -276,6 +428,8 @@ def run_single_iteration(
             title,
             "--body",
             body,
+            "--base",
+            main_branch,
         ],
         cwd=repo_root,
         capture_output=True,
@@ -295,7 +449,8 @@ def run_single_iteration(
             _git_output(repo_root, "checkout", "--", rel)
         except subprocess.CalledProcessError:
             pass
-        _cleanup_failed_branch(repo_root, branch)
+        _cleanup_failed_branch(repo_root, branch, main_branch)
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     # `gh pr create` does not support `--json` on many CLI versions; read metadata separately.
@@ -322,7 +477,8 @@ def run_single_iteration(
             _git_output(repo_root, "checkout", "--", rel)
         except subprocess.CalledProcessError:
             pass
-        _cleanup_failed_branch(repo_root, branch)
+        _cleanup_failed_branch(repo_root, branch, main_branch)
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     pr_meta = json.loads(view.stdout)
@@ -339,12 +495,13 @@ def run_single_iteration(
             "branch": branch,
             "pr": pr_number,
             "touch": touch.value,
+            "pr_title": title,
         },
     )
 
     if not merge:
         _emit(repo_root, sink, {"kind": "note", "message": "Skipping merge (--no-merge)."})
-        _git_output(repo_root, "checkout", "main")
+        restore_branch(repo_root, start_branch, main_branch)
         return 0
 
     remote = git_remote_owner_repo(repo_root)
@@ -354,7 +511,7 @@ def run_single_iteration(
             sink,
             {"kind": "error", "message": "Could not parse origin remote (GitHub)."},
         )
-        _git_output(repo_root, "checkout", "main")
+        restore_branch(repo_root, start_branch, main_branch)
         return 1
 
     owner, repo = remote
@@ -375,11 +532,12 @@ def run_single_iteration(
         _emit(repo_root, sink, {"kind": "note", "message": f"Stopped waiting on PR #{pr_number}"})
 
     try:
-        _git_output(repo_root, "checkout", "main")
-        _git_output(repo_root, "pull", "--ff-only")
+        _git_output(repo_root, "checkout", main_branch)
+        _git_output(repo_root, "pull", "--ff-only", "origin", main_branch)
     except subprocess.CalledProcessError:
         pass
 
+    restore_branch(repo_root, start_branch, main_branch)
     return 0
 
 

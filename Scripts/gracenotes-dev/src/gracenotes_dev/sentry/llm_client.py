@@ -74,25 +74,32 @@ def propose_swift_fix(
     """Return full replacement Swift source from the model (extracted from a ```swift``` block)."""
     messages = [
         {"role": "system", "content": MACOS_XCODE_PREAMBLE},
-        {
-            "role": "user",
-            "content": (
-                f"File: `{relative_path}`\n\n"
-                "Find a real bug, unsafe edge case, or clear improvement. "
-                "If nothing is worth changing, reply exactly: NO_CHANGE\n\n"
-                "Otherwise reply with ONLY a single markdown fenced code block ```swift ... ``` "
-                "containing the complete new file contents (entire file, not a diff).\n\n"
-                f"---BEGIN FILE---\n{file_content}\n---END FILE---"
-            ),
-        },
+        {"role": "user", "content": build_fix_user_prompt(relative_path, file_content)},
     ]
     result = _chat_completion(base_url=base_url, api_key=api_key, model=model, messages=messages)
-    if result.content.strip().upper().startswith("NO_CHANGE"):
+    return parse_fix_response(result.content)
+
+
+def parse_fix_response(content: str) -> str:
+    """Extract full Swift file from model output, or empty string if NO_CHANGE."""
+    if content.strip().upper().startswith("NO_CHANGE"):
         return ""
-    m = _SWIFT_BLOCK.search(result.content)
+    m = _SWIFT_BLOCK.search(content)
     if not m:
-        raise RuntimeError("LLM did not return a ```swift``` block and did not say NO_CHANGE.")
+        raise RuntimeError("Model did not return a ```swift``` block and did not say NO_CHANGE.")
     return m.group(1).strip() + "\n"
+
+
+def build_fix_user_prompt(relative_path: str, file_content: str) -> str:
+    """Shared instruction block for HTTP and local ``agent`` providers."""
+    return (
+        f"File: `{relative_path}`\n\n"
+        "Find a real bug, unsafe edge case, or clear improvement. "
+        "If nothing is worth changing, reply exactly: NO_CHANGE\n\n"
+        "Otherwise reply with ONLY a single markdown fenced code block ```swift ... ``` "
+        "containing the complete new file contents (entire file, not a diff).\n\n"
+        f"---BEGIN FILE---\n{file_content}\n---END FILE---"
+    )
 
 
 def classify_touch_llm(

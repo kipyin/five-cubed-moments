@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
 from typer.testing import CliRunner
 
 from gracenotes_dev.cli import app
 from gracenotes_dev.sentry.classify import TouchClass, classify_paths
+from gracenotes_dev.sentry.llm_client import parse_fix_response
 from gracenotes_dev.sentry.merge_logic import can_merge
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import format_report
@@ -59,6 +61,24 @@ class SentrySettingsTest(unittest.TestCase):
     def test_defaults(self) -> None:
         s = SentrySettings.from_environ()
         self.assertEqual(s.approval_phrase, "/sentry-approve")
+        self.assertEqual(s.fix_provider, "http")
+        self.assertEqual(s.agent_bin, "agent")
+
+
+class SentryParseFixTest(unittest.TestCase):
+    def test_no_change(self) -> None:
+        self.assertEqual(parse_fix_response("NO_CHANGE"), "")
+
+    def test_swift_block(self) -> None:
+        out = parse_fix_response("Here:\n```swift\nlet x = 1\n```\n")
+        self.assertIn("let x = 1", out)
+
+
+class SentryFixProviderEnvTest(unittest.TestCase):
+    def test_cursor_agent_provider(self) -> None:
+        with mock.patch.dict("os.environ", {"SENTRY_FIX_PROVIDER": "cursor-agent"}):
+            s = SentrySettings.from_environ()
+            self.assertEqual(s.fix_provider, "cursor_agent")
 
 
 class SentryApprovalParseTest(unittest.TestCase):

@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from gracenotes_dev.sentry import github as gh_api
+from gracenotes_dev.sentry.agent_client import propose_swift_fix_via_agent
 from gracenotes_dev.sentry.classify import classify_paths, is_high_touch
 from gracenotes_dev.sentry.git_remote import git_remote_owner_repo
 from gracenotes_dev.sentry.llm_client import api_key_from_env, propose_swift_fix
@@ -111,45 +112,64 @@ def run_single_iteration(
     file_path = repo_root / rel
     content = file_path.read_text(encoding="utf-8")
 
-    base_url = settings.llm_base_url or "https://api.openai.com/v1"
-    api_key = api_key_from_env(settings.llm_api_key_env)
-    if not api_key:
-        append_event(
-            repo_root,
-            {
-                "kind": "error",
-                "message": (
-                    f"Set {settings.llm_api_key_env} (SENTRY_LLM_API_KEY_ENV) for LLM access."
-                ),
-            },
-        )
-        return 2
-
     if dry_run:
+        mode = settings.fix_provider
         append_event(
             repo_root,
             {
                 "kind": "dry_run",
-                "message": f"Would propose fix for {rel}",
+                "message": f"Would propose fix for {rel} (provider={mode})",
                 "path": rel,
             },
         )
         return 0
 
-    try:
-        new_src = propose_swift_fix(
-            base_url=base_url,
-            api_key=api_key,
-            model=settings.llm_model,
-            relative_path=rel,
-            file_content=content,
-        )
-    except RuntimeError as exc:
-        append_event(repo_root, {"kind": "error", "message": str(exc), "path": rel})
-        return 1
+    if settings.fix_provider == "cursor_agent":
+        try:
+            new_src = propose_swift_fix_via_agent(
+                repo_root=repo_root,
+                agent_bin=settings.agent_bin,
+                prefix_args=settings.agent_prefix_args,
+                extra_args=settings.agent_extra_args,
+                relative_path=rel,
+                file_content=content,
+                timeout_sec=settings.agent_timeout_sec,
+            )
+        except (FileNotFoundError, OSError, RuntimeError) as exc:
+            append_event(repo_root, {"kind": "error", "message": str(exc), "path": rel})
+            return 1
+    else:
+        base_url = settings.llm_base_url or "https://api.openai.com/v1"
+        api_key = api_key_from_env(settings.llm_api_key_env)
+        if not api_key:
+            append_event(
+                repo_root,
+                {
+                    "kind": "error",
+                    "message": (
+                        f"Set {settings.llm_api_key_env} (SENTRY_LLM_API_KEY_ENV) for LLM access, "
+                        "or SENTRY_FIX_PROVIDER=cursor_agent for local `agent`."
+                    ),
+                },
+            )
+            return 2
+        try:
+            new_src = propose_swift_fix(
+                base_url=base_url,
+                api_key=api_key,
+                model=settings.llm_model,
+                relative_path=rel,
+                file_content=content,
+            )
+        except RuntimeError as exc:
+            append_event(repo_root, {"kind": "error", "message": str(exc), "path": rel})
+            return 1
 
     if not new_src.strip():
-        append_event(repo_root, {"kind": "skip", "message": "LLM returned NO_CHANGE", "path": rel})
+        append_event(
+            repo_root,
+            {"kind": "skip", "message": "Fix step returned NO_CHANGE", "path": rel},
+        )
         return 0
 
     touch = classify_paths([rel])

@@ -29,7 +29,7 @@ Configuration lives in the repo root file [`gracenotes-dev.toml`](../../gracenot
 | `grace l10n audit` | String catalog vs Swift literals | `grace l10n audit --json` |
 | `grace sentry` | macOS: exploratory LLM fix loop, PR, merge gates (see env below) | `grace sentry start --once --dry-run` |
 
-**`grace sentry` (macOS)** expects `gh` on `PATH`, a clean git working tree, and an LLM key (default: `OPENAI_API_KEY`, or set `SENTRY_LLM_API_KEY_ENV`). Configure `SENTRY_COPILOT_LOGIN`, `SENTRY_APPROVAL_USERS`, and optional `SENTRY_CI_PROFILE`. State logs to `.grace/sentry/` (gitignored). Use `grace sentry report` for a briefing.
+**`grace sentry` (macOS)** expects `gh` on `PATH` and a clean git working tree. **Fix source:** default is an OpenAI-compatible HTTP API (`OPENAI_API_KEY` or `SENTRY_LLM_API_KEY_ENV`). Alternatively set **`SENTRY_FIX_PROVIDER=cursor_agent`** to run the local Cursor **`agent`** CLI (see [Cursor CLI](https://cursor.com/docs/cli/overview)): defaults to `agent chat` — override with `SENTRY_AGENT_BIN`, `SENTRY_AGENT_PREFIX_ARGS` (e.g. `agent chat` for `cursor`), and `SENTRY_AGENT_EXTRA_ARGS` (e.g. `--no-interactive` if your install supports it). Also configure `SENTRY_COPILOT_LOGIN`, `SENTRY_APPROVAL_USERS`, and optional `SENTRY_CI_PROFILE`. State logs to `.grace/sentry/` (gitignored). Use `grace sentry report` for a briefing.
 
 Global flags (before the subcommand): `grace --repo-root /path/to/grace-notes …` uses that directory as the start of repo discovery; same via `GRACE_REPO_ROOT`.
 

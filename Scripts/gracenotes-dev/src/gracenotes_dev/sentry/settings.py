@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 from dataclasses import dataclass
 
 
@@ -31,6 +32,23 @@ def _comma_list(key: str) -> tuple[str, ...]:
     return tuple(s.strip() for s in raw.split(",") if s.strip())
 
 
+def _split_shell(key: str, default: str) -> tuple[str, ...]:
+    raw = os.environ.get(key)
+    if raw is None:
+        raw = default
+    s = raw.strip()
+    if not s:
+        return ()
+    return tuple(shlex.split(s))
+
+
+def _normalize_fix_provider(raw: str) -> str:
+    n = raw.strip().lower().replace("-", "_")
+    if n in ("cursor_agent", "agent"):
+        return "cursor_agent"
+    return "http"
+
+
 @dataclass(frozen=True)
 class SentrySettings:
     """Resolved configuration (see plan: defaults overridable via env)."""
@@ -47,10 +65,16 @@ class SentrySettings:
     max_retries: int
     retry_base_seconds: float
     ci_profile: str | None
+    fix_provider: str
+    agent_bin: str
+    agent_prefix_args: tuple[str, ...]
+    agent_extra_args: tuple[str, ...]
+    agent_timeout_sec: int
 
     @classmethod
     def from_environ(cls) -> SentrySettings:
         prof = os.environ.get("SENTRY_CI_PROFILE", "").strip()
+        provider = _normalize_fix_provider(os.environ.get("SENTRY_FIX_PROVIDER", "http"))
         return cls(
             copilot_login=os.environ.get("SENTRY_COPILOT_LOGIN", "").strip() or None,
             approval_phrase=os.environ.get("SENTRY_APPROVAL_PHRASE", "/sentry-approve").strip()
@@ -66,4 +90,9 @@ class SentrySettings:
             max_retries=_env_int("SENTRY_MAX_RETRIES", 8),
             retry_base_seconds=_env_float("SENTRY_RETRY_BASE_SEC", 1.5),
             ci_profile=prof or None,
+            fix_provider=provider,
+            agent_bin=os.environ.get("SENTRY_AGENT_BIN", "agent").strip() or "agent",
+            agent_prefix_args=_split_shell("SENTRY_AGENT_PREFIX_ARGS", "chat"),
+            agent_extra_args=_split_shell("SENTRY_AGENT_EXTRA_ARGS", ""),
+            agent_timeout_sec=_env_int("SENTRY_AGENT_TIMEOUT_SEC", 900),
         )

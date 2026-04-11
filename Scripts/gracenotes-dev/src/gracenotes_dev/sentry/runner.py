@@ -17,8 +17,22 @@ from gracenotes_dev.sentry.git_remote import git_remote_owner_repo
 from gracenotes_dev.sentry.llm_client import api_key_from_env, propose_swift_fix
 from gracenotes_dev.sentry.merge_logic import can_merge
 from gracenotes_dev.sentry.pr_template import build_pr_body, risk_label_for_touch
+from gracenotes_dev.sentry.log_sink import SentryLogSink
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import append_event
+
+
+def _emit(repo_root: Path, sink: SentryLogSink | None, event: dict) -> None:
+    append_event(repo_root, event)
+    if sink is None:
+        return
+    kind = str(event.get("kind", "?"))
+    msg = str(event.get("message", ""))
+    extra = {k: v for k, v in event.items() if k not in ("kind", "message")}
+    line = f"[{kind}] {msg}"
+    if extra:
+        line += " " + " ".join(f"{k}={v}" for k, v in extra.items())
+    sink.log(line)
 
 
 def _git_output(repo_root: Path, *args: str, check: bool = True) -> str:
@@ -87,18 +101,21 @@ def run_single_iteration(
     *,
     dry_run: bool,
     merge: bool,
+    sink: SentryLogSink | None = None,
 ) -> int:
     """Return process exit code (0 ok)."""
     if sys.platform != "darwin":
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {"kind": "error", "message": "grace sentry requires macOS (iOS/Xcode toolchain)."},
         )
         return 2
 
     if not working_tree_clean(repo_root):
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {"kind": "skip", "message": "Working tree not clean; commit or stash before sentry."},
         )
         return 1
@@ -106,16 +123,25 @@ def run_single_iteration(
     paths = list_gracenotes_swift_files(repo_root)
     rel = _pick_random(paths)
     if not rel:
-        append_event(repo_root, {"kind": "skip", "message": "No GraceNotes Swift files found."})
+        if sink is not None:
+            sink.set_step("pick file")
+        _emit(repo_root, sink, {"kind": "skip", "message": "No GraceNotes Swift files found."})
         return 1
+
+    if sink is not None:
+        sink.set_step("pick file")
+        sink.set_target_file(rel)
+        sink.set_branch(None)
+        sink.set_pr(None)
 
     file_path = repo_root / rel
     content = file_path.read_text(encoding="utf-8")
 
     if dry_run:
         mode = settings.fix_provider
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {
                 "kind": "dry_run",
                 "message": f"Would propose fix for {rel} (provider={mode})",
@@ -125,6 +151,8 @@ def run_single_iteration(
         return 0
 
     if settings.fix_provider == "cursor_agent":
+        if sink is not None:
+            sink.set_step("fix (cursor agent)")
         try:
             new_src = propose_swift_fix_via_agent(
                 repo_root=repo_root,
@@ -136,14 +164,17 @@ def run_single_iteration(
                 timeout_sec=settings.agent_timeout_sec,
             )
         except (FileNotFoundError, OSError, RuntimeError) as exc:
-            append_event(repo_root, {"kind": "error", "message": str(exc), "path": rel})
+            _emit(repo_root, sink, {"kind": "error", "message": str(exc), "path": rel})
             return 1
     else:
+        if sink is not None:
+            sink.set_step("fix (LLM)")
         base_url = settings.llm_base_url or "https://api.openai.com/v1"
         api_key = api_key_from_env(settings.llm_api_key_env)
         if not api_key:
-            append_event(
+            _emit(
                 repo_root,
+                sink,
                 {
                     "kind": "error",
                     "message": (
@@ -162,12 +193,13 @@ def run_single_iteration(
                 file_content=content,
             )
         except RuntimeError as exc:
-            append_event(repo_root, {"kind": "error", "message": str(exc), "path": rel})
+            _emit(repo_root, sink, {"kind": "error", "message": str(exc), "path": rel})
             return 1
 
     if not new_src.strip():
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {"kind": "skip", "message": "Fix step returned NO_CHANGE", "path": rel},
         )
         return 0
@@ -191,19 +223,28 @@ def run_single_iteration(
         approval_phrase=settings.approval_phrase,
     )
 
+    if sink is not None:
+        sink.set_step("commit & branch")
+        sink.set_branch(branch)
+
     try:
         _git_output(repo_root, "checkout", "-b", branch)
         file_path.write_text(new_src, encoding="utf-8")
         _git_output(repo_root, "add", rel)
         _git_output(repo_root, "commit", "-m", f"sentry: refine {rel}")
     except subprocess.CalledProcessError as exc:
-        append_event(repo_root, {"kind": "error", "message": f"git commit failed: {exc}"})
+        _emit(repo_root, sink, {"kind": "error", "message": f"git commit failed: {exc}"})
         _cleanup_failed_branch(repo_root, branch)
         return 1
 
+    if sink is not None:
+        sink.set_step("grace ci")
+        sink.log("Running `grace ci` (this may take several minutes)…")
+
     if not run_grace_ci(repo_root, settings):
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {"kind": "error", "message": "grace ci failed; dropping branch", "branch": branch},
         )
         try:
@@ -213,12 +254,18 @@ def run_single_iteration(
         _cleanup_failed_branch(repo_root, branch)
         return 1
 
+    if sink is not None:
+        sink.set_step("git push")
+
     try:
         _git_output(repo_root, "push", "-u", "origin", branch)
     except subprocess.CalledProcessError as exc:
-        append_event(repo_root, {"kind": "error", "message": f"git push failed: {exc}"})
+        _emit(repo_root, sink, {"kind": "error", "message": f"git push failed: {exc}"})
         _cleanup_failed_branch(repo_root, branch)
         return 1
+
+    if sink is not None:
+        sink.set_step("create PR")
 
     proc = subprocess.run(
         [
@@ -237,8 +284,9 @@ def run_single_iteration(
         text=True,
     )
     if proc.returncode != 0:
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {
                 "kind": "error",
                 "message": f"gh pr create failed: {proc.stderr or proc.stdout}",
@@ -250,8 +298,11 @@ def run_single_iteration(
     pr_meta = json.loads(proc.stdout)
     pr_number = int(pr_meta["number"])
     pr_url = pr_meta.get("url", "")
-    append_event(
+    if sink is not None:
+        sink.set_pr(pr_url or f"#{pr_number}")
+    _emit(
         repo_root,
+        sink,
         {
             "kind": "pr_created",
             "message": pr_url,
@@ -262,14 +313,15 @@ def run_single_iteration(
     )
 
     if not merge:
-        append_event(repo_root, {"kind": "note", "message": "Skipping merge (--no-merge)."})
+        _emit(repo_root, sink, {"kind": "note", "message": "Skipping merge (--no-merge)."})
         _git_output(repo_root, "checkout", "main")
         return 0
 
     remote = git_remote_owner_repo(repo_root)
     if not remote:
-        append_event(
+        _emit(
             repo_root,
+            sink,
             {"kind": "error", "message": "Could not parse origin remote (GitHub)."},
         )
         _git_output(repo_root, "checkout", "main")
@@ -285,11 +337,12 @@ def run_single_iteration(
         pr_number,
         high_touch,
         allow,
+        sink=sink,
     )
     if merge_ok:
-        append_event(repo_root, {"kind": "merged", "message": f"PR #{pr_number} squash-merged"})
+        _emit(repo_root, sink, {"kind": "merged", "message": f"PR #{pr_number} squash-merged"})
     else:
-        append_event(repo_root, {"kind": "note", "message": f"Stopped waiting on PR #{pr_number}"})
+        _emit(repo_root, sink, {"kind": "note", "message": f"Stopped waiting on PR #{pr_number}"})
 
     try:
         _git_output(repo_root, "checkout", "main")
@@ -308,12 +361,16 @@ def _poll_until_merge(
     pr_number: int,
     high_touch: bool,
     allow: set[str],
+    *,
+    sink: SentryLogSink | None = None,
 ) -> bool:
     """Return True if merged."""
     deadline = time.monotonic() + float(settings.arbitration_stuck_seconds)
     poll = 30.0
 
     while time.monotonic() < deadline:
+        if sink is not None:
+            sink.set_step("merge gates (poll)")
         ci_ok = gh_api.pr_checks_passed(repo_root, pr_number)
         threads = gh_api.graphql_review_threads(repo_root, owner, repo, pr_number)
         if settings.copilot_login:
@@ -330,12 +387,20 @@ def _poll_until_merge(
 
         copilot_ok = unresolved == 0
 
+        if sink is not None:
+            sink.log(
+                f"merge poll: ci_ok={ci_ok} high_touch={high_touch} "
+                f"copilot_unresolved={unresolved} approve={approve}"
+            )
+
         if can_merge(
             ci_ok=ci_ok,
             high_touch=high_touch,
             copilot_ok=copilot_ok,
             approve_phrase_present=approve,
         ):
+            if sink is not None:
+                sink.set_step("squash merge")
             return gh_api.pr_merge_squash(repo_root, pr_number)
 
         time.sleep(poll)

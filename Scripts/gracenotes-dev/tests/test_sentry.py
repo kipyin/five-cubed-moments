@@ -62,7 +62,11 @@ class SentryClassifyTest(unittest.TestCase):
 
 class SentrySettingsTest(unittest.TestCase):
     def test_defaults(self) -> None:
-        s = SentrySettings.from_environ()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text("", encoding="utf-8")
+            s = SentrySettings.from_repo(root)
         self.assertEqual(s.approval_phrase, "/sentry-approve")
         self.assertEqual(s.fix_provider, "http")
         self.assertEqual(s.agent_bin, "agent")
@@ -135,5 +139,5 @@ class SentryCLISurfaceTest(unittest.TestCase):
             self.assertIn(token, result.output)
         start_help = runner.invoke(app, ["sentry", "start", "--help"])
         self.assertEqual(start_help.exit_code, 0)
-        for token in ["--once", "--dry-run", "--no-merge"]:
+        for token in ["--once", "--dry-run", "--no-merge", "--tui", "--no-tui"]:
             self.assertIn(token, start_help.output)

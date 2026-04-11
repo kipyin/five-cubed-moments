@@ -14,9 +14,11 @@ from rich.console import Console
 
 from gracenotes_dev.cli import core as cli_core
 from gracenotes_dev.cli.apps import sentry_app
+from gracenotes_dev.sentry.log_sink import PlainStderrSink, SentryLogSink
 from gracenotes_dev.sentry.runner import run_single_iteration
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import format_report, pid_path, read_recent_events
+from gracenotes_dev.sentry.tui import RichSentryTUI
 
 
 def _console() -> Console:
@@ -46,6 +48,17 @@ def _read_pid(repo_root: Path) -> int | None:
         return None
 
 
+def _make_sink(tui: bool | None) -> tuple[SentryLogSink, bool]:
+    """Return (sink, use_rich_context). Rich TUI uses a ``with`` block for ``Live``."""
+    if tui is True:
+        return RichSentryTUI(), True
+    if tui is False:
+        return PlainStderrSink(), False
+    if cli_core._supports_rich_output(sys.stdout):
+        return RichSentryTUI(), True
+    return PlainStderrSink(), False
+
+
 @sentry_app.command("start")
 def sentry_start(
     once: Annotated[
@@ -60,14 +73,36 @@ def sentry_start(
         bool,
         typer.Option("--no-merge", help="Create PR but do not poll for squash merge."),
     ] = False,
+    tui: Annotated[
+        bool | None,
+        typer.Option(
+            "--tui/--no-tui",
+            help="Rich status + log panel (default: on when stdout is a TTY).",
+        ),
+    ] = None,
 ) -> None:
     """Run sentry until interrupted (``--once`` = one pass). macOS + gh + HTTP or ``agent`` fix."""
     cli_core._require_macos_xcode()
     repo_root = cli_core._repo_root()
     settings = SentrySettings.from_repo(cli_core._repo_root())
 
+    sink, use_rich = _make_sink(tui)
+
+    def _run_one(s: SentryLogSink) -> int:
+        return run_single_iteration(
+            repo_root,
+            settings,
+            dry_run=dry_run,
+            merge=not no_merge,
+            sink=s,
+        )
+
     if once:
-        code = run_single_iteration(repo_root, settings, dry_run=dry_run, merge=not no_merge)
+        if use_rich:
+            with sink as s:
+                code = _run_one(s)
+        else:
+            code = _run_one(sink)
         raise typer.Exit(code=code)
 
     _write_pid(repo_root)
@@ -80,12 +115,21 @@ def sentry_start(
     signal.signal(signal.SIGINT, _handle_term)
 
     try:
-        while True:
-            code = run_single_iteration(repo_root, settings, dry_run=dry_run, merge=not no_merge)
-            if code != 0:
-                time.sleep(min(settings.interval_seconds, 60))
-            else:
-                time.sleep(settings.interval_seconds)
+        if use_rich:
+            with sink as s:
+                while True:
+                    code = _run_one(s)
+                    if code != 0:
+                        time.sleep(min(settings.interval_seconds, 60))
+                    else:
+                        time.sleep(settings.interval_seconds)
+        else:
+            while True:
+                code = _run_one(sink)
+                if code != 0:
+                    time.sleep(min(settings.interval_seconds, 60))
+                else:
+                    time.sleep(settings.interval_seconds)
     finally:
         _remove_pid(repo_root)
 

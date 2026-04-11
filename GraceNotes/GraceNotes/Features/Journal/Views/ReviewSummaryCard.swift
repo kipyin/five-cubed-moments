@@ -1,11 +1,5 @@
 import SwiftUI
 
-private struct ReviewInsightPanelBodies {
-    let observation: String
-    let thread: String
-    let action: String
-}
-
 // swiftlint:disable type_body_length file_length
 /// “Days you wrote” rhythm strip for the Past tab, as its own list row.
 struct ReviewDaysYouWrotePanel: View {
@@ -642,11 +636,13 @@ struct ReviewDaysYouWrotePanel: View {
     }
 }
 
-/// Observation, next step, and primary CTA for the Past tab as its own list row (after recurring and trending).
+/// Next step only for the Past tab as its own list row (after recurring and trending).
 struct ReviewNarrativeSummaryCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let insights: ReviewInsights?
     let isLoading: Bool
+
+    private let nextStepRefiner = ReviewNextStepRowRefiner()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -678,26 +674,12 @@ struct ReviewNarrativeSummaryCard: View {
         }
     }
 
+    @ViewBuilder
     private func narrativeContent(for insights: ReviewInsights) -> some View {
-        let bodies = dedupedPanelBodies(for: insights)
-        return VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                observationPanel(body: bodies.observation)
-                // Intentional product choice: keep the middle "Thinking"/narrative layer hidden for now.
-                if insights.presentationMode == .insight {
-                    // `.statsFirst` stays rhythm-led by design, so we omit the next-step panel in that mode.
-                    actionPanel(body: bodies.action)
-                }
-            }
-        }
-    }
-
-    private func observationPanel(body: String) -> some View {
-        ReviewInsightInsetPanel(
-            title: String(localized: "review.labels.observation"),
-            panelChrome: .lead
-        ) {
-            panelParagraph(body, lineSpacing: 4)
+        if isLoading {
+            NarrativeInsightsLoadingSkeleton(reduceMotion: reduceMotion)
+        } else if let text = nextStepRefiner.nextStepText(for: insights) {
+            actionPanel(body: text)
         }
     }
 
@@ -708,114 +690,24 @@ struct ReviewNarrativeSummaryCard: View {
     }
 
     private func panelParagraph(_ text: String, lineSpacing: CGFloat) -> some View {
-        Text(trimmed(text))
+        Text(text.trimmingCharacters(in: .whitespacesAndNewlines))
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(AppTheme.reviewTextPrimary)
             .lineSpacing(lineSpacing)
             .fixedSize(horizontal: false, vertical: true)
     }
+}
 
-    private func shouldShowNarrativeSummary(for insights: ReviewInsights) -> Bool {
-        guard let narrativeSummary = insights.narrativeSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !narrativeSummary.isEmpty
-        else {
-            return false
-        }
-        guard let firstInsightObservation = insights.weeklyInsights.first?.observation else {
+extension ReviewNextStepRowRefiner {
+    /// Whether the Past tab should show the narrative list row (unlock, loading, or non-empty next step).
+    static func shouldShowNarrativeRow(insights: ReviewInsights?, isLoading: Bool) -> Bool {
+        if isLoading {
             return true
         }
-        return normalizedInsightText(narrativeSummary) != normalizedInsightText(firstInsightObservation)
-    }
-
-    private func observationText(for insights: ReviewInsights) -> String {
-        let resurfacing = trimmed(insights.resurfacingMessage)
-        if !resurfacing.isEmpty {
-            return resurfacing
+        guard let insights else {
+            return true
         }
-        if let fallbackObservation = firstNonEmptyWeeklyObservation(for: insights) {
-            return fallbackObservation
-        }
-        let fallbackNarrative = trimmed(insights.narrativeSummary)
-        if !fallbackNarrative.isEmpty {
-            return fallbackNarrative
-        }
-        return trimmed(insights.continuityPrompt)
-    }
-
-    private func thinkingText(for insights: ReviewInsights) -> String {
-        let narrativeSummary = trimmed(insights.narrativeSummary)
-        if shouldShowNarrativeSummary(for: insights), !narrativeSummary.isEmpty {
-            return narrativeSummary
-        }
-        if let fallbackObservation = firstNonEmptyWeeklyObservation(for: insights) {
-            return fallbackObservation
-        }
-        let resurfacing = trimmed(insights.resurfacingMessage)
-        if !resurfacing.isEmpty {
-            return resurfacing
-        }
-        return trimmed(insights.continuityPrompt)
-    }
-
-    /// Action line from payload only (no Thinking fallback) so the card can substitute a distinct thin-week string.
-    private func actionBodyCandidate(for insights: ReviewInsights) -> String {
-        let continuityPrompt = trimmed(insights.continuityPrompt)
-        if !continuityPrompt.isEmpty {
-            return continuityPrompt
-        }
-        if let fallbackAction = firstNonEmptyWeeklyAction(for: insights) {
-            return fallbackAction
-        }
-        return ""
-    }
-
-    private func dedupedPanelBodies(for insights: ReviewInsights) -> ReviewInsightPanelBodies {
-        let observation = observationText(for: insights)
-        var thread = thinkingText(for: insights)
-        if normalizedInsightText(thread) == normalizedInsightText(observation) {
-            thread = String(localized: "journal.guidance.fewLinesHoldALot")
-        }
-
-        var action = actionBodyCandidate(for: insights)
-        let observationKey = normalizedInsightText(observation)
-        let actionKey = normalizedInsightText(action)
-        // Action dedupes against visible panels only; Thinking is intentionally hidden in this layout.
-        let actionDuplicatesPanel = actionKey == observationKey
-        if action.isEmpty || actionDuplicatesPanel {
-            action = String(localized: "review.prompts.gladHappened")
-        }
-
-        return ReviewInsightPanelBodies(observation: observation, thread: thread, action: action)
-    }
-
-    private func firstNonEmptyWeeklyObservation(for insights: ReviewInsights) -> String? {
-        insights.weeklyInsights
-            .lazy
-            .map(\.observation)
-            .map { trimmed($0) }
-            .first { !$0.isEmpty }
-    }
-
-    private func firstNonEmptyWeeklyAction(for insights: ReviewInsights) -> String? {
-        insights.weeklyInsights
-            .lazy
-            .compactMap(\.action)
-            .map { trimmed($0) }
-            .first { !$0.isEmpty }
-    }
-
-    private func trimmed(_ value: String?) -> String {
-        guard let value else {
-            return ""
-        }
-        return value.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func normalizedInsightText(_ value: String) -> String {
-        value
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return ReviewNextStepRowRefiner().nextStepText(for: insights) != nil
     }
 }
 // swiftlint:enable type_body_length
@@ -856,18 +748,11 @@ private struct NarrativeInsightsLoadingSkeleton: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                skeletonInsetPanel(
-                    title: String(localized: "review.labels.observation"),
-                    panelChrome: .lead,
-                    lineSpecs: [(1.0, 12), (1.0, 12), (0.72, 12)]
-                )
-                skeletonInsetPanel(
-                    title: String(localized: "review.prompts.nextStep"),
-                    panelChrome: .standard,
-                    lineSpecs: [(1.0, 11), (0.78, 11)]
-                )
-            }
+            skeletonInsetPanel(
+                title: String(localized: "review.prompts.nextStep"),
+                panelChrome: .standard,
+                lineSpecs: [(1.0, 11), (0.78, 11)]
+            )
         }
         .modifier(InsightsCalmLoadingBreath(active: !reduceMotion))
         .accessibilityElement(children: .ignore)

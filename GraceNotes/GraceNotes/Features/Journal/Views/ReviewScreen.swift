@@ -389,13 +389,18 @@ extension ReviewScreen {
             .listRowBackground(AppTheme.reviewBackground)
             .listRowSeparator(.hidden)
 
-            ReviewNarrativeSummaryCard(
+            if ReviewNextStepRowRefiner.shouldShowNarrativeRow(
                 insights: reviewInsights,
                 isLoading: isLoadingInsights
-            )
-            .listRowInsets(PastTabListLayout.cardRowInsets)
-            .listRowBackground(AppTheme.reviewBackground)
-            .listRowSeparator(.hidden)
+            ) {
+                ReviewNarrativeSummaryCard(
+                    insights: reviewInsights,
+                    isLoading: isLoadingInsights
+                )
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+            }
         }
     }
 

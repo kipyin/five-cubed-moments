@@ -248,7 +248,7 @@ enum ReviewSectionDistributionStripLayout {
         let totalDouble = Double(total)
         let exactShares = counts.map { Double($0) / totalDouble * 100 }
         var floors = exactShares.map { Int($0.rounded(.down)) }
-        var remainder = 100 - floors.reduce(0, +)
+        let remainder = 100 - floors.reduce(0, +)
         guard remainder > 0 else { return floors }
 
         let indicesByLargestFraction = (0..<counts.count).sorted { lhs, rhs in

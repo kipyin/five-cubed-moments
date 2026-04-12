@@ -60,7 +60,8 @@ struct JournalUnlockFeedbackSurface: View {
     var milestoneHighlight: JournalUnlockMilestoneHighlight = .none
 
     var body: some View {
-        let text = JournalUnlockFeedbackMessage.message(for: level, milestone: milestoneHighlight)
+        let raw = JournalUnlockFeedbackMessage.message(for: level, milestone: milestoneHighlight)
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty {
             EmptyView()
         } else {
@@ -109,23 +110,16 @@ struct JournalUnlockFeedbackSurface: View {
         }
     }
 
-    private var shadowTint: Color {
+    private var shadowColor: Color {
         switch level {
         case .soil:
-            return .clear
-        case .sprout:
-            return palette.quickCheckInGlow
-        case .twig, .leaf:
-            return palette.standardGlow
-        case .bloom:
-            return palette.fullGlow
-        }
-    }
-
-    private var shadowColor: Color {
-        if shadowTint == .clear {
             return Color.black.opacity(0.12)
+        case .sprout:
+            return palette.quickCheckInGlow.opacity(0.18)
+        case .twig, .leaf:
+            return palette.standardGlow.opacity(0.18)
+        case .bloom:
+            return palette.fullGlow.opacity(0.18)
         }
-        return shadowTint.opacity(0.18)
     }
 }

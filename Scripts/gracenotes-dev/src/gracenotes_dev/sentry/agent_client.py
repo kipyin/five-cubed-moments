@@ -113,7 +113,11 @@ def review_fix_summary_via_agent(
         raise RuntimeError(f"agent command timed out after {timeout_sec}s") from exc
 
     combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
-    return parse_review_summary_text(combined)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"agent summary exited {proc.returncode}. Output (truncated): {combined[:2000]!r}"
+        )
+    return parse_review_summary_text(proc.stdout or "")
 
 
 def address_cursor_feedback_file_via_agent(

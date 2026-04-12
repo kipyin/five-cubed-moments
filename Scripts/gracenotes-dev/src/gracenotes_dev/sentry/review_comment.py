@@ -72,7 +72,7 @@ def merge_outcome_templates(
     out = dict(defaults)
     if overrides:
         for k, v in overrides.items():
-            ks = str(k).strip()
+            ks = str(k).strip().lower()
             if ks and isinstance(v, str) and v.strip():
                 out[ks] = v.strip()
     return out
@@ -134,7 +134,8 @@ def reviewers_clear_from_sentry_comment(
     not in ``block_outcomes``.
 
     If ``authenticated_login`` is None, returns False. If ``max_age_seconds`` > 0, comments
-    older than that (by ``created_at``) do not qualify.
+    older than that (by ``created_at``) do not qualify, and comments without a parseable
+    ``created_at`` cannot clear the gate.
     """
     if not authenticated_login:
         return False
@@ -164,6 +165,12 @@ def reviewers_clear_from_sentry_comment(
 
     if not scored:
         return False
+
+    if max_age_seconds > 0:
+        dated = [t for t in scored if t[2] is not None]
+        if not dated:
+            return False
+        scored = dated
 
     def _dt_key(t: tuple[str, str, datetime | None]) -> datetime:
         _, _, dt = t

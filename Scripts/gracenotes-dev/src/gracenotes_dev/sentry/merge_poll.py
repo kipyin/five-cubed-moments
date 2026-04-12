@@ -79,7 +79,9 @@ def merge_poll_once(
         reviewer_logins=settings.reviewer_logins,
         start_phrases=settings.cursor_start_phrases,
     )
-    if settings.review_clear_mode == "comment":
+    if not settings.reviewer_logins:
+        reviewers_clear = True
+    elif settings.review_clear_mode == "comment":
         auth_login = gh_api.gh_authenticated_login(repo_root)
         if sink is not None and auth_login is None:
             sink.log(

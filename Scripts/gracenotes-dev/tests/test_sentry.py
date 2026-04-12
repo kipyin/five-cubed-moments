@@ -283,6 +283,39 @@ class SentryReviewCommentTest(unittest.TestCase):
             )
         )
 
+    def test_max_age_false_when_created_at_missing(self) -> None:
+        from gracenotes_dev.sentry.review_comment import reviewers_clear_from_sentry_comment
+
+        comments = [
+            {
+                "user": {"login": "alice"},
+                "body": "<!-- sentry-review: addressed -->",
+                "created_at": None,
+            },
+        ]
+        self.assertFalse(
+            reviewers_clear_from_sentry_comment(
+                comments=comments,
+                authenticated_login="alice",
+                block_outcomes=frozenset(),
+                max_age_seconds=3600,
+            )
+        )
+
+    def test_merge_outcome_templates_normalizes_keys_to_lowercase(self) -> None:
+        from gracenotes_dev.sentry.review_comment import (
+            DEFAULT_REVIEW_OUTCOME_TEMPLATES,
+            format_review_comment_body,
+            merge_outcome_templates,
+        )
+
+        merged = merge_outcome_templates(
+            DEFAULT_REVIEW_OUTCOME_TEMPLATES,
+            {"ADDRESSED": "Custom **addressed** for PR #{pr}."},
+        )
+        body = format_review_comment_body("addressed", pr_number=99, templates=merged)
+        self.assertIn("Custom **addressed**", body)
+
 
 class SentryTomlTest(unittest.TestCase):
     def test_from_repo_reads_toml(self) -> None:

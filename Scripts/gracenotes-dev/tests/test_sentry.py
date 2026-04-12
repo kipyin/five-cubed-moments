@@ -22,6 +22,7 @@ from gracenotes_dev.sentry.llm_client import (
 )
 from gracenotes_dev.sentry.merge_logic import can_merge
 from gracenotes_dev.sentry.pr_template import build_pr_body_from_material, fallback_pr_material
+from gracenotes_dev.sentry.review_gates import review_wait_satisfied
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import format_report, read_recent_events
 
@@ -32,7 +33,7 @@ class SentryMergeLogicTest(unittest.TestCase):
             can_merge(
                 ci_ok=True,
                 copilot_ok=True,
-                cursor_ok=True,
+                reviewers_ok=True,
                 approve_phrase_present=False,
             )
         )
@@ -40,7 +41,7 @@ class SentryMergeLogicTest(unittest.TestCase):
             can_merge(
                 ci_ok=True,
                 copilot_ok=False,
-                cursor_ok=True,
+                reviewers_ok=True,
                 approve_phrase_present=False,
             )
         )
@@ -50,17 +51,17 @@ class SentryMergeLogicTest(unittest.TestCase):
             can_merge(
                 ci_ok=True,
                 copilot_ok=False,
-                cursor_ok=False,
+                reviewers_ok=False,
                 approve_phrase_present=True,
             )
         )
 
-    def test_cursor_pending_blocks_without_approve(self) -> None:
+    def test_reviewers_not_clear_blocks_without_approve(self) -> None:
         self.assertFalse(
             can_merge(
                 ci_ok=True,
                 copilot_ok=True,
-                cursor_ok=False,
+                reviewers_ok=False,
                 approve_phrase_present=False,
             )
         )
@@ -70,7 +71,7 @@ class SentryMergeLogicTest(unittest.TestCase):
             can_merge(
                 ci_ok=False,
                 copilot_ok=True,
-                cursor_ok=True,
+                reviewers_ok=True,
                 approve_phrase_present=False,
             )
         )
@@ -100,6 +101,62 @@ class SentryClassifyTest(unittest.TestCase):
         )
 
 
+class SentryReviewGatesTest(unittest.TestCase):
+    def test_review_wait_satisfied_empty_allowlist(self) -> None:
+        self.assertTrue(
+            review_wait_satisfied(
+                pr_created_at=None,
+                review_silence_timeout_seconds=0,
+                comments=[],
+                pr_reviews=[],
+                reviewer_logins=(),
+                start_phrases=(),
+            )
+        )
+
+    def test_review_wait_satisfied_after_silence_when_stuck_on_start(self) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        old = datetime.now(timezone.utc) - timedelta(seconds=10_000)
+        self.assertTrue(
+            review_wait_satisfied(
+                pr_created_at=old,
+                review_silence_timeout_seconds=60,
+                comments=[{"user": {"login": "x"}, "body": "Taking a look"}],
+                pr_reviews=[],
+                reviewer_logins=("x",),
+                start_phrases=("Taking a look",),
+            )
+        )
+
+    def test_review_wait_blocks_before_silence_when_stuck_on_start(self) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        recent = datetime.now(timezone.utc) - timedelta(seconds=5)
+        self.assertFalse(
+            review_wait_satisfied(
+                pr_created_at=recent,
+                review_silence_timeout_seconds=3600,
+                comments=[{"user": {"login": "x"}, "body": "Taking a look"}],
+                pr_reviews=[],
+                reviewer_logins=("x",),
+                start_phrases=("Taking a look",),
+            )
+        )
+
+    def test_review_wait_blocks_when_created_at_unknown_and_gate_not_ok(self) -> None:
+        self.assertFalse(
+            review_wait_satisfied(
+                pr_created_at=None,
+                review_silence_timeout_seconds=3600,
+                comments=[{"user": {"login": "x"}, "body": "Taking a look"}],
+                pr_reviews=[],
+                reviewer_logins=("x",),
+                start_phrases=("Taking a look",),
+            )
+        )
+
+
 class SentrySettingsTest(unittest.TestCase):
     def test_defaults(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -117,7 +174,16 @@ class SentrySettingsTest(unittest.TestCase):
             s.cursor_reviewer_logins,
             ("cursor[bot]", "cursor", "cursoragent"),
         )
+        self.assertEqual(
+            s.reviewer_logins,
+            ("cursor[bot]", "cursor", "cursoragent"),
+        )
         self.assertTrue(s.cursor_post_review_trigger)
+        self.assertEqual(s.merge_sweep_budget_seconds, 120)
+        self.assertEqual(s.merge_sweep_total_budget_seconds, 0)
+        self.assertEqual(s.review_silence_timeout_seconds, 15 * 60)
+        self.assertEqual(s.review_fix_cooldown_seconds, 180)
+        self.assertEqual(s.cursor_review_fix_cooldown_seconds, 180)
 
 
 class SentryTomlTest(unittest.TestCase):
@@ -157,6 +223,46 @@ class SentryTomlTest(unittest.TestCase):
         self.assertEqual(s.cursor_reviewer_logins, ())
         self.assertFalse(s.cursor_post_review_trigger)
 
+    def test_reviewer_logins_explicit_overrides_legacy_union(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text(
+                '[sentry]\nreviewer_logins = ["only-me"]\ncopilot_login = "copilot-bot"\n',
+                encoding="utf-8",
+            )
+            s = SentrySettings.from_repo(root)
+        self.assertEqual(s.reviewer_logins, ("only-me",))
+
+    def test_cursor_review_fix_cooldown_can_override_base(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text(
+                "[sentry]\n"
+                "review_fix_cooldown_seconds = 100\n"
+                "cursor_review_fix_cooldown_seconds = 250\n",
+                encoding="utf-8",
+            )
+            s = SentrySettings.from_repo(root)
+        self.assertEqual(s.review_fix_cooldown_seconds, 100)
+        self.assertEqual(s.cursor_review_fix_cooldown_seconds, 250)
+
+    def test_reviewer_logins_unions_copilot_and_cursor_when_unset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text(
+                '[sentry]\ncopilot_login = "copilot-bot"\n'
+                'cursor_reviewer_logins = ["cursor[bot]"]\n',
+                encoding="utf-8",
+            )
+            s = SentrySettings.from_repo(root)
+        self.assertEqual(
+            set(s.reviewer_logins),
+            {"copilot-bot", "cursor[bot]"},
+        )
+
 
 class SentryPrMaterialParseTest(unittest.TestCase):
     def test_parse_pr_material_json_from_fence(self) -> None:
@@ -183,7 +289,7 @@ class SentryPrMaterialParseTest(unittest.TestCase):
         self.assertIn("## User impact", body)
         self.assertIn("## What changed", body)
         self.assertIn("## Verification", body)
-        self.assertIn("Copilot review threads", body)
+        self.assertIn("emergency override", body)
 
 
 class SentryParseFixTest(unittest.TestCase):
@@ -255,6 +361,22 @@ class SentryGithubGraphQLTest(unittest.TestCase):
         self.assertEqual(gh.unresolved_copilot_threads(nodes, "copilot"), 1)
         self.assertEqual(gh.unresolved_copilot_threads(nodes, "Copilot"), 1)
         self.assertEqual(gh.unresolved_copilot_threads(nodes, None), 0)
+
+    def test_unresolved_cursor_threads_counts_matching_login(self) -> None:
+        from gracenotes_dev.sentry import github as gh
+
+        nodes = [
+            {
+                "isResolved": False,
+                "comments": {"nodes": [{"author": {"login": "cursor"}, "body": "a"}]},
+            },
+            {
+                "isResolved": False,
+                "comments": {"nodes": [{"author": {"login": "human"}, "body": "b"}]},
+            },
+        ]
+        self.assertEqual(gh.unresolved_cursor_threads(nodes, ("cursor",)), 1)
+        self.assertEqual(gh.unresolved_cursor_threads(nodes, ()), 0)
 
 
 class SentryGithubListPrsTest(unittest.TestCase):
@@ -412,13 +534,93 @@ class SentryCursorPrReviewGateTest(unittest.TestCase):
             )
         )
 
-    def test_merge_gate_ok_changes_requested_counts(self) -> None:
+    def test_merge_gate_ok_changes_requested_counts_as_review_done(self) -> None:
+        """``CHANGES_REQUESTED`` still satisfies ``cursor_merge_gate_ok`` (review submitted)."""
         self.assertTrue(
             gh_sentry.cursor_merge_gate_ok(
                 comments=[{"user": {"login": "cursor"}, "body": "Taking a look"}],
                 pr_reviews=[{"user": {"login": "cursor"}, "state": "CHANGES_REQUESTED"}],
                 cursor_logins=("cursor",),
                 start_phrases=("Taking a look",),
+            )
+        )
+
+
+class SentryCursorMergeClearTest(unittest.TestCase):
+    def test_empty_logins_always_clear(self) -> None:
+        self.assertTrue(
+            gh_sentry.cursor_merge_clear(
+                review_thread_nodes=[],
+                pr_reviews=[{"user": {"login": "cursor"}, "state": "CHANGES_REQUESTED"}],
+                cursor_logins=(),
+            )
+        )
+
+    def test_changes_requested_blocks_merge_clear(self) -> None:
+        self.assertFalse(
+            gh_sentry.cursor_merge_clear(
+                review_thread_nodes=[],
+                pr_reviews=[
+                    {
+                        "user": {"login": "cursor"},
+                        "state": "CHANGES_REQUESTED",
+                        "submitted_at": "2020-01-02T00:00:00Z",
+                    },
+                ],
+                cursor_logins=("cursor",),
+            )
+        )
+
+    def test_approved_is_clear(self) -> None:
+        self.assertTrue(
+            gh_sentry.cursor_merge_clear(
+                review_thread_nodes=[],
+                pr_reviews=[
+                    {
+                        "user": {"login": "cursor"},
+                        "state": "APPROVED",
+                        "submitted_at": "2020-01-02T00:00:00Z",
+                    },
+                ],
+                cursor_logins=("cursor",),
+            )
+        )
+
+    def test_latest_review_wins_over_older_changes_requested(self) -> None:
+        self.assertTrue(
+            gh_sentry.cursor_merge_clear(
+                review_thread_nodes=[],
+                pr_reviews=[
+                    {
+                        "user": {"login": "cursor"},
+                        "state": "CHANGES_REQUESTED",
+                        "submitted_at": "2020-01-01T00:00:00Z",
+                    },
+                    {
+                        "user": {"login": "cursor"},
+                        "state": "APPROVED",
+                        "submitted_at": "2020-01-02T00:00:00Z",
+                    },
+                ],
+                cursor_logins=("cursor",),
+            )
+        )
+
+    def test_unresolved_cursor_thread_blocks(self) -> None:
+        self.assertFalse(
+            gh_sentry.cursor_merge_clear(
+                review_thread_nodes=[
+                    {
+                        "isResolved": False,
+                        "comments": {
+                            "nodes": [
+                                {"author": {"login": "cursor"}, "body": "fix this"},
+                            ],
+                        },
+                    },
+                ],
+                pr_reviews=[],
+                cursor_logins=("cursor",),
             )
         )
 

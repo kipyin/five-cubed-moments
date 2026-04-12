@@ -181,6 +181,8 @@ final class JournalScreenEntryHandlingEdgeCaseTests: XCTestCase {
         XCTAssertNil(editingIndex)
     }
 
+    /// Regression (issue #275): UI reveals the add morph only after this handler succeeds so the morph
+    /// cannot appear while `isTransitioning` still blocks hit testing on the section.
     func test_handleAddEntryTap_whileTransitioning_returnsFalseWithoutMutating() {
         var input = "Draft"
         var editingIndex: Int?

@@ -11,19 +11,15 @@ enum JournalEntryInteractionCoordinator {
         let operations: EntrySectionOperations
     }
 
-    static func addNewTapped(
-        context: SectionContext,
-        restoreInputFocus: (FocusState<Bool>.Binding) -> Void
-    ) {
-        let handled = JournalScreenEntryHandling.handleAddEntryTap(
+    /// Returns whether `handleAddEntryTap` applied. Callers that reveal the add morph should run
+    /// `restoreInputFocus` **after** `isAddMorphComposerVisible` becomes true (next run loop).
+    static func addNewTapped(context: SectionContext) -> Bool {
+        JournalScreenEntryHandling.handleAddEntryTap(
             input: context.input,
             editingIndex: context.editingIndex,
             operations: context.operations,
             isTransitioning: context.isTransitioning
         )
-        if handled {
-            restoreInputFocus(context.inputFocus)
-        }
     }
 
     static func entryTapped(

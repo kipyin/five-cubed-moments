@@ -40,7 +40,9 @@ struct SequentialSectionView: View {
     let onItemTap: (Int) -> Void
     let onMoveItem: ((Int, Int) -> Void)?
     let onDeleteItem: ((Int) -> Void)?
-    let onAddNew: (() -> Void)?
+    let onAddNew: (() -> Bool)?
+    /// After a successful add tap, run once the add morph is visible (e.g. keyboard focus on the composer).
+    let onAfterAddMorphRevealed: (() -> Void)?
     /// When true, another entry row or add morph in this journal is focused; fades non-focused rows.
     let ambientInlineEditingActive: Bool
     /// This section contains the focused inline editor or add morph composer.
@@ -81,7 +83,8 @@ struct SequentialSectionView: View {
         onItemTap: @escaping (Int) -> Void,
         onMoveItem: ((Int, Int) -> Void)? = nil,
         onDeleteItem: ((Int) -> Void)? = nil,
-        onAddNew: (() -> Void)? = nil,
+        onAddNew: (() -> Bool)? = nil,
+        onAfterAddMorphRevealed: (() -> Void)? = nil,
         isAddMorphComposerVisible: Binding<Bool> = .constant(false),
         ambientInlineEditingActive: Bool = false,
         sectionHostsInlineFocus: Bool = false,
@@ -112,6 +115,7 @@ struct SequentialSectionView: View {
         self.onMoveItem = onMoveItem
         self.onDeleteItem = onDeleteItem
         self.onAddNew = onAddNew
+        self.onAfterAddMorphRevealed = onAfterAddMorphRevealed
         self._isAddMorphComposerVisible = isAddMorphComposerVisible
         self.ambientInlineEditingActive = ambientInlineEditingActive
         self.sectionHostsInlineFocus = sectionHostsInlineFocus
@@ -182,6 +186,7 @@ struct SequentialSectionView: View {
             onMoveItem: onMoveItem,
             onDeleteItem: onDeleteItem,
             onAddNew: onAddNew,
+            onAfterAddMorphRevealed: onAfterAddMorphRevealed,
             ambientInlineEditingActive: ambientInlineEditingActive,
             sectionHostsInlineFocus: sectionHostsInlineFocus,
             onRequestDismissInlineEditing: onRequestDismissInlineEditing,

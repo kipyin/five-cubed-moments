@@ -1117,6 +1117,7 @@ private extension JournalScreen {
             onMoveItem: { from, toOffset in moveChip(section: .gratitude, from: from, toOffset: toOffset) },
             onDeleteItem: { index in deleteChip(section: .gratitude, index: index) },
             onAddNew: { addNewTapped(section: .gratitude) },
+            onAfterAddMorphRevealed: { restoreFocusAfterAddMorph(section: .gratitude) },
             isAddMorphComposerVisible: $isGratitudeAddMorphComposerVisible,
             ambientInlineEditingActive: isAnyInlineChipEditing,
             sectionHostsInlineFocus: editingGratitudeIndex != nil || isGratitudeAddMorphComposerVisible,
@@ -1154,6 +1155,7 @@ private extension JournalScreen {
             onMoveItem: { from, toOffset in moveChip(section: .need, from: from, toOffset: toOffset) },
             onDeleteItem: { index in deleteChip(section: .need, index: index) },
             onAddNew: { addNewTapped(section: .need) },
+            onAfterAddMorphRevealed: { restoreFocusAfterAddMorph(section: .need) },
             isAddMorphComposerVisible: $isNeedAddMorphComposerVisible,
             ambientInlineEditingActive: isAnyInlineChipEditing,
             sectionHostsInlineFocus: editingNeedIndex != nil || isNeedAddMorphComposerVisible,
@@ -1192,6 +1194,7 @@ private extension JournalScreen {
             onMoveItem: { from, toOffset in moveChip(section: .person, from: from, toOffset: toOffset) },
             onDeleteItem: { index in deleteChip(section: .person, index: index) },
             onAddNew: { addNewTapped(section: .person) },
+            onAfterAddMorphRevealed: { restoreFocusAfterAddMorph(section: .person) },
             isAddMorphComposerVisible: $isPersonAddMorphComposerVisible,
             ambientInlineEditingActive: isAnyInlineChipEditing,
             sectionHostsInlineFocus: editingPersonIndex != nil || isPersonAddMorphComposerVisible,
@@ -1796,12 +1799,16 @@ private extension JournalScreen {
             )
         )
     }
-    func addNewTapped(section: EntryListSection) {
+    func addNewTapped(section: EntryListSection) -> Bool {
         let adapter = entryListSectionAdapter(for: section)
-        JournalEntryInteractionCoordinator.addNewTapped(
-            context: adapter.entryInteractionContext,
-            restoreInputFocus: restoreInputFocus
+        return JournalEntryInteractionCoordinator.addNewTapped(
+            context: adapter.entryInteractionContext
         )
+    }
+
+    private func restoreFocusAfterAddMorph(section: EntryListSection) {
+        let adapter = entryListSectionAdapter(for: section)
+        restoreInputFocus(adapter.inputFocus)
     }
 
     func deleteChip(section: EntryListSection, index: Int) {

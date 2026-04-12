@@ -32,7 +32,8 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     let onItemTap: (Int) -> Void
     let onMoveItem: ((Int, Int) -> Void)?
     let onDeleteItem: ((Int) -> Void)?
-    let onAddNew: (() -> Void)?
+    let onAddNew: (() -> Bool)?
+    let onAfterAddMorphRevealed: (() -> Void)?
     let ambientInlineEditingActive: Bool
     let sectionHostsInlineFocus: Bool
     let onRequestDismissInlineEditing: (() -> Void)?
@@ -362,11 +363,19 @@ extension SequentialSectionPrimaryColumn {
         }
     }
 
-    private func handleAddTap(_ addNew: () -> Void) {
+    /// Issue #275: Commit prior editor state (`onAddNew` / `handleAddEntryTap`) before revealing the morph so we
+    /// never show the composer when the handler fails or `isTransitioning` blocks interaction.
+    private func handleAddTap(_ addNew: () -> Bool) {
+        guard addNew() else { return }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
             isAddMorphComposerVisible = true
         }
-        addNew()
+        if let onAfterAddMorphRevealed {
+            Task { @MainActor in
+                await Task.yield()
+                onAfterAddMorphRevealed()
+            }
+        }
     }
 
     private func commitAddMorphFromHeaderTap() {

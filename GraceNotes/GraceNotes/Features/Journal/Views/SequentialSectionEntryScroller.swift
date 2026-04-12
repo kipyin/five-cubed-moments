@@ -17,7 +17,7 @@ struct SequentialSectionEntryScroller<ChipRow: View>: View {
     let isInteractionEnabled: Bool
     let canScrollChipsLeft: Bool
     let canScrollChipsRight: Bool
-    let onAddNew: (() -> Void)?
+    let onAddNew: (() -> Bool)?
 
     @Binding var entryScrollSnapshot: SequentialSectionEntryRow.EntryRowScrollSnapshot
 
@@ -33,7 +33,7 @@ struct SequentialSectionEntryScroller<ChipRow: View>: View {
                         accessibilityHint: addButtonAccessibilityHint,
                         accessibilityIdentifier: addChipAccessibilityIdentifier,
                         showsTrailingChevron: showsTrailingChevronOnAddChip,
-                        onTap: addNew
+                        onTap: { _ = addNew() }
                     )
                 }
             }

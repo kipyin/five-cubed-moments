@@ -65,6 +65,15 @@ def merge_poll_once(
 
     copilot_ok = unresolved == 0
     created_at = gh_api.pr_created_at_utc(repo_root, pr_number)
+    if (
+        sink is not None
+        and settings.reviewer_logins
+        and created_at is None
+    ):
+        sink.log(
+            f"merge poll: pr={pr_number} createdAt unavailable from gh; "
+            "reviewer wait gate cannot use silence timeout until metadata is readable."
+        )
     wait_ok = review_wait_satisfied(
         pr_created_at=created_at,
         review_silence_timeout_seconds=settings.review_silence_timeout_seconds,
@@ -101,7 +110,7 @@ def merge_poll_once(
             and cursor_fix_should_attempt(
                 repo_root,
                 pr_number,
-                settings.review_fix_cooldown_seconds,
+                settings.cursor_review_fix_cooldown_seconds,
             )
         ):
             feedback = gh_api.reviewers_feedback_digest(

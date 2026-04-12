@@ -45,7 +45,7 @@ Automated “try a small Swift change, run CI, open a PR” loop. Needs **`gh`**
 
 Allowlisted users may still post the approval phrase (default `/sentry-approve`) as an **emergency** override if automation is stuck.
 
-With `fix_provider = "cursor_agent"`, sentry may run **`agent`** to apply review feedback (bounded by `review_fix_cooldown_seconds` / `cursor_review_fix_cooldown_seconds`). When the primary checkout is not already on the PR branch, fixes run in **`.grace/sentry/worktrees/review-fix-<PR#>/`**. Each open sentry PR gets up to **`merge_sweep_budget_seconds`** of sweep time before sentry rotates to the next PR. The older `arbitration_stuck_seconds` setting is not used for merge polling.
+With `fix_provider = "cursor_agent"`, sentry may run **`agent`** to apply review feedback. Cooldown uses **`cursor_review_fix_cooldown_seconds`** (override) or **`review_fix_cooldown_seconds`** (base). When the primary checkout is not already on the PR branch, fixes run in **`.grace/sentry/worktrees/review-fix-<PR#>/`**. Each open sentry PR gets up to **`merge_sweep_budget_seconds`** before rotating; the whole sweep stops after **`merge_sweep_total_budget_seconds`** (default **0** = derive from per-PR budget × open PR count, minimum 300s) so a stuck queue cannot block the rest of the sentry iteration. The older `arbitration_stuck_seconds` setting is not used for merge polling.
 
 **Other behavior:** without `--once`, sentry sleeps between iterations (see `interval_seconds` / `SENTRY_INTERVAL_SEC`). With merge enabled, each iteration **sweeps** open `sentry/auto-*` PRs in ascending number before starting new work. If `fix_provider` is `cursor_agent` and GitHub reports conflicts, sentry may merge `main` locally and run `agent` on conflicted files.
 

@@ -144,6 +144,18 @@ class SentryReviewGatesTest(unittest.TestCase):
             )
         )
 
+    def test_review_wait_blocks_when_created_at_unknown_and_gate_not_ok(self) -> None:
+        self.assertFalse(
+            review_wait_satisfied(
+                pr_created_at=None,
+                review_silence_timeout_seconds=3600,
+                comments=[{"user": {"login": "x"}, "body": "Taking a look"}],
+                pr_reviews=[],
+                reviewer_logins=("x",),
+                start_phrases=("Taking a look",),
+            )
+        )
+
 
 class SentrySettingsTest(unittest.TestCase):
     def test_defaults(self) -> None:
@@ -168,6 +180,7 @@ class SentrySettingsTest(unittest.TestCase):
         )
         self.assertTrue(s.cursor_post_review_trigger)
         self.assertEqual(s.merge_sweep_budget_seconds, 120)
+        self.assertEqual(s.merge_sweep_total_budget_seconds, 0)
         self.assertEqual(s.review_silence_timeout_seconds, 15 * 60)
         self.assertEqual(s.review_fix_cooldown_seconds, 180)
         self.assertEqual(s.cursor_review_fix_cooldown_seconds, 180)
@@ -220,6 +233,20 @@ class SentryTomlTest(unittest.TestCase):
             )
             s = SentrySettings.from_repo(root)
         self.assertEqual(s.reviewer_logins, ("only-me",))
+
+    def test_cursor_review_fix_cooldown_can_override_base(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text(
+                "[sentry]\n"
+                "review_fix_cooldown_seconds = 100\n"
+                "cursor_review_fix_cooldown_seconds = 250\n",
+                encoding="utf-8",
+            )
+            s = SentrySettings.from_repo(root)
+        self.assertEqual(s.review_fix_cooldown_seconds, 100)
+        self.assertEqual(s.cursor_review_fix_cooldown_seconds, 250)
 
     def test_reviewer_logins_unions_copilot_and_cursor_when_unset(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

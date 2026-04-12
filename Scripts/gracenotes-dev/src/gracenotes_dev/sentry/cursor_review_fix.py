@@ -20,6 +20,11 @@ def _cooldown_path(repo_root: Path) -> Path:
     return repo_root / ".grace" / "sentry" / "cursor_fix_last.json"
 
 
+def _text_effectively_same(a: str, b: str) -> bool:
+    """Ignore CRLF vs LF and trailing newline differences when comparing agent output."""
+    return a.replace("\r\n", "\n").rstrip() == b.replace("\r\n", "\n").rstrip()
+
+
 def _pushback_marker_path(repo_root: Path, pr_number: int) -> Path:
     return repo_root / ".grace" / "sentry" / f"review_pushback_{pr_number}.txt"
 
@@ -329,7 +334,7 @@ def _try_address_review_in_git_root(
             )
             if not new_src.strip():
                 continue
-            if new_src == raw:
+            if _text_effectively_same(new_src, raw):
                 continue
             fp.write_text(new_src, encoding="utf-8")
             subprocess.run(["git", "add", rel], cwd=git_root, capture_output=True, text=True)

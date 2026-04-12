@@ -22,8 +22,9 @@ def review_wait_satisfied(
 
     Exits when the issue/PR review gate passes, or when ``review_silence_timeout_seconds``
     has elapsed since PR creation (``createdAt``), or when reviewer logins are empty.
-    If ``pr_created_at`` is unknown, does not block on silence (treats as satisfied for
-    the timeout leg only when gate fails).
+
+    If ``pr_created_at`` is unknown while the gate is still blocking, returns False so
+    silence cannot be assumed (fail closed on missing metadata).
     """
     if not reviewer_logins:
         return True
@@ -37,7 +38,7 @@ def review_wait_satisfied(
     if review_silence_timeout_seconds <= 0:
         return True
     if pr_created_at is None:
-        return True
+        return False
     created = pr_created_at
     if created.tzinfo is None:
         created = created.replace(tzinfo=timezone.utc)

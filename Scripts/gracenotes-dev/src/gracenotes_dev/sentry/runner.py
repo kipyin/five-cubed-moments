@@ -649,6 +649,10 @@ def reconcile_open_sentry_prs(
 
     Runs after syncing ``main`` and before picking a new file so approved PRs are not
     starved behind new exploratory work.
+
+    Uses a **total** wall-clock budget (``merge_sweep_total_budget_seconds``, or derived
+    from per-PR budget × open PR count) so the sweep always returns and later iterations
+    can open new work even when every PR is waiting on gates.
     """
     pr_numbers = gh_api.list_open_sentry_pr_numbers(
         repo_root,
@@ -669,13 +673,25 @@ def reconcile_open_sentry_prs(
     allow = set(settings.approval_users)
     poll_interval = 30.0
     queue: list[int] = sorted(pr_numbers)
+    sweep_start = time.monotonic()
+    total_budget_sec = float(settings.merge_sweep_total_budget_seconds)
+    if total_budget_sec <= 0:
+        n = len(pr_numbers)
+        total_budget_sec = max(
+            float(settings.merge_sweep_budget_seconds) * float(max(n, 3)),
+            300.0,
+        )
+    sweep_deadline = sweep_start + total_budget_sec
 
-    while queue:
+    while queue and time.monotonic() < sweep_deadline:
         pr_number = queue[0]
-        pr_deadline = time.monotonic() + float(settings.merge_sweep_budget_seconds)
+        pr_end = min(
+            time.monotonic() + float(settings.merge_sweep_budget_seconds),
+            sweep_deadline,
+        )
         announced = False
         finished = False
-        while time.monotonic() < pr_deadline and not finished:
+        while time.monotonic() < pr_end and not finished:
             if not announced:
                 announced = True
                 paths = gh_api.pr_changed_file_paths(repo_root, pr_number)
@@ -741,7 +757,7 @@ def reconcile_open_sentry_prs(
 
             if not queue:
                 break
-            time.sleep(min(poll_interval, pr_deadline - time.monotonic()))
+            time.sleep(min(poll_interval, pr_end - time.monotonic()))
 
         if finished:
             continue
@@ -758,3 +774,17 @@ def reconcile_open_sentry_prs(
                     "pr": pr_number,
                 },
             )
+
+    if queue:
+        _emit(
+            repo_root,
+            sink,
+            {
+                "kind": "sweep_time_exhausted",
+                "message": (
+                    f"Merge sweep stopped with {len(queue)} open sentry PR(s) after "
+                    f"{total_budget_sec:.0f}s total budget (per-PR work may resume next iteration)."
+                ),
+                "prs": queue,
+            },
+        )

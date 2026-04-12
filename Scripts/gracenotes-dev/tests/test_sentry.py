@@ -1090,8 +1090,8 @@ class MergePollCiFixTest(unittest.TestCase):
 
 
 class MergePollCommentModeTest(unittest.TestCase):
-    def test_comment_mode_without_marker_uses_github_state_and_merges(self) -> None:
-        """Without a marker comment, merge must use GitHub state (not stall forever)."""
+    def test_comment_mode_without_marker_merges_without_github_threads(self) -> None:
+        """No marker yet: reviewers_clear is True; unresolved Copilot threads do not block."""
         from gracenotes_dev.sentry.merge_poll import MergePollOutcome, merge_poll_once
 
         settings = mock.Mock()
@@ -1137,10 +1137,6 @@ class MergePollCommentModeTest(unittest.TestCase):
             "gracenotes_dev.sentry.merge_poll.gh_api.gh_authenticated_login",
             return_value="kipyin",
         )
-        patch_github_clear = mock.patch(
-            "gracenotes_dev.sentry.merge_poll.gh_api.reviewers_merge_clear",
-            return_value=True,
-        )
         patch_merge = mock.patch(
             "gracenotes_dev.sentry.merge_poll.gh_api.pr_merge_squash",
             return_value=True,
@@ -1154,7 +1150,6 @@ class MergePollCommentModeTest(unittest.TestCase):
             patch_created,
             patch_wait,
             patch_auth,
-            patch_github_clear,
             patch_merge,
         ):
             out = merge_poll_once(

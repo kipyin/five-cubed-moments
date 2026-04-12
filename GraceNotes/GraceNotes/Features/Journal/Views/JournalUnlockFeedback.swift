@@ -35,19 +35,18 @@ enum JournalUnlockFeedbackMessage {
         case .firstFull:
             return String(localized: "journal.guidance.firstBloomDay")
         case .none:
-            break
-        }
-        switch level {
-        case .soil:
-            return ""
-        case .sprout:
-            return String(localized: "journal.guidance.reachedSproutToday")
-        case .twig:
-            return String(localized: "journal.guidance.towardLeafShort")
-        case .leaf:
-            return String(localized: "journal.guidance.reachedLeafToday")
-        case .bloom:
-            return String(localized: "journal.guidance.reachedBloomToday")
+            switch level {
+            case .soil:
+                return ""
+            case .sprout:
+                return String(localized: "journal.guidance.reachedSproutToday")
+            case .twig:
+                return String(localized: "journal.guidance.towardLeafShort")
+            case .leaf:
+                return String(localized: "journal.guidance.reachedLeafToday")
+            case .bloom:
+                return String(localized: "journal.guidance.reachedBloomToday")
+            }
         }
     }
 }
@@ -60,22 +59,17 @@ struct JournalUnlockFeedbackSurface: View {
     let level: JournalCompletionLevel
     var milestoneHighlight: JournalUnlockMilestoneHighlight = .none
 
-    private var message: String {
-        JournalUnlockFeedbackMessage.message(for: level, milestone: milestoneHighlight)
-    }
-
     var body: some View {
-        Group {
-            if message.isEmpty {
-                EmptyView()
-            } else {
-                content
-            }
+        let text = JournalUnlockFeedbackMessage.message(for: level, milestone: milestoneHighlight)
+        if text.isEmpty {
+            EmptyView()
+        } else {
+            content(text: text)
         }
     }
 
-    private var content: some View {
-        Text(message)
+    private func content(text: String) -> some View {
+        Text(text)
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(palette.textPrimary)
             .multilineTextAlignment(.leading)
@@ -108,9 +102,7 @@ struct JournalUnlockFeedbackSurface: View {
             return palette.border
         case .sprout:
             return palette.quickCheckInBorder
-        case .twig:
-            return palette.standardBorder
-        case .leaf:
+        case .twig, .leaf:
             return palette.standardBorder
         case .bloom:
             return palette.fullBorder
@@ -123,9 +115,7 @@ struct JournalUnlockFeedbackSurface: View {
             return .clear
         case .sprout:
             return palette.quickCheckInGlow
-        case .twig:
-            return palette.standardGlow
-        case .leaf:
+        case .twig, .leaf:
             return palette.standardGlow
         case .bloom:
             return palette.fullGlow

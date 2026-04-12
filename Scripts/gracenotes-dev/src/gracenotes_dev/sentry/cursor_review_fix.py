@@ -14,15 +14,11 @@ from gracenotes_dev.sentry.branch_ops import remove_sentry_worktree, sentry_work
 from gracenotes_dev.sentry.log_sink import SentryLogSink
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import append_event
+from gracenotes_dev.sentry.text_compare import text_effectively_same
 
 
 def _cooldown_path(repo_root: Path) -> Path:
     return repo_root / ".grace" / "sentry" / "cursor_fix_last.json"
-
-
-def _text_effectively_same(a: str, b: str) -> bool:
-    """Ignore CRLF vs LF and trailing newline differences when comparing agent output."""
-    return a.replace("\r\n", "\n").rstrip() == b.replace("\r\n", "\n").rstrip()
 
 
 def _pushback_marker_path(repo_root: Path, pr_number: int) -> Path:
@@ -44,9 +40,9 @@ def _prepare_review_fix_worktree(
     head_ref: str,
 ) -> tuple[Path, str]:
     worktree_path = sentry_worktrees_dir(repo_root) / f"review-fix-{pr_number}"
-    if worktree_path.is_dir():
-        remove_sentry_worktree(repo_root, worktree_path, None)
     local_branch = f"sentry-review-fix-{pr_number}"
+    if worktree_path.is_dir():
+        remove_sentry_worktree(repo_root, worktree_path, local_branch)
     fetch = subprocess.run(
         ["git", "fetch", "origin", head_ref],
         cwd=repo_root,
@@ -334,7 +330,7 @@ def _try_address_review_in_git_root(
             )
             if not new_src.strip():
                 continue
-            if _text_effectively_same(new_src, raw):
+            if text_effectively_same(new_src, raw):
                 continue
             fp.write_text(new_src, encoding="utf-8")
             subprocess.run(["git", "add", rel], cwd=git_root, capture_output=True, text=True)

@@ -332,6 +332,14 @@ class SentryParseMergeConflictTest(unittest.TestCase):
         self.assertIn("final class X", out)
 
 
+class SentryTextCompareTest(unittest.TestCase):
+    def test_text_effectively_same_normalizes_crlf(self) -> None:
+        from gracenotes_dev.sentry.text_compare import text_effectively_same
+
+        self.assertTrue(text_effectively_same("a\r\n", "a\n"))
+        self.assertTrue(text_effectively_same("x\n", "x\n\n"))
+
+
 class SentryParseCiFixTest(unittest.TestCase):
     def test_swift_path_uses_swift_fence(self) -> None:
         out = parse_ci_fix_response("```swift\nlet a = 1\n```\n", "GraceNotes/Foo.swift")
@@ -809,6 +817,7 @@ class MergePollCiFixTest(unittest.TestCase):
             "gracenotes_dev.sentry.merge_poll.ci_fix_should_attempt",
             return_value=True,
         )
+        patch_mark = mock.patch("gracenotes_dev.sentry.merge_poll.ci_fix_mark_attempt")
         patch_try = mock.patch(
             "gracenotes_dev.sentry.merge_poll.try_fix_ci_with_agent",
             return_value=False,
@@ -823,6 +832,7 @@ class MergePollCiFixTest(unittest.TestCase):
             patch_wait,
             patch_clear,
             patch_should,
+            patch_mark,
             patch_try,
         ):
             out = merge_poll_once(

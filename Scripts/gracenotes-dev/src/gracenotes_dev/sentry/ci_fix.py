@@ -11,10 +11,10 @@ from pathlib import Path
 from gracenotes_dev.sentry import github as gh_api
 from gracenotes_dev.sentry.agent_client import address_ci_failure_file_via_agent
 from gracenotes_dev.sentry.branch_ops import remove_sentry_worktree, sentry_worktrees_dir
-from gracenotes_dev.sentry.cursor_review_fix import _text_effectively_same
 from gracenotes_dev.sentry.log_sink import SentryLogSink
 from gracenotes_dev.sentry.settings import SentrySettings
 from gracenotes_dev.sentry.state import append_event
+from gracenotes_dev.sentry.text_compare import text_effectively_same
 
 
 def _ci_fix_cooldown_path(repo_root: Path) -> Path:
@@ -40,9 +40,9 @@ def _prepare_ci_fix_worktree(
     head_ref: str,
 ) -> tuple[Path, str]:
     worktree_path = sentry_worktrees_dir(repo_root) / f"ci-fix-{pr_number}"
-    if worktree_path.is_dir():
-        remove_sentry_worktree(repo_root, worktree_path, None)
     local_branch = f"sentry-ci-fix-{pr_number}"
+    if worktree_path.is_dir():
+        remove_sentry_worktree(repo_root, worktree_path, local_branch)
     fetch = subprocess.run(
         ["git", "fetch", "origin", head_ref],
         cwd=repo_root,
@@ -315,7 +315,7 @@ def _try_fix_ci_in_git_root(
 
     def _commit_and_push() -> bool:
         commit = subprocess.run(
-            ["git", "commit", "-a", "-m", "sentry: fix CI failures"],
+            ["git", "commit", "-m", "sentry: fix CI failures"],
             cwd=git_root,
             capture_output=True,
             text=True,
@@ -394,7 +394,7 @@ def _try_fix_ci_in_git_root(
                 continue
             if not new_src.strip():
                 continue
-            if _text_effectively_same(new_src, raw):
+            if text_effectively_same(new_src, raw):
                 continue
             fp.write_text(new_src, encoding="utf-8")
             subprocess.run(["git", "add", rel], cwd=git_root, capture_output=True, text=True)

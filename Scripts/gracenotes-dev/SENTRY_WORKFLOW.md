@@ -104,11 +104,11 @@ If **not** mergeable but `wait_ok` and **not** `reviewers_clear` and
 
 | Mode | Source |
 |------|--------|
-| `github` (default) | GraphQL: no unresolved threads with allowlisted reviewer
+| `comment` (default) | Latest issue comment **from `gh` auth user** with
+| | `<!-- sentry-review: X -->`; `X` not in `review_clear_block_outcomes`. |
+| `github` | GraphQL: no unresolved threads with allowlisted reviewer
 | | comments; REST: latest non-pending review per allowlisted login not
 | | `CHANGES_REQUESTED`. |
-| `comment` | Latest issue comment **from `gh` auth user** with
-| | `<!-- sentry-review: X -->`; `X` not in `review_clear_block_outcomes`. |
 
 Default block list includes `product_decision`, `no_change`, `ci_failed`,
 `error`, `no_swift_files`. **`addressed`**, **`pushback`**, **`caveat`**
@@ -190,7 +190,7 @@ Cooldowns: `ci_fix_cooldown_seconds`, `cursor_review_fix_cooldown_seconds`
 | | when gates say so (see `merge_poll.py`) |
 | Merge conflicts on PR | Optional merge-conflict agent path |
 | `review_clear_mode=github` | Threads + PR review state |
-| `review_clear_mode=comment` | Marker + blocklist on **your** issue comments |
+| `review_clear_mode=comment` (default) | Marker + blocklist on **your** issue comments |
 
 ---
 

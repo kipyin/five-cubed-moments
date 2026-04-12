@@ -272,11 +272,11 @@ def _merge_cursor_start_phrases(tom: dict[str, Any]) -> tuple[str, ...]:
 
 def _normalize_review_clear_mode(raw: str | None) -> str:
     if not raw:
-        return "github"
-    n = str(raw).strip().lower()
-    if n == "comment":
         return "comment"
-    return "github"
+    n = str(raw).strip().lower()
+    if n == "github":
+        return "github"
+    return "comment"
 
 
 def _merge_review_clear_mode(tom: dict[str, Any]) -> str:

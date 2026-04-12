@@ -187,7 +187,7 @@ class SentrySettingsTest(unittest.TestCase):
         self.assertEqual(s.cursor_review_fix_cooldown_seconds, 180)
         self.assertEqual(s.ci_fix_cooldown_seconds, 180)
         self.assertEqual(s.ci_fix_max_rounds_per_poll, 5)
-        self.assertEqual(s.review_clear_mode, "github")
+        self.assertEqual(s.review_clear_mode, "comment")
         self.assertEqual(s.review_clear_comment_max_age_seconds, 0)
         self.assertIn("addressed", s.review_outcome_templates)
         self.assertIn("product_decision", s.review_clear_block_outcomes)
@@ -309,6 +309,17 @@ class SentryTomlTest(unittest.TestCase):
             s = SentrySettings.from_repo(root)
             self.assertEqual(s.review_clear_mode, "comment")
             self.assertEqual(s.review_clear_block_outcomes, frozenset({"product_decision"}))
+
+    def test_review_clear_mode_github_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "GraceNotes").mkdir()
+            (root / "gracenotes-dev.toml").write_text(
+                '[sentry]\nreview_clear_mode = "github"\n',
+                encoding="utf-8",
+            )
+            s = SentrySettings.from_repo(root)
+            self.assertEqual(s.review_clear_mode, "github")
 
     def test_load_sentry_table_strips_secret_keys(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

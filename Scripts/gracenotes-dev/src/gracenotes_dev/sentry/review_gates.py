@@ -23,7 +23,9 @@ def review_wait_satisfied(
 
     Requires:
 
-    * :func:`~gracenotes_dev.sentry.github.reviewer_issue_review_ok` (issue ``/review`` flow).
+    * :func:`~gracenotes_dev.sentry.github.reviewer_merge_gate_ok` — issue ``/review`` flow
+      **or** a submitted (non-``PENDING``) PR review from an allowlisted login (so a bot that
+      posts a start phrase in an issue comment but finishes only in a PR review is not stuck).
     * :func:`~gracenotes_dev.sentry.github.review_bots_quiescent` — no ``PENDING`` drafts from
       allowlisted reviewers and no outstanding **requested** reviewers (allowlisted) on the PR.
 
@@ -37,8 +39,9 @@ def review_wait_satisfied(
     if not reviewer_logins:
         return True
 
-    issue_ok = gh_api.reviewer_issue_review_ok(
+    review_phase_ok = gh_api.reviewer_merge_gate_ok(
         comments=comments,
+        pr_reviews=pr_reviews,
         reviewer_logins=reviewer_logins,
         start_phrases=start_phrases,
     )
@@ -48,7 +51,7 @@ def review_wait_satisfied(
         requested_allowlisted_logins=review_requested_allowlisted_logins,
     )
 
-    if issue_ok and bots_ok:
+    if review_phase_ok and bots_ok:
         return True
 
     if review_silence_timeout_seconds <= 0:

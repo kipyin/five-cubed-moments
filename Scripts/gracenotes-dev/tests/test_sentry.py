@@ -195,6 +195,23 @@ class SentryReviewGatesTest(unittest.TestCase):
             )
         )
 
+    def test_review_wait_true_when_issue_start_only_then_pr_review_submitted(self) -> None:
+        """PR review alone can satisfy the gate after a start phrase (Copilot review comment)."""
+        from datetime import datetime, timedelta, timezone
+
+        recent = datetime.now(timezone.utc) - timedelta(seconds=5)
+        self.assertTrue(
+            review_wait_satisfied(
+                pr_created_at=recent,
+                review_silence_timeout_seconds=3600,
+                comments=[{"user": {"login": "cursor"}, "body": "Taking a look"}],
+                pr_reviews=[{"user": {"login": "cursor"}, "state": "COMMENTED"}],
+                reviewer_logins=("cursor",),
+                start_phrases=("Taking a look",),
+                review_requested_allowlisted_logins=[],
+            )
+        )
+
 
 class SentryReviewBotsQuiescentTest(unittest.TestCase):
     def test_pending_draft_blocks(self) -> None:

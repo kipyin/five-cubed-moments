@@ -106,8 +106,8 @@ If **not** mergeable but `wait_ok` and **not** `reviewers_clear` and
 Satisfied when **both** hold (or **`review_silence_timeout_seconds`** has elapsed
 since PR creation, or that timeout is ``<= 0``):
 
-* **Issue comments:** ``reviewer_issue_review_ok`` (``/review`` start phrases
-  must finish).
+* **Issue + PR reviews:** ``reviewer_merge_gate_ok`` (``/review`` start phrases
+  must finish in issue comments **or** via a submitted PR review from an allowlisted login).
 * **Bot quiescence (A2):** no ``PENDING`` PR review from an allowlisted login,
   and no **requested** reviewers left on the PR whose login is allowlisted
   (``gh pr view --json reviewRequests``). Inactive bots that never appear do

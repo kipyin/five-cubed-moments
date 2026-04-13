@@ -80,6 +80,28 @@ final class ReviewWeekTrendPolicyTests: XCTestCase {
         XCTAssertEqual(ReviewWeekTrendPolicy.rawTrend(current: 2, previous: 2), .stable)
     }
 
+    /// Invalid negative counts are treated as `.stable` so bad upstream data does not imply rising/down labels.
+    func test_rawTrend_negativeCountsAreStable() {
+        XCTAssertEqual(ReviewWeekTrendPolicy.rawTrend(current: -1, previous: 0), .stable)
+        XCTAssertEqual(ReviewWeekTrendPolicy.rawTrend(current: 0, previous: -1), .stable)
+        XCTAssertEqual(ReviewWeekTrendPolicy.rawTrend(current: -1, previous: -2), .stable)
+    }
+
+    func test_trendingSurfacingTrend_negativeCountsAreStable() {
+        XCTAssertEqual(
+            ReviewWeekTrendPolicy.trendingSurfacingTrend(current: -1, previous: 0, isWarmUpPhase: false),
+            .stable
+        )
+        XCTAssertEqual(
+            ReviewWeekTrendPolicy.trendingSurfacingTrend(current: 0, previous: -1, isWarmUpPhase: false),
+            .stable
+        )
+        XCTAssertEqual(
+            ReviewWeekTrendPolicy.trendingSurfacingTrend(current: -1, previous: -2, isWarmUpPhase: true),
+            .stable
+        )
+    }
+
     func test_trendingSurfacing_new_requiresCurrentAtLeastTwo() {
         XCTAssertEqual(
             ReviewWeekTrendPolicy.trendingSurfacingTrend(current: 1, previous: 0, isWarmUpPhase: false),

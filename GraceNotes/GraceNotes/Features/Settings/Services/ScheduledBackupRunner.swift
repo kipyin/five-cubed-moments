@@ -1,5 +1,11 @@
 import Foundation
+import os
 import SwiftData
+
+private let scheduledBackupLogger = Logger(
+    subsystem: "com.gracenotes.GraceNotes",
+    category: "ScheduledBackup"
+)
 
 enum ScheduledBackupRunner {
     /// Writes a JSON export into the user’s appointed folder when the schedule says it is time.
@@ -70,12 +76,20 @@ enum ScheduledBackupRunner {
     private static func copyScheduledExportToFolder(tempFile: URL) throws -> String {
         try ScheduledBackupPreferences.withFolderSecurityScopedAccess { folderURL in
             let name = try copyTempExport(at: tempFile, to: folderURL)
-            try BackupFolderLibrary.prune(
-                folderURL: folderURL,
-                now: Date(),
-                retention: ScheduledBackupPreferences.backupRetentionPeriod,
-                maxTotalBytes: ScheduledBackupPreferences.backupFolderSizeCap.maxBytes
-            )
+            do {
+                try BackupFolderLibrary.prune(
+                    folderURL: folderURL,
+                    now: Date(),
+                    retention: ScheduledBackupPreferences.backupRetentionPeriod,
+                    maxTotalBytes: ScheduledBackupPreferences.backupFolderSizeCap.maxBytes
+                )
+            } catch {
+                // Copy already succeeded; pruning is best-effort so the run still counts as success.
+                let detail = String(describing: error)
+                scheduledBackupLogger.error(
+                    "Backup folder prune failed after successful copy. \(detail, privacy: .public)"
+                )
+            }
             return name
         }
     }
@@ -183,9 +197,16 @@ enum BackupFolderLibrary {
         var result: [BackupFolderFileMetadata] = []
         result.reserveCapacity(jsonURLs.count)
         for url in jsonURLs {
-            let values = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
-            let date = values.contentModificationDate ?? .distantPast
-            let size = Int64(values.fileSize ?? 0)
+            let date: Date
+            let size: Int64
+            do {
+                let values = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+                date = values.contentModificationDate ?? .distantPast
+                size = Int64(values.fileSize ?? 0)
+            } catch {
+                date = .distantPast
+                size = 0
+            }
             result.append(BackupFolderFileMetadata(url: url, modificationDate: date, fileSize: size))
         }
         return result
@@ -216,12 +237,14 @@ enum BackupFolderLibrary {
 
         guard let maxBytes = maxTotalBytes else { return }
 
-        var remaining = try listJSONMetadataOldestFirst(in: folderURL, fileManager: fileManager)
+        let remaining = try listJSONMetadataOldestFirst(in: folderURL, fileManager: fileManager)
         var total = remaining.reduce(Int64(0)) { $0 + $1.fileSize }
-        while total > maxBytes, let oldest = remaining.first {
+        var index = 0
+        while total > maxBytes, index < remaining.count {
+            let oldest = remaining[index]
             try fileManager.removeItem(at: oldest.url)
             total -= oldest.fileSize
-            remaining.removeFirst()
+            index += 1
         }
     }
 }

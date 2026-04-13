@@ -18,8 +18,10 @@ enum AppInstructionLocale: Equatable, Sendable {
     }
 
     /// BCP 47 tags are case-insensitive; `Bundle` may return `zh-Hans` or `zh-hans`.
-    /// Require `zh-Hans` as a full tag or as the language-script prefix before the next subtag (`zh-Hans-CN`, …), not `zh-Hant`.
-    private static func isSimplifiedChineseUIIdentifier(_ identifier: String) -> Bool {
+    /// Require `zh-Hans` as a full tag or as the language-script prefix before the next subtag
+    /// (`zh-Hans-CN`, …), not `zh-Hant`.
+    /// - Note: Unit tests cover tag forms; production code should use ``preferred(bundle:)``.
+    static func isSimplifiedChineseUIIdentifier(_ identifier: String) -> Bool {
         let tag = identifier.lowercased()
         return tag == "zh-hans" || tag.hasPrefix("zh-hans-")
     }

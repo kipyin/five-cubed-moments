@@ -557,14 +557,27 @@ class SentryParseFixTest(unittest.TestCase):
     def test_no_change(self) -> None:
         self.assertEqual(parse_fix_response("NO_CHANGE"), "")
 
+    def test_no_change_after_prose(self) -> None:
+        self.assertEqual(parse_fix_response("The feedback does not apply.\n\nNO_CHANGE\n"), "")
+
+    def test_no_change_markdown_bold(self) -> None:
+        self.assertEqual(parse_fix_response("**NO_CHANGE**\n"), "")
+
     def test_swift_block(self) -> None:
         out = parse_fix_response("Here:\n```swift\nlet x = 1\n```\n")
         self.assertIn("let x = 1", out)
+
+    def test_prefers_swift_fence_when_multiple_fences(self) -> None:
+        out = parse_fix_response("```text\nignore\n```\n```swift\nlet z = 3\n```\n")
+        self.assertIn("let z = 3", out)
 
 
 class SentryParseMergeConflictTest(unittest.TestCase):
     def test_no_change(self) -> None:
         self.assertEqual(parse_merge_conflict_response("NO_CHANGE\n"), "")
+
+    def test_no_change_inline_token(self) -> None:
+        self.assertEqual(parse_merge_conflict_response("Cannot merge; NO_CHANGE\n"), "")
 
     def test_any_fence_block(self) -> None:
         out = parse_merge_conflict_response("Ok:\n```\nline a\nline b\n```\n")

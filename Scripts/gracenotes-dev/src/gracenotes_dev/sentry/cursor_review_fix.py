@@ -340,7 +340,6 @@ def _try_address_review_in_git_root(
     max_files = 15
     paths = paths[:max_files]
     changed_paths: list[str] = []
-    changed_any = False
     try:
         for rel in paths:
             fp = git_root / rel
@@ -363,7 +362,6 @@ def _try_address_review_in_git_root(
                 continue
             fp.write_text(new_src, encoding="utf-8")
             subprocess.run(["git", "add", rel], cwd=git_root, capture_output=True, text=True)
-            changed_any = True
             changed_paths.append(rel)
             append_event(
                 repo_root,
@@ -374,7 +372,28 @@ def _try_address_review_in_git_root(
                 },
             )
 
-        if not changed_any:
+        # The local `agent` CLI may create additional Swift files (e.g. unit tests) as a side
+        # effect; those are not returned through `address_cursor_feedback_file_via_agent`.
+        for tree in ("GraceNotes", "GraceNotesTests"):
+            if (git_root / tree).is_dir():
+                subprocess.run(
+                    ["git", "add", tree],
+                    cwd=git_root,
+                    capture_output=True,
+                    text=True,
+                )
+
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=git_root,
+            capture_output=True,
+            text=True,
+        )
+        staged_paths = [ln.strip() for ln in staged.stdout.splitlines() if ln.strip()]
+        if staged_paths:
+            changed_paths = [p for p in staged_paths if p.endswith(".swift")]
+
+        if not staged_paths:
             try:
                 summary = review_fix_summary_via_agent(
                     repo_root=git_root,

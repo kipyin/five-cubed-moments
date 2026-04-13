@@ -2,23 +2,26 @@ import XCTest
 @testable import GraceNotes
 
 final class BackupFolderLibraryPruneTests: XCTestCase {
-    private var root: URL!
+    private var root: URL?
 
-    override func setUp() throws {
-        try super.setUp()
-        root = FileManager.default.temporaryDirectory
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        let tempRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("BackupFolderLibraryPruneTests-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        root = tempRoot
     }
 
     override func tearDown() {
-        if let root {
+        if let root = root {
             try? FileManager.default.removeItem(at: root)
         }
+        root = nil
         super.tearDown()
     }
 
     func test_prune_removesFilesOlderThanRetention() throws {
+        let root = try XCTUnwrap(root)
         let folder = root.appendingPathComponent("Folder", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
@@ -46,6 +49,7 @@ final class BackupFolderLibraryPruneTests: XCTestCase {
     }
 
     func test_prune_trimsBySizeOldestFirst() throws {
+        let root = try XCTUnwrap(root)
         let folder = root.appendingPathComponent("SizeFolder", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
@@ -74,6 +78,7 @@ final class BackupFolderLibraryPruneTests: XCTestCase {
     }
 
     func test_prune_ageThenSize() throws {
+        let root = try XCTUnwrap(root)
         let folder = root.appendingPathComponent("Both", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 

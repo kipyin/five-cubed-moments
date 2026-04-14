@@ -9,17 +9,21 @@ final class ICloudAccountStatusModel: ObservableObject {
     private let provider: any ICloudAccountStatusProviding
     /// Increments on each `refresh()` so a slower, older fetch cannot overwrite a newer result.
     private var refreshGeneration = 0
+    /// Superseded refreshes cancel the previous task so redundant CloudKit work is not started or finished needlessly.
+    private var refreshTask: Task<Void, Never>?
 
     init(provider: any ICloudAccountStatusProviding = ICloudAccountStatusService()) {
         self.provider = provider
     }
 
     func refresh() {
+        refreshTask?.cancel()
         refreshGeneration += 1
         let generation = refreshGeneration
         let provider = self.provider
-        Task { @MainActor [weak self] in
+        refreshTask = Task { @MainActor [weak self] in
             let bucket = await provider.fetchAccountBucket()
+            guard !Task.isCancelled else { return }
             guard let self else { return }
             guard generation == self.refreshGeneration else { return }
             self.displayedBucket = bucket

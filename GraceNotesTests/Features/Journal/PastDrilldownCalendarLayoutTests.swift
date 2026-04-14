@@ -265,6 +265,14 @@ final class PastDrilldownCalendarLayoutTests: XCTestCase {
         XCTAssertEqual(clamped, 0, accuracy: 0.001)
     }
 
+    /// `max(0, -0)` can yield IEEE −0; `abs` canonicalizes to +0 so layout heights are a clean non-negative signal.
+    func test_peekMetrics_clampedViewport_canonicalizesNegativeZeroRemainingToPositiveZero() {
+        let negativeZero = CGFloat(signOf: -1, magnitudeOf: 0)
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: negativeZero)
+        XCTAssertEqual(clamped.bitPattern, CGFloat(0).bitPattern)
+        XCTAssertEqual(1 / clamped, .infinity)
+    }
+
     func test_peekMetrics_clampedViewport_usesRemainingWhenBetweenMinAndPreferred() {
         let minimum = ReviewHistoryDrilldownPeekMetrics.minimumViewportHeight
         let preferred = ReviewHistoryDrilldownCalendarGrid.Metrics.scrollViewportHeight

@@ -7,12 +7,18 @@ enum ReviewWeekTrendPolicy {
 
     /// Whether `referenceDate` falls on the first or second local day of `currentPeriod`.
     static func isWarmUpPhase(currentPeriod: Range<Date>, referenceDate: Date, calendar: Calendar) -> Bool {
+        guard currentPeriod.lowerBound < currentPeriod.upperBound else {
+            return false
+        }
         let weekStart = calendar.startOfDay(for: currentPeriod.lowerBound)
         let refDay = calendar.startOfDay(for: referenceDate)
         guard refDay >= weekStart, refDay < currentPeriod.upperBound else {
             return false
         }
-        let dayOffset = calendar.dateComponents([.day], from: weekStart, to: refDay).day ?? 0
+        guard let dayOffset = calendar.dateComponents([.day], from: weekStart, to: refDay).day,
+              dayOffset >= 0 else {
+            return false
+        }
         return warmUpDayRange.contains(dayOffset)
     }
 

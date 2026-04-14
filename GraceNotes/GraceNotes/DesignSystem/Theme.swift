@@ -349,16 +349,18 @@ struct WarmPaperPressStyle: ButtonStyle {
 
 // MARK: - Color Hex Extension
 
-private extension UIColor {
+extension UIColor {
+    /// 24-bit `RRGGBB`. High bits are masked so `AARRGGBB`-style literals still resolve to the same sRGB triplet.
     convenience init(hex: UInt) {
-        let red = CGFloat((hex >> 16) & 0xFF) / 255
-        let green = CGFloat((hex >> 8) & 0xFF) / 255
-        let blue = CGFloat(hex & 0xFF) / 255
+        let rgb = hex & 0xFFFFFF
+        let red = CGFloat((rgb >> 16) & 0xFF) / 255
+        let green = CGFloat((rgb >> 8) & 0xFF) / 255
+        let blue = CGFloat(rgb & 0xFF) / 255
         self.init(red: red, green: green, blue: blue, alpha: 1)
     }
 }
 
-private extension Color {
+extension Color {
     init(hex: UInt) {
         self.init(UIColor(hex: hex))
     }

@@ -14,7 +14,11 @@ enum ReviewHistoryDrilldownPeekMetrics {
     static let minimumViewportHeight: CGFloat = 200
 
     /// Uses at most the non-negative space remaining; never inflates above `remainingHeight`.
+    ///
+    /// Non-finite values (NaN or infinity) collapse to `0` so invalid geometry math cannot propagate into
+    /// frame sizes for the calendar grid.
     static func clampedViewportHeight(remainingHeight: CGFloat) -> CGFloat {
-        max(0, remainingHeight)
+        guard remainingHeight.isFinite else { return 0 }
+        return max(0, remainingHeight)
     }
 }

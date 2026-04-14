@@ -16,7 +16,14 @@ enum AppInterfaceAppearance {
         textStyle: UIFont.TextStyle,
         maximumForContentSizeCategory limit: UIContentSizeCategory? = nil
     ) -> UIFont {
-        let baseFont = UIFont(name: name, size: baseSize) ?? UIFont.preferredFont(forTextStyle: textStyle)
+        let baseFont: UIFont
+        if let outfit = UIFont(name: name, size: baseSize) {
+            baseFont = outfit
+        } else {
+            // `preferredFont(forTextStyle:)` uses the *current* Dynamic Type size; `UIFontMetrics` would scale again.
+            let largeTraits = UITraitCollection(preferredContentSizeCategory: .large)
+            baseFont = UIFont.preferredFont(forTextStyle: textStyle, compatibleWith: largeTraits)
+        }
         let metrics = UIFontMetrics(forTextStyle: textStyle)
         guard let limit else {
             return metrics.scaledFont(for: baseFont)
@@ -90,5 +97,6 @@ enum AppInterfaceAppearance {
         let barButton = UIBarButtonItem.appearance()
         barButton.setTitleTextAttributes([.font: font], for: .normal)
         barButton.setTitleTextAttributes([.font: font], for: .highlighted)
+        barButton.setTitleTextAttributes([.font: font], for: .disabled)
     }
 }

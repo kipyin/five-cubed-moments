@@ -11,12 +11,15 @@ enum ICloudSyncLastActivityFormatting {
         referenceNow: Date,
         localizationLocale: Locale = .current
     ) -> String {
-        let elapsed = referenceNow.timeIntervalSince(lastActivity)
+        // Clock skew or bad metadata can make `lastActivity` slightly (or wildly) in the future.
+        // Cap to `referenceNow` so relative math never goes negative (which would clamp to “1 second”).
+        let effectiveLastActivity = min(lastActivity, referenceNow)
+        let elapsed = referenceNow.timeIntervalSince(effectiveLastActivity)
         if elapsed >= twentyFourHours {
             let style = Date.FormatStyle(date: .abbreviated, time: .shortened).locale(localizationLocale)
-            return lastActivity.formatted(style)
+            return effectiveLastActivity.formatted(style)
         }
-        return relativePhrase(since: lastActivity, now: referenceNow, locale: localizationLocale)
+        return relativePhrase(since: effectiveLastActivity, now: referenceNow, locale: localizationLocale)
     }
 
     /// Full subtitle line (prefix + time phrase).

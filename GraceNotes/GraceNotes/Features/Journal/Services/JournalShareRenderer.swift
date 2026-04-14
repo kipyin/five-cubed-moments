@@ -20,8 +20,12 @@ enum JournalShareRenderer {
     /// Keep in sync with `JournalShareCardView` (`cardWidth` + twice `padding`).
     private static let proposedLayoutWidth: CGFloat = 448 + 24 * 2
 
+    /// `ImageRenderer` runs without hosting in a window; `UITraitCollection.current.displayScale` can be
+    /// unset or 1× while the device screen is Retina. Take the best positive value between trait and screen.
     private static var pixelScale: CGFloat {
-        let scale = UITraitCollection.current.displayScale
-        return scale > 0 ? scale : UIScreen.main.scale
+        let traitScale = UITraitCollection.current.displayScale
+        let screenScale = UIScreen.main.scale
+        let best = max(traitScale > 0 ? traitScale : 0, screenScale > 0 ? screenScale : 0)
+        return best > 0 ? best : 3
     }
 }

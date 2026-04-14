@@ -223,6 +223,9 @@ private extension WeeklyReviewAggregatesBuilder {
         return sortedThemeSummaries(from: themeMap)
     }
 
+    /// Recurring chips sort by mention/day; further ties use scan order (`firstSeenOrder`) before label,
+    /// matching ``sortedThemeSummaries`` for chip-only aggregates (narrative paths can still differ when text
+    /// themes mix in).
     func topThemes(from summaries: [ThemeSummary]) -> [ReviewInsightTheme] {
         summaries
             .sorted {
@@ -258,21 +261,25 @@ private extension WeeklyReviewAggregatesBuilder {
         let normalized = textNormalizer.normalizeThemeLabel(trimmedLabel)
         guard !normalized.isEmpty else { return }
 
-        if var existing = map[normalized] {
-            existing.mentionCount += 1
-            existing.weightedScore += weight
-            existing.days.insert(day)
-            map[normalized] = existing
+        let isNew = map[normalized] == nil
+        var accumulator = map[normalized] ?? ThemeAccumulator(
+            normalizedLabel: normalized,
+            displayLabel: trimmedLabel,
+            mentionCount: 0,
+            weightedScore: 0,
+            days: [],
+            firstSeenOrder: sequence
+        )
+        if isNew {
+            accumulator.mentionCount = 1
+            accumulator.weightedScore = weight
+            accumulator.days = [day]
         } else {
-            map[normalized] = ThemeAccumulator(
-                normalizedLabel: normalized,
-                displayLabel: trimmedLabel,
-                mentionCount: 1,
-                weightedScore: weight,
-                days: [day],
-                firstSeenOrder: sequence
-            )
+            accumulator.mentionCount += 1
+            accumulator.weightedScore += weight
+            accumulator.days.insert(day)
         }
+        map[normalized] = accumulator
     }
 
     func sortedThemeSummaries(from map: [String: ThemeAccumulator]) -> [ThemeSummary] {

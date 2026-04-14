@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor
 enum DemoDataSeeder {
-    private static let seedVersion = 6
+    private static let seedVersion = 7
     private static let seedVersionKey = "demoDataSeedVersion"
 
     static func seedIfNeeded(context: ModelContext, calendar: Calendar = .current) {
@@ -100,12 +100,9 @@ enum DemoDataSeeder {
             makeSixDaysAgoPayload(entryDate: sixDaysAgo)
         ]
 
-        // The anchored December row must not share a calendar day with the rolling week, or the
-        // later upsert would overwrite the intended demo for that day.
-        let anchored = demoDecember2025Entry(calendar: calendar, now: now)
-        let anchoredDay = calendar.startOfDay(for: anchored.entryDate)
-        let weekDays = Set(week.map { calendar.startOfDay(for: $0.entryDate) })
-        if weekDays.contains(anchoredDay) {
+        // Historical anchor uses the day before the oldest day in the rolling week (`today-6`), so it
+        // never shares a calendar day with the seven seeded rows (collision-proof without a runtime check).
+        guard let anchored = demoHistoricalAnchorEntry(today: today, calendar: calendar) else {
             return week
         }
         return week + [anchored]
@@ -274,31 +271,29 @@ enum DemoDataSeeder {
     }
 }
 
-/// Anchored historical row so Demo builds can sanity-check Past/review behavior across calendar years.
-private func demoDecember2025Entry(calendar: Calendar, now: Date) -> DemoEntryPayload {
-    var parts = DateComponents()
-    parts.year = 2025
-    parts.month = 12
-    parts.day = 10
-    let raw = calendar.date(from: parts) ?? calendar.startOfDay(for: now)
+/// Older-than-week row so Demo builds can sanity-check Past/review behavior
+/// (often crosses calendar years near January).
+private func demoHistoricalAnchorEntry(today: Date, calendar: Calendar) -> DemoEntryPayload? {
+    guard let raw = calendar.date(byAdding: .day, value: -7, to: today) else { return nil }
     let entryDate = calendar.startOfDay(for: raw)
     return DemoEntryPayload(
         entryDate: entryDate,
         gratitudes: [
-            demoLine("Grateful for closing out 2025 with calm routines"),
+            demoLine("Grateful for steady routines before this week"),
             demoLine("Thankful for friends who checked in"),
             demoLine("Quiet evening to reflect")
         ],
         needs: [
-            demoLine("Need margin before the new year"),
-            demoLine("Want to plan January lightly")
+            demoLine("Need margin as schedules shift"),
+            demoLine("Want to plan the week lightly")
         ],
         people: [
-            demoLine("Thinking of family gathering plans"),
+            demoLine("Thinking of family plans"),
             demoLine("Grateful for community support")
         ],
-        readingNotes: "Demo note dated in 2025 for Past-tab and rhythm checks.",
-        reflections: "This entry is intentionally in December 2025 to verify history outside the current week.",
+        readingNotes: "Demo note outside the rolling week for Past-tab and rhythm checks.",
+        reflections: "This entry is intentionally one day older than the seeded week "
+            + "to verify history outside the current seven days.",
         completedAt: nil
     )
 }

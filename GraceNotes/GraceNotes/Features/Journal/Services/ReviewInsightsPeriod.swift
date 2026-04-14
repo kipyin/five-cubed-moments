@@ -7,12 +7,29 @@ enum ReviewInsightsPeriod {
     /// The calendar week containing `referenceDate`, as half-open `[lower, upper)` where
     /// `lower` is the start of the week’s first day and `upper` is the start of the day after
     /// the week’s last day (exactly seven local days).
-    static func currentPeriod(containing referenceDate: Date, calendar: Calendar) -> Range<Date> {
-        guard let interval = calendar.dateInterval(of: .weekOfYear, for: referenceDate) else {
+    static func currentPeriod(
+        containing referenceDate: Date,
+        calendar: Calendar,
+        weekExclusiveEnd: ((Date) -> Date?)? = nil,
+        weekIntervalForReference: ((Date) -> DateInterval?)? = nil
+    ) -> Range<Date> {
+        let interval: DateInterval?
+        if let override = weekIntervalForReference {
+            interval = override(referenceDate)
+        } else {
+            interval = calendar.dateInterval(of: .weekOfYear, for: referenceDate)
+        }
+        guard let interval else {
             return rollingSevenDayFallback(containing: referenceDate, calendar: calendar)
         }
         let weekStart = calendar.startOfDay(for: interval.start)
-        if let exclusiveEnd = calendar.date(byAdding: .day, value: 7, to: weekStart), exclusiveEnd > weekStart {
+        let exclusiveEnd: Date?
+        if let override = weekExclusiveEnd {
+            exclusiveEnd = override(weekStart)
+        } else {
+            exclusiveEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)
+        }
+        if let exclusiveEnd, exclusiveEnd > weekStart {
             return weekStart..<exclusiveEnd
         }
         if interval.end > weekStart {
@@ -23,9 +40,19 @@ enum ReviewInsightsPeriod {
 
     /// The calendar week immediately before `current` (the seven local days whose end abuts
     /// `current.lowerBound`).
-    static func previousPeriod(before current: Range<Date>, calendar: Calendar) -> Range<Date> {
-        let previousStart = calendar.date(byAdding: .day, value: -7, to: current.lowerBound)
-            ?? current.lowerBound.addingTimeInterval(-604_800)
+    static func previousPeriod(
+        before current: Range<Date>,
+        calendar: Calendar,
+        subtractSevenDaysFromLowerBound: ((Date) -> Date?)? = nil
+    ) -> Range<Date> {
+        let span = current.upperBound.timeIntervalSince(current.lowerBound)
+        let previousStart: Date
+        if let override = subtractSevenDaysFromLowerBound {
+            previousStart = override(current.lowerBound) ?? current.lowerBound.addingTimeInterval(-span)
+        } else {
+            previousStart = calendar.date(byAdding: .day, value: -7, to: current.lowerBound)
+                ?? current.lowerBound.addingTimeInterval(-span)
+        }
         return previousStart..<current.lowerBound
     }
 

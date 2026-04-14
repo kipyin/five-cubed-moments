@@ -362,8 +362,9 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
     /// Strongest completion level per calendar day across that same slice; bucket counts sum to entry-days represented.
     let historyCompletionMix: ReviewWeekCompletionMix
     let mostRecurringThemes: [ReviewMostRecurringTheme]
+    /// Surfacing movement rows only (excludes stable trends), matching ``trendingBuckets``.
     let movementThemes: [ReviewMovementTheme]
-    /// Grouped trending rows (same models as ``movementThemes``, which is ``trendingBuckets.flattened``).
+    /// Grouped trending rows; ``movementThemes`` is ``trendingBuckets.flattened``.
     let trendingBuckets: ReviewTrendingBuckets
 
     init(
@@ -402,8 +403,9 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
             self.trendingBuckets = buckets
             self.movementThemes = buckets.flattened
         } else {
-            self.movementThemes = movementThemes
-            self.trendingBuckets = ReviewTrendingBuckets(bucketing: movementThemes)
+            let buckets = ReviewTrendingBuckets(bucketing: movementThemes)
+            self.trendingBuckets = buckets
+            self.movementThemes = buckets.flattened
         }
     }
 
@@ -453,8 +455,9 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
             trendingBuckets = buckets
             movementThemes = buckets.flattened
         } else {
-            movementThemes = decodedMovement
-            trendingBuckets = ReviewTrendingBuckets(bucketing: decodedMovement)
+            let buckets = ReviewTrendingBuckets(bucketing: decodedMovement)
+            trendingBuckets = buckets
+            movementThemes = buckets.flattened
         }
     }
 

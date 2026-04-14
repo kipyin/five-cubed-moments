@@ -52,6 +52,7 @@ struct JournalShareComposerView: View {
                     Button(String(localized: "common.cancel"), role: .cancel) {
                         onDismiss()
                     }
+                    .disabled(isShareCommitInProgress)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "sharing.composer.share")) {
@@ -66,6 +67,7 @@ struct JournalShareComposerView: View {
         .toolbarBackground(AppTheme.settingsBackground, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .presentationBackground(AppTheme.settingsBackground)
+        .interactiveDismissDisabled(isShareCommitInProgress)
         .preferredColorScheme(appPreferredColorScheme)
         .alert(String(localized: "sharing.error.unable"), isPresented: $showRenderError) {
             Button(String(localized: "common.dismiss")) {

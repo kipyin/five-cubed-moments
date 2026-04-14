@@ -64,8 +64,10 @@ struct JournalOnboardingPresentation: Equatable {
 
     /// Guided step plus body copy; both are required for a visible banner (`sectionGuidance`).
     private var guidedStepWithMessage: (step: JournalOnboardingStep, message: String)? {
-        guard let step, let message, !message.isEmpty else { return nil }
-        return (step, message)
+        guard let step, let message else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return (step, trimmed)
     }
 
     var isGuidanceActive: Bool {
@@ -80,12 +82,16 @@ struct JournalOnboardingPresentation: Equatable {
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
         guard let guided = guidedStepWithMessage else { return nil }
         guard section == guided.step.bannerSection else { return nil }
-        let secondary: String? = switch guided.step {
-        case .gratitude:
-            String(localized: "journal.onboarding.keyboardFinishHint")
-        case .need, .person:
-            nil
-        }
+        let secondary: String? = {
+            switch guided.step {
+            case .gratitude:
+                let hint = String(localized: "journal.onboarding.keyboardFinishHint")
+                let trimmedHint = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmedHint.isEmpty ? nil : trimmedHint
+            case .need, .person:
+                return nil
+            }
+        }()
         return JournalOnboardingSectionGuidance(
             title: title ?? "",
             message: guided.message,

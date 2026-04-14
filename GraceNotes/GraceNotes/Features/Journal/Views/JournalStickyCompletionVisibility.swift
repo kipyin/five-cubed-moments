@@ -27,10 +27,8 @@ enum JournalStickyCompletionVisibility {
         guard scrollContentOffsetY.isFinite, scrollRevealThreshold.isFinite else {
             return currentlyRevealed
         }
-        if currentlyRevealed {
-            return scrollContentOffsetY > scrollRevealThreshold + releasePadding
-        }
-        return scrollContentOffsetY > scrollRevealThreshold + engagePadding
+        let scrollPastThreshold = scrollContentOffsetY - scrollRevealThreshold
+        return shouldShow(scrollPastThreshold: scrollPastThreshold, currentlyRevealed: currentlyRevealed)
     }
 
     // MARK: - iOS 17 (header frame in scroll space)
@@ -52,9 +50,19 @@ enum JournalStickyCompletionVisibility {
         guard headerMinYInScrollSpace.isFinite, scrollRevealThreshold.isFinite else {
             return currentlyRevealed
         }
-        if currentlyRevealed {
-            return headerMinYInScrollSpace < -(scrollRevealThreshold + releasePadding)
+        let scrollPastThreshold = -headerMinYInScrollSpace - scrollRevealThreshold
+        return shouldShow(scrollPastThreshold: scrollPastThreshold, currentlyRevealed: currentlyRevealed)
+    }
+
+    /// Shared hysteresis: both code paths normalize to “how far past the reveal line” (in points) so the
+    /// engage/release bands cannot drift between iOS 17 and iOS 18 implementations.
+    private static func shouldShow(scrollPastThreshold: CGFloat, currentlyRevealed: Bool) -> Bool {
+        guard scrollPastThreshold.isFinite else {
+            return currentlyRevealed
         }
-        return headerMinYInScrollSpace < -(scrollRevealThreshold + engagePadding)
+        if currentlyRevealed {
+            return scrollPastThreshold > releasePadding
+        }
+        return scrollPastThreshold > engagePadding
     }
 }

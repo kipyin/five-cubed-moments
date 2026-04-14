@@ -25,7 +25,8 @@ extension JournalCompletionLevel: Codable {
 
     /// Maps persisted raw strings from older app versions and unknown values.
     init(decodingLegacyRawValue raw: String) {
-        switch raw.lowercased() {
+        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch normalized {
         case "soil", "empty":
             self = .soil
         case "sprout", "started", "seed":

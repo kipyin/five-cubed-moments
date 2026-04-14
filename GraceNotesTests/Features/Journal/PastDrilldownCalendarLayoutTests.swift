@@ -273,3 +273,22 @@ final class PastDrilldownCalendarLayoutTests: XCTestCase {
         XCTAssertEqual(clamped, target, accuracy: 0.001)
     }
 }
+
+/// Isolated so `PastDrilldownCalendarLayoutTests` stays within SwiftLint `type_body_length`.
+final class PeekMetricsClampedViewportTests: XCTestCase {
+
+    func test_peekMetrics_clampedViewport_nonFiniteRemaining_nanReturnsZero() {
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: .nan)
+        XCTAssertEqual(clamped, 0, accuracy: 0.001)
+    }
+
+    func test_peekMetrics_clampedViewport_nonFiniteRemaining_positiveInfinityReturnsZero() {
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: .infinity)
+        XCTAssertEqual(clamped, 0, accuracy: 0.001)
+    }
+
+    func test_peekMetrics_clampedViewport_nonFiniteRemaining_negativeInfinityReturnsZero() {
+        let clamped = ReviewHistoryDrilldownPeekMetrics.clampedViewportHeight(remainingHeight: -.infinity)
+        XCTAssertEqual(clamped, 0, accuracy: 0.001)
+    }
+}

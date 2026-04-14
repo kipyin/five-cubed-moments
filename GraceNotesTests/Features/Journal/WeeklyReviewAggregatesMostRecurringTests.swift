@@ -500,6 +500,31 @@ extension WeeklyReviewAggregatesMostRecurringTests {
         XCTAssertFalse(recurring.contains(where: { $0.label == "Exercise" || $0.label == "Movement" }))
     }
 
+    func test_moderateSurfaceSemanticMatch_latinRestDoesNotMatchForestSubstring() {
+        XCTAssertFalse(
+            builder.moderateSurfaceSemanticMatch(themeConcept: "rest", supportText: "I walked in the forest")
+        )
+    }
+
+    func test_moderateSurfaceSemanticMatch_latinMatchesWholeWordAndPhrase() {
+        XCTAssertTrue(builder.moderateSurfaceSemanticMatch(themeConcept: "rest", supportText: "I need rest today"))
+        XCTAssertTrue(
+            builder.moderateSurfaceSemanticMatch(
+                themeConcept: "quiet morning",
+                supportText: "A quiet morning walk helped"
+            )
+        )
+    }
+
+    func test_moderateSurfaceSemanticMatch_hanContentionAfterNormalization() {
+        XCTAssertTrue(builder.moderateSurfaceSemanticMatch(themeConcept: "休息", supportText: "今天 休息 很重要"))
+        XCTAssertTrue(builder.moderateSurfaceSemanticMatch(themeConcept: "今天休息", supportText: "休息"))
+    }
+
+    func test_moderateSurfaceSemanticMatch_punctuationOnlySupportDoesNotMatch() {
+        XCTAssertFalse(builder.moderateSurfaceSemanticMatch(themeConcept: "rest", supportText: "   ..., "))
+    }
+
     /// Mirrors `PersistenceController.seedUITestDataIfNeeded` default seed + Monday reference (issue #140 UI test).
     func test_uitestSeed_onePriorDayEntry_hasNoTrendingMovementThemes() throws {
         let referenceDate = date(year: 2026, month: 3, day: 30)

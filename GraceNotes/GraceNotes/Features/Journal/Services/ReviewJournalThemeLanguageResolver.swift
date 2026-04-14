@@ -55,6 +55,9 @@ struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
     private static let maximumAnalysisGraphemes = 50_000
 
     private static func hasEnoughMeaningfulGraphemes(_ text: String, minimum: Int) -> Bool {
+        if minimum <= 0 {
+            return true
+        }
         var count = 0
         for character in text where !character.isWhitespace {
             count += 1
@@ -62,7 +65,7 @@ struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
                 return true
             }
         }
-        return count >= minimum
+        return false
     }
 
     /// Keeps language detection and script scanning bounded on pathologically long corpora without scanning `count`.

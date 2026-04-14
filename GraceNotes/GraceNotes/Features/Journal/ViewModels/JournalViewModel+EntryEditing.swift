@@ -33,33 +33,39 @@ extension JournalViewModel {
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
     func updateGratitude(at index: Int, fullText: String) async -> Bool {
+        guard gratitudes.indices.contains(index) else { return false }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return false }
-        guard trimmed != gratitudes[index].fullText else { return true }
+        guard !trimmed.isEmpty else { return false }
+        let existing = gratitudes[index]
+        guard trimmed != existing.fullText else { return true }
 
-        gratitudes[index] = Entry(fullText: trimmed, id: gratitudes[index].id)
+        gratitudes[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
     func updateNeed(at index: Int, fullText: String) async -> Bool {
+        guard needs.indices.contains(index) else { return false }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < needs.count, !trimmed.isEmpty else { return false }
-        guard trimmed != needs[index].fullText else { return true }
+        guard !trimmed.isEmpty else { return false }
+        let existing = needs[index]
+        guard trimmed != existing.fullText else { return true }
 
-        needs[index] = Entry(fullText: trimmed, id: needs[index].id)
+        needs[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return true
     }
 
     /// Returns true if the item was updated (valid index and trimmed text non-empty).
     func updatePerson(at index: Int, fullText: String) async -> Bool {
+        guard people.indices.contains(index) else { return false }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < people.count, !trimmed.isEmpty else { return false }
-        guard trimmed != people[index].fullText else { return true }
+        guard !trimmed.isEmpty else { return false }
+        let existing = people[index]
+        guard trimmed != existing.fullText else { return true }
 
-        people[index] = Entry(fullText: trimmed, id: people[index].id)
+        people[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return true
     }
@@ -68,11 +74,13 @@ extension JournalViewModel {
 
     /// Updates the item immediately. Returns index or nil.
     func updateGratitudeImmediate(at index: Int, fullText: String) -> Int? {
+        guard gratitudes.indices.contains(index) else { return nil }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < gratitudes.count, !trimmed.isEmpty else { return nil }
-        guard trimmed != gratitudes[index].fullText else { return index }
+        guard !trimmed.isEmpty else { return nil }
+        let existing = gratitudes[index]
+        guard trimmed != existing.fullText else { return index }
 
-        gratitudes[index] = Entry(fullText: trimmed, id: gratitudes[index].id)
+        gratitudes[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return index
     }
@@ -89,11 +97,13 @@ extension JournalViewModel {
 
     /// Updates the item immediately. Returns index or nil.
     func updateNeedImmediate(at index: Int, fullText: String) -> Int? {
+        guard needs.indices.contains(index) else { return nil }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < needs.count, !trimmed.isEmpty else { return nil }
-        guard trimmed != needs[index].fullText else { return index }
+        guard !trimmed.isEmpty else { return nil }
+        let existing = needs[index]
+        guard trimmed != existing.fullText else { return index }
 
-        needs[index] = Entry(fullText: trimmed, id: needs[index].id)
+        needs[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return index
     }
@@ -110,11 +120,13 @@ extension JournalViewModel {
 
     /// Updates the item immediately. Returns index or nil.
     func updatePersonImmediate(at index: Int, fullText: String) -> Int? {
+        guard people.indices.contains(index) else { return nil }
         let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard index >= 0, index < people.count, !trimmed.isEmpty else { return nil }
-        guard trimmed != people[index].fullText else { return index }
+        guard !trimmed.isEmpty else { return nil }
+        let existing = people[index]
+        guard trimmed != existing.fullText else { return index }
 
-        people[index] = Entry(fullText: trimmed, id: people[index].id)
+        people[index] = Entry(fullText: trimmed, id: existing.id)
         scheduleAutosave()
         return index
     }
@@ -131,7 +143,7 @@ extension JournalViewModel {
 
     /// Returns true if the item was removed (valid index).
     func removeGratitude(at index: Int) -> Bool {
-        guard index >= 0, index < gratitudes.count else { return false }
+        guard gratitudes.indices.contains(index) else { return false }
         gratitudes.remove(at: index)
         scheduleAutosave()
         return true
@@ -139,7 +151,7 @@ extension JournalViewModel {
 
     /// Returns true if the item was removed (valid index).
     func removeNeed(at index: Int) -> Bool {
-        guard index >= 0, index < needs.count else { return false }
+        guard needs.indices.contains(index) else { return false }
         needs.remove(at: index)
         scheduleAutosave()
         return true
@@ -147,7 +159,7 @@ extension JournalViewModel {
 
     /// Returns true if the item was removed (valid index).
     func removePerson(at index: Int) -> Bool {
-        guard index >= 0, index < people.count else { return false }
+        guard people.indices.contains(index) else { return false }
         people.remove(at: index)
         scheduleAutosave()
         return true
@@ -169,8 +181,8 @@ extension JournalViewModel {
     }
 
     private func moveItem(in items: inout [Entry], from sourceIndex: Int, to destinationOffset: Int) -> Bool {
-        guard sourceIndex >= 0, sourceIndex < items.count else { return false }
-        guard destinationOffset >= 0, destinationOffset <= items.count else { return false }
+        guard items.indices.contains(sourceIndex) else { return false }
+        guard (0...items.count).contains(destinationOffset) else { return false }
 
         let noOpOffset = sourceIndex + 1
         guard destinationOffset != sourceIndex, destinationOffset != noOpOffset else { return false }
@@ -195,17 +207,17 @@ extension JournalViewModel {
     }
 
     func fullTextForGratitude(at index: Int) -> String? {
-        guard index >= 0, index < gratitudes.count else { return nil }
+        guard gratitudes.indices.contains(index) else { return nil }
         return gratitudes[index].fullText
     }
 
     func fullTextForNeed(at index: Int) -> String? {
-        guard index >= 0, index < needs.count else { return nil }
+        guard needs.indices.contains(index) else { return nil }
         return needs[index].fullText
     }
 
     func fullTextForPerson(at index: Int) -> String? {
-        guard index >= 0, index < people.count else { return nil }
+        guard people.indices.contains(index) else { return nil }
         return people[index].fullText
     }
 }

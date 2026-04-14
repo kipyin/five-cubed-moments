@@ -73,7 +73,7 @@ struct WeeklyInsightRuleEngine {
     /// Prefer a non-empty trimmed `action` from the same insight that drives the resurfacing headline
     /// (first insight with a non-empty observation or `primaryTheme`), then any other insight’s action,
     /// so the prompt stays aligned with the line the member actually sees.
-    private static func continuityPrompt(
+    static func continuityPrompt(
         matching primaryInsight: ReviewWeeklyInsight?,
         in insights: [ReviewWeeklyInsight],
         defaultPrompt: String
@@ -83,13 +83,14 @@ struct WeeklyInsightRuleEngine {
            let trimmed = Self.nonEmptyTrimmed(action) {
             return trimmed
         }
-        return insights.compactMap(\.action).map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines)
-        }.first(where: { !$0.isEmpty })
+        return insights
+            .compactMap(\.action)
+            .compactMap(Self.nonEmptyTrimmed)
+            .first
             ?? defaultPrompt
     }
 
-    private static func nonEmptyTrimmed(_ text: String) -> String? {
+    static func nonEmptyTrimmed(_ text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -97,16 +98,14 @@ struct WeeklyInsightRuleEngine {
     /// Prefer the first non-empty trimmed `observation` across selected insights. If an observation is blank
     /// but `primaryTheme` is present (e.g. failed template substitution), use the trimmed theme so the
     /// resurfacing line still matches visible card context instead of the generic starter copy.
-    private static func headlineAndPrimaryInsight(
+    static func headlineAndPrimaryInsight(
         from insights: [ReviewWeeklyInsight]
     ) -> (headline: String?, primaryInsight: ReviewWeeklyInsight?) {
         for insight in insights {
-            let trimmedObservation = insight.observation.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmedObservation.isEmpty {
+            if let trimmedObservation = Self.nonEmptyTrimmed(insight.observation) {
                 return (trimmedObservation, insight)
             }
-            if let theme = insight.primaryTheme?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !theme.isEmpty {
+            if let theme = insight.primaryTheme.flatMap(Self.nonEmptyTrimmed) {
                 return (theme, insight)
             }
         }

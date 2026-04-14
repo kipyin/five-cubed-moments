@@ -8,7 +8,9 @@ protocol ReviewJournalThemeLanguageResolving: Sendable {
 }
 
 struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
-    /// Ignore language detection until the corpus has at least this many non-whitespace graphemes.
+    /// Ignore language detection until the corpus has at least this many non-whitespace graphemes in the
+    /// **analysis prefix** (the first 50,000 extended grapheme clusters—the same capped sample used for
+    /// `NLLanguageRecognizer`), not the entire trimmed corpus. Dense text after that prefix does not count.
     private let minimumMeaningfulGraphemes: Int
     /// If the top `NLLanguageRecognizer` hypothesis is weaker than this, fall back to script share.
     private let confidenceThreshold: Double

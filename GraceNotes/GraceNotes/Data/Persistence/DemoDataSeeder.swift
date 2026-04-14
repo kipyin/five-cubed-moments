@@ -31,6 +31,7 @@ enum DemoDataSeeder {
             UserDefaults.standard.set(seedVersion, forKey: seedVersionKey)
             PerformanceTrace.end("DemoDataSeeder.seedIfNeeded", startedAt: seedTrace)
         } catch {
+            context.rollback()
             PerformanceTrace.end("DemoDataSeeder.seedIfNeeded.failed", startedAt: seedTrace)
             assertionFailure("Failed to seed demo database: \(error)")
         }
@@ -264,18 +265,12 @@ enum DemoDataSeeder {
     }
 }
 
-/// Uses `[dayStart, nextDay)` like ``JournalRepository/fetchEntry(dayStart:context:)``.
+/// Delegates to ``JournalRepository/fetchEntry(dayStart:context:)`` so demo upserts target the same
+/// canonical journal Past and Today use when more than one row exists for a calendar day.
 private func fetchDemoJournalForDay(_ date: Date, context: ModelContext, calendar: Calendar) -> Journal? {
     let dayStart = calendar.startOfDay(for: date)
-    guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return nil }
-    let descriptor = FetchDescriptor<Journal>(
-        predicate: #Predicate { entry in
-            entry.entryDate >= dayStart && entry.entryDate < nextDay
-        },
-        sortBy: [SortDescriptor(\.createdAt, order: .forward)]
-    )
     do {
-        return try context.fetch(descriptor).first
+        return try JournalRepository(calendar: calendar).fetchEntry(dayStart: dayStart, context: context)
     } catch {
         assertionFailure("DemoDataSeeder: failed to fetch journal for demo seeding: \(error)")
         return nil

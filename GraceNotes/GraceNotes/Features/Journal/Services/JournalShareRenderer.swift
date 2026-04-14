@@ -11,9 +11,12 @@ enum JournalShareRenderer {
         let cardView = JournalShareCardView(payload: payload, onLineTap: nil)
         let renderer = ImageRenderer(content: cardView)
         renderer.proposedSize = ProposedViewSize(width: Self.proposedLayoutWidth, height: nil)
-        renderer.scale = Self.pixelScale
+        renderer.scale = Self.recommendedPixelScale()
         guard let image = renderer.uiImage else { return nil }
         guard image.size.width > 0, image.size.height > 0 else { return nil }
+        if let cgImage = image.cgImage {
+            guard cgImage.width > 0, cgImage.height > 0 else { return nil }
+        }
         return image
     }
 
@@ -21,11 +24,21 @@ enum JournalShareRenderer {
     private static let proposedLayoutWidth: CGFloat = 448 + 24 * 2
 
     /// `ImageRenderer` runs without hosting in a window; `UITraitCollection.current.displayScale` can be
-    /// unset or 1× while the device screen is Retina. Take the best positive value between trait and screen.
-    private static var pixelScale: CGFloat {
+    /// unset or 1× while the device screen is Retina. Prefer an active window scene scale, then trait, then
+    /// screen, then a safe default.
+    @MainActor
+    private static func recommendedPixelScale() -> CGFloat {
         let traitScale = UITraitCollection.current.displayScale
+        let sceneScale = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .map { $0.screen.scale }
+            .max() ?? 0
         let screenScale = UIScreen.main.scale
-        let best = max(traitScale > 0 ? traitScale : 0, screenScale > 0 ? screenScale : 0)
+        let best = max(
+            traitScale > 0 ? traitScale : 0,
+            sceneScale > 0 ? sceneScale : 0,
+            screenScale > 0 ? screenScale : 0
+        )
         return best > 0 ? best : 3
     }
 }

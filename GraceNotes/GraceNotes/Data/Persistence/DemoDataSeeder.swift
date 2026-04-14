@@ -4,17 +4,17 @@ import SwiftData
 
 @MainActor
 enum DemoDataSeeder {
-    private static let seedVersion = 5
+    private static let seedVersion = 6
     private static let seedVersionKey = "demoDataSeedVersion"
 
     static func seedIfNeeded(context: ModelContext, calendar: Calendar = .current) {
         let seedTrace = PerformanceTrace.begin("DemoDataSeeder.seedIfNeeded")
-        guard shouldSeed(context: context, calendar: calendar) else {
+        let now = Date.now
+        guard shouldSeed(context: context, calendar: calendar, now: now) else {
             PerformanceTrace.end("DemoDataSeeder.seedIfNeeded.skipped", startedAt: seedTrace)
             return
         }
 
-        let now = Date.now
         let today = calendar.startOfDay(for: now)
         let entries = makeSeedEntries(today: today, now: now, calendar: calendar)
 
@@ -32,11 +32,11 @@ enum DemoDataSeeder {
         }
     }
 
-    private static func shouldSeed(context: ModelContext, calendar: Calendar) -> Bool {
+    private static func shouldSeed(context: ModelContext, calendar: Calendar, now: Date) -> Bool {
         let savedVersion = UserDefaults.standard.integer(forKey: seedVersionKey)
         if savedVersion != seedVersion { return true }
 
-        let today = calendar.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: now)
         return fetchEntry(for: today, context: context, calendar: calendar) == nil
     }
 
@@ -90,16 +90,25 @@ enum DemoDataSeeder {
         let fiveDaysAgo = calendar.date(byAdding: .day, value: -5, to: today) ?? today
         let sixDaysAgo = calendar.date(byAdding: .day, value: -6, to: today) ?? today
 
-        return [
+        let week = [
             makeTodayPayload(entryDate: today, completedAt: now),
             makeYesterdayPayload(entryDate: yesterday),
             makeBlankPayload(entryDate: twoDaysAgo),
             makeThreeDaysAgoPayload(entryDate: threeDaysAgo, completedAt: now),
             makeFourDaysAgoPayload(entryDate: fourDaysAgo),
             makeFiveDaysAgoPayload(entryDate: fiveDaysAgo),
-            makeSixDaysAgoPayload(entryDate: sixDaysAgo),
-            demoDecember2025Entry(calendar: calendar, now: now)
+            makeSixDaysAgoPayload(entryDate: sixDaysAgo)
         ]
+
+        // The anchored December row must not share a calendar day with the rolling week, or the
+        // later upsert would overwrite the intended demo for that day.
+        let anchored = demoDecember2025Entry(calendar: calendar, now: now)
+        let anchoredDay = calendar.startOfDay(for: anchored.entryDate)
+        let weekDays = Set(week.map { calendar.startOfDay(for: $0.entryDate) })
+        if weekDays.contains(anchoredDay) {
+            return week
+        }
+        return week + [anchored]
     }
 
     private static func makeTodayPayload(entryDate: Date, completedAt: Date) -> DemoEntryPayload {

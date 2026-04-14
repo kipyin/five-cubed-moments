@@ -211,13 +211,15 @@ private extension JournalShareCardView {
             Button {
                 onLineTap(identity)
             } label: {
-                redactionBar
+                redactionBarShape
+                    .accessibilityHidden(true)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(String(localized: "sharing.a11y.lineRedacted"))
             .accessibilityHint(String(localized: "sharing.a11y.lineTapToShow"))
         } else {
-            redactionBar
+            redactionBarShape
+                .accessibilityLabel(String(localized: "sharing.a11y.lineRedacted"))
         }
     }
 
@@ -230,11 +232,10 @@ private extension JournalShareCardView {
             .accessibilityLabel(String(localized: "sharing.a11y.sectionStub"))
     }
 
-    var redactionBar: some View {
+    private var redactionBarShape: some View {
         RoundedRectangle(cornerRadius: 4, style: .continuous)
             .fill(surface.redactionBarColor)
             .frame(height: 18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityHidden(onLineTap == nil)
     }
 }

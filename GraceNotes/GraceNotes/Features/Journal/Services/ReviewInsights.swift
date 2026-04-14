@@ -364,9 +364,10 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
     /// Strongest completion level per calendar day across that same slice; bucket counts sum to entry-days represented.
     let historyCompletionMix: ReviewWeekCompletionMix
     let mostRecurringThemes: [ReviewMostRecurringTheme]
+    /// Surfacing movement rows only (excludes stable trends), matching ``trendingBuckets``.
     let movementThemes: [ReviewMovementTheme]
-    /// Grouped trending rows (new / rising / down). ``movementThemes`` is usually the same set, reordered.
-    /// If both fields exist in JSON, prefer non-empty ``movementThemes`` so stable rows are not dropped on decode.
+    /// Grouped trending rows (new / rising / down).
+    /// ``movementThemes`` is always ``trendingBuckets.flattened`` (same order as grouped UI).
     let trendingBuckets: ReviewTrendingBuckets
 
     init(
@@ -403,10 +404,11 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
         self.mostRecurringThemes = mostRecurringThemes
         if let buckets = trendingBuckets {
             self.trendingBuckets = buckets
-            self.movementThemes = movementThemes.isEmpty ? buckets.flattened : movementThemes
+            self.movementThemes = buckets.flattened
         } else {
-            self.movementThemes = movementThemes
-            self.trendingBuckets = ReviewTrendingBuckets(bucketing: movementThemes)
+            let buckets = ReviewTrendingBuckets(bucketing: movementThemes)
+            self.trendingBuckets = buckets
+            self.movementThemes = buckets.flattened
         }
     }
 
@@ -454,10 +456,11 @@ struct ReviewWeekStats: Equatable, Sendable, Codable {
             try container.decodeIfPresent([ReviewMovementTheme].self, forKey: .movementThemes) ?? []
         if let buckets = try container.decodeIfPresent(ReviewTrendingBuckets.self, forKey: .trendingBuckets) {
             trendingBuckets = buckets
-            movementThemes = decodedMovement.isEmpty ? buckets.flattened : decodedMovement
+            movementThemes = buckets.flattened
         } else {
-            movementThemes = decodedMovement
-            trendingBuckets = ReviewTrendingBuckets(bucketing: decodedMovement)
+            let buckets = ReviewTrendingBuckets(bucketing: decodedMovement)
+            trendingBuckets = buckets
+            movementThemes = buckets.flattened
         }
     }
 

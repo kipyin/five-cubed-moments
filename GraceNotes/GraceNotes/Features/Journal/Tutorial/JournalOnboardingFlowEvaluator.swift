@@ -62,10 +62,16 @@ struct JournalOnboardingPresentation: Equatable {
         sectionStates: [:]
     )
 
-    /// True when guided copy is actually shown (`sectionGuidance` would be non-nil for the active step).
+    /// Guided step plus body copy; both are required for a visible banner (`sectionGuidance`).
+    private var guidedStepWithMessage: (step: JournalOnboardingStep, message: String)? {
+        guard let step, let message else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return (step, trimmed)
+    }
+
     var isGuidanceActive: Bool {
-        guard step != nil, let message else { return false }
-        return !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guidedStepWithMessage != nil
     }
 
     func state(for section: JournalOnboardingSection) -> JournalOnboardingSectionState {
@@ -74,22 +80,21 @@ struct JournalOnboardingPresentation: Equatable {
 
     /// Per-section placement: linear steps use the active row.
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
-        guard let message, let step else { return nil }
-        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        guard section == step.bannerSection else { return nil }
+        guard let guided = guidedStepWithMessage else { return nil }
+        guard section == guided.step.bannerSection else { return nil }
         let secondary: String? = {
-            switch step {
+            switch guided.step {
             case .gratitude:
                 let hint = String(localized: "journal.onboarding.keyboardFinishHint")
-                let trimmed = hint.trimmingCharacters(in: .whitespacesAndNewlines)
-                return trimmed.isEmpty ? nil : trimmed
+                let trimmedHint = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmedHint.isEmpty ? nil : trimmedHint
             case .need, .person:
                 return nil
             }
         }()
         return JournalOnboardingSectionGuidance(
             title: title ?? "",
-            message: message,
+            message: guided.message,
             messageSecondary: secondary
         )
     }

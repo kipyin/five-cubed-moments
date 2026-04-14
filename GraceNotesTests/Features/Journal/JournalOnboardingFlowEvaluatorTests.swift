@@ -79,6 +79,52 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
 
         XCTAssertFalse(presentation.isGuidanceActive)
     }
+
+    func test_presentation_stepWithoutMessage_isNotGuidanceActiveAndNoSectionGuidance() {
+        let presentation = JournalOnboardingPresentation(
+            step: .gratitude,
+            title: nil,
+            message: nil,
+            sectionStates: [.gratitude: .active]
+        )
+
+        XCTAssertFalse(presentation.isGuidanceActive)
+        XCTAssertNil(presentation.sectionGuidance(for: .gratitude))
+    }
+
+    func test_presentation_stepWithEmptyOrWhitespaceMessage_isNotGuidanceActiveAndNoSectionGuidance() {
+        for message in ["", " ", "\n\t"] {
+            let presentation = JournalOnboardingPresentation(
+                step: .gratitude,
+                title: nil,
+                message: message,
+                sectionStates: [.gratitude: .active]
+            )
+
+            XCTAssertFalse(
+                presentation.isGuidanceActive,
+                "Expected inactive guidance for message: \(String(describing: message))"
+            )
+            XCTAssertNil(
+                presentation.sectionGuidance(for: .gratitude),
+                "Expected no section guidance for message: \(String(describing: message))"
+            )
+        }
+    }
+
+    func test_presentation_stepWithNonEmptyMessage_isGuidanceActiveAndReturnsSectionGuidance() {
+        let presentation = JournalOnboardingPresentation(
+            step: .gratitude,
+            title: "Title",
+            message: " Body ",
+            sectionStates: [.gratitude: .active]
+        )
+
+        XCTAssertTrue(presentation.isGuidanceActive)
+        let guidance = presentation.sectionGuidance(for: .gratitude)
+        XCTAssertEqual(guidance?.title, "Title")
+        XCTAssertEqual(guidance?.message, "Body")
+    }
 }
 
 private extension JournalOnboardingFlowEvaluatorTests {

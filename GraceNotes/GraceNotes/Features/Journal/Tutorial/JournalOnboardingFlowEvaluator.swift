@@ -62,8 +62,14 @@ struct JournalOnboardingPresentation: Equatable {
         sectionStates: [:]
     )
 
+    /// Guided step plus body copy; both are required for a visible banner (`sectionGuidance`).
+    private var guidedStepWithMessage: (step: JournalOnboardingStep, message: String)? {
+        guard let step, let message, !message.isEmpty else { return nil }
+        return (step, message)
+    }
+
     var isGuidanceActive: Bool {
-        step != nil
+        guidedStepWithMessage != nil
     }
 
     func state(for section: JournalOnboardingSection) -> JournalOnboardingSectionState {
@@ -72,10 +78,9 @@ struct JournalOnboardingPresentation: Equatable {
 
     /// Per-section placement: linear steps use the active row.
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
-        guard let message, let step else { return nil }
-        guard !message.isEmpty else { return nil }
-        guard section == step.bannerSection else { return nil }
-        let secondary: String? = switch step {
+        guard let guided = guidedStepWithMessage else { return nil }
+        guard section == guided.step.bannerSection else { return nil }
+        let secondary: String? = switch guided.step {
         case .gratitude:
             String(localized: "journal.onboarding.keyboardFinishHint")
         case .need, .person:
@@ -83,7 +88,7 @@ struct JournalOnboardingPresentation: Equatable {
         }
         return JournalOnboardingSectionGuidance(
             title: title ?? "",
-            message: message,
+            message: guided.message,
             messageSecondary: secondary
         )
     }

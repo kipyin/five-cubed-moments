@@ -21,8 +21,8 @@ struct AdvancedSettingsScreen: View {
     @State private var customUnit: PastStatisticsIntervalUnit
 
     init() {
-        let encoded = UserDefaults.standard.string(forKey: PastStatisticsIntervalPreference.appStorageKey) ?? ""
-        let selection = PastStatisticsIntervalPreference.selection(fromAppStorage: encoded).validated
+        let raw = PastStatisticsIntervalPreference.appStorageRawValue()
+        let selection = PastStatisticsIntervalPreference.selection(fromAppStorage: raw).validated
         _intervalMode = State(initialValue: selection.mode == .all ? .all : .custom)
         _customQuantity = State(initialValue: Self.clampedPickerQuantity(selection.quantity))
         _customUnit = State(initialValue: selection.unit)

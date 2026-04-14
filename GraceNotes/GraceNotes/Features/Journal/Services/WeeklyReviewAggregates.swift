@@ -146,6 +146,14 @@ private extension WeeklyReviewAggregatesBuilder {
             || !textNormalizer.trimmed(entry.reflections).isEmpty
     }
 
+    /// Joins non-empty trimmed notes and reflections without a stray lone space when both are empty.
+    func reflectionCorpusForContinuity(_ entry: Journal) -> String {
+        [entry.readingNotes, entry.reflections]
+            .map { textNormalizer.trimmed($0) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
     func buildChipStats(
         from entries: [Journal],
         itemsExtractor: (Journal) -> [Entry],
@@ -192,7 +200,7 @@ private extension WeeklyReviewAggregatesBuilder {
                 sequence += 1
             }
 
-            for textTheme in textNormalizer.extractThemesFromText(entry.readingNotes + " " + entry.reflections) {
+            for textTheme in textNormalizer.extractThemesFromText(reflectionCorpusForContinuity(entry)) {
                 accumulateTheme(
                     label: textTheme,
                     day: day,
@@ -373,8 +381,9 @@ private extension WeeklyReviewAggregatesBuilder {
             from: allEntries,
             calendar: calendar
         )
-        let weekLastInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound)
-            ?? currentPeriod.lowerBound
+        guard let weekLastInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound) else {
+            return nil
+        }
         let weekLastStart = calendar.startOfDay(for: weekLastInclusive)
         let referenceDayStart = calendar.startOfDay(for: referenceDate)
         let endDayInclusive = min(weekLastStart, referenceDayStart)
@@ -384,7 +393,9 @@ private extension WeeklyReviewAggregatesBuilder {
         let startDay = entryMinRaw
         guard startDay <= endDayInclusive else { return nil }
 
-        let rangeEndExclusive = calendar.date(byAdding: .day, value: 1, to: endDayInclusive) ?? currentPeriod.upperBound
+        guard let rangeEndExclusive = calendar.date(byAdding: .day, value: 1, to: endDayInclusive) else {
+            return nil
+        }
         let history = buildDayActivity(
             currentPeriod: startDay..<rangeEndExclusive,
             entries: allEntries,

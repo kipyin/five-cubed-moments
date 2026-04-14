@@ -6,6 +6,20 @@ enum JournalOnboardingStep: Equatable {
     case person
 }
 
+private extension JournalOnboardingStep {
+    /// Section whose row hosts the onboarding banner for this linear step.
+    var bannerSection: JournalOnboardingSection {
+        switch self {
+        case .gratitude:
+            .gratitude
+        case .need:
+            .need
+        case .person:
+            .person
+        }
+    }
+}
+
 enum JournalOnboardingSection: Hashable {
     case gratitude
     case need
@@ -58,23 +72,20 @@ struct JournalOnboardingPresentation: Equatable {
 
     /// Per-section placement: linear steps use the active row.
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
-        guard let title, let message, let step else { return nil }
-        let bannerSection: JournalOnboardingSection = switch step {
-        case .gratitude:
-            .gratitude
-        case .need:
-            .need
-        case .person:
-            .person
-        }
-        guard section == bannerSection else { return nil }
+        guard let message, let step else { return nil }
+        guard !message.isEmpty else { return nil }
+        guard section == step.bannerSection else { return nil }
         let secondary: String? = switch step {
         case .gratitude:
             String(localized: "journal.onboarding.keyboardFinishHint")
         case .need, .person:
             nil
         }
-        return JournalOnboardingSectionGuidance(title: title, message: message, messageSecondary: secondary)
+        return JournalOnboardingSectionGuidance(
+            title: title ?? "",
+            message: message,
+            messageSecondary: secondary
+        )
     }
 }
 
@@ -93,15 +104,19 @@ enum JournalOnboardingFlowEvaluator {
             return .inactive
         }
 
-        if context.gratitudesCount == 0 {
+        let gratitudes = max(0, context.gratitudesCount)
+        let needs = max(0, context.needsCount)
+        let people = max(0, context.peopleCount)
+
+        if gratitudes == 0 {
             return firstGratitudePresentation()
         }
 
-        if context.needsCount == 0 {
+        if needs == 0 {
             return firstNeedPresentation()
         }
 
-        if context.peopleCount == 0 {
+        if people == 0 {
             return firstPersonPresentation()
         }
 
@@ -112,7 +127,7 @@ enum JournalOnboardingFlowEvaluator {
 private extension JournalOnboardingFlowEvaluator {
     static func presentation(
         step: JournalOnboardingStep,
-        title: String,
+        title: String?,
         message: String,
         states: [JournalOnboardingSection: JournalOnboardingSectionState]
     ) -> JournalOnboardingPresentation {
@@ -135,7 +150,7 @@ private extension JournalOnboardingFlowEvaluator {
     static func firstGratitudePresentation() -> JournalOnboardingPresentation {
         presentation(
             step: .gratitude,
-            title: "",
+            title: nil,
             message: String(localized: "journal.onboarding.startWithGratitude"),
             states: [
                 .gratitude: .active,

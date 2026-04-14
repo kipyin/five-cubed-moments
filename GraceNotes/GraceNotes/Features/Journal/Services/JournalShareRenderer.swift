@@ -14,9 +14,8 @@ enum JournalShareRenderer {
         renderer.scale = Self.recommendedPixelScale()
         guard let image = renderer.uiImage else { return nil }
         guard image.size.width > 0, image.size.height > 0 else { return nil }
-        if let cgImage = image.cgImage {
-            guard cgImage.width > 0, cgImage.height > 0 else { return nil }
-        }
+        guard let cgImage = image.cgImage else { return nil }
+        guard cgImage.width > 0, cgImage.height > 0 else { return nil }
         return image
     }
 
@@ -28,15 +27,18 @@ enum JournalShareRenderer {
     }
 
     /// `ImageRenderer` runs without hosting in a window; `UITraitCollection.current.displayScale` can be
-    /// unset or 1× while the device screen is Retina. Prefer the foreground active window scene scale, then
-    /// trait, then screen, then a safe default. Ignores background scenes so multi-window layouts do not
-    /// pick an unrelated display’s scale.
+    /// unset or 1× while the device screen is Retina. Prefer the foreground window scene scale (active or
+    /// inactive — a presented sheet can leave the root scene inactive), then trait, then screen, then a
+    /// safe default. Ignores background/unattached scenes so multi-window layouts do not pick an unrelated
+    /// display’s scale.
     @MainActor
     private static func recommendedPixelScale() -> CGFloat {
         let traitScale = UITraitCollection.current.displayScale
         let sceneScale = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .filter { $0.activationState == .foregroundActive }
+            .filter {
+                $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive
+            }
             .map { $0.screen.scale }
             .max() ?? 0
         let screenScale = UIScreen.main.scale

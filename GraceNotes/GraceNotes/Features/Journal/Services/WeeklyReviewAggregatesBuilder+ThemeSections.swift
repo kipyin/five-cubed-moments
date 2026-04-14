@@ -280,11 +280,20 @@ extension WeeklyReviewAggregatesBuilder {
         let normalizedSupport = textNormalizer.normalizeThemeLabel(supportText)
         let normalizedTheme = textNormalizer.normalizeThemeLabel(themeConcept)
         guard !normalizedSupport.isEmpty, !normalizedTheme.isEmpty else { return false }
-        // CJK: word boundaries and Latin token overlap do not apply; substring match either direction.
-        if containsHanCharacters(themeConcept) || containsHanCharacters(supportText) {
+        // Substring matching is for CJK themes where `\b` and token overlap do not apply. If the theme is
+        // Latin-only, substring matching whenever the support text also contains CJK would reintroduce
+        // Latin-in-word hits (e.g. "rest" inside "forest") in mixed-language passages.
+        if containsHanCharacters(themeConcept) {
             return normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport)
         }
-        // Latin: naive `contains` matches inside other words (e.g. "rest" in "forest"); require word boundaries.
+        return latinNormalizedThemeMatchesSupport(
+            normalizedTheme: normalizedTheme,
+            normalizedSupport: normalizedSupport
+        )
+    }
+
+    /// Latin-safe matching after normalization: word boundaries, then multi-character token overlap.
+    private func latinNormalizedThemeMatchesSupport(normalizedTheme: String, normalizedSupport: String) -> Bool {
         if latinPhraseHasWordBoundaryMatch(haystack: normalizedSupport, needle: normalizedTheme)
             || latinPhraseHasWordBoundaryMatch(haystack: normalizedTheme, needle: normalizedSupport) {
             return true

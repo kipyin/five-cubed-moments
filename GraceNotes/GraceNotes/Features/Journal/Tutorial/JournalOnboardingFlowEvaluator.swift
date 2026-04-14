@@ -62,8 +62,10 @@ struct JournalOnboardingPresentation: Equatable {
         sectionStates: [:]
     )
 
+    /// True when guided copy is actually shown (`sectionGuidance` would be non-nil for the active step).
     var isGuidanceActive: Bool {
-        step != nil
+        guard step != nil, let message else { return false }
+        return !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func state(for section: JournalOnboardingSection) -> JournalOnboardingSectionState {
@@ -73,14 +75,18 @@ struct JournalOnboardingPresentation: Equatable {
     /// Per-section placement: linear steps use the active row.
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
         guard let message, let step else { return nil }
-        guard !message.isEmpty else { return nil }
+        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         guard section == step.bannerSection else { return nil }
-        let secondary: String? = switch step {
-        case .gratitude:
-            String(localized: "journal.onboarding.keyboardFinishHint")
-        case .need, .person:
-            nil
-        }
+        let secondary: String? = {
+            switch step {
+            case .gratitude:
+                let hint = String(localized: "journal.onboarding.keyboardFinishHint")
+                let trimmed = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? nil : trimmed
+            case .need, .person:
+                return nil
+            }
+        }()
         return JournalOnboardingSectionGuidance(
             title: title ?? "",
             message: message,

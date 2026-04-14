@@ -47,9 +47,18 @@ struct WeeklyInsightRuleEngine {
         )
 
         let narrativeSummary = candidateBuilder.narrativeSummary(from: selectedInsights)
-        let resurfacingMessage = selectedInsights.first?.observation
-            ?? String(localized: "review.insights.starterReflection")
-        let continuityPrompt = selectedInsights.compactMap(\.action).first
+        let trimmedHeadline = selectedInsights.first?.observation
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let resurfacingMessage: String
+        if let trimmedHeadline, !trimmedHeadline.isEmpty {
+            resurfacingMessage = trimmedHeadline
+        } else {
+            resurfacingMessage = String(localized: "review.insights.starterReflection")
+        }
+
+        let continuityPrompt = selectedInsights.compactMap(\.action).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }.first(where: { !$0.isEmpty })
             ?? candidateBuilder.defaultContinuityPrompt
 
         return WeeklyInsightAnalysis(

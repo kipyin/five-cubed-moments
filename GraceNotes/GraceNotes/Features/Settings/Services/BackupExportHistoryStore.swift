@@ -18,6 +18,8 @@ enum BackupExportHistoryStore {
     private static let userDefaultsKey = "BackupExportHistory.entries"
     private static let maxEntries = 40
 
+    /// Serialize with the main actor: `record` is a read-modify-write and must not interleave.
+    @MainActor
     static func record(
         finishedAt: Date = .now,
         success: Bool,
@@ -42,6 +44,7 @@ enum BackupExportHistoryStore {
         UserDefaults.standard.set(data, forKey: userDefaultsKey)
     }
 
+    @MainActor
     static func load() -> [BackupExportHistoryEntry] {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
               let decoded = try? JSONDecoder().decode([BackupExportHistoryEntry].self, from: data) else {

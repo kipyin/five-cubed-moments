@@ -19,10 +19,12 @@ enum AppInstructionLocale: Equatable, Sendable {
 
     /// Uses `Locale.Language` so legacy tags (`zh_CN`, `zh_Hans_CN`) and bare `zh` resolve like the system,
     /// instead of brittle `zh-hans` / `zh-hans-` string prefix checks that miss underscore forms.
-    private static let simplifiedChineseScript = Locale.Script("Hans")
-
-    private static func isSimplifiedChineseUIIdentifier(_ identifier: String) -> Bool {
+    /// BCP 47 tags are case-insensitive; `Bundle` may return `zh-Hans` or `zh-hans`.
+    /// - Note: Unit tests cover tag forms; production code should use ``preferred(bundle:)``.
+    static func isSimplifiedChineseUIIdentifier(_ identifier: String) -> Bool {
         let language = Locale.Language(identifier: identifier)
         return language.languageCode == .chinese && language.script == simplifiedChineseScript
     }
+
+    private static let simplifiedChineseScript = Locale.Script("Hans")
 }

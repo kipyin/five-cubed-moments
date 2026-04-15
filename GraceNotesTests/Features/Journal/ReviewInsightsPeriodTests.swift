@@ -62,6 +62,54 @@ final class ReviewInsightsPeriodTests: XCTestCase {
         XCTAssertEqual(period.lowerBound, weekStart)
     }
 
+    /// Forces the `weekStart..<interval.end` branch when the seven-day exclusive end is unavailable.
+    func test_currentPeriod_fallsBackToIntervalEndWhenExclusiveEndUnavailable() {
+        calendar.firstWeekday = 1
+        let reference = date(year: 2026, month: 3, day: 18)
+        let interval = calendar.dateInterval(of: .weekOfYear, for: reference)!
+        let weekStart = calendar.startOfDay(for: interval.start)
+        let period = ReviewInsightsPeriod.currentPeriod(
+            containing: reference,
+            calendar: calendar,
+            weekExclusiveEnd: { _ in nil }
+        )
+        XCTAssertEqual(period.lowerBound, weekStart)
+        XCTAssertEqual(period.upperBound, interval.end)
+    }
+
+    /// Forces ``rollingSevenDayFallback`` when the week interval cannot be resolved.
+    func test_currentPeriod_rollingFallbackWhenWeekIntervalUnavailable() {
+        calendar.firstWeekday = 1
+        let reference = date(year: 2026, month: 3, day: 18)
+        let period = ReviewInsightsPeriod.currentPeriod(
+            containing: reference,
+            calendar: calendar,
+            weekIntervalForReference: { _ in nil }
+        )
+        let endDay = calendar.startOfDay(for: reference)
+        let expectedEnd = calendar.date(byAdding: .day, value: 1, to: endDay) ?? endDay
+        let expectedStart = calendar.date(byAdding: .day, value: -6, to: endDay) ?? endDay
+        XCTAssertEqual(period.lowerBound, expectedStart)
+        XCTAssertEqual(period.upperBound, expectedEnd)
+    }
+
+    /// Forces the span-based fallback when subtracting seven local days returns nil.
+    func test_previousPeriod_fallsBackToSpanWhenSubtractSevenDaysUnavailable() {
+        calendar.firstWeekday = 1
+        let lower = date(year: 2026, month: 3, day: 15)
+        let upper = date(year: 2026, month: 3, day: 24)
+        let current = lower..<upper
+        let span = upper.timeIntervalSince(lower)
+        let previous = ReviewInsightsPeriod.previousPeriod(
+            before: current,
+            calendar: calendar,
+            subtractSevenDaysFromLowerBound: { _ in nil }
+        )
+        XCTAssertEqual(previous.upperBound, lower)
+        XCTAssertEqual(previous.lowerBound, lower.addingTimeInterval(-span))
+        XCTAssertEqual(previous.upperBound.timeIntervalSince(previous.lowerBound), span, accuracy: 0.001)
+    }
+
     private func date(year: Int, month: Int, day: Int) -> Date {
         var components = DateComponents()
         components.year = year

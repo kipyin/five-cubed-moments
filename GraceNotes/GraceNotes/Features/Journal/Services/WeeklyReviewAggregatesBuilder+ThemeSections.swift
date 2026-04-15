@@ -314,23 +314,30 @@ extension WeeklyReviewAggregatesBuilder {
         let normalizedSupport = textNormalizer.normalizeThemeLabel(supportText)
         let normalizedTheme = textNormalizer.normalizeThemeLabel(themeConcept)
         guard !normalizedSupport.isEmpty, !normalizedTheme.isEmpty else { return false }
-        // Substring matching is for CJK themes where `\b` and token overlap do not apply. If the theme is
-        // Latin-only, substring matching whenever the support text also contains CJK would reintroduce
-        // Latin-in-word hits (e.g. "rest" inside "forest") in mixed-language passages.
-        if containsHanCharacters(themeConcept) {
+        // Drive script routing from the same normalized label we compare; `normalizeThemeLabel` does not strip Han.
+        if containsHanCharacters(normalizedTheme) || containsHanCharacters(themeConcept) {
             return normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport)
         }
-        return latinNormalizedThemeMatchesSupport(
-            normalizedTheme: normalizedTheme,
-            normalizedSupport: normalizedSupport
-        )
-    }
-
-    /// Latin-safe matching after normalization: word boundaries, then multi-character token overlap.
-    private func latinNormalizedThemeMatchesSupport(normalizedTheme: String, normalizedSupport: String) -> Bool {
-        if latinPhraseHasWordBoundaryMatch(haystack: normalizedSupport, needle: normalizedTheme)
-            || latinPhraseHasWordBoundaryMatch(haystack: normalizedTheme, needle: normalizedSupport) {
-            return true
+        let latinPairSafeForRegexWordBoundaries =
+            isLatinWhitespaceDelimitedForRegexWordBoundaries(normalizedTheme)
+            && isLatinWhitespaceDelimitedForRegexWordBoundaries(normalizedSupport)
+        if latinPairSafeForRegexWordBoundaries {
+            // `\b` aligns with whitespace-delimited Latin words; skip for kana, Cyrillic, emoji-mixed text, etc.
+            if latinPhraseHasWordBoundaryMatch(haystack: normalizedSupport, needle: normalizedTheme)
+                || latinPhraseHasWordBoundaryMatch(haystack: normalizedTheme, needle: normalizedSupport) {
+                return true
+            }
+        } else {
+            if phraseMatchesUsingEnumeratedWords(haystack: normalizedSupport, needle: normalizedTheme)
+                || phraseMatchesUsingEnumeratedWords(haystack: normalizedTheme, needle: normalizedSupport) {
+                return true
+            }
+            // Avoid naive substring matching when ASCII Latin appears (e.g. "rest" inside "forest").
+            if !hasASCIILatinLetters(normalizedTheme), !hasASCIILatinLetters(normalizedSupport) {
+                if normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport) {
+                    return true
+                }
+            }
         }
         let themeTokens = Set(normalizedTheme.split(separator: " ").map(String.init).filter { $0.count >= 3 })
         let supportTokens = Set(normalizedSupport.split(separator: " ").map(String.init).filter { $0.count >= 3 })
@@ -340,29 +347,64 @@ extension WeeklyReviewAggregatesBuilder {
         return !themeTokens.isDisjoint(with: supportTokens)
     }
 
-    /// Picks the section whose `displayLabel` semantics should win when a theme appears in more than one chip type.
-    private func strongerDisplaySourceForThemeLabel(
-        _ lhs: ReviewThemeSourceCategory,
-        _ rhs: ReviewThemeSourceCategory
-    ) -> ReviewThemeSourceCategory {
-        func rank(_ source: ReviewThemeSourceCategory) -> Int {
-            switch source {
-            case .people:
-                return 3
-            case .needs:
-                return 2
-            case .gratitudes:
-                return 1
-            case .readingNotes, .reflections:
-                return 0
-            }
-        }
-        return rank(lhs) >= rank(rhs) ? lhs : rhs
+    /// True when the string is only Latin letters/digits/whitespace — safe for regex `\\b` word boundaries.
+    private func isLatinWhitespaceDelimitedForRegexWordBoundaries(_ text: String) -> Bool {
+        let range = NSRange(text.startIndex..., in: text)
+        return Self.latinWhitespaceDelimitedRegex.firstMatch(in: text, options: [], range: range) != nil
     }
 
-    /// Whole-phrase / whole-word match for Latin script; avoids substring hits like "rest" inside "forest".
+    private static let latinWhitespaceDelimitedRegex: NSRegularExpression = {
+        // swiftlint:disable:next force_try
+        try! NSRegularExpression(pattern: "^[\\p{Latin}\\p{Nd}\\s]*$", options: [])
+    }()
+
+    private func hasASCIILatinLetters(_ text: String) -> Bool {
+        text.contains { character in
+            character.isLetter && character.isASCII
+        }
+    }
+
+    /// Whole-word / phrase match via `enumerateSubstrings(.byWords)` when regex `\\b` is unreliable.
+    private func phraseMatchesUsingEnumeratedWords(haystack: String, needle: String) -> Bool {
+        let needleWords = needle.split(whereSeparator: { $0.isWhitespace }).map(String.init).filter { !$0.isEmpty }
+        guard !needleWords.isEmpty else { return false }
+        if needleWords.count == 1 {
+            return wordMatchesUsingEnumeratedWords(haystack: haystack, word: needleWords[0])
+        }
+        var haystackWords: [String] = []
+        haystack.enumerateSubstrings(in: haystack.startIndex..., options: [.byWords]) { substring, _, _, _ in
+            if let substring, !substring.isEmpty {
+                haystackWords.append(substring)
+            }
+        }
+        let loweredNeedle = needleWords.map { $0.lowercased() }
+        let loweredHaystack = haystackWords.map { $0.lowercased() }
+        guard loweredNeedle.count <= loweredHaystack.count else { return false }
+        for start in 0...(loweredHaystack.count - loweredNeedle.count) {
+            let end = start + loweredNeedle.count
+            let window = Array(loweredHaystack[start..<end])
+            if window == loweredNeedle {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func wordMatchesUsingEnumeratedWords(haystack: String, word: String) -> Bool {
+        let target = word.lowercased()
+        var found = false
+        haystack.enumerateSubstrings(in: haystack.startIndex..., options: [.byWords]) { substring, _, _, _ in
+            guard let substring, !substring.isEmpty else { return }
+            if substring.lowercased() == target {
+                found = true
+            }
+        }
+        return found
+    }
+
+    /// Whole-phrase / whole-word match for Latin-only strings; avoids substring hits like "rest" inside "forest".
     private func latinPhraseHasWordBoundaryMatch(haystack: String, needle: String) -> Bool {
-        guard !needle.isEmpty, needle.count <= haystack.count else { return false }
+        guard needle.count <= haystack.count else { return false }
         let escaped = NSRegularExpression.escapedPattern(for: needle)
         let pattern = "\\b\(escaped)\\b"
         return haystack.range(of: pattern, options: .regularExpression) != nil

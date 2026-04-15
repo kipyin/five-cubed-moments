@@ -19,14 +19,10 @@ enum AppInstructionLocale: Equatable, Sendable {
 
     /// Uses `Locale.Language` so legacy tags (`zh_CN`, `zh_Hans_CN`) and bare `zh` resolve like the system,
     /// instead of brittle `zh-hans` / `zh-hans-` string prefix checks that miss underscore forms.
+    private static let simplifiedChineseScript = Locale.Script("Hans")
+
     private static func isSimplifiedChineseUIIdentifier(_ identifier: String) -> Bool {
         let language = Locale.Language(identifier: identifier)
-        guard language.languageCode?.identifier == "zh" else {
-            return false
-        }
-        guard let script = language.script?.identifier else {
-            return false
-        }
-        return script.caseInsensitiveCompare("Hans") == .orderedSame
+        return language.languageCode == .chinese && language.script == simplifiedChineseScript
     }
 }

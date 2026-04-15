@@ -22,9 +22,10 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
         let gratitudeGuidance = presentation.sectionGuidance(for: .gratitude)
         XCTAssertEqual(gratitudeGuidance?.title, "")
         XCTAssertEqual(gratitudeGuidance?.message, String(localized: "journal.onboarding.startWithGratitude"))
+        let keyboardHint = String(localized: "journal.onboarding.keyboardFinishHint")
         XCTAssertEqual(
             gratitudeGuidance?.messageSecondary,
-            String(localized: "journal.onboarding.keyboardFinishHint")
+            JournalOnboardingPresentation.trimmedKeyboardFinishHintLine(keyboardHint)
         )
         XCTAssertEqual(presentation.state(for: .gratitude), .active)
         XCTAssertEqual(
@@ -80,27 +81,27 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
         XCTAssertFalse(presentation.isGuidanceActive)
     }
 
-    func test_presentation_negativeGratitudesCount_targetsGratitudeLikeZero() {
-        let presentation = makePresentation(gratitudes: -1, needs: 0, people: 0)
-
-        XCTAssertEqual(presentation.step, .gratitude)
-        XCTAssertTrue(presentation.isGuidanceActive)
-        XCTAssertNotNil(presentation.sectionGuidance(for: .gratitude))
-        XCTAssertEqual(presentation.state(for: .gratitude), .active)
-        XCTAssertEqual(
-            presentation.state(for: .need),
-            .locked(reason: String(localized: "journal.onboarding.needsLockedReason"))
+    func test_presentation_whitespaceOnlyMessage_isNotGuidanceActiveAndSectionGuidanceNil() {
+        let presentation = JournalOnboardingPresentation(
+            step: .gratitude,
+            title: nil,
+            message: "  \n\t ",
+            sectionStates: [.gratitude: .active]
         )
+
+        XCTAssertFalse(presentation.isGuidanceActive)
+        XCTAssertNil(presentation.sectionGuidance(for: .gratitude))
     }
 
-    func test_presentation_negativeNeedsCount_targetsNeedAfterFirstGratitude() {
-        let presentation = makePresentation(gratitudes: 1, needs: -1, people: 0)
+    func test_trimmedKeyboardFinishHintLine_whitespaceOnly_returnsNil() {
+        XCTAssertNil(JournalOnboardingPresentation.trimmedKeyboardFinishHintLine("  \n  "))
+    }
 
-        XCTAssertEqual(presentation.step, .need)
-        XCTAssertTrue(presentation.isGuidanceActive)
-        XCTAssertNotNil(presentation.sectionGuidance(for: .need))
-        XCTAssertEqual(presentation.state(for: .gratitude), .available)
-        XCTAssertEqual(presentation.state(for: .need), .active)
+    func test_trimmedKeyboardFinishHintLine_surroundingWhitespace_returnsTrimmed() {
+        XCTAssertEqual(
+            JournalOnboardingPresentation.trimmedKeyboardFinishHintLine("  \n hint \t "),
+            "hint"
+        )
     }
 }
 

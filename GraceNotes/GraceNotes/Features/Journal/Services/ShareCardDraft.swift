@@ -189,7 +189,7 @@ enum ShareRenderPayloadBuilder {
         )
         return ShareRenderPayload(
             style: draft.style,
-            typographyScript: ShareTypographyScript.current(),
+            typographyScript: ShareTypographyScript.current(bundle: .main),
             dateFormatted: payload.dateFormatted,
             completionLevel: payload.completionLevel,
             showWatermark: draft.showWatermark,

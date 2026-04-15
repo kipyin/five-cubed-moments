@@ -2,6 +2,7 @@ import SwiftData
 import XCTest
 @testable import GraceNotes
 
+// swiftlint:disable:next type_body_length
 final class WeeklyInsightRuleEngineTests: XCTestCase {
     private var calendar: Calendar!
     private var ruleEngine: WeeklyInsightRuleEngine!
@@ -151,6 +152,72 @@ final class WeeklyInsightRuleEngineTests: XCTestCase {
     }
 
     /// Surface text counts as a reflection day for `.empty` chip status (no chips filled).
+    func test_resurfacingMessage_whitespaceOnlyObservation_fallsBackToStarterReflection() {
+        let starter = String(localized: "review.insights.starterReflection")
+        let insights = [
+            ReviewWeeklyInsight(
+                pattern: .sparseFallback,
+                observation: "   \n",
+                action: "Valid action",
+                primaryTheme: nil,
+                mentionCount: nil,
+                dayCount: 1
+            )
+        ]
+        let normalized = WeeklyInsightRuleEngine.normalizedWeeklyInsights(insights)
+        XCTAssertEqual(normalized.first?.observation, "")
+        XCTAssertEqual(
+            WeeklyInsightRuleEngine.resurfacingMessage(for: normalized, emptyObservationFallback: starter),
+            starter
+        )
+    }
+
+    func test_continuityPrompt_firstActionWhitespace_usesSecondNonEmptyAction() {
+        let defaultPrompt = String(localized: "review.prompts.carryIntoNextWeek")
+        let insights = [
+            ReviewWeeklyInsight(
+                pattern: .sparseFallback,
+                observation: "Headline",
+                action: "  \n",
+                primaryTheme: nil,
+                mentionCount: nil,
+                dayCount: 1
+            ),
+            ReviewWeeklyInsight(
+                pattern: .sparseFallback,
+                observation: "Other",
+                action: "  Carry this forward  ",
+                primaryTheme: nil,
+                mentionCount: nil,
+                dayCount: 1
+            )
+        ]
+        let normalized = WeeklyInsightRuleEngine.normalizedWeeklyInsights(insights)
+        XCTAssertEqual(
+            WeeklyInsightRuleEngine.continuityPrompt(for: normalized, defaultPrompt: defaultPrompt),
+            "Carry this forward"
+        )
+    }
+
+    func test_continuityPrompt_allActionsWhitespace_usesDefaultContinuityPrompt() {
+        let defaultPrompt = String(localized: "review.prompts.carryIntoNextWeek")
+        let insights = [
+            ReviewWeeklyInsight(
+                pattern: .sparseFallback,
+                observation: "x",
+                action: "  ",
+                primaryTheme: nil,
+                mentionCount: nil,
+                dayCount: 1
+            )
+        ]
+        let normalized = WeeklyInsightRuleEngine.normalizedWeeklyInsights(insights)
+        XCTAssertEqual(
+            WeeklyInsightRuleEngine.continuityPrompt(for: normalized, defaultPrompt: defaultPrompt),
+            defaultPrompt
+        )
+    }
+
     func test_analyze_soilEntryWithSurfaceText_usesNonEmptySparseFallbackWhenWeekIsSparse() throws {
         try withInsertedEntries { context in
             let entries = [

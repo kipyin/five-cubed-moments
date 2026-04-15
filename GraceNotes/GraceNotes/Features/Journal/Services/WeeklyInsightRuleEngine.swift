@@ -46,19 +46,21 @@ struct WeeklyInsightRuleEngine {
             )
         )
 
-        let narrativeSummary = candidateBuilder.narrativeSummary(from: selectedInsights)
+        let normalizedInsights = Self.normalizedWeeklyInsights(selectedInsights)
+
+        let narrativeSummary = candidateBuilder.narrativeSummary(from: normalizedInsights)
         let starterReflection = String(localized: "review.insights.starterReflection")
-        let (headline, primaryInsight) = Self.headlineAndPrimaryInsight(from: selectedInsights)
+        let (headline, primaryInsight) = Self.headlineAndPrimaryInsight(from: normalizedInsights)
         let resurfacingMessage = headline ?? starterReflection
 
         let continuityPrompt = Self.continuityPrompt(
             matching: primaryInsight,
-            in: selectedInsights,
+            in: normalizedInsights,
             defaultPrompt: candidateBuilder.defaultContinuityPrompt
         )
 
         return WeeklyInsightAnalysis(
-            weeklyInsights: selectedInsights,
+            weeklyInsights: normalizedInsights,
             recurringGratitudes: aggregates.recurringGratitudes,
             recurringNeeds: aggregates.recurringNeeds,
             recurringPeople: aggregates.recurringPeople,
@@ -111,5 +113,44 @@ struct WeeklyInsightRuleEngine {
             }
         }
         return (nil, nil)
+    }
+}
+
+extension WeeklyInsightRuleEngine {
+    /// Trims insight copy so `weeklyInsights` matches `resurfacingMessage` / `continuityPrompt`.
+    static func normalizedWeeklyInsights(_ insights: [ReviewWeeklyInsight]) -> [ReviewWeeklyInsight] {
+        insights.map { insight in
+            let trimmedObservation = insight.observation.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedAction = insight.action?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let action: String? = {
+                guard let trimmedAction, !trimmedAction.isEmpty else { return nil }
+                return trimmedAction
+            }()
+            return ReviewWeeklyInsight(
+                pattern: insight.pattern,
+                observation: trimmedObservation,
+                action: action,
+                primaryTheme: insight.primaryTheme,
+                mentionCount: insight.mentionCount,
+                dayCount: insight.dayCount
+            )
+        }
+    }
+
+    static func resurfacingMessage(
+        for insights: [ReviewWeeklyInsight],
+        emptyObservationFallback: String
+    ) -> String {
+        guard let headline = insights.first?.observation, !headline.isEmpty else {
+            return emptyObservationFallback
+        }
+        return headline
+    }
+
+    static func continuityPrompt(
+        for insights: [ReviewWeeklyInsight],
+        defaultPrompt: String
+    ) -> String {
+        insights.compactMap(\.action).first ?? defaultPrompt
     }
 }

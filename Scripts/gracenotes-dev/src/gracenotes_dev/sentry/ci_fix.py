@@ -147,6 +147,22 @@ def _git_has_uncommitted_changes(git_root: Path) -> bool:
     return bool((st.stdout or "").strip())
 
 
+def _git_push_origin_head_to_branch(git_root: Path, remote_branch: str) -> subprocess.CompletedProcess[str]:
+    """
+    Push ``HEAD`` to ``origin``'s branch ``remote_branch`` (GitHub PR ``headRefName``).
+
+    Sentry worktrees use local names like ``sentry-review-fix-N``; a plain ``git push origin HEAD``
+    would update the wrong remote branch without this refspec.
+    """
+    refspec = f"HEAD:refs/heads/{remote_branch}"
+    return subprocess.run(
+        ["git", "push", "origin", refspec],
+        cwd=git_root,
+        capture_output=True,
+        text=True,
+    )
+
+
 def try_fix_ci_with_agent(
     repo_root: Path,
     settings: SentrySettings,
@@ -280,6 +296,7 @@ def try_fix_ci_with_agent(
             settings=settings,
             pr_number=pr_number,
             git_root=git_root,
+            push_remote_branch=str(head_ref),
             sink=sink,
         )
     finally:
@@ -291,16 +308,12 @@ def _push_git_head(
     repo_root: Path,
     git_root: Path,
     pr_number: int,
+    push_remote_branch: str,
     *,
     sink: SentryLogSink | None,
 ) -> bool:
-    """Push ``HEAD`` to ``origin`` (e.g. after local ``grace ci`` passed with a clean tree)."""
-    push = subprocess.run(
-        ["git", "push", "origin", "HEAD"],
-        cwd=git_root,
-        capture_output=True,
-        text=True,
-    )
+    """Push ``HEAD`` to ``origin``'s PR head branch (e.g. after local ``grace ci`` passed)."""
+    push = _git_push_origin_head_to_branch(git_root, push_remote_branch)
     if push.returncode != 0:
         append_event(
             repo_root,
@@ -329,6 +342,7 @@ def run_ci_recovery_loop_in_worktree(
     settings: SentrySettings,
     pr_number: int,
     git_root: Path,
+    head_ref: str,
     *,
     sink: SentryLogSink | None,
 ) -> bool:
@@ -337,12 +351,15 @@ def run_ci_recovery_loop_in_worktree(
 
     Use after a **local commit** exists in ``git_root`` (e.g. review feedback applied) so a
     green run with a clean tree still pushes that commit.
+
+    ``head_ref`` is the PR's ``headRefName``; pushes target ``origin``'s branch of that name.
     """
     return _try_fix_ci_in_git_root(
         repo_root,
         settings,
         pr_number,
         git_root,
+        push_remote_branch=head_ref,
         sink=sink,
         push_when_ci_green_clean=True,
     )
@@ -353,6 +370,7 @@ def _try_fix_ci_in_git_root(
     settings: SentrySettings,
     pr_number: int,
     git_root: Path,
+    push_remote_branch: str,
     *,
     sink: SentryLogSink | None,
     push_when_ci_green_clean: bool = False,
@@ -394,12 +412,7 @@ def _try_fix_ci_in_git_root(
             )
             return False
 
-        push = subprocess.run(
-            ["git", "push", "origin", "HEAD"],
-            cwd=git_root,
-            capture_output=True,
-            text=True,
-        )
+        push = _git_push_origin_head_to_branch(git_root, push_remote_branch)
         if push.returncode != 0:
             append_event(
                 repo_root,
@@ -486,7 +499,13 @@ def _try_fix_ci_in_git_root(
             if _git_has_uncommitted_changes(git_root):
                 return _commit_and_push()
             if push_when_ci_green_clean:
-                return _push_git_head(repo_root, git_root, pr_number, sink=sink)
+                return _push_git_head(
+                    repo_root,
+                    git_root,
+                    pr_number,
+                    push_remote_branch,
+                    sink=sink,
+                )
             append_event(
                 repo_root,
                 {

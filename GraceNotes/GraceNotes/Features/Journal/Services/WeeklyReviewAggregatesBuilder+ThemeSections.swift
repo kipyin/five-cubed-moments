@@ -123,6 +123,7 @@ extension WeeklyReviewAggregatesBuilder {
 
         let mostRecurringSorted = map.values
             .filter { $0.totalCount >= minimumMostRecurringSignalCount }
+            .filter { passesPenalizedThemeMostRecurringFloor($0) }
             .sorted {
                 if $0.totalCount != $1.totalCount {
                     return $0.totalCount > $1.totalCount
@@ -171,6 +172,15 @@ extension WeeklyReviewAggregatesBuilder {
         )
 
         return (mostRecurring, trending)
+    }
+
+    /// Penalized generic labels (see ``ReviewCuratedThemeMap/penalizedConcepts``) need more than the
+    /// bare minimum recurrence to appear in Most Recurring; two sparse chips are not enough context.
+    private func passesPenalizedThemeMostRecurringFloor(_ value: DistilledThemeAccumulator) -> Bool {
+        guard ReviewCuratedThemeMap.defaultMap.penalizedConcepts.contains(value.canonicalConcept) else {
+            return true
+        }
+        return value.totalCount >= 3 || value.days.count >= 3
     }
 
     /// Picks the highest-scoring `ReviewDistilledConcept` per canonical label while preserving the order of

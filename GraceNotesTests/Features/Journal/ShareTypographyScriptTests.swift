@@ -11,7 +11,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "en",
             systemLanguage: Locale.Language(identifier: "ja")
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_englishUIAndEnglishSystem_staysLatin_notCJKFromSecondaryPreferences() {
@@ -29,7 +29,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "zh-Hans",
             systemLanguage: english
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_usesPreferredUILocalizationIdentifier_zhHant_beforeSystemEnglish() {
@@ -37,7 +37,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "zh-Hant",
             systemLanguage: english
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_usesPreferredUILocalizationIdentifier_ja_beforeSystemEnglish() {
@@ -45,7 +45,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "ja",
             systemLanguage: english
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_usesPreferredUILocalizationIdentifier_ko_beforeSystemEnglish() {
@@ -53,7 +53,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "ko",
             systemLanguage: english
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_fallsBackToSystemLanguage_whenUIIsEnglish() {
@@ -61,7 +61,7 @@ final class ShareTypographyScriptTests: XCTestCase {
             preferredUILocalizationIdentifier: "en",
             systemLanguage: Locale.Language(identifier: "zh-Hans")
         )
-        XCTAssertEqual(script, .chinese)
+        XCTAssertEqual(script, .cjk)
     }
 
     func test_current_latinWhenUIAndSystemAreNonCJK() {

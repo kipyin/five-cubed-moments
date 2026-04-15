@@ -393,8 +393,8 @@ final class WeeklyInsightRuleEngineContinuityTests: XCTestCase {
         let fallback = ReviewWeeklyInsight(
             pattern: .recurringTheme,
             observation: "",
-            primaryTheme: "Theme",
             action: "  Fallback action ",
+            primaryTheme: "Theme",
             mentionCount: nil,
             dayCount: nil
         )

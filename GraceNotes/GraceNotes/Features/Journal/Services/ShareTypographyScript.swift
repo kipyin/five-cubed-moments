@@ -31,9 +31,19 @@ extension ShareTypographyScript {
         }
         languages.append(systemLanguage)
         for language in languages where isCJK(language) {
-            return .chinese
+            return .cjk
         }
         return .latin
+    }
+
+    /// Maps a concrete locale’s base language code (for tests and direct locale-driven layout).
+    static func forLocale(_ locale: Locale) -> ShareTypographyScript {
+        switch locale.language.languageCode?.identifier {
+        case "zh", "ja", "ko":
+            return .cjk
+        default:
+            return .latin
+        }
     }
 
     private static func isCJK(_ language: Locale.Language) -> Bool {

@@ -32,8 +32,7 @@ enum ReviewWeekTrendPolicy {
     static func rawTrend(current: Int, previous: Int) -> ReviewThemeTrend {
         guard current >= 0, previous >= 0 else {
             reviewWeekTrendPolicyLogger.warning(
-                "Negative mention counts in rawTrend (current=\(current, privacy: .public), "
-                    + "previous=\(previous, privacy: .public))"
+                "Negative mention counts in rawTrend (current=\(current, privacy: .public), previous=\(previous, privacy: .public))"
             )
             return .stable
         }

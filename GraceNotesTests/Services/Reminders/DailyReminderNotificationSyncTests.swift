@@ -67,7 +67,7 @@ private final class DailyReminderSyncSchedulerMock: ReminderScheduling {
     func enableDailyReminder(at time: Date, body: String) async -> ReminderSyncResult {
         _ = time
         _ = body
-        .scheduled
+        return .scheduled
     }
 
     func disableDailyReminder() async -> ReminderSyncResult {

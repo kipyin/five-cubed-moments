@@ -39,7 +39,7 @@ enum HistoryEntryGrouping {
         if let normalized = calendar.date(from: components) {
             return normalized
         }
-        return gregorianMonthStart(for: date, timeZone: calendar.timeZone)
+        return gregorianUTCMonthStart(for: date)
     }
 
     /// When the active calendar cannot form a month start, anchor by Gregorian UTC year/month

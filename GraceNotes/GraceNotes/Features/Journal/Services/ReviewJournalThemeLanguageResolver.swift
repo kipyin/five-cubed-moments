@@ -8,6 +8,8 @@ protocol ReviewJournalThemeLanguageResolving: Sendable {
 }
 
 struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
+    private static let defaultConfidenceThreshold = 0.55
+
     /// Ignore language detection until the corpus has at least this many non-whitespace graphemes in the
     /// **analysis prefix** (the first 50,000 extended grapheme clusters—the same capped sample used for
     /// `NLLanguageRecognizer`), not the entire trimmed corpus. Dense text after that prefix does not count.
@@ -34,7 +36,7 @@ struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
             return Self.englishCatalogLocale
         }
 
-        let analysisText = Self.analysisSample(from: trimmed)
+        let analysisText = Self.normalizedAnalysisSample(from: trimmed)
 
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(analysisText)
@@ -47,7 +49,7 @@ struct ReviewJournalThemeLanguageResolver: ReviewJournalThemeLanguageResolving {
             }
         }
 
-        return Self.scriptTieBreakLocale(trimmed: analysisText)
+        return Self.scriptTieBreakLocale(analysisText: analysisText)
     }
 
     private static let englishCatalogLocale = Locale(identifier: "en")

@@ -19,7 +19,7 @@ enum JournalShareRenderer {
     @MainActor static func renderImage(from payload: ShareRenderPayload) -> UIImage? {
         let cardView = JournalShareCardView(payload: payload, onLineTap: nil)
         let renderer = ImageRenderer(content: cardView)
-        renderer.proposedSize = ProposedViewSize(width: Self.proposedLayoutWidth, height: nil)
+        renderer.proposedSize = ProposedViewSize(width: JournalShareExportMetrics.totalLayoutWidth, height: nil)
         renderer.scale = Self.recommendedPixelScale()
         guard let image = renderer.uiImage else { return nil }
         guard image.size.width > 0, image.size.height > 0 else { return nil }

@@ -169,6 +169,49 @@ extension WeeklyReviewAggregatesMostRecurringTests {
         XCTAssertEqual(literal.totalCount, 3)
     }
 
+    /// When the same canonical theme appears under gratitudes, needs, and people, `buildThemeSections` picks a
+    /// single winning `ReviewThemeSourceCategory` for `displayLabel` (people > needs > gratitudes). This
+    /// integration test locks that merge plus the curated label for `rest`.
+    func test_buildThemeSections_sameCanonicalAcrossPeopleNeedsGratitudesPicksRankedDisplaySource() throws {
+        let referenceDate = date(year: 2026, month: 3, day: 18)
+        let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
+        let previous = ReviewInsightsPeriod.previousPeriod(before: period, calendar: calendar)
+
+        // Day 16: gratitudes + needs both map to canonical `rest`; needs outranks gratitudes (no people yet).
+        // Day 17: people-only surface for `rest`, merged with prior days so people outranks needs for the label source.
+        let entries = [
+            makeEntry(
+                on: date(year: 2026, month: 3, day: 16),
+                gratitudes: ["recover"],
+                needs: ["downtime"],
+                people: []
+            ),
+            makeEntry(
+                on: date(year: 2026, month: 3, day: 17),
+                gratitudes: [],
+                needs: [],
+                people: ["Rest"]
+            )
+        ]
+        let aggregates = builder.build(
+            currentPeriod: period,
+            currentWeekEntries: entries.filter { period.contains($0.entryDate) },
+            previousWeekEntries: entries.filter { previous.contains($0.entryDate) },
+            allEntries: entries,
+            calendar: calendar,
+            referenceDate: referenceDate
+        )
+
+        let restTheme = try XCTUnwrap(
+            aggregates.stats.mostRecurringThemes.first(where: { $0.label == "Rest" })
+        )
+        XCTAssertGreaterThanOrEqual(restTheme.totalCount, 2)
+        let sources = Set(restTheme.evidence.map(\.source))
+        XCTAssertTrue(sources.contains(.gratitudes))
+        XCTAssertTrue(sources.contains(.needs))
+        XCTAssertTrue(sources.contains(.people))
+    }
+
     func test_buildThemeSections_trendingIncludesNewUpAndDownWithPriorVsCurrentCounts() throws {
         let referenceDate = date(year: 2026, month: 3, day: 18)
         let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)

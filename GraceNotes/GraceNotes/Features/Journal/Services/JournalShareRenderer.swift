@@ -29,14 +29,20 @@ enum JournalShareRenderer {
     }
 
     /// `ImageRenderer` runs without hosting in a window; `UITraitCollection.current.displayScale` can be
-    /// unset or 1× while the device screen is Retina. Use the highest positive scale reported by the current
-    /// trait collection, any connected window scene's screen, or the main screen, then fall back to a safe
-    /// default.
+    /// unset or 1× while the device screen is Retina. Uses the highest positive scale available from any
+    /// foreground window scene (active or inactive — a presented sheet can leave the root scene inactive),
+    /// the current trait collection, or the main screen, then clamps to a safe supported range. Ignores
+    /// background/unattached scenes so multi-window layouts do not pick an unrelated display’s scale.
     @MainActor
     private static func recommendedPixelScale() -> CGFloat {
         let traitScale = UITraitCollection.current.displayScale
+        // Deliberately take the maximum across foreground scenes so export matches the sharpest attached
+        // screen when multiple windows are visible.
         let sceneScale = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
+            .filter {
+                $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive
+            }
             .map { $0.screen.scale }
             .max() ?? 0
         let screenScale = UIScreen.main.scale

@@ -304,6 +304,7 @@ def try_address_cursor_review_with_agent(
             settings=settings,
             pr_number=pr_number,
             git_root=git_root,
+            head_ref=str(head_ref),
             feedback_text=ft,
             sink=sink,
         )
@@ -318,6 +319,7 @@ def _try_address_review_in_git_root(
     pr_number: int,
     git_root: Path,
     *,
+    head_ref: str,
     feedback_text: str,
     sink: SentryLogSink | None,
 ) -> bool:
@@ -456,6 +458,7 @@ def _try_address_review_in_git_root(
             settings,
             pr_number,
             git_root,
+            head_ref,
             sink=sink,
         )
         if not ci_ok:

@@ -314,30 +314,42 @@ extension WeeklyReviewAggregatesBuilder {
         let normalizedSupport = textNormalizer.normalizeThemeLabel(supportText)
         let normalizedTheme = textNormalizer.normalizeThemeLabel(themeConcept)
         guard !normalizedSupport.isEmpty, !normalizedTheme.isEmpty else { return false }
-        // Drive script routing from the same normalized label we compare; `normalizeThemeLabel` does not strip Han.
-        if containsHanCharacters(normalizedTheme) || containsHanCharacters(themeConcept) {
+
+        let hasHanInRaw = containsHanCharacters(themeConcept) || containsHanCharacters(supportText)
+        let bothNormalizedHaveLatin = containsLatinLetters(normalizedTheme) && containsLatinLetters(normalizedSupport)
+        let latinWordOrTokenMatch = latinWordBoundaryOrTokenOverlap(
+            normalizedTheme: normalizedTheme,
+            normalizedSupport: normalizedSupport
+        )
+
+        if !hasHanInRaw {
+            return latinWordOrTokenMatch
+        }
+
+        if !bothNormalizedHaveLatin {
+            // Han/kanji (or one side lacks Latin letters): `\b` and Latin token overlap are unreliable;
+            // substring either way.
             return normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport)
         }
-        let latinPairSafeForRegexWordBoundaries =
-            isLatinWhitespaceDelimitedForRegexWordBoundaries(normalizedTheme)
-            && isLatinWhitespaceDelimitedForRegexWordBoundaries(normalizedSupport)
-        if latinPairSafeForRegexWordBoundaries {
-            // `\b` aligns with whitespace-delimited Latin words; skip for kana, Cyrillic, emoji-mixed text, etc.
-            if latinPhraseHasWordBoundaryMatch(haystack: normalizedSupport, needle: normalizedTheme)
-                || latinPhraseHasWordBoundaryMatch(haystack: normalizedTheme, needle: normalizedSupport) {
-                return true
-            }
-        } else {
-            if phraseMatchesUsingEnumeratedWords(haystack: normalizedSupport, needle: normalizedTheme)
-                || phraseMatchesUsingEnumeratedWords(haystack: normalizedTheme, needle: normalizedSupport) {
-                return true
-            }
-            // Avoid naive substring matching when ASCII Latin appears (e.g. "rest" inside "forest").
-            if !hasASCIILatinLetters(normalizedTheme), !hasASCIILatinLetters(normalizedSupport) {
-                if normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport) {
-                    return true
-                }
-            }
+
+        if latinWordOrTokenMatch {
+            return true
+        }
+
+        // Both normalized strings include Latin letters; Latin checks already ran. Substring fallback only when both
+        // sides also include Han characters (Han/kanji adjacency), avoiding pure Latin substring hits like "rest"
+        // inside "forest …" when a Han character triggers the Han path.
+        let bidirectionalSubstring =
+            normalizedSupport.contains(normalizedTheme) || normalizedTheme.contains(normalizedSupport)
+        return bidirectionalSubstring
+            && containsHanCharacters(normalizedTheme)
+            && containsHanCharacters(normalizedSupport)
+    }
+
+    private func latinWordBoundaryOrTokenOverlap(normalizedTheme: String, normalizedSupport: String) -> Bool {
+        if latinPhraseHasWordBoundaryMatch(haystack: normalizedSupport, needle: normalizedTheme)
+            || latinPhraseHasWordBoundaryMatch(haystack: normalizedTheme, needle: normalizedSupport) {
+            return true
         }
         let themeTokens = Set(normalizedTheme.split(separator: " ").map(String.init).filter { $0.count >= 3 })
         let supportTokens = Set(normalizedSupport.split(separator: " ").map(String.init).filter { $0.count >= 3 })
@@ -408,6 +420,10 @@ extension WeeklyReviewAggregatesBuilder {
         let escaped = NSRegularExpression.escapedPattern(for: needle)
         let pattern = "\\b\(escaped)\\b"
         return haystack.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    private func containsLatinLetters(_ normalized: String) -> Bool {
+        normalized.range(of: "\\p{Latin}", options: .regularExpression) != nil
     }
 
     func containsHanCharacters(_ text: String) -> Bool {

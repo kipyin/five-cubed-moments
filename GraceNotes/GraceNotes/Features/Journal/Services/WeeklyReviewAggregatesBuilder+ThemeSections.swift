@@ -28,7 +28,7 @@ extension WeeklyReviewAggregatesBuilder {
             forJournalCorpus: journalCorpus
         )
         var map: [String: DistilledThemeAccumulator] = [:]
-        /// Strongest section source seen for each canonical (drives `displayLabel`; `.people` enables person labels).
+        // Strongest section source seen for each canonical (drives `displayLabel`; `.people` enables person labels).
         var displaySourceByCanonical: [String: ReviewThemeSourceCategory] = [:]
         var sequence = 0
 
@@ -337,6 +337,7 @@ extension WeeklyReviewAggregatesBuilder {
                 return 0
             }
         }
+        // When ranks tie, keep lhs (the category already stored for this canonical).
         return rank(lhs) >= rank(rhs) ? lhs : rhs
     }
 

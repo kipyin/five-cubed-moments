@@ -42,7 +42,7 @@ enum DemoDataSeeder {
         if savedVersion != seedVersion { return true }
 
         let today = calendar.startOfDay(for: now)
-        return fetchDemoJournalForDay(today, context: context, calendar: calendar) == nil
+        return fetchEntry(for: today, context: context, calendar: calendar) == nil
     }
 
     private static func upsertEntry(_ payload: DemoEntryPayload, context: ModelContext, calendar: Calendar, now: Date) {
@@ -82,21 +82,18 @@ enum DemoDataSeeder {
         }
 
         let week = [
-            makeTodayPayload(entryDate: days[0], completedAt: now),
-            makeYesterdayPayload(entryDate: days[1]),
-            makeBlankPayload(entryDate: days[2]),
-            makeThreeDaysAgoPayload(entryDate: days[3], completedAt: now),
-            makeFourDaysAgoPayload(entryDate: days[4]),
-            makeFiveDaysAgoPayload(entryDate: days[5]),
-            makeSixDaysAgoPayload(entryDate: days[6])
+            makeTodayPayload(entryDate: today, completedAt: now),
+            makeYesterdayPayload(entryDate: yesterday),
+            makeBlankPayload(entryDate: twoDaysAgo),
+            makeThreeDaysAgoPayload(entryDate: threeDaysAgo, completedAt: now),
+            makeFourDaysAgoPayload(entryDate: fourDaysAgo),
+            makeFiveDaysAgoPayload(entryDate: fiveDaysAgo),
+            makeSixDaysAgoPayload(entryDate: sixDaysAgo)
         ]
 
-        // The anchored December row must not share a calendar day with the rolling week, or the
-        // later upsert would overwrite the intended demo for that day.
-        let anchored = demoDecember2025Entry(calendar: calendar, now: now)
-        let anchoredDay = calendar.startOfDay(for: anchored.entryDate)
-        let weekDays = Set(week.map { calendar.startOfDay(for: $0.entryDate) })
-        if weekDays.contains(anchoredDay) {
+        // Historical anchor uses the day before the oldest day in the rolling week (`today-6`), so it
+        // never shares a calendar day with the seven seeded rows (collision-proof without a runtime check).
+        guard let anchored = demoHistoricalAnchorEntry(today: today, calendar: calendar) else {
             return week
         }
         return week + [anchored]
@@ -265,75 +262,29 @@ enum DemoDataSeeder {
     }
 }
 
-/// Delegates to ``JournalRepository/fetchEntry(dayStart:context:)`` so demo upserts target the same
-/// canonical journal Past and Today use when more than one row exists for a calendar day.
-private func fetchDemoJournalForDay(_ date: Date, context: ModelContext, calendar: Calendar) -> Journal? {
-    let dayStart = calendar.startOfDay(for: date)
-    do {
-        return try JournalRepository(calendar: calendar).fetchEntry(dayStart: dayStart, context: context)
-    } catch {
-        assertionFailure("DemoDataSeeder: failed to fetch journal for demo seeding: \(error)")
-        return nil
-    }
-}
-
-/// Seven consecutive local calendar days ending at `today`, without collapsing failed `date(byAdding:)`
-/// steps to the same day.
-private func rollingWeekDayStarts(from today: Date, calendar: Calendar) -> [Date]? {
-    var result: [Date] = []
-    var cursor = today
-    for _ in 0..<7 {
-        result.append(calendar.startOfDay(for: cursor))
-        guard let prior = calendar.date(byAdding: .day, value: -1, to: cursor) else {
-            assertionFailure("DemoDataSeeder: calendar could not subtract one day from \(cursor)")
-            return nil
-        }
-        cursor = prior
-    }
-    return result
-}
-
-/// Fallback when the day-by-day chain fails (rare); avoids `?? today` collapsing multiple rows onto one day.
-private func fallbackWeekDayStarts(from today: Date, calendar: Calendar) -> [Date]? {
-    var result: [Date] = []
-    for offset in 0..<7 {
-        guard let offsetDate = calendar.date(byAdding: .day, value: -offset, to: today) else {
-            assertionFailure("DemoDataSeeder: calendar could not subtract \(offset) days from today")
-            return nil
-        }
-        result.append(calendar.startOfDay(for: offsetDate))
-    }
-    return result
-}
-
-/// Anchored historical row so Demo builds can sanity-check Past/review behavior across calendar years.
-/// Gregorian components avoid misinterpreting year/month/day when `Calendar.current` is not Gregorian.
-private func demoDecember2025Entry(calendar: Calendar, now: Date) -> DemoEntryPayload {
-    var gregorian = Calendar(identifier: .gregorian)
-    gregorian.timeZone = calendar.timeZone
-    var parts = DateComponents()
-    parts.year = 2025
-    parts.month = 12
-    parts.day = 10
-    let raw = gregorian.date(from: parts) ?? calendar.startOfDay(for: now)
+/// Older-than-week row so Demo builds can sanity-check Past/review behavior
+/// (often crosses calendar years near January).
+private func demoHistoricalAnchorEntry(today: Date, calendar: Calendar) -> DemoEntryPayload? {
+    guard let raw = calendar.date(byAdding: .day, value: -7, to: today) else { return nil }
     let entryDate = calendar.startOfDay(for: raw)
     return DemoEntryPayload(
         entryDate: entryDate,
         gratitudes: [
-            demoLine("Grateful for closing out 2025 with calm routines"),
+            demoLine("Grateful for steady routines before this week"),
             demoLine("Thankful for friends who checked in"),
             demoLine("Quiet evening to reflect")
         ],
         needs: [
-            demoLine("Need margin before the new year"),
-            demoLine("Want to plan January lightly")
+            demoLine("Need margin as schedules shift"),
+            demoLine("Want to plan the week lightly")
         ],
         people: [
-            demoLine("Thinking of family gathering plans"),
+            demoLine("Thinking of family plans"),
             demoLine("Grateful for community support")
         ],
-        readingNotes: "Demo note dated in 2025 for Past-tab and rhythm checks.",
-        reflections: "This entry is intentionally in December 2025 to verify history outside the current week.",
+        readingNotes: "Demo note outside the rolling week for Past-tab and rhythm checks.",
+        reflections: "This entry is intentionally one day older than the seeded week "
+            + "to verify history outside the current seven days.",
         completedAt: nil
     )
 }

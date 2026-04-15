@@ -370,7 +370,22 @@ private extension UIColor {
     }
 }
 
-private extension Color {
+extension UIColor {
+    /// 24-bit `RRGGBB`. High bits are masked so `AARRGGBB`-style literals still resolve to the same sRGB triplet.
+    convenience init(hex: UInt) {
+        let rgb = hex & 0xFFFFFF
+        let red = CGFloat((rgb >> 16) & 0xFF) / 255
+        let green = CGFloat((rgb >> 8) & 0xFF) / 255
+        let blue = CGFloat(rgb & 0xFF) / 255
+        self.init(red: red, green: green, blue: blue, alpha: 1)
+    }
+}
+
+extension Color {
+    init(hex: UInt) {
+        self.init(UIColor(hex: hex))
+    }
+
     static func adaptive(lightHex: UInt, darkHex: UInt) -> Color {
         Color(
             UIColor { traitCollection in
@@ -378,16 +393,5 @@ private extension Color {
                 return UIColor(hex: colorHex)
             }
         )
-    }
-}
-
-private extension UIColor {
-    /// Matches `Color.init(hex:)` masking so light/dark adaptive pairs stay consistent with share-card hex colors.
-    convenience init(hex: UInt) {
-        let rgb = hex & 0xFFFFFF
-        let red = CGFloat((rgb >> 16) & 0xFF) / 255
-        let green = CGFloat((rgb >> 8) & 0xFF) / 255
-        let blue = CGFloat(rgb & 0xFF) / 255
-        self.init(red: red, green: green, blue: blue, alpha: 1)
     }
 }

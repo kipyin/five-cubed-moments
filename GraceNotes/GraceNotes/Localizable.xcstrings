@@ -4088,13 +4088,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Changing the icon may briefly show a confirmation from iOS."
+            "value": "Changing the icon may briefly show a confirmation from iOS. The preview in that dialog may follow device appearance rather than your Home Screen icon settings."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更换图标时，系统可能会短暂显示确认提示。"
+            "value": "更换图标时，系统可能会短暂显示确认提示。系统提示里的图标预览通常跟随设备外观，未必与主屏幕图标样式设置一致。"
           }
         }
       }

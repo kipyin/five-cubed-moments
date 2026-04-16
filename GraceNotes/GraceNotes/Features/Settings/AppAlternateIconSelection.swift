@@ -24,8 +24,31 @@ enum AppAlternateIconSelection {
         return .liquidGlass
     }
 
+    /// The system confirmation sheet and its icon preview are controlled by iOS; they may follow device
+    /// appearance rather than Home Screen icon customization. There is no public API to change that preview.
     static func setChoice(_ choice: Choice, completion: @escaping (Error?) -> Void) {
         let name: String? = choice == .legacy ? legacyAssetCatalogName : nil
         UIApplication.shared.setAlternateIconName(name, completionHandler: completion)
+    }
+}
+
+extension AppAlternateIconSelection.Choice {
+    var localizedTitle: String {
+        switch self {
+        case .liquidGlass:
+            return String(localized: "settings.advanced.appIcon.option.liquidGlass")
+        case .legacy:
+            return String(localized: "settings.advanced.appIcon.option.legacy")
+        }
+    }
+
+    /// Asset catalog image name for Settings list preview (regular imageset, not appiconset).
+    var settingsPreviewAssetName: String {
+        switch self {
+        case .liquidGlass:
+            return "SettingsAppIconPreviewLiquidGlass"
+        case .legacy:
+            return "SettingsAppIconPreviewLegacy"
+        }
     }
 }

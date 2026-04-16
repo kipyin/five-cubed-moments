@@ -19,6 +19,8 @@ struct AdvancedSettingsScreen: View {
     @State private var intervalMode: PastStatisticsIntervalPickerMode
     @State private var customQuantity: Int
     @State private var customUnit: PastStatisticsIntervalUnit
+    @State private var appIconChoice: AppAlternateIconSelection.Choice
+    @State private var showAppIconChangeError = false
 
     init() {
         let raw = PastStatisticsIntervalPreference.appStorageRawValue()
@@ -26,10 +28,40 @@ struct AdvancedSettingsScreen: View {
         _intervalMode = State(initialValue: selection.mode == .all ? .all : .custom)
         _customQuantity = State(initialValue: Self.clampedPickerQuantity(selection.quantity))
         _customUnit = State(initialValue: selection.unit)
+        _appIconChoice = State(initialValue: .liquidGlass)
     }
 
     var body: some View {
         List {
+            if AppAlternateIconSelection.supportsAlternateIcons {
+                Section {
+                    Picker(
+                        String(localized: "settings.advanced.appIcon.pickerLabel"),
+                        selection: $appIconChoice
+                    ) {
+                        ForEach(AppAlternateIconSelection.Choice.allCases) { choice in
+                            Text(appIconChoiceLabel(choice)).tag(choice)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .font(AppTheme.warmPaperBody)
+                    .foregroundStyle(AppTheme.settingsTextPrimary)
+                    .onChange(of: appIconChoice) { _, newValue in
+                        applyAppIconChoice(newValue)
+                    }
+
+                    Text(String(localized: "settings.advanced.appIcon.footnote"))
+                        .font(AppTheme.warmPaperMeta)
+                        .foregroundStyle(AppTheme.settingsTextMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                } header: {
+                    Text(String(localized: "settings.advanced.appIcon.sectionTitle"))
+                        .font(AppTheme.warmPaperHeader)
+                        .foregroundStyle(AppTheme.settingsTextPrimary)
+                        .textCase(nil)
+                }
+            }
+
             Section {
                 Picker(
                     String(localized: "settings.advanced.firstWeekday.label"),
@@ -119,9 +151,39 @@ struct AdvancedSettingsScreen: View {
         .navigationTitle(String(localized: "settings.advanced.title"))
         .onAppear {
             loadIntervalState()
+            appIconChoice = AppAlternateIconSelection.currentChoice()
         }
         .onChange(of: intervalEncoded) { _, _ in
             loadIntervalState()
+        }
+        .alert(
+            String(localized: "settings.advanced.appIcon.errorTitle"),
+            isPresented: $showAppIconChangeError
+        ) {
+            Button(String(localized: "common.ok"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "settings.advanced.appIcon.errorMessage"))
+        }
+    }
+
+    private func appIconChoiceLabel(_ choice: AppAlternateIconSelection.Choice) -> String {
+        switch choice {
+        case .liquidGlass:
+            return String(localized: "settings.advanced.appIcon.option.liquidGlass")
+        case .legacy:
+            return String(localized: "settings.advanced.appIcon.option.legacy")
+        }
+    }
+
+    private func applyAppIconChoice(_ choice: AppAlternateIconSelection.Choice) {
+        guard choice != AppAlternateIconSelection.currentChoice() else { return }
+        AppAlternateIconSelection.setChoice(choice) { error in
+            Task { @MainActor in
+                if error != nil {
+                    appIconChoice = AppAlternateIconSelection.currentChoice()
+                    showAppIconChangeError = true
+                }
+            }
         }
     }
 

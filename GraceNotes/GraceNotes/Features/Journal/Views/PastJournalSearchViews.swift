@@ -79,6 +79,7 @@ enum PastJournalSearchGrouping {
     }
 }
 
+/// File-scoped highlight rendering; ``text(content:highlightQuery:)`` is the only entry point used by views.
 private enum PastJournalSearchHighlighting {
     /// Body size matches ``AppTheme.warmPaperBody`` (17pt, scaled for Dynamic Type).
     private static let bodyPointSize: CGFloat = 17
@@ -97,8 +98,10 @@ private enum PastJournalSearchHighlighting {
         return UIFont(descriptor: boldDescriptor, size: size)
     }
 
+    /// `private` to this enum so new call sites cannot skip trimming; empty `trimmedQuery` returns `[]` because
+    /// `range(of:options:range:locale:)` would yield zero-width matches without advancing and could spin on the main
+    /// actor.
     private static func matchRanges(for content: String, trimmedQuery: String) -> [Range<String.Index>] {
-        // `range(of: "")` yields a zero-width match without advancing — would spin forever.
         guard !trimmedQuery.isEmpty else { return [] }
 
         var ranges: [Range<String.Index>] = []

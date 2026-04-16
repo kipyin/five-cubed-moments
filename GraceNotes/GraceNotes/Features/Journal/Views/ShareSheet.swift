@@ -24,6 +24,8 @@ private enum ShareSheetPopover {
             width: 0,
             height: 0
         )
+        // Empty set avoids default arrow anchoring that can clash with chained sheets (e.g. journal share after another popover).
+        popover.permittedArrowDirections = []
     }
 }
 

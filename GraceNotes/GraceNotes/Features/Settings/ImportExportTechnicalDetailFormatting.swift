@@ -4,6 +4,7 @@ struct ExportHistoryLineParts {
     let kindLabel: String
     let statusLabel: String
     /// Non-nil when `entry.detail` has visible content after normalization (trim; line breaks flattened).
+    /// For this purpose, Unicode scalars in General Category `.control` or `.format` count as non-visible.
     let detail: String?
 }
 
@@ -51,7 +52,9 @@ enum ImportExportTechnicalDetailFormatting {
     /// history rows and accessibility labels stay single-line. Each newline-delimited segment is
     /// trimmed; empty segments are dropped so spacing collapses to single spaces between words.
     /// Runs of horizontal whitespace on a line collapse to a single space; strings that contain no
-    /// visible characters after that (e.g. only zero-width format scalars) are treated as absent.
+    /// visible Unicode scalars after that are treated as absent. Visibility ignores **all** scalars
+    /// whose General Category is `.control` or `.format` (including zero-width characters, joiners,
+    /// and BOM-style scalars), not a hand-picked zero-width subset.
     private static func normalizedExportHistoryDetail(_ raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -63,6 +66,7 @@ enum ImportExportTechnicalDetailFormatting {
         let joined = segments.joined(separator: " ")
         let collapsed = joined.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         guard !collapsed.isEmpty else { return nil }
+        // Non-visible for this row: every scalar in General Category `.control` or `.format`.
         let hasVisibleScalar = collapsed.unicodeScalars.contains { scalar in
             switch scalar.properties.generalCategory {
             case .control, .format:

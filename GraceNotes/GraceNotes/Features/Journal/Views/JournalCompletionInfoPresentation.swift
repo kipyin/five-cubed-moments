@@ -25,12 +25,12 @@ final class JournalCompletionInfoPresentation {
             return
         }
 
-        selectedBadgeInfo = badgeInfo
-
         if isInfoCardPresented {
-            scheduleInfoCardCloseThenReopenAfterDelay(reduceMotion: reduceMotion)
+            scheduleInfoCardCloseThenReopenAfterDelay(newBadgeInfo: badgeInfo, reduceMotion: reduceMotion)
             return
         }
+
+        selectedBadgeInfo = badgeInfo
 
         withAnimation(infoCardEntranceAnimation(reduceMotion: reduceMotion)) {
             isInfoCardPresented = true
@@ -71,7 +71,7 @@ final class JournalCompletionInfoPresentation {
         cancelInfoCardBloomAnimation(resetProgress: true)
     }
 
-    private func scheduleInfoCardCloseThenReopenAfterDelay(reduceMotion: Bool) {
+    private func scheduleInfoCardCloseThenReopenAfterDelay(newBadgeInfo: CompletionBadgeInfo, reduceMotion: Bool) {
         cancelInfoCardBloomAnimation(resetProgress: !reduceMotion)
         withAnimation(infoCardExitAnimation(reduceMotion: reduceMotion)) {
             isInfoCardPresented = false
@@ -82,6 +82,7 @@ final class JournalCompletionInfoPresentation {
         infoCardDismissTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(reduceMotion ? 1 : 130))
             guard !Task.isCancelled, reopenSequence == infoCardDismissSequence else { return }
+            selectedBadgeInfo = newBadgeInfo
             withAnimation(infoCardEntranceAnimation(reduceMotion: reduceMotion)) {
                 isInfoCardPresented = true
             }

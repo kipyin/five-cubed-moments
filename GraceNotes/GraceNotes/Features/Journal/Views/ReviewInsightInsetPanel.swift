@@ -97,6 +97,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
                         Text(trailing)
                             .font(AppTheme.warmPaperMeta)
                             .foregroundStyle(AppTheme.reviewTextMuted)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -128,7 +129,7 @@ struct ReviewInsightInsetPanel<Content: View>: View {
 private extension View {
     @ViewBuilder
     func optionalAccessibilityHint(_ hint: String?) -> some View {
-        if let hint {
+        if let hint, !hint.isEmpty {
             accessibilityHint(hint)
         } else {
             self

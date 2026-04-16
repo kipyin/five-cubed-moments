@@ -20,7 +20,7 @@ final class SaveToPhotosActivity: UIActivity {
     }
 
     override var activityTitle: String? {
-        String(localized: "Save to Photos")
+        String(localized: "sharing.saveToPhotos")
     }
 
     override var activityImage: UIImage? {
@@ -32,6 +32,18 @@ final class SaveToPhotosActivity: UIActivity {
     }
 
     override func perform() {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            DispatchQueue.main.async {
+                guard status == .authorized else {
+                    self.activityDidFinish(false)
+                    return
+                }
+                self.saveImageToPhotoLibrary()
+            }
+        }
+    }
+
+    private func saveImageToPhotoLibrary() {
         PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.creationRequestForAsset(from: self.image)
         } completionHandler: { [weak self] success, _ in

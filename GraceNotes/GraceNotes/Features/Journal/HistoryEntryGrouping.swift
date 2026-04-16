@@ -1,18 +1,102 @@
 import Foundation
-import SwiftData
 
 enum HistoryEntryGrouping {
     static func groupedByMonth(
-        entries: [JournalEntry],
-        calendar: Calendar
-    ) -> [(key: Date, entries: [JournalEntry])] {
+        entries: [Journal],
+        calendar: Calendar,
+        monthKeyResolver: ((Date, Calendar) -> Date)? = nil
+    ) -> [(key: Date, entries: [Journal])] {
+        let resolveMonthKey: (Date) -> Date = { date in
+            if let monthKeyResolver {
+                return monthKeyResolver(date, calendar)
+            }
+            return monthKey(for: date, calendar: calendar)
+        }
         let grouped = Dictionary(grouping: entries) { entry -> Date in
-            let components = calendar.dateComponents([.year, .month], from: entry.entryDate)
-            return calendar.date(from: components) ?? entry.entryDate
+            resolveMonthKey(entry.entryDate)
         }
         return grouped.keys.sorted(by: >).map { month in
-            let groupedEntries = grouped[month] ?? []
+            let groupedEntries = (grouped[month] ?? []).sorted {
+                $0.entryDate > $1.entryDate
+            }
             return (month, groupedEntries)
         }
+    }
+
+    /// Returns the start of the calendar month containing `date` when possible.
+    /// If month normalization fails, falls back to the start of the day rather than the raw
+    /// entry timestamp, which still avoids splitting a single day into many buckets.
+    private static func monthKey(for date: Date, calendar: Calendar) -> Date {
+        if let intervalStart = calendar.dateInterval(of: .month, for: date)?.start {
+            return intervalStart
+        }
+        var components = calendar.dateComponents([.year, .month], from: date)
+        components.day = 1
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        components.nanosecond = 0
+        if let normalized = calendar.date(from: components) {
+            return normalized
+        }
+        return gregorianUTCMonthStart(for: date)
+    }
+
+    /// When the active calendar cannot form a month start, anchor by Gregorian UTC year/month
+    /// so entries in the same month are not split by day. If direct month normalization fails
+    /// but year and month are known, derive the month from January 1; only then fall back to
+    /// `startOfDay(for:)` (which can still split one month across buckets when all else fails).
+    private static func gregorianUTCMonthStart(for date: Date) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)
+            ?? TimeZone(identifier: "UTC")
+            ?? TimeZone(abbreviation: "GMT")
+            ?? .current
+        var components = calendar.dateComponents([.year, .month], from: date)
+        components.day = 1
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        components.nanosecond = 0
+        if let normalized = calendar.date(from: components) {
+            return normalized
+        }
+        guard let year = components.year, let month = components.month else {
+            return calendar.startOfDay(for: date)
+        }
+        return gregorianUTCMonthStartFromYearMonth(
+            year: year,
+            month: month,
+            calendar: calendar,
+            fallbackDate: date
+        )
+    }
+
+    /// When `date(from:)` cannot build the first of the month from normalized components but year and month
+    /// are still present, anchor at January 1 and add months so entries in the same calendar month share one bucket.
+    /// Exposed as `internal` for unit tests (`@testable`) because forcing the parent `date(from:)` failure in
+    /// `gregorianUTCMonthStart(for:)` is impractical to reproduce reliably across OS versions.
+    internal static func gregorianUTCMonthStartFromYearMonth(
+        year: Int,
+        month: Int,
+        calendar: Calendar,
+        fallbackDate: Date
+    ) -> Date {
+        // Ultra-defensive: if components ever produced garbage, avoid crashing and land in a plausible month.
+        let clampedMonth = min(max(month, 1), 12)
+        var yearStartComponents = DateComponents()
+        yearStartComponents.timeZone = calendar.timeZone
+        yearStartComponents.year = year
+        yearStartComponents.month = 1
+        yearStartComponents.day = 1
+        yearStartComponents.hour = 0
+        yearStartComponents.minute = 0
+        yearStartComponents.second = 0
+        yearStartComponents.nanosecond = 0
+        guard let januaryFirst = calendar.date(from: yearStartComponents) else {
+            return calendar.startOfDay(for: fallbackDate)
+        }
+        return calendar.date(byAdding: .month, value: clampedMonth - 1, to: januaryFirst)
+            ?? calendar.startOfDay(for: fallbackDate)
     }
 }

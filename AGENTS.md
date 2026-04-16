@@ -6,15 +6,16 @@
 
 **Grace Notes** is a native iOS journaling app (SwiftUI + SwiftData). It is a single Xcode project with zero third-party dependencies. See `README.md` for features and project structure.
 
-**Release versioning (summary):** Prefer a **fixed marketing version** per roadmap line with **incrementing build** for each TestFlight/App Store binary; git tags **`v{marketing}+{build}`** (e.g. `v0.5.0+8`). Full convention: `.agents/skills/vc/SKILL.md` → **Versioning**.
+**Release versioning (summary):** Prefer a **fixed marketing version** per roadmap line with **incrementing build** for each TestFlight/App Store binary; git tags **`v{marketing}+{build}`** (e.g. `v0.5.0+9`). Full convention: `.agents/skills/vc/SKILL.md` → **Versioning**.
 
 ### Platform constraint
 
-This project **requires macOS + Xcode 26+** to build, run, and test with the **default** Makefile simulator destinations (iPhone 17 family / iOS 26 runtimes). The Cloud Agent Linux VM cannot compile Swift code that depends on iOS SDK frameworks (SwiftUI, SwiftData, UIKit). There is no backend, no API server, and no web UI—everything runs on-device in the iOS Simulator.
+This project **requires macOS + Xcode 26+** to build, run, and test with the **default** simulator destinations in [`gracenotes-dev.toml`](gracenotes-dev.toml) (iPhone 17 family / iOS 26 runtimes). The Cloud Agent Linux VM cannot compile Swift code that depends on iOS SDK frameworks (SwiftUI, SwiftData, UIKit). There is no backend, no API server, and no web UI—everything runs on-device in the iOS Simulator.
 
 ### What works on Linux
 
 - **Linting**: `swiftlint lint` (invoke `swiftlint` from PATH; binary location can vary by environment). In Cursor Cloud Linux, the static SwiftLint binary is preinstalled and runs without the Swift toolchain; it reports style violations across all Swift source files. The dynamic SwiftLint binary will crash on Linux because `libsourcekitdInProc.so` is unavailable, so use the static variant there.
+- **String catalog audit**: `grace l10n audit` — compares `Localizable.xcstrings` to Swift `String(localized:)` / `localized:` references (no Xcode). Use `--full` for exhaustive tables.
 - **Code review / static analysis**: Reading and reviewing Swift source files.
 
 ### What does NOT work on Linux
@@ -25,21 +26,25 @@ This project **requires macOS + Xcode 26+** to build, run, and test with the **d
 
 ### Build and test commands (macOS only)
 
-Prefer **`make`** from the repo root so destinations and flags stay aligned with `Makefile` (`make ci`, `make test`, `make test-matrix`). Destinations are validated/resolved by `Scripts/simulator_destination.py` (Python 3). For copy-paste `platform=…` strings, run `make list-simulator-destinations`.
+**Supported entrypoints** (after install): the **`grace`** console script and **`python3 -m gracenotes_dev`** — both run the same CLI. There is no Makefile-based dev automation; GitHub Actions and contributors use **`grace`** only.
 
-CI uses **GitHub Actions** with **`make lint`** + **`make ci-build`** on PRs to **`main`**, **`make ci-full`** on **`full-ci`**-labeled PRs and on pushes to **`main`** (that post-merge job is skipped when the push is the merge commit of a PR merged to **`main`** with label **`no-ci`**). Runners select **Xcode 26.3** and use **iPhone 17 Pro @ iOS 26.2** plus **iPhone SE (3rd generation) @ iOS 18.5** (`CI_SIMULATOR_PRO` / `CI_SIMULATOR_XR`) without downloading simulator platforms in workflow steps. See **CI (GitHub Actions)** in [`README.md`](README.md).
+**Install** (from repo root): `python3 -m pip install -e Scripts/gracenotes-dev` (use a current `pip` so editable installs work with `pyproject.toml`), or **`uv tool install --editable ./Scripts/gracenotes-dev`** for an isolated `grace` on your tool path. Ephemeral runs without a global install: **`uv run --project Scripts/gracenotes-dev grace …`**.
+
+Prefer **`grace`** so destinations and flags stay aligned with [`gracenotes-dev.toml`](gracenotes-dev.toml). For copy-paste `platform=…` strings, run `grace sim list`.
+
+**`gracenotes-dev` package tests** (any OS after install or with `uv run --project Scripts/gracenotes-dev`): stdlib **`unittest`** under [`Scripts/gracenotes-dev/tests/`](Scripts/gracenotes-dev/tests/). From repo root with an editable install: `python3 -m unittest discover -s Scripts/gracenotes-dev/tests`. From the package directory: `cd Scripts/gracenotes-dev && uv run python -m unittest discover -s tests`.
+
+CI uses **GitHub Actions** with **`grace ci`** (default profile: **`lint-build`** — lint and simulator build) on PRs to **`main`**, and **`grace ci --profile full`** on **`full-ci`**-labeled PRs and on pushes to **`main`** (that post-merge job is skipped when the push is the merge commit of a PR merged to **`main`** with label **`no-ci`**). Runners select **Xcode 26.3** and use **iPhone 17 Pro @ `OS=latest`** plus **iPhone SE (3rd generation) @ iOS 18.5** (`CI_SIMULATOR_PRO` / `CI_SIMULATOR_XR`) without downloading simulator platforms in workflow steps. See **CI (GitHub Actions)** in [`README.md`](README.md).
 
 ```bash
-make ci
-# or, ad hoc:
-xcodebuild \
-  -project GraceNotes/GraceNotes.xcodeproj \
-  -scheme GraceNotes \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  test
+grace ci
+# or, post-merge / full-ci parity (adds UI smoke on SE):
+grace ci --profile full
+# ad hoc:
+grace test --destination 'iPhone 17 Pro@latest'
 ```
 
-Automated Makefile targets test the **GraceNotes** scheme only. The **GraceNotes (Demo)** scheme remains in Xcode for local runs with demo seed data; it is not part of `make test` / `make ci`.
+Automated **grace** workflows test the **GraceNotes** scheme only. The **GraceNotes (Demo)** scheme remains in Xcode for local runs with demo seed data; it is not part of the default CI profiles.
 
 ### Lint command
 
@@ -63,9 +68,13 @@ brew install swiftlint
 
 **GitHub issue:** Use one when product intent or acceptance should outlive the chat — write in plain language, not forms or required section headers.
 
-**Specialist skills:** `.agents/skills/` holds optional roles (Strategist, Architect, Builder, and others). Attach or follow them **only** when work is ambiguous, high-risk, or you explicitly want that lens — not as a default pipeline.
+**Specialist skills:** `.agents/skills/` holds optional roles (Strategist, Architect, Builder, and others). Attach or follow them **only** when work is ambiguous, high-risk, or you explicitly want that lens — not as a default pipeline. For **plain-language explanations** of code or fixes with **user-visible impact** first (not diff walkthroughs), use `.agents/skills/explain/SKILL.md`.
+
+**Process skills (optional, high-signal):** Lock requirements before a large or ambiguous change with `.agents/skills/interview/SKILL.md` (user-invokable; agents may also use it when a task is non-trivial). After implementation is verified, review code shape and optional follow-ups with `.agents/skills/simplify/SKILL.md`. For **GitHub issue/PR workflow** with `gh` (labels, milestones, agent-driven branches), use `.agents/skills/gh/SKILL.md`. None of these are required for small, obvious edits.
 
 **Handoffs:** Put anything the next person needs in the **PR** or **linked issue** (description or comments). This repo does not use a separate handoff folder.
+
+**Agent memory:** Skim [`MEMORY.md`](MEMORY.md) before redoing risky UI or “obvious” fixes. **Update it proactively** when interaction signals warrant it—**not only** when the human says “remember this.” Triggers include **reverts**, **multiple failed iterations** on the same behavior, **frustration or repeated instructions**, and **explicit tradeoffs** (e.g. feel vs metrics). Follow [`.agents/skills/memory/SKILL.md`](.agents/skills/memory/SKILL.md): one **short** new line per lesson, dedupe against existing entries, commit with `docs(memory): …`. This is **in-session** learning (there is no background worker); the discipline is **end-of-turn** before you wrap. Keeps context small; does not replace PR/issue discussion for load-bearing detail.
 
 ## Role index (optional specialists)
 
@@ -83,6 +92,11 @@ Behavior for each role lives in `.agents/skills/`. Shared vocabulary and quality
 | QA Reviewer | `.agents/skills/qa-review/SKILL.md` |
 | Test Lead | `.agents/skills/test/SKILL.md` |
 
+| Process | Skill file |
+|---------|------------|
+| Interview (pre-implementation gate) | `.agents/skills/interview/SKILL.md` |
+| Simplify (post-implementation code shape) | `.agents/skills/simplify/SKILL.md` |
+
 `housekeep` is **deprecated** (see `.agents/skills/housekeep/SKILL.md`).
 
 Keep `AGENTS.md` focused on global constraints; use skills when they help, not by default.
@@ -95,10 +109,10 @@ The goal is not maximal abstraction or maximal cleverness. The goal is code that
 
 - Prefer **boring code over surprising code**. Avoid clever one-liners, operator overloading for non-obvious semantics, or patterns that require deep familiarity to understand.
 - Keep types and extensions **small in concept count**. A file should have one primary responsibility. If a type grows large, split by concern (e.g., separate view modifiers from view logic).
-- Use **clear names** that match the product language. If the UI says "Gratitudes", the code should use `gratitudes`. Prefer `JournalEntry` over `JEntry`, `SequentialSectionView` over `SeqSection`.
+- Use **clear names** that match the product language. If the UI says "Gratitudes", the code should use `gratitudes`. Prefer `Journal` (day record) and `Entry` (section item) over abbreviations; prefer `SequentialSectionView` over `SeqSection`.
 - **User-facing English** (`Localizable.xcstrings`, alerts, permissions, onboarding): use **American English** spelling (e.g. *Summarize*, *color*, *behavior*).
 - Make the **main flow easy to scan**: load data → render UI → handle user action → update state → persist. Keep view bodies readable; extract complex subviews with clear names.
-- Prefer a **single obvious representation** for a piece of data. Avoid bouncing between SwiftData `@Model`, DTOs, and ad hoc tuples unless there is a strong reason. Use `JournalExportPayload` for sharing, not raw `JournalEntry`.
+- Prefer a **single obvious representation** for a piece of data. Avoid bouncing between SwiftData `@Model`, DTOs, and ad hoc tuples unless there is a strong reason. Use `JournalExportPayload` for sharing, not raw `Journal`.
 - Keep comments sparse. Add them when they explain **why** something exists or a non-obvious constraint (e.g., "NL extraction can return nil for very short input"). Do not narrate obvious code.
 - Avoid "magic helper" sprawl. A helper or extension should either simplify the reader's job, or it should not exist. Prefer a small, well-named function over a generic utility that obscures intent.
 

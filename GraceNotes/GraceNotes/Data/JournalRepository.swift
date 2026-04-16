@@ -8,9 +8,9 @@ struct JournalRepository {
         self.calendar = calendar
     }
 
-    func fetchAllEntries(context: ModelContext) throws -> [JournalEntry] {
+    func fetchAllEntries(context: ModelContext) throws -> [Journal] {
         let trace = PerformanceTrace.begin("JournalRepository.fetchAllEntries")
-        let descriptor = FetchDescriptor<JournalEntry>(
+        let descriptor = FetchDescriptor<Journal>(
             sortBy: [SortDescriptor(\.entryDate, order: .reverse)]
         )
         do {
@@ -23,31 +23,184 @@ struct JournalRepository {
         }
     }
 
-    func fetchEntry(for date: Date, context: ModelContext) throws -> JournalEntry? {
+    func fetchEntry(for date: Date, context: ModelContext) throws -> Journal? {
         let dayStart = calendar.startOfDay(for: date)
         return try fetchEntry(dayStart: dayStart, context: context)
     }
 
+    /// True when the user has reached Full/Harvest at least once.
+    /// Prefers `completedAt` (cheap query), then scans for legacy rows without that field.
+    func hasUserEverReachedBloom(context: ModelContext) throws -> Bool {
+        var completedDescriptor = FetchDescriptor<Journal>(
+            predicate: #Predicate<Journal> { entry in
+                entry.completedAt != nil
+            }
+        )
+        completedDescriptor.fetchLimit = 1
+        if try context.fetch(completedDescriptor).first != nil {
+            return true
+        }
+        let entries = try fetchAllEntries(context: context)
+        return entries.contains { $0.completionLevel == .bloom }
+    }
+
     /// Fetches the journal row for `[dayStart, nextDay)` using the same interval semantics as import and demo seeding.
-    func fetchEntry(dayStart: Date, context: ModelContext) throws -> JournalEntry? {
+    func fetchEntry(dayStart: Date, context: ModelContext) throws -> Journal? {
         let trace = PerformanceTrace.begin("JournalRepository.fetchEntry")
         guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
             PerformanceTrace.end("JournalRepository.fetchEntry.invalidDate", startedAt: trace)
             return nil
         }
         do {
-            let descriptor = FetchDescriptor<JournalEntry>(
+            let descriptor = FetchDescriptor<Journal>(
                 predicate: #Predicate { entry in
                     entry.entryDate >= dayStart && entry.entryDate < nextDay
-                },
-                sortBy: [SortDescriptor(\.entryDate, order: .reverse)]
+                }
             )
-            let entry = try context.fetch(descriptor).first
+            let candidates = try context.fetch(descriptor)
+            let entry = candidates.max(by: Self.isStrictlyWorseCanonicalDayEntry)
             PerformanceTrace.end("JournalRepository.fetchEntry", startedAt: trace)
             return entry
         } catch {
             PerformanceTrace.end("JournalRepository.fetchEntry.failed", startedAt: trace)
             throw error
         }
+    }
+
+    /// Returns structured lines and notes whose text contains `query`
+    /// (case- and diacritic-insensitive), newest days first. Caps total rows for responsiveness on large stores.
+    func searchMatches(
+        query: String,
+        context: ModelContext,
+        maxRows: Int = 200
+    ) throws -> [JournalSearchMatch] {
+        let trace = PerformanceTrace.begin("JournalRepository.searchMatches")
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            PerformanceTrace.end("JournalRepository.searchMatches.emptyQuery", startedAt: trace)
+            return []
+        }
+
+        do {
+            var matches: [JournalSearchMatch] = []
+            let batchSize = max(maxRows, 64)
+            var offset = 0
+
+            batchLoop: while matches.count < maxRows {
+                var descriptor = FetchDescriptor<Journal>(
+                    sortBy: [SortDescriptor(\.entryDate, order: .reverse)]
+                )
+                descriptor.fetchLimit = batchSize
+                descriptor.fetchOffset = offset
+
+                let batch = try context.fetch(descriptor)
+                if batch.isEmpty { break }
+
+                for entry in batch {
+                    guard matches.count < maxRows else { break batchLoop }
+                    appendMatches(from: entry, trimmedQuery: trimmed, matches: &matches, maxRows: maxRows)
+                }
+
+                if batch.count < batchSize {
+                    break
+                }
+                offset += batch.count
+            }
+
+            PerformanceTrace.end("JournalRepository.searchMatches", startedAt: trace)
+            return matches
+        } catch {
+            PerformanceTrace.end("JournalRepository.searchMatches.failed", startedAt: trace)
+            throw error
+        }
+    }
+
+    private func appendMatches(
+        from entry: Journal,
+        trimmedQuery: String,
+        matches: inout [JournalSearchMatch],
+        maxRows: Int
+    ) {
+        let dayStart = calendar.startOfDay(for: entry.entryDate)
+
+        func appendMatchingEntry(item: Entry, source: ReviewThemeSourceCategory) {
+            guard matches.count < maxRows else { return }
+            let full = item.fullText
+            guard Self.textContains(trimmedQuery, in: full) else { return }
+            let displayContent = full
+            matches.append(
+                JournalSearchMatch(
+                    entryDate: dayStart,
+                    journalEntryId: entry.id,
+                    item: item,
+                    source: source,
+                    content: displayContent
+                )
+            )
+        }
+
+        func appendField(source: ReviewThemeSourceCategory, text: String) {
+            guard matches.count < maxRows else { return }
+            guard Self.textContains(trimmedQuery, in: text) else { return }
+            matches.append(
+                JournalSearchMatch(
+                    entryDate: dayStart,
+                    journalEntryId: entry.id,
+                    source: source,
+                    content: text
+                )
+            )
+        }
+
+        for item in entry.gratitudes ?? [] {
+            appendMatchingEntry(item: item, source: .gratitudes)
+        }
+        for item in entry.needs ?? [] {
+            appendMatchingEntry(item: item, source: .needs)
+        }
+        for item in entry.people ?? [] {
+            appendMatchingEntry(item: item, source: .people)
+        }
+
+        let notes = entry.readingNotes
+        if !notes.isEmpty {
+            appendField(source: .readingNotes, text: notes)
+        }
+
+        let reflections = entry.reflections
+        if !reflections.isEmpty {
+            appendField(source: .reflections, text: reflections)
+        }
+    }
+
+    private static func textContains(_ needle: String, in haystack: String) -> Bool {
+        haystack.range(
+            of: needle,
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: .current
+        ) != nil
+    }
+
+    private static func totalChipCount(_ entry: Journal) -> Int {
+        (entry.gratitudes ?? []).count + (entry.needs ?? []).count + (entry.people ?? []).count
+    }
+
+    /// `true` when `lhs` should sort strictly before `rhs` in increasing “journal quality” order
+    /// (so `candidates.max(by:)` returns the row Past treats as strongest for that calendar day).
+    private static func isStrictlyWorseCanonicalDayEntry(_ lhs: Journal, _ rhs: Journal) -> Bool {
+        let leftRank = lhs.completionLevel.tutorialCompletionRank
+        let rightRank = rhs.completionLevel.tutorialCompletionRank
+        if leftRank != rightRank {
+            return leftRank < rightRank
+        }
+        let leftChips = totalChipCount(lhs)
+        let rightChips = totalChipCount(rhs)
+        if leftChips != rightChips {
+            return leftChips < rightChips
+        }
+        if lhs.updatedAt != rhs.updatedAt {
+            return lhs.updatedAt < rhs.updatedAt
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
     }
 }

@@ -23,6 +23,48 @@ extension DeterministicReviewInsightsTests {
         XCTAssertEqual(builder.narrativeSummary(from: [first, second]), "Beta observation line.")
     }
 
+    func test_weeklyInsightCandidateBuilder_narrativeSummary_distinctObservations_secondEmpty_usesFirst() {
+        let builder = WeeklyInsightCandidateBuilder(textNormalizer: WeeklyInsightTextNormalizer())
+        let first = ReviewWeeklyInsight(
+            pattern: .recurringTheme,
+            observation: "Alpha observation line.",
+            action: "Q1?",
+            primaryTheme: "Alpha",
+            mentionCount: 2,
+            dayCount: 2
+        )
+        let second = ReviewWeeklyInsight(
+            pattern: .continuityShift,
+            observation: "",
+            action: "Q2?",
+            primaryTheme: "Beta",
+            mentionCount: 2,
+            dayCount: 2
+        )
+        XCTAssertEqual(builder.narrativeSummary(from: [first, second]), "Alpha observation line.")
+    }
+
+    func test_weeklyInsightCandidateBuilder_narrativeSummary_distinctObservations_secondWhitespaceOnly_usesFirst() {
+        let builder = WeeklyInsightCandidateBuilder(textNormalizer: WeeklyInsightTextNormalizer())
+        let first = ReviewWeeklyInsight(
+            pattern: .recurringTheme,
+            observation: "Alpha observation line.",
+            action: "Q1?",
+            primaryTheme: "Alpha",
+            mentionCount: 2,
+            dayCount: 2
+        )
+        let second = ReviewWeeklyInsight(
+            pattern: .continuityShift,
+            observation: "   ",
+            action: "Q2?",
+            primaryTheme: "Beta",
+            mentionCount: 2,
+            dayCount: 2
+        )
+        XCTAssertEqual(builder.narrativeSummary(from: [first, second]), "Alpha observation line.")
+    }
+
     func test_weeklyInsightCandidateBuilder_narrativeSummary_whenObservationsDuplicate_usesBothThemesLine() {
         let builder = WeeklyInsightCandidateBuilder(textNormalizer: WeeklyInsightTextNormalizer())
         let shared = "Same observation text."
@@ -49,7 +91,7 @@ extension DeterministicReviewInsightsTests {
 
     func test_weeklyInsightCandidateBuilder_narrativeSummary_sparseFallbackZeroDay_returnsNil() {
         let builder = WeeklyInsightCandidateBuilder(textNormalizer: WeeklyInsightTextNormalizer())
-        let starter = String(localized: "Start with one reflection today to build your weekly review.")
+        let starter = String(localized: "review.insights.starterReflection")
         let insight = ReviewWeeklyInsight(
             pattern: .sparseFallback,
             observation: starter,
@@ -64,7 +106,7 @@ extension DeterministicReviewInsightsTests {
     func test_weeklyInsightCandidateBuilder_narrativeSummary_sparseFallbackNonZeroDay_returnsTrimmed() {
         let builder = WeeklyInsightCandidateBuilder(textNormalizer: WeeklyInsightTextNormalizer())
         let observation = "  Sparse week summary line.  "
-        let easyStart = String(localized: "What would make tomorrow's check-in easy to start?")
+        let easyStart = String(localized: "review.prompts.easyCheckInTomorrow")
         let insight = ReviewWeeklyInsight(
             pattern: .sparseFallback,
             observation: observation,

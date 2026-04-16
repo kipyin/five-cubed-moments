@@ -4,9 +4,20 @@ enum JournalOnboardingStep: Equatable {
     case gratitude
     case need
     case person
-    case ripening
-    case harvest
-    case abundance
+}
+
+private extension JournalOnboardingStep {
+    /// Section whose row hosts the onboarding banner for this linear step.
+    var bannerSection: JournalOnboardingSection {
+        switch self {
+        case .gratitude:
+            .gratitude
+        case .need:
+            .need
+        case .person:
+            .person
+        }
+    }
 }
 
 enum JournalOnboardingSection: Hashable {
@@ -51,38 +62,44 @@ struct JournalOnboardingPresentation: Equatable {
         sectionStates: [:]
     )
 
+    /// True when guided copy is actually shown for the active step's banner section
+    /// (that is, when `sectionGuidance(for: step.bannerSection)` would be non-nil).
     var isGuidanceActive: Bool {
-        step != nil
+        guard step != nil, let message else { return false }
+        return !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func state(for section: JournalOnboardingSection) -> JournalOnboardingSectionState {
         sectionStates[section] ?? .standard
     }
 
-    /// Per-section placement: linear steps use the active row; multi-active chips use Gratitudes.
-    /// Abundance uses Reading Notes.
+    /// Per-section placement: linear steps use the active row.
     func sectionGuidance(for section: JournalOnboardingSection) -> JournalOnboardingSectionGuidance? {
-        guard let title, let message, let step else { return nil }
-        let bannerSection: JournalOnboardingSection = switch step {
-        case .gratitude:
-            .gratitude
-        case .need:
-            .need
-        case .person:
-            .person
-        case .ripening, .harvest:
-            .gratitude
-        case .abundance:
-            .readingNotes
-        }
-        guard section == bannerSection else { return nil }
-        let secondary: String? = switch step {
-        case .gratitude:
-            String(localized: "When you're finished, press Return or Enter on your keyboard.")
-        case .need, .person, .ripening, .harvest, .abundance:
-            nil
-        }
-        return JournalOnboardingSectionGuidance(title: title, message: message, messageSecondary: secondary)
+        guard let message, let step else { return nil }
+        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard section == step.bannerSection else { return nil }
+        let secondary: String? = {
+            switch step {
+            case .gratitude:
+                return Self.trimmedKeyboardFinishHintLine(
+                    String(localized: "journal.onboarding.keyboardFinishHint")
+                )
+            case .need, .person:
+                return nil
+            }
+        }()
+        return JournalOnboardingSectionGuidance(
+            title: title ?? "",
+            message: message,
+            messageSecondary: secondary
+        )
+    }
+
+    /// Returns `nil` when `raw` is empty or only whitespace and newlines; otherwise returns trimmed text.
+    /// Used for the gratitude keyboard hint line; exposed for unit tests covering trim/empty rules.
+    static func trimmedKeyboardFinishHintLine(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
@@ -91,63 +108,30 @@ struct JournalOnboardingContext: Equatable {
     let gratitudesCount: Int
     let needsCount: Int
     let peopleCount: Int
-    let readingNotes: String
-    let reflections: String
     let hasCompletedGuidedJournal: Bool
-
-    var notesTrimmed: String {
-        readingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var reflectionsTrimmed: String {
-        reflections.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var hasRipening: Bool {
-        JournalEntry.minChipSectionCount(
-            gratitudesCount: gratitudesCount,
-            needsCount: needsCount,
-            peopleCount: peopleCount
-        ) >= 3
-    }
-
-    var hasHarvest: Bool {
-        JournalEntry.hasAllFifteenChips(
-            gratitudesCount: gratitudesCount,
-            needsCount: needsCount,
-            peopleCount: peopleCount
-        )
-    }
 }
 
 enum JournalOnboardingFlowEvaluator {
+    /// Linear guided steps through first 1/1/1; afterwards presentation is inactive on Today.
     static func presentation(for context: JournalOnboardingContext) -> JournalOnboardingPresentation {
         guard context.entryDate == nil, !context.hasCompletedGuidedJournal else {
             return .inactive
         }
 
-        if context.gratitudesCount == 0 {
+        let gratitudes = max(0, context.gratitudesCount)
+        let needs = max(0, context.needsCount)
+        let people = max(0, context.peopleCount)
+
+        if gratitudes == 0 {
             return firstGratitudePresentation()
         }
 
-        if context.needsCount == 0 {
+        if needs == 0 {
             return firstNeedPresentation()
         }
 
-        if context.peopleCount == 0 {
+        if people == 0 {
             return firstPersonPresentation()
-        }
-
-        if !context.hasRipening {
-            return ripeningPresentation()
-        }
-
-        if !context.hasHarvest {
-            return harvestPresentation()
-        }
-
-        if context.notesTrimmed.isEmpty || context.reflectionsTrimmed.isEmpty {
-            return abundancePresentation()
         }
 
         return .inactive
@@ -157,11 +141,20 @@ enum JournalOnboardingFlowEvaluator {
 private extension JournalOnboardingFlowEvaluator {
     static func presentation(
         step: JournalOnboardingStep,
-        title: String,
+        title: String?,
         message: String,
         states: [JournalOnboardingSection: JournalOnboardingSectionState]
     ) -> JournalOnboardingPresentation {
-        JournalOnboardingPresentation(
+        if message.isEmpty {
+            #if DEBUG
+            assertionFailure(
+                "Journal onboarding requires non-empty message for step \(step); "
+                    + "treating as inactive to avoid locked sections without copy."
+            )
+            #endif
+            return .inactive
+        }
+        return JournalOnboardingPresentation(
             step: step,
             title: title,
             message: message,
@@ -169,38 +162,24 @@ private extension JournalOnboardingFlowEvaluator {
         )
     }
 
-    static func chipSectionPresentation(
-        chipState: JournalOnboardingSectionState,
-        notesState: JournalOnboardingSectionState,
-        reflectionsState: JournalOnboardingSectionState
-    ) -> [JournalOnboardingSection: JournalOnboardingSectionState] {
-        [
-            .gratitude: chipState,
-            .need: chipState,
-            .person: chipState,
-            .readingNotes: notesState,
-            .reflections: reflectionsState
-        ]
-    }
-
     static func lockedNotesState() -> JournalOnboardingSectionState {
-        .locked(reason: String(localized: "Reading Notes open after Gratitudes, Needs, and People are full."))
+        .locked(reason: String(localized: "journal.onboarding.readingNotesLockedReason"))
     }
 
     static func lockedReflectionsState() -> JournalOnboardingSectionState {
-        .locked(reason: String(localized: "Reflections open after Gratitudes, Needs, and People are full."))
+        .locked(reason: String(localized: "journal.onboarding.reflectionsLockedReason"))
     }
 
     static func firstGratitudePresentation() -> JournalOnboardingPresentation {
         presentation(
             step: .gratitude,
-            title: "",
-            message: String(localized: "Start with one gratitude."),
+            title: nil,
+            message: String(localized: "journal.onboarding.startWithGratitude"),
             states: [
                 .gratitude: .active,
-                .need: .locked(reason: String(localized: "Needs will open after your first gratitude.")),
+                .need: .locked(reason: String(localized: "journal.onboarding.needsLockedReason")),
                 .person: .locked(
-                    reason: String(localized: "People in Mind will open after your first gratitude.")
+                    reason: String(localized: "journal.onboarding.peopleLockedAfterGratitude")
                 ),
                 .readingNotes: lockedNotesState(),
                 .reflections: lockedReflectionsState()
@@ -211,12 +190,12 @@ private extension JournalOnboardingFlowEvaluator {
     static func firstNeedPresentation() -> JournalOnboardingPresentation {
         presentation(
             step: .need,
-            title: String(localized: "Keep going"),
-            message: String(localized: "Now add one need for today."),
+            title: String(localized: "journal.onboarding.keepGoingTitle"),
+            message: String(localized: "journal.onboarding.addOneNeedMessage"),
             states: [
                 .gratitude: .available,
                 .need: .active,
-                .person: .locked(reason: String(localized: "People in Mind will open after your first need.")),
+                .person: .locked(reason: String(localized: "journal.onboarding.peopleLockedAfterNeed")),
                 .readingNotes: lockedNotesState(),
                 .reflections: lockedReflectionsState()
             ]
@@ -226,8 +205,8 @@ private extension JournalOnboardingFlowEvaluator {
     static func firstPersonPresentation() -> JournalOnboardingPresentation {
         presentation(
             step: .person,
-            title: String(localized: "One more step"),
-            message: String(localized: "Who is on your mind today?"),
+            title: String(localized: "journal.onboarding.oneMoreStepTitle"),
+            message: String(localized: "journal.onboarding.whoOnMind"),
             states: [
                 .gratitude: .available,
                 .need: .available,
@@ -235,50 +214,6 @@ private extension JournalOnboardingFlowEvaluator {
                 .readingNotes: lockedNotesState(),
                 .reflections: lockedReflectionsState()
             ]
-        )
-    }
-
-    static func ripeningPresentation() -> JournalOnboardingPresentation {
-        presentation(
-            step: .ripening,
-            title: String(localized: "Seed"),
-            message: String(localized: "You've planted Seed. Keep going until each section has three."),
-            states: chipSectionPresentation(
-                chipState: .active,
-                notesState: .active,
-                reflectionsState: .active
-            )
-        )
-    }
-
-    static func harvestPresentation() -> JournalOnboardingPresentation {
-        presentation(
-            step: .harvest,
-            title: String(localized: "Ripening"),
-            message: String(
-                localized: "You're ready to keep filling the rows. Reach five in each section when it feels right."
-            ),
-            states: chipSectionPresentation(
-                chipState: .active,
-                notesState: .active,
-                reflectionsState: .active
-            )
-        )
-    }
-
-    static func abundancePresentation() -> JournalOnboardingPresentation {
-        presentation(
-            step: .abundance,
-            title: String(localized: "Harvest"),
-            message: String(
-                // swiftlint:disable:next line_length
-                localized: "You've filled Gratitudes, Needs, and People. Add reading notes and reflections when you're ready for Abundance."
-            ),
-            states: chipSectionPresentation(
-                chipState: .available,
-                notesState: .active,
-                reflectionsState: .active
-            )
         )
     }
 }

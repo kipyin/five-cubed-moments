@@ -21,11 +21,11 @@ struct StreakCalculator {
         self.calendar = calendar
     }
 
-    func summary(from entries: [JournalEntry], now: Date = .now) -> StreakSummary {
+    func summary(from entries: [Journal], now: Date = .now) -> StreakSummary {
         let today = calendar.startOfDay(for: now)
         let basicByDay = buildCompletionByDay(entries: entries) { $0.hasMeaningfulContent }
-        // "Perfect" = Abundance (full rhythm). `completedAt` tracks harvest only and must not inflate this streak.
-        let perfectByDay = buildCompletionByDay(entries: entries) { $0.hasAbundanceRhythm }
+        // "Perfect" = Harvest: all fifteen chips. `completedAt` alone must not inflate this streak.
+        let perfectByDay = buildCompletionByDay(entries: entries) { $0.hasReachedBloom }
 
         return StreakSummary(
             basicCurrent: currentStreakLength(byDay: basicByDay, today: today),
@@ -36,8 +36,8 @@ struct StreakCalculator {
     }
 
     private func buildCompletionByDay(
-        entries: [JournalEntry],
-        completion: (JournalEntry) -> Bool
+        entries: [Journal],
+        completion: (Journal) -> Bool
     ) -> [Date: Bool] {
         var completionByDay: [Date: Bool] = [:]
         for entry in entries {
@@ -49,6 +49,7 @@ struct StreakCalculator {
 
     private func currentStreakLength(byDay: [Date: Bool], today: Date) -> Int {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+            .map { calendar.startOfDay(for: $0) }
         let startDay: Date
         if byDay[today] == true {
             startDay = today
@@ -62,7 +63,11 @@ struct StreakCalculator {
         var cursor = startDay
         while byDay[cursor] == true {
             streakLength += 1
-            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: cursor) else {
+            guard let rawPrevious = calendar.date(byAdding: .day, value: -1, to: cursor) else {
+                break
+            }
+            let previousDay = calendar.startOfDay(for: rawPrevious)
+            guard previousDay != cursor else {
                 break
             }
             cursor = previousDay

@@ -100,13 +100,12 @@ extension JournalViewModelMutationTests {
     func makeViewModel(now: Date) -> JournalViewModel {
         JournalViewModel(
             calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            nowProvider: { now }
         )
     }
 
     func makeInMemoryContext() throws -> ModelContext {
-        let schema = Schema([JournalEntry.self])
+        let schema = Schema([Journal.self])
         let storeURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("GraceNotesTests-\(UUID().uuidString).store")
         let configuration = ModelConfiguration(schema: schema, url: storeURL)

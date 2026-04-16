@@ -9,22 +9,24 @@ struct SequentialSectionView: View {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.todayJournalPalette) private var palette
 
     let title: String
     let addButtonTitle: String
     let addButtonAccessibilityHint: String
+    let showsTrailingChevronOnAddRow: Bool
     /// Guided onboarding title shown above the section header (optional; omitted when empty).
     let guidanceTitle: String?
     /// Guided onboarding message shown under `guidanceTitle`.
     let guidanceMessage: String?
     /// Optional second line under `guidanceMessage` (e.g. keyboard hint).
     let guidanceMessageSecondary: String?
-    let items: [JournalItem]
+    let items: [Entry]
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    /// When set (e.g. UI tests), strips use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
-    let stripAccessibilityIdentifierPrefix: String?
+    /// When set (e.g. UI tests), entry rows use identifiers `"\(prefix).\(index)"` for stable XCUITest queries.
+    let entryAccessibilityIdentifierPrefix: String?
     /// When set (e.g. UI tests), the section (+) control exposes this `accessibilityIdentifier`.
     let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
@@ -38,13 +40,18 @@ struct SequentialSectionView: View {
     let onItemTap: (Int) -> Void
     let onMoveItem: ((Int, Int) -> Void)?
     let onDeleteItem: ((Int) -> Void)?
-    let onAddNew: (() -> Void)?
-    /// When true, another sentence strip or add morph in this journal is focused; fades non-focused rows.
+    let onAddNew: (() -> Bool)?
+    /// After a successful add tap, run once the add morph is visible (e.g. keyboard focus on the composer).
+    let onAfterAddMorphRevealed: (() -> Void)?
+    /// When true, another entry row or add morph in this journal is focused; fades non-focused rows.
     let ambientInlineEditingActive: Bool
     /// This section contains the focused inline editor or add morph composer.
     let sectionHostsInlineFocus: Bool
     /// Commits inline editing when the user taps outside the active field (e.g. dimmed section overlay).
     let onRequestDismissInlineEditing: (() -> Void)?
+    /// Optional `ScrollViewReader` id on the chip list + composer (excludes header).
+    /// Used for Needs/People keyboard avoidance.
+    let keyboardScrollAnchorID: JournalScrollTarget?
     @Binding var isAddMorphComposerVisible: Bool
     @State private var draggingItemID: UUID?
     /// Item UUID that last triggered a live reorder during this drag.
@@ -56,14 +63,15 @@ struct SequentialSectionView: View {
         title: String,
         addButtonTitle: String,
         addButtonAccessibilityHint: String,
+        showsTrailingChevronOnAddRow: Bool = false,
         guidanceTitle: String? = nil,
         guidanceMessage: String? = nil,
         guidanceMessageSecondary: String? = nil,
-        items: [JournalItem],
+        items: [Entry],
         placeholder: String,
         slotCount: Int = 5,
         inputAccessibilityIdentifier: String? = nil,
-        stripAccessibilityIdentifierPrefix: String? = nil,
+        entryAccessibilityIdentifierPrefix: String? = nil,
         addItemAccessibilityIdentifier: String? = nil,
         onboardingState: JournalOnboardingSectionState = .standard,
         isTransitioning: Bool = false,
@@ -75,15 +83,18 @@ struct SequentialSectionView: View {
         onItemTap: @escaping (Int) -> Void,
         onMoveItem: ((Int, Int) -> Void)? = nil,
         onDeleteItem: ((Int) -> Void)? = nil,
-        onAddNew: (() -> Void)? = nil,
+        onAddNew: (() -> Bool)? = nil,
+        onAfterAddMorphRevealed: (() -> Void)? = nil,
         isAddMorphComposerVisible: Binding<Bool> = .constant(false),
         ambientInlineEditingActive: Bool = false,
         sectionHostsInlineFocus: Bool = false,
-        onRequestDismissInlineEditing: (() -> Void)? = nil
+        onRequestDismissInlineEditing: (() -> Void)? = nil,
+        keyboardScrollAnchorID: JournalScrollTarget? = nil
     ) {
         self.title = title
         self.addButtonTitle = addButtonTitle
         self.addButtonAccessibilityHint = addButtonAccessibilityHint
+        self.showsTrailingChevronOnAddRow = showsTrailingChevronOnAddRow
         self.guidanceTitle = guidanceTitle
         self.guidanceMessage = guidanceMessage
         self.guidanceMessageSecondary = guidanceMessageSecondary
@@ -91,7 +102,7 @@ struct SequentialSectionView: View {
         self.placeholder = placeholder
         self.slotCount = slotCount
         self.inputAccessibilityIdentifier = inputAccessibilityIdentifier
-        self.stripAccessibilityIdentifierPrefix = stripAccessibilityIdentifierPrefix
+        self.entryAccessibilityIdentifierPrefix = entryAccessibilityIdentifierPrefix
         self.addItemAccessibilityIdentifier = addItemAccessibilityIdentifier
         self.onboardingState = onboardingState
         self.isTransitioning = isTransitioning
@@ -104,14 +115,20 @@ struct SequentialSectionView: View {
         self.onMoveItem = onMoveItem
         self.onDeleteItem = onDeleteItem
         self.onAddNew = onAddNew
+        self.onAfterAddMorphRevealed = onAfterAddMorphRevealed
         self._isAddMorphComposerVisible = isAddMorphComposerVisible
         self.ambientInlineEditingActive = ambientInlineEditingActive
         self.sectionHostsInlineFocus = sectionHostsInlineFocus
         self.onRequestDismissInlineEditing = onRequestDismissInlineEditing
+        self.keyboardScrollAnchorID = keyboardScrollAnchorID
     }
 
     private var isInputFocused: Bool {
         inputFocus?.wrappedValue ?? false
+    }
+
+    private var activeEditingIndex: Int? {
+        sequentialSectionActiveEditingIndex(editingIndex: editingIndex, itemCount: items.count)
     }
 
     private var shouldAnimateEditingPulse: Bool {
@@ -120,7 +137,7 @@ struct SequentialSectionView: View {
 
     private var slotStatuses: [SlotStatus] {
         (0..<slotCount).map { index in
-            if editingIndex == index {
+            if activeEditingIndex == index {
                 return .editing
             }
             if index < items.count {
@@ -138,7 +155,7 @@ struct SequentialSectionView: View {
         let editingCount = slotStatuses.filter { $0 == .editing }.count
         let pendingCount = slotStatuses.filter { $0 == .pending }.count
         return String(
-            format: String(localized: "%1$@ progress. %2$d complete, %3$d in progress, %4$d open."),
+            format: String(localized: "journal.section.progressSummary"),
             locale: Locale.current,
             title,
             editedCount,
@@ -153,6 +170,7 @@ struct SequentialSectionView: View {
             title: title,
             addButtonTitle: addButtonTitle,
             addButtonAccessibilityHint: addButtonAccessibilityHint,
+            showsTrailingChevronOnAddRow: showsTrailingChevronOnAddRow,
             guidanceTitle: guidanceTitle,
             guidanceMessage: guidanceMessage,
             guidanceMessageSecondary: guidanceMessageSecondary,
@@ -160,11 +178,12 @@ struct SequentialSectionView: View {
             placeholder: placeholder,
             slotCount: slotCount,
             inputAccessibilityIdentifier: inputAccessibilityIdentifier,
-            stripAccessibilityIdentifierPrefix: stripAccessibilityIdentifierPrefix,
+            entryAccessibilityIdentifierPrefix: entryAccessibilityIdentifierPrefix,
             addItemAccessibilityIdentifier: addItemAccessibilityIdentifier,
             onboardingState: onboardingState,
             isTransitioning: isTransitioning,
             editingIndex: editingIndex,
+            activeEditingIndex: activeEditingIndex,
             inputFocus: inputFocus,
             onInputFocusLost: onInputFocusLost,
             onSubmit: onSubmit,
@@ -172,6 +191,7 @@ struct SequentialSectionView: View {
             onMoveItem: onMoveItem,
             onDeleteItem: onDeleteItem,
             onAddNew: onAddNew,
+            onAfterAddMorphRevealed: onAfterAddMorphRevealed,
             ambientInlineEditingActive: ambientInlineEditingActive,
             sectionHostsInlineFocus: sectionHostsInlineFocus,
             onRequestDismissInlineEditing: onRequestDismissInlineEditing,
@@ -179,7 +199,8 @@ struct SequentialSectionView: View {
             draggingItemID: $draggingItemID,
             itemReorderHoverTargetItemID: $itemReorderHoverTargetItemID,
             isAddMorphComposerVisible: $isAddMorphComposerVisible,
-            progressDots: sectionProgressDots
+            progressDots: sectionProgressDots,
+            keyboardScrollAnchorID: keyboardScrollAnchorID
         )
         .onAppear {
             updateEditingPulseAnimation()
@@ -202,14 +223,14 @@ struct SequentialSectionView: View {
                     .overlay {
                         if status == .editing {
                             Circle()
-                                .fill(AppTheme.journalActiveEditingAccentStrong)
+                                .fill(palette.activeEditingAccentStrong)
                                 .frame(width: 4, height: 4)
                         }
                     }
                     .overlay {
                         if status == .editing && shouldAnimateEditingPulse {
                             Circle()
-                                .stroke(AppTheme.journalActiveEditingAccentStrong.opacity(0.45), lineWidth: 1)
+                                .stroke(palette.activeEditingAccentStrong.opacity(0.45), lineWidth: 1)
                                 .frame(width: 14, height: 14)
                                 .scaleEffect(isEditingPulseExpanded ? 1.14 : 0.94)
                                 .opacity(isEditingPulseExpanded ? 0 : 0.56)
@@ -224,9 +245,9 @@ struct SequentialSectionView: View {
     private func dotFill(for status: SlotStatus) -> Color {
         switch status {
         case .edited:
-            return AppTheme.journalComplete
+            return palette.complete
         case .editing:
-            return AppTheme.journalActiveEditingAccent.opacity(0.28)
+            return palette.activeEditingAccent.opacity(0.28)
         case .pending:
             return .clear
         }
@@ -237,9 +258,9 @@ struct SequentialSectionView: View {
         case .edited:
             return .clear
         case .editing:
-            return AppTheme.journalActiveEditingAccentStrong.opacity(0.9)
+            return palette.activeEditingAccentStrong.opacity(0.9)
         case .pending:
-            return AppTheme.journalPendingOutline.opacity(0.52)
+            return palette.pendingOutline.opacity(0.52)
         }
     }
 

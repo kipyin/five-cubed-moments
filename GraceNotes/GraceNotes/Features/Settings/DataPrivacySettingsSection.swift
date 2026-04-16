@@ -4,6 +4,8 @@ struct DataPrivacySettingsSection: View {
     @Binding var isICloudSyncEnabled: Bool
     @ObservedObject var iCloudAccountState: ICloudAccountStatusModel
     let persistenceRuntimeSnapshot: PersistenceRuntimeSnapshot
+    /// Shown below the iCloud sync toggle when CloudKit is the live store (best-effort remote activity).
+    let lastICloudSyncSubtitle: String?
     let highlightedTarget: SettingsScrollTarget?
     let openSystemSettings: () -> Void
 
@@ -17,11 +19,19 @@ struct DataPrivacySettingsSection: View {
                 }
 
                 if shouldShowICloudSyncToggle {
-                    Toggle(String(localized: "iCloud sync"), isOn: $isICloudSyncEnabled)
+                    Toggle(String(localized: "settings.dataPrivacy.iCloudSyncToggle"), isOn: $isICloudSyncEnabled)
                         .font(AppTheme.warmPaperBody)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .tint(AppTheme.accent)
                         .frame(minHeight: 44)
+
+                    if isJournalOnCloudKitStore, let lastICloudSyncSubtitle {
+                        Text(lastICloudSyncSubtitle)
+                            .font(AppTheme.warmPaperMeta)
+                            .foregroundStyle(AppTheme.settingsTextMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
             .padding(.vertical, AppTheme.spacingTight / 2)
@@ -30,7 +40,7 @@ struct DataPrivacySettingsSection: View {
             importExportRow
                 .padding(.vertical, AppTheme.spacingTight / 2)
         } header: {
-            Text(String(localized: "Data & Privacy"))
+            Text(String(localized: "settings.dataPrivacy.navTitle"))
                 .font(AppTheme.warmPaperHeader)
                 .foregroundStyle(AppTheme.settingsTextPrimary)
                 .textCase(nil)
@@ -65,42 +75,42 @@ private extension DataPrivacySettingsSection {
 
     var primaryStorageBody: String {
         if persistenceRuntimeSnapshot.startupUsedCloudKitFallback {
-            return String(localized: "DataPrivacy.storage.fallbackLocal")
+            return String(localized: "settings.dataPrivacy.storage.fallbackLocal")
         }
-        return String(localized: "DataPrivacy.storage.localOnly")
+        return String(localized: "settings.dataPrivacy.storage.localOnly")
     }
 
     var attentionMessage: String? {
         if let bucket = iCloudAccountState.displayedBucket {
             switch bucket {
             case .noAccount:
-                return String(localized: "DataPrivacy.attention.noAccount.summary")
+                return String(localized: "settings.dataPrivacy.attention.noAccount.summary")
             case .restricted:
-                return String(localized: "DataPrivacy.attention.restricted.summary")
+                return String(localized: "settings.dataPrivacy.attention.restricted.summary")
             case .temporarilyUnavailable:
                 if !preferenceMatchesEffectiveStore {
-                    return String(localized: "DataPrivacy.attention.tempUnavailableMismatch.summary")
+                    return String(localized: "settings.dataPrivacy.attention.tempUnavailableMismatch.summary")
                 }
-                return String(localized: "DataPrivacy.attention.tempUnavailable")
+                return String(localized: "settings.dataPrivacy.attention.tempUnavailable")
             case .couldNotDetermine:
                 if !preferenceMatchesEffectiveStore {
-                    return String(localized: "DataPrivacy.attention.unknownMismatch.summary")
+                    return String(localized: "settings.dataPrivacy.attention.unknownMismatch.summary")
                 }
-                return String(localized: "DataPrivacy.attention.unknown")
+                return String(localized: "settings.dataPrivacy.attention.unknown")
             case .available:
                 break
             }
         }
 
         if persistenceRuntimeSnapshot.startupUsedCloudKitFallback, isICloudSyncEnabled {
-            return String(localized: "DataPrivacy.attention.retryICloudAfterRelaunch.summary")
+            return String(localized: "settings.dataPrivacy.attention.retryICloudAfterRelaunch.summary")
         }
 
         if !preferenceMatchesEffectiveStore {
             if shouldShowICloudSyncToggle {
-                return String(localized: "DataPrivacy.attention.toggleChangedRelaunch.summary")
+                return String(localized: "settings.dataPrivacy.attention.toggleChangedRelaunch.summary")
             }
-            return String(localized: "DataPrivacy.attention.preferenceMismatchRelaunch.summary")
+            return String(localized: "settings.dataPrivacy.attention.preferenceMismatchRelaunch.summary")
         }
 
         return nil
@@ -119,18 +129,18 @@ private extension DataPrivacySettingsSection {
     /// No Storage body for CloudKit store; status copy is in `attentionBlock`.
     private var storageHeadingOnlyBlock: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingTight / 2) {
-            Text(String(localized: "DataPrivacy.storage.heading"))
+            Text(String(localized: "settings.dataPrivacy.storage.heading"))
                 .font(AppTheme.warmPaperMeta)
                 .foregroundStyle(AppTheme.settingsTextMuted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(String(localized: "DataPrivacy.a11y.storage.cloudActive"))
+        .accessibilityLabel(String(localized: "settings.dataPrivacy.a11y.storage.cloudActive"))
     }
 
     private var storageHeadingWithLocalDescriptionBlock: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingTight / 2) {
-            Text(String(localized: "DataPrivacy.storage.heading"))
+            Text(String(localized: "settings.dataPrivacy.storage.heading"))
                 .font(AppTheme.warmPaperMeta)
                 .foregroundStyle(AppTheme.settingsTextMuted)
             Text(primaryStorageBody)
@@ -140,7 +150,6 @@ private extension DataPrivacySettingsSection {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "DataPrivacy.a11y.storage"))
     }
 
     func attentionBlock(message: String) -> some View {
@@ -154,8 +163,7 @@ private extension DataPrivacySettingsSection {
                 SettingsOpenSystemSettingsButton(
                     action: openSystemSettings,
                     accessibilityHint: String(
-                        localized:
-                            "Opens iOS Settings where you can sign in to iCloud or review restrictions."
+                        localized: "settings.dataPrivacy.openIOSSettingsICloudHint"
                     ),
                     emphasis: .prominent
                 )
@@ -163,7 +171,6 @@ private extension DataPrivacySettingsSection {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "DataPrivacy.a11y.nextSteps"))
     }
 
     var importExportRow: some View {
@@ -171,7 +178,7 @@ private extension DataPrivacySettingsSection {
             ImportExportSettingsScreen()
         } label: {
             HStack(spacing: AppTheme.spacingRegular) {
-                Text(String(localized: "DataPrivacy.importExport.rowTitle"))
+                Text(String(localized: "settings.dataPrivacy.importExport.rowTitle"))
                     .font(AppTheme.warmPaperBody)
                     .foregroundStyle(AppTheme.settingsTextPrimary)
                 Spacer(minLength: AppTheme.spacingRegular)
@@ -182,6 +189,6 @@ private extension DataPrivacySettingsSection {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "DataPrivacy.a11y.backup"))
+        .accessibilityLabel(String(localized: "settings.dataPrivacy.a11y.backup"))
     }
 }

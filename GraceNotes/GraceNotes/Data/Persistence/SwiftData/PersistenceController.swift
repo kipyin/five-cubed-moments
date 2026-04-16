@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SwiftData
 
@@ -50,31 +51,39 @@ final class PersistenceController {
         if FileManager.default.fileExists(atPath: url.path) {
             try? FileManager.default.removeItem(at: url)
         }
+        ReviewInsightsCache.wipeDiskPayloadForUITestStoreReset()
     }
 
     static func makeForUITesting() throws -> PersistenceController {
         resetUITestStoreIfRequested()
+        removeLegacyUITestStoreFiles()
         let startupTrace = PerformanceTrace.begin("PersistenceController.makeForUITesting")
-        let schema = Schema([JournalEntry.self])
+        let schema = Schema([Journal.self])
         let configuration = ModelConfiguration(
             schema: schema,
             url: uiTestStoreURL,
             cloudKitDatabase: .none
         )
+        let container: ModelContainer
         do {
-            let container = try ModelContainer(for: schema, configurations: configuration)
-            try seedUITestDataIfNeeded(in: container)
-            PerformanceTrace.end("PersistenceController.makeForUITesting", startedAt: startupTrace)
-            let snapshot = PersistenceRuntimeSnapshot.forDiskLaunch(
-                userRequestedCloudSync: Self.cloudSyncEnabled(using: .standard),
-                storeUsesCloudKit: false,
-                startupUsedCloudKitFallback: false
-            )
-            return PersistenceController(container: container, runtimeSnapshot: snapshot)
+            container = try ModelContainer(for: schema, configurations: configuration)
         } catch {
             PerformanceTrace.end("PersistenceController.makeForUITesting.failed", startedAt: startupTrace)
             throw PersistenceControllerError.unableToCreateContainer(error)
         }
+        do {
+            try seedUITestDataIfNeeded(in: container)
+        } catch {
+            PerformanceTrace.end("PersistenceController.makeForUITesting.failed", startedAt: startupTrace)
+            throw PersistenceControllerError.unableToSeedUITestData(error)
+        }
+        PerformanceTrace.end("PersistenceController.makeForUITesting", startedAt: startupTrace)
+        let snapshot = PersistenceRuntimeSnapshot.forDiskLaunch(
+            userRequestedCloudSync: Self.cloudSyncEnabled(using: .standard),
+            storeUsesCloudKit: false,
+            startupUsedCloudKitFallback: false
+        )
+        return PersistenceController(container: container, runtimeSnapshot: snapshot)
     }
 
     static func makeInMemoryForTesting() throws -> PersistenceController {
@@ -83,7 +92,7 @@ final class PersistenceController {
 
     private static func makeController(inMemory: Bool, cloudSyncEnabled: Bool) throws -> PersistenceController {
         let startupTrace = PerformanceTrace.begin("PersistenceController.makeController")
-        let schema = Schema([JournalEntry.self])
+        let schema = Schema([Journal.self])
         let configuration = Self.makeConfiguration(
             schema: schema,
             inMemory: inMemory,
@@ -155,7 +164,14 @@ final class PersistenceController {
     }
 #endif
 
-    private static var uiTestStoreURL: URL {
+    /// Stable, bounded-length filename so long `XCTestConfigurationFilePath` values cannot exceed filesystem limits.
+    private static func uiTestStoreFileName(for sessionKey: String) -> String {
+        let digest = SHA256.hash(data: Data(sessionKey.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        return "ui-test-\(hex).store"
+    }
+
+    private static var uiTestDirectoryURL: URL {
         let fileManager = FileManager.default
         let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
@@ -163,6 +179,41 @@ final class PersistenceController {
         if !fileManager.fileExists(atPath: uiTestDirectory.path) {
             try? fileManager.createDirectory(at: uiTestDirectory, withIntermediateDirectories: true)
         }
+        return uiTestDirectory
+    }
+
+    /// Removes pre-hashing `ui-test-*.store` files (session key embedded in the filename) so Application Support
+    /// does not accumulate orphaned stores after the SHA-256 naming change.
+    private static func removeLegacyUITestStoreFiles() {
+        let fileManager = FileManager.default
+        let uiTestDirectory = uiTestDirectoryURL
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: uiTestDirectory,
+            includingPropertiesForKeys: nil
+        ) else {
+            return
+        }
+        for url in contents {
+            let name = url.lastPathComponent
+            guard name.hasPrefix("ui-test-"), name.hasSuffix(".store") else { continue }
+            if isHashedUITestStoreFileName(name) {
+                continue
+            }
+            try? fileManager.removeItem(at: url)
+        }
+    }
+
+    /// `true` when `name` matches `^ui-test-[0-9a-f]{64}\.store$` (current on-disk naming).
+    private static func isHashedUITestStoreFileName(_ name: String) -> Bool {
+        guard name.hasPrefix("ui-test-"), name.hasSuffix(".store") else { return false }
+        let middle = name.dropFirst("ui-test-".count).dropLast(".store".count)
+        guard middle.count == 64 else { return false }
+        let hexDigits = CharacterSet(charactersIn: "0123456789abcdef")
+        return middle.unicodeScalars.allSatisfy { hexDigits.contains($0) }
+    }
+
+    private static var uiTestStoreURL: URL {
+        let uiTestDirectory = uiTestDirectoryURL
 
         // Prefer XCTest's config path so parallel runs stay isolated. After `terminate()` + `launch()`,
         // that env var is often missing in the app; reuse the last key so relaunch hits the same store.
@@ -180,16 +231,13 @@ final class PersistenceController {
             try? sessionKey.write(to: markerURL, atomically: true, encoding: .utf8)
         }
 
-        let safeSessionKey = sessionKey
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: ":", with: "_")
-        let fileName = "ui-test-\(safeSessionKey).store"
+        let fileName = uiTestStoreFileName(for: sessionKey)
         return uiTestDirectory.appendingPathComponent(fileName, isDirectory: false)
     }
 
     private static func seedUITestDataIfNeeded(in container: ModelContainer) throws {
         let context = ModelContext(container)
-        var descriptor = FetchDescriptor<JournalEntry>()
+        var descriptor = FetchDescriptor<Journal>()
         descriptor.fetchLimit = 1
         if try context.fetch(descriptor).first != nil {
             return
@@ -200,23 +248,76 @@ final class PersistenceController {
         let today = calendar.startOfDay(for: now)
         let previousDay = calendar.date(byAdding: .day, value: -1, to: today) ?? today
 
-        let seededEntry = JournalEntry(
-            entryDate: previousDay,
-            gratitudes: [JournalItem(fullText: "Seed gratitude for timeline")],
-            needs: [JournalItem(fullText: "Seed need for timeline")],
-            people: [JournalItem(fullText: "Seed person for timeline")],
-            createdAt: now,
-            updatedAt: now
-        )
-        context.insert(seededEntry)
+        if ProcessInfo.graceNotesUITestWideReviewRhythmSeed {
+            try insertWideReviewRhythmUITestSeed(
+                context: context,
+                calendar: calendar,
+                today: today,
+                now: now
+            )
+        } else {
+            // Short, distinct lines so NL distillation does not emit overlapping concepts that
+            // sum to trending floors from a single entry (see `WeeklyReviewAggregatesMostRecurringTests`).
+            let seededEntry = Journal(
+                entryDate: previousDay,
+                gratitudes: [Entry(fullText: "sunlight")],
+                needs: [Entry(fullText: "stretching")],
+                people: [Entry(fullText: "Jordan")],
+                createdAt: now,
+                updatedAt: now
+            )
+            context.insert(seededEntry)
+        }
         try context.save()
+    }
+
+    /// One lightweight entry per day so `rhythmHistory` spans dozens of columns (horizontal scrolling in Review).
+    private static func insertWideReviewRhythmUITestSeed(
+        context: ModelContext,
+        calendar: Calendar,
+        today: Date,
+        now: Date
+    ) throws {
+        for dayOffset in 1...36 {
+            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let gratitudeSeed: String
+            let needSeed: String
+            switch dayOffset {
+            case 1...6:
+                gratitudeSeed = "rest"
+                needSeed = "focus"
+            case 7...13:
+                gratitudeSeed = "walking"
+                needSeed = "focus"
+            case 14...20:
+                gratitudeSeed = "family time"
+                needSeed = "rest"
+            default:
+                let rolling = ["rest", "walking", "quiet morning"]
+                gratitudeSeed = rolling[dayOffset % rolling.count]
+                needSeed = rolling[(dayOffset + 1) % rolling.count]
+            }
+            let personSeed = dayOffset % 2 == 0 ? "Mia" : "Dad"
+            let entry = Journal(
+                entryDate: day,
+                gratitudes: [Entry(fullText: gratitudeSeed)],
+                needs: [Entry(fullText: needSeed)],
+                people: [Entry(fullText: personSeed)],
+                readingNotes: dayOffset % 3 == 0 ? "Short note about \(gratitudeSeed)." : "",
+                reflections: dayOffset % 4 == 0 ? "Reflecting on \(needSeed)." : "",
+                createdAt: now,
+                updatedAt: now
+            )
+            context.insert(entry)
+        }
     }
 }
 
 enum PersistenceControllerError: LocalizedError {
     case unableToCreateContainer(Error)
+    case unableToSeedUITestData(Error)
 
     var errorDescription: String? {
-        String(localized: "We couldn't finish setting up your Grace Notes space. Please try again.")
+        String(localized: "startup.error.setupFailed")
     }
 }

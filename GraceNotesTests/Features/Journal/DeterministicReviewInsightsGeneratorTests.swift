@@ -114,7 +114,7 @@ final class DeterministicReviewInsightsTests: XCTestCase {
     func test_generateInsights_generatesFullCompletionInsight_forSevenFullDays() async throws {
         let reference = date(year: 2026, month: 3, day: 18)
         let fullWeekEntries = (0...6).map { offset in
-            makeFullEntry(on: date(year: 2026, month: 3, day: 12 + offset))
+            makeFullEntry(on: date(year: 2026, month: 3, day: 16 + offset))
         }
 
         let insights = try await generator.generateInsights(
@@ -136,11 +136,11 @@ final class DeterministicReviewInsightsTests: XCTestCase {
         let insights = try await generator.generateInsights(
             from: [
                 makeEntry(on: seedDay, gratitudes: ["Family"], needs: ["Rest"], people: ["Mia"]),
-                JournalEntry(
+                Journal(
                     entryDate: harvestDay,
-                    gratitudes: (1...5).map { JournalItem(fullText: "Gratitude \($0)", chipLabel: "Gratitude \($0)") },
-                    needs: (1...5).map { JournalItem(fullText: "Need \($0)", chipLabel: "Need \($0)") },
-                    people: (1...5).map { JournalItem(fullText: "Person \($0)", chipLabel: "Person \($0)") }
+                    gratitudes: (1...5).map { Entry(fullText: "Gratitude \($0)") },
+                    needs: (1...5).map { Entry(fullText: "Need \($0)") },
+                    people: (1...5).map { Entry(fullText: "Person \($0)") }
                 ),
                 makeEntry(on: textOnlyDay, readingNotes: "Short note from the day")
             ],
@@ -152,13 +152,13 @@ final class DeterministicReviewInsightsTests: XCTestCase {
             insights.weekStats.activity
                 .first(where: { calendar.isDate($0.date, inSameDayAs: seedDay) })?
                 .strongestCompletionLevel,
-            .seed
+            .sprout
         )
         XCTAssertEqual(
             insights.weekStats.activity
                 .first(where: { calendar.isDate($0.date, inSameDayAs: harvestDay) })?
                 .strongestCompletionLevel,
-            .harvest
+            .bloom
         )
         XCTAssertEqual(
             insights.weekStats.activity
@@ -183,7 +183,7 @@ final class DeterministicReviewInsightsTests: XCTestCase {
         XCTAssertEqual(insights.presentationMode, .statsFirst)
         XCTAssertEqual(
             insights.weeklyInsights.first?.observation,
-            "Start with one reflection today to build your weekly review."
+            String(localized: "review.insights.starterReflection")
         )
     }
 
@@ -194,22 +194,22 @@ final class DeterministicReviewInsightsTests: XCTestCase {
         people: [String] = [],
         readingNotes: String = "",
         reflections: String = ""
-    ) -> JournalEntry {
-        JournalEntry(
+    ) -> Journal {
+        Journal(
             entryDate: date,
-            gratitudes: gratitudes.map { JournalItem(fullText: $0, chipLabel: $0) },
-            needs: needs.map { JournalItem(fullText: $0, chipLabel: $0) },
-            people: people.map { JournalItem(fullText: $0, chipLabel: $0) },
+            gratitudes: gratitudes.map { Entry(fullText: $0) },
+            needs: needs.map { Entry(fullText: $0) },
+            people: people.map { Entry(fullText: $0) },
             readingNotes: readingNotes,
             reflections: reflections
         )
     }
 
-    func makeFullEntry(on date: Date) -> JournalEntry {
-        let gratitudes = (1...5).map { JournalItem(fullText: "Gratitude \($0)", chipLabel: "Gratitude \($0)") }
-        let needs = (1...5).map { JournalItem(fullText: "Need \($0)", chipLabel: "Need \($0)") }
-        let people = (1...5).map { JournalItem(fullText: "Person \($0)", chipLabel: "Person \($0)") }
-        return JournalEntry(
+    func makeFullEntry(on date: Date) -> Journal {
+        let gratitudes = (1...5).map { Entry(fullText: "Gratitude \($0)") }
+        let needs = (1...5).map { Entry(fullText: "Need \($0)") }
+        let people = (1...5).map { Entry(fullText: "Person \($0)") }
+        return Journal(
             entryDate: date,
             gratitudes: gratitudes,
             needs: needs,

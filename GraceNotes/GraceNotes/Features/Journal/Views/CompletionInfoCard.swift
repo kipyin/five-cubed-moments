@@ -1,10 +1,6 @@
 import SwiftUI
 
 struct CompletionInfoCard: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var contentVisible = false
-    @State private var iconSettled = false
-
     let badgeInfo: CompletionBadgeInfo
     let cardTintColor: Color
     let reduceTransparency: Bool
@@ -13,25 +9,45 @@ struct CompletionInfoCard: View {
     let bloomProgress: CGFloat
 
     var body: some View {
-        HStack(alignment: .top, spacing: AppTheme.spacingRegular) {
-            Image(systemName: badgeInfo.iconName)
-                .font(AppTheme.outfitSemiboldSubheadline)
-                .foregroundStyle(cardTintColor)
-                .frame(width: 26, height: 26)
-                .background(Circle().fill(cardTintColor.opacity(0.16)))
-                .scaleEffect(iconSettled || reduceMotion ? 1 : 0.86)
-                .accessibilityHidden(true)
+        CompletionInfoCardContent(
+            badgeInfo: badgeInfo,
+            cardTintColor: cardTintColor,
+            reduceTransparency: reduceTransparency,
+            morphNamespace: morphNamespace,
+            showMorph: showMorph,
+            bloomProgress: bloomProgress
+        )
+        .id(badgeInfo)
+    }
+}
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(badgeInfo.description)
-                    .font(AppTheme.warmPaperMeta)
-                    .foregroundStyle(AppTheme.journalTextMuted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+private struct CompletionInfoCardContent: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.todayJournalPalette) private var palette
+    @State private var contentVisible = false
+    @State private var didPlayEntryAnimation = false
+
+    let badgeInfo: CompletionBadgeInfo
+    let cardTintColor: Color
+    let reduceTransparency: Bool
+    let morphNamespace: Namespace.ID
+    let showMorph: Bool
+    let bloomProgress: CGFloat
+
+    private var isEntryRevealed: Bool {
+        contentVisible || reduceMotion
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(badgeInfo.description)
+                .font(AppTheme.warmPaperMeta)
+                .foregroundStyle(palette.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .opacity(contentVisible || reduceMotion ? 1 : 0)
-        .offset(y: contentVisible || reduceMotion ? 0 : 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .opacity(isEntryRevealed ? 1 : 0)
+        .offset(y: isEntryRevealed ? 0 : 8)
         .padding(AppTheme.spacingRegular)
         .background(cardSurface)
         .overlay(
@@ -39,53 +55,63 @@ struct CompletionInfoCard: View {
                 .stroke(cardTintColor.opacity(0.38), lineWidth: 1)
         )
         .shadow(color: cardTintColor.opacity(reduceTransparency ? 0.18 : 0.24), radius: 8, x: 0, y: 4)
+        .allowsHitTesting(isEntryRevealed)
+        .accessibilityHidden(!isEntryRevealed)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(badgeInfo.description))
         .onAppear {
             animateEntry()
         }
     }
 
-    private var cardSurface: AnyView {
-        let base = RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-            .fill(AppTheme.journalPaper.opacity(reduceTransparency ? 1.0 : 0.94))
+    private var cardSurface: some View {
+        Group {
+            if showMorph && !reduceMotion {
+                roundedRectangleSurface
+                    .matchedGeometryEffect(
+                        id: "completionInfoMorphSurface",
+                        in: morphNamespace,
+                        properties: .frame,
+                        anchor: .topLeading,
+                        isSource: false
+                    )
+            } else {
+                roundedRectangleSurface
+            }
+        }
+    }
+
+    private var roundedRectangleSurface: some View {
+        RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
+            .fill(
+                palette.paper.opacity(reduceTransparency ? 1.0 : 0.94 * palette.sectionPaperOpacity)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                     .stroke(cardTintColor.opacity(0.24 * bloomProgress), lineWidth: 1.4)
                     .scaleEffect(1.0 + (0.02 * (1 - bloomProgress)))
             )
-
-        guard showMorph, !reduceMotion else {
-            return AnyView(base)
-        }
-
-        return AnyView(
-            base.matchedGeometryEffect(
-                id: "completionInfoMorphSurface",
-                in: morphNamespace,
-                properties: .frame,
-                anchor: .topLeading,
-                isSource: false
-            )
-        )
     }
 
     private func animateEntry() {
         guard !reduceMotion else {
             contentVisible = true
-            iconSettled = true
             return
         }
 
-        contentVisible = false
-        iconSettled = false
+        if didPlayEntryAnimation {
+            contentVisible = true
+            return
+        }
+        didPlayEntryAnimation = true
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            contentVisible = false
+        }
 
         withAnimation(.easeOut(duration: 0.24)) {
             contentVisible = true
-        }
-
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.64).delay(0.08)) {
-            iconSettled = true
         }
     }
 }

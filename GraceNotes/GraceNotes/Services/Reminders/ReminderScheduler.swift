@@ -18,9 +18,9 @@ enum ReminderLiveStatus: Equatable {
 
 protocol ReminderScheduling {
     func currentReminderStatus() async -> ReminderLiveStatus
-    func enableDailyReminder(at time: Date) async -> ReminderSyncResult
+    func enableDailyReminder(at time: Date, body: String) async -> ReminderSyncResult
     func disableDailyReminder() async -> ReminderSyncResult
-    func rescheduleEnabledReminder(at time: Date) async -> ReminderSyncResult
+    func rescheduleEnabledReminder(at time: Date, body: String) async -> ReminderSyncResult
 }
 
 protocol UserNotificationCenterClient {
@@ -70,10 +70,14 @@ struct ReminderScheduler {
         }
     }
 
-    func enableDailyReminder(at time: Date) async -> ReminderSyncResult {
-        switch await notificationPermissionOutcome(allowPermissionPrompt: true) {
+    func enableDailyReminder(at time: Date, body: String) async -> ReminderSyncResult {
+        let authorizationStatus = await notificationCenter.authorizationStatus()
+        switch await notificationPermissionOutcome(
+            allowPermissionPrompt: true,
+            authorizationStatus: authorizationStatus
+        ) {
         case .granted:
-            let wasScheduled = await scheduleReminder(at: time)
+            let wasScheduled = await scheduleReminder(at: time, body: body)
             return wasScheduled ? .scheduled : .failed
         case .denied:
             removeReminder()
@@ -90,10 +94,21 @@ struct ReminderScheduler {
     }
 
     /// Reschedules only when authorization is already available.
-    func rescheduleEnabledReminder(at time: Date) async -> ReminderSyncResult {
-        switch await notificationPermissionOutcome(allowPermissionPrompt: false) {
+    func rescheduleEnabledReminder(at time: Date, body: String) async -> ReminderSyncResult {
+        // `notDetermined` is not a denial. This path does not prompt, so treat it as “cannot
+        // reconcile now” and keep any existing pending request (maps to the same UI result as
+        // before, without clearing a still-valid schedule).
+        let authorizationStatus = await notificationCenter.authorizationStatus()
+        if authorizationStatus == .notDetermined {
+            return .permissionDenied
+        }
+
+        switch await notificationPermissionOutcome(
+            allowPermissionPrompt: false,
+            authorizationStatus: authorizationStatus
+        ) {
         case .granted:
-            let wasScheduled = await scheduleReminder(at: time)
+            let wasScheduled = await scheduleReminder(at: time, body: body)
             return wasScheduled ? .scheduled : .failed
         case .denied:
             removeReminder()
@@ -104,18 +119,18 @@ struct ReminderScheduler {
         }
     }
 
-    func syncDailyReminder(enabled: Bool, time: Date) async -> ReminderSyncResult {
+    func syncDailyReminder(enabled: Bool, time: Date, body: String) async -> ReminderSyncResult {
         if !enabled {
             return await disableDailyReminder()
         }
 
-        return await enableDailyReminder(at: time)
+        return await enableDailyReminder(at: time, body: body)
     }
 
     private func notificationPermissionOutcome(
-        allowPermissionPrompt: Bool
+        allowPermissionPrompt: Bool,
+        authorizationStatus status: UNAuthorizationStatus
     ) async -> NotificationPermissionOutcome {
-        let status = await notificationCenter.authorizationStatus()
         switch status {
         case .authorized, .provisional, .ephemeral:
             return .granted
@@ -136,16 +151,29 @@ struct ReminderScheduler {
         }
     }
 
-    private func scheduleReminder(at time: Date) async -> Bool {
-        removeReminder()
+    private func scheduleReminder(at time: Date, body: String) async -> Bool {
+        guard time.timeIntervalSinceReferenceDate.isFinite else { return false }
 
+        // Do not remove the existing pending request first. Adding a request with the same
+        // identifier replaces it; removing first would orphan the user if `add` throws.
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "Grace Notes")
-        content.body = String(localized: "Take a moment to complete today's entry.")
+        content.title = String(localized: "app.name")
+        let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        content.body = trimmedBody.isEmpty
+            ? String(localized: String.LocalizationValue("notifications.reminder.body.fallback"))
+            : trimmedBody
         content.sound = .default
 
-        let timeComponents = ReminderSettings.timeComponents(from: time, calendar: calendar)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: timeComponents, repeats: true)
+        let extracted = ReminderSettings.timeComponents(from: time, calendar: calendar)
+        guard let hour = extracted.hour, let minute = extracted.minute else { return false }
+
+        var triggerComponents = DateComponents()
+        triggerComponents.calendar = calendar
+        triggerComponents.timeZone = calendar.timeZone
+        triggerComponents.hour = hour
+        triggerComponents.minute = minute
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: true)
         let request = UNNotificationRequest(
             identifier: ReminderSettings.notificationIdentifier,
             content: content,

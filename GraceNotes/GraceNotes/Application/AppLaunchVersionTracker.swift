@@ -17,7 +17,8 @@ enum AppLaunchVersionTracker {
         currentMarketingVersionOverride: String? = nil,
         currentBundleVersionOverride: Int? = nil
     ) {
-        let currentMarketing = currentMarketingVersionOverride ?? bundle.graceNotesMarketingVersion ?? "0"
+        let rawMarketing = currentMarketingVersionOverride ?? bundle.graceNotesMarketingVersion
+        let currentMarketing = Self.normalizedMarketingVersion(rawMarketing)
         let currentBundle = currentBundleVersionOverride ?? bundle.graceNotesBundleVersion
 
         defaults.set(currentMarketing, forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
@@ -31,5 +32,11 @@ enum AppLaunchVersionTracker {
     static func resetLaunchTracking(in defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: GraceNotesLaunchStorageKeys.lastLaunchedMarketingVersion)
         defaults.removeObject(forKey: GraceNotesLaunchStorageKeys.lastLaunchedBundleVersion)
+    }
+
+    /// `CFBundleShortVersionString` may be empty or whitespace in a malformed bundle; treat like a missing value.
+    private static func normalizedMarketingVersion(_ raw: String?) -> String {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "0" : trimmed
     }
 }

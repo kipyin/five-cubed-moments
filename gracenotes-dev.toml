@@ -1,0 +1,103 @@
+[defaults]
+project = "GraceNotes/GraceNotes.xcodeproj"
+scheme = "GraceNotes"
+bundle_id = "com.gracenotes.GraceNotes"
+# Default `grace ci` profile when `--profile` is omitted (lint + simulator build; no tests).
+default_ci_profile = "lint-build"
+destination = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+ci_simulator_pro = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+ci_simulator_xr = "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.5"
+test_destination_matrix = [
+  "iPhone SE (3rd generation)@18.5",
+  "iPhone 17 Pro@latest",
+]
+isolated_derived_data = "/tmp/GraceNotes-TestDerivedData"
+
+[tests]
+unit_test_bundle = "GraceNotesTests"
+ui_test_bundle = "GraceNotesUITests"
+smoke_ui_test = "GraceNotesUITests/GraceNotesSmokeUITests/testSmokeLaunch"
+# XCTest parallel execution (UI defaults off — see CHANGELOG re: simulator contention).
+parallel_testing_unit = true
+parallel_testing_ui = false
+legacy_runtime_skip_flags = [
+  "-skip-testing:GraceNotesTests/DeterministicReviewInsightsTests",
+  "-skip-testing:GraceNotesTests/HistoryEntryGroupingTests",
+]
+
+[ci.profiles.lint-build]
+lint = true
+build = true
+build_destination = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+
+[ci.profiles.test-all]
+lint = true
+test = true
+test_kind = "all"
+reset_simulators_before_test = true
+
+[ci.profiles.lint-build-test]
+lint = true
+build = true
+build_destination = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+test = true
+test_kind = "all"
+reset_simulators_before_test = true
+
+[ci.profiles.full]
+lint = true
+test = true
+test_kind = "all"
+test_destination = "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+smoke = true
+smoke_destination = "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.5"
+
+[run.presets]
+tutorial-reset = ["-reset-journal-tutorial"]
+uitest-reset-store = ["-grace-notes-reset-uitest-store"]
+
+# grace sentry — non-secret only (no API keys). Fix step: local Cursor `agent` CLI.
+# Default reviewer allowlist (when reviewer_logins unset) includes the GitHub Copilot PR
+# reviewer app (`copilot-pull-request-reviewer`) plus Cursor reviewer logins; use
+# `grace sentry review-thread-authors <PR#>` to confirm `author.login` values.
+[sentry]
+fix_provider = "cursor_agent"
+agent_bin = "agent"
+agent_prefix_args = "chat"
+agent_extra_args = ""
+agent_timeout_sec = 900
+
+approval_phrase = "/sentry-approve"
+# GitHub logins allowed to post `approval_phrase` as an emergency merge override. Use [] to disable.
+approval_users = ["kipyin"]
+
+# Reviewer merge gate: GitHub `author.login` / `user.login` allowlist. If unset, sentry merges
+# default Copilot bot + `cursor_reviewer_logins`. Set to [] to disable reviewer gates.
+# reviewer_logins = ["cursor[bot]", "copilot-pull-request-reviewer"]
+# How "reviewers cleared" is decided: "comment" (default; marker on your issue comments) or
+# "github" (threads + PR review state). See gracenotes-dev README.
+review_clear_mode = "comment"
+# review_clear_block_outcomes = ["product_decision", "ci_failed", "error"]
+# review_clear_comment_max_age_seconds = 0
+# [sentry.review_outcome_templates]
+# addressed = "… {pr} …"
+# SENTRY_REVIEWER_LOGINS=comma-separated
+# Silence timeout (seconds) from PR creation when bots never submit a review (see grace sentry README).
+# review_silence_timeout_seconds = 900
+
+# Cursor merge gate: default logins match common app accounts; use
+# `grace sentry issue-comment-authors <PR#>` to confirm. Set to [] to disable.
+# cursor_reviewer_logins = []
+# cursor_post_review_trigger = true
+
+ci_profile = "lint-build"
+copilot_wait_seconds = 900
+# merge_sweep_budget_seconds = 120
+# merge_sweep_total_budget_seconds = 0
+# 0 = derive (per-PR budget × max(3, open PRs), min 300s). Set a positive value to cap the whole sweep.
+# review_fix_cooldown_seconds = 180
+# cursor_review_fix_cooldown_seconds = 180
+arbitration_stuck_seconds = 172800
+interval_seconds = 30
+max_retries = 8
+retry_base_seconds = 1.5

@@ -8,7 +8,6 @@ enum AppTab: Hashable {
 }
 
 enum SettingsScrollTarget: Hashable {
-    case aiFeatures
     case reminders
     case dataPrivacy
 }
@@ -21,8 +20,12 @@ final class AppNavigationModel: ObservableObject {
     /// Switches to Settings and requests scroll/highlight for `target`.
     /// Callers that deep-link from domain rules (e.g. journal onboarding) should validate intent before calling.
     func openSettings(target: SettingsScrollTarget) {
-        settingsScrollTarget = target
         selectedTab = .settings
+        // If the target is unchanged, SwiftUI `onChange` may not run; nil-out first so repeat deep links still scroll.
+        if settingsScrollTarget == target {
+            settingsScrollTarget = nil
+        }
+        settingsScrollTarget = target
     }
 
     func clearSettingsTarget(_ target: SettingsScrollTarget) {

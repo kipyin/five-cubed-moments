@@ -1,35 +1,96 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **Past (#257):** Sticky completion toolbar chip matches inline completion (tap shows status info and scrolls to header; touch-and-hold toggles the expanded label). Past journal navigation titles align with search/list day captions (same calendar year omits year; **Today** / **Yesterday** unchanged). Opening a day from **Growth**, **Section mix**, **Reflection rhythm** drill-down, **theme** drill-downs, or **browse** sheets presents **Journal** in the top-level day sheet (drill-down sheet dismisses first).
+- **Past (#255):** The narrative row below recurring/trending is **Next step** only (no separate Observation panel). Weeks in **stats-first** presentation still omit that row (rhythm-led). Otherwise a refiner **hides the whole row** when the line would be empty, duplicate the generic glad-happened filler, or echo a **short** recurring-theme action already shown in the most-recurring stats; longer actions still show. **zh-Hans** tightened for the next-step title and weekly insight action strings (`Localizable.xcstrings`).
+- **Past (#247):** Section mix strip shows **integer percentages** in each segment; the legend keeps **mention counts** with **meta** labels and per-section **count capsules** aligned with other insight cards.
+
 ## [0.5.0]
 
-Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Store); git tags **`v0.5.0+{build}`**. GitHub milestones **0.5.2**, **0.5.3**, etc. name **scope lanes**, not separate marketing versions — see `GraceNotes/docs/07-release-roadmap.md`. Older docs or issues may still mention interim labels (**0.5.1**, **0.5.2**); **ship truth** is **0.5.0 + build** below.
+Marketing version **0.5.0** ships as successive **builds** (TestFlight / App Store); git tags **`v0.5.0+{build}`**. GitHub milestones **0.5.2**, **0.5.3**, etc. name **scope lanes**, not separate marketing versions — see **README.md** (Roadmap) and GitHub milestones. Older docs or issues may still mention interim labels (**0.5.1**, **0.5.2**); **ship truth** is **0.5.0 + build** below.
 
-### Build 8 — Unreleased
+### Next build (in progress)
 
-Work tracked toward milestone **0.5.2** (Settings cohesion and insight follow-through); ships as marketing **0.5.0**, next **bundle** increment at cut time (tag e.g. **`v0.5.0+8`**).
+*No entries yet.*
+
+### Build 10 — 2026-04-09
+
+Marketing **0.5.0** / bundle **10** (git tag **`v0.5.0+10`** at release).
+
+### Changed
+
+- Journal (**#216**): On **Today**, reduce stacked onboarding nudges—when the one-time App Tour presents at first 1/1/1, suppress the bottom Sprout unlock toast and header celebration for both the generic tier bump and the first-triple-one variant (recording flags unchanged). The Settings suggestion strip (reminders / iCloud) does not show while linear section guidance is active.
+- Journal: Remove the dismissible **hint card** under the completion pill; guided steps **end after first 1/1/1** (no ripening/harvest phases). Focus still advances from first gratitude → first need → first person. Further toast polish is tracked in **#225**.
+- **Journal (Today):** Completion unlock feedback uses the same **high-contrast card** in the **header** (inline pill visible) and **below the navigation bar** when the **sticky toolbar** completion chip is showing, with an **opacity crossfade** when scrolling switches between the two. The old **bottom** unlock toast is removed. Refs **#225**.
+- **Journal (Today):** Sticky completion chip uses **scroll hysteresis** so unlock placement does not **oscillate** at the reveal threshold; unlock card fill uses **warm paper palette** only (no system grey Materials). Refs **#225**.
+- **Share card:** Three distinct typographic presets — Grace Notes default (Playfair + Source Serif 4), **Editorial** (Outfit + IBM Plex Serif), **Embellished** (Spectral on the sunrise gradient). Watermark uses the warm paper meta font for a consistent footer; stubs use each style’s meta font. Section include/exclude uses subtle **plus** / **xmark** (44pt target). Sunrise preset text ink slightly darkened for contrast on the gradient. Bundled **IBM Plex Serif** and **Spectral** (SIL OFL); license texts alongside fonts under `GraceNotes/GraceNotes/Resources/Fonts/`.
+- **Share:** Composer and manual backup actions use the label **Share** / **分享** (no ellipsis). Share card preview places the completion badge on the **same row** as the date, **trailing**-aligned, at a **larger** scale for balance with section titles; sunrise accent rule stays below that row.
+- **Copy / localization (zh-Hans):** Review pass for onboarding, journal guidance, App Tour criteria, Past insights, and settings—more consistent **件/位** counting, calmer onboarding tone, and clearer iCloud / completion phrasing (`Localizable.xcstrings`). Removed legacy unused catalog keys that had no Swift references.
+
+### Developer
+
+- Tests: `JournalTodayOrientationPolicyTests`, `OnboardingSuggestionEvaluatorTests`, `JournalOnboardingFlowEvaluatorTests`; `JournalStickyCompletionVisibilityTests`, `JournalUnlockFeedbackPlacementTests`; removed `JournalTutorialHintPresentationTests`. `JournalUnlockFeedback` replaces the former bottom unlock toast (`JournalUnlockToastView` removed).
+- **gracenotes-dev:** `grace l10n audit` now treats `LocalizedStringResource("…")` and `localized("…")` helper call sites as key references (fixes false “unused key” warnings for iCloud last-activity strings).
+
+### Build 9 — 2026-04-04
+
+Marketing **0.5.0** / bundle **9** (git tag **`v0.5.0+9`** at release).
+
+### Changed
+
+- Settings (**#200**): Data / import-export surfaces show **file names**, **scheduled backup folder** titles, and **file-like** JSON names in export history (system monospaced text via `AppTheme` tokens); localized labels and prose stay Warm Paper. Localized error sentences in history stay serif.
+
+### Fixed
+
+- Journal (**#191**): **Today** picks up the current local calendar day after you return from the background, lock and unlock, or switch to another tab and back—without requiring an app restart. Unsaved edits on the previous day are flushed before loading the new day. Staying on **Today** with the app continuously active (no background, lock, or tab change) can still show the prior day until you leave active use, as intended.
+
+### Developer
+
+- Tests: `JournalViewModel.refreshTodayIfStale` coverage for calendar-day rollover, immediate persist before advancing, same-day no-op, and clock moving backward.
+
+### Build 8 — 2026-03-28
+
+Work tracked toward milestone **0.5.2** (Settings cohesion and insight follow-through); shipped as marketing **0.5.0** / bundle **8** (git tag **`v0.5.0+8`**).
+
+### Changed
+
+- Past (**#178**): Opening a day from **Reflection rhythm** or **Search journal** presents **Journal** in a **sheet** (Done dismisses). **Growth** and **Section** Past drill-downs use **stacked month calendars**; emphasized days open the journal via push inside the drill-down.
+- Journal (**#177**): **App Tour** naming and storage (`AppTourView`, `AppTourTrigger`, `hasSeenAppTour` with one-time migration from `hasSeenPostSeedJourney`). Journal lines are **strip text only** (removed chip-label summarization and `JournalItem` label fields). Removed **Cloud AI** wiring (API key / xcconfig placeholders; `ReviewInsightSource` only **deterministic**, legacy **`cloudAI`** decodes as deterministic). **`JournalCompletionLevel`** encodes as **`soil` / `sprout` / `twig` / `leaf` / `bloom`** with legacy raw decode; rhythm catalog images renamed to match. *(Older changelog entries that describe Cloud AI or chip labels document removed behavior.)*
+- Past: **Search** (en / zh-Hans) labels the Past tab inline field — results and behavior unchanged; clearing the query restores insights cards. The dismiss control sits **outside** the search pill (trailing, 44pt target), clears non-empty text, and dismisses the keyboard with **Today**-aligned snappy layout animation (respects Reduce Motion). While the search field is focused, list scrolling does not dismiss the keyboard. **zh-Hans** Past search copy refined (`Localizable.xcstrings`).
+- Journal: removed the extra **Abundance** / full-rhythm tier. **Bloom** (all fifteen structured lines) is the top state for **perfect** streaks, **`completedToday`**, and first-run onboarding; reading notes and reflections are optional. Legacy decode still maps raw **`abundance`** → **`.bloom`** where older data or APIs use that string (`JournalCompletionLevel`, weekly mix JSON).
+- Copy / localization (**#128**): completion surfaces use the **Soil → Bloom** English set and locked **zh-Hans** status labels (静待播种 → 花开有成); contributor glossary (**记录** / **部分** / **条**) in completion-facing strings; string catalog scrubbed for user-facing **Abundance**, **满溢**, cloud/AI product framing, and em dash in customer copy where the issue checklist applies.
+- **Data export:** JSON share filenames now use the prefix **`grace-notes-export-`** instead of `five-cubed-journal-export-`. Automation or scripts that match the old basename need updating (#133 / #136).
+- Review > Insights: weekly **Reflection rhythm** uses a redesigned column visualization (completion tier per day, horizontal scroll with edge feathering when the week is wider than the card); only days with a **saved journal row** navigate to `JournalScreen`—empty history slots stay visual-only with a distinct VoiceOver hint (#115).
+- Review rhythm day labels format with `DateFormatter` configured from the passed `Calendar` (locale and time zone) (`ReviewRhythmFormatting`).
+- Journal: **Today** sequential sections (**Gratitudes**, **Needs**, **People in mind**) show submitted lines as **sentence strips** with inline edit. Inline empty-space dismiss uses a clearer scroll backdrop; navigation-bar taps use bar-frame hit testing. Strip add/tap orchestration goes through `JournalStripInteractionCoordinator` (#102).
+- Review > Insights: single read-only **Source** badge (replacing twin pills that read like a control); insights UI copy framed for on-device digest only (**#83**, **#119**).
+- Settings: section headers use authored title case instead of all-caps list header styling (#84).
+- Journal: middle tab label **Review** → **Past** (en / zh-Hans); onboarding copy that directed users to the **Review** tab now names **Past** (`Localizable.xcstrings`, `GraceNotesApp`, `ReviewScreen`, `JournalUITests`) (#130).
+- Review: **Reflection rhythm** uses **Today** instead of a weekday abbreviation for the current calendar day’s column (`ReviewRhythmFormatting`, unit tests) (#132).
+- Review > Insights: thin-week **Write today's reflection** control switches to **Today**; flatter insights column (inset panels only, no outer summary shell); **This week** title row shows the week date range; read-only on-device source labeling; unified semibold panel titles; system **Insights** / **Timeline** segmented control (Liquid Glass on iOS 26+) with `ReviewModePicker` id preserved (#85).
+- Review insights engine: weekly **reflection day count** and **narrative summary** now treat non-empty reading notes or reflections as signal (even when chip completion is still **Empty**), so sparse-week and narrative behavior match long-form journaling (#85).
+- Review insights: continue #40 / #80 follow-through in the **0.5.2** milestone lane on GitHub (**#80** may remain open for engine depth).
+
+### Fixed
+
+- SwiftData + CloudKit: `@Model` types are again named **`JournalEntry`** / composite **`JournalItem`**, with **`Journal`** / **`Entry`** as `typealias`es for app code, so existing on-disk stores and iCloud sync match the persisted entity identity after the #187 rename.
+- Review: **Reflection rhythm** horizontal strip pins to the trailing edge on first layout when the week is wider than the card, so the current day is not left under the trailing edge fade (`UIScrollView` KVO + `contentOffset`; issue #127).
 
 ### Developer
 
 - Tests: SwiftData unit tests use in-memory isolation (`SwiftDataTestIsolation`) so `JournalViewModel*`, `JournalRepository`, import, and `PersistenceRuntimeSnapshot` suites run on the iOS Simulator instead of skipping; `JournalViewModel` supports a shorter autosave debounce for UI tests (`-grace-notes-uitest-short-autosave` or `autosaveDebounceMilliseconds` in tests).
-- Journal: `JournalTodayOrientationPolicy` centralizes Today-only post-Seed presentation (delegating to `PostSeedJourneyTrigger`) and Seed unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion behavior live in code and tests (`JournalTodayOrientationPolicy`, `JournalTodayOrientationPolicyTests`).
-- Journal: post-Seed journey (**C**) is **version-free**—eligibility uses `hasSeenPostSeedJourney`, Today completion **≥ Seed**, and `completedGuidedJournal` (skip congratulations only). Removed `OrientationReleaseGate` and launch-time cohort flags; `JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded` normalizes legacy `pending051UpgradeOrientation` into guided/branch state, clears the upgrade key, and keeps `legacy051GuidedBranchResolution` until Today runs `resolvePending051GuidedJournalBranch`. Settings **App tour** sets `hasSeenPostSeedJourney` on finish without completing guided journal and skips the Seed congratulations page when guided journal is already complete. `AppLaunchVersionTracker` still records last marketing/bundle only.
+- Journal: `JournalTodayOrientationPolicy` centralizes Today-only App Tour presentation (delegating to `AppTourTrigger`) and Sprout unlock toast suppression; `JournalScreen` consumes it. Product matrix and dual-completion behavior live in code and tests (`JournalTodayOrientationPolicy`, `JournalTodayOrientationPolicyTests`).
+- Journal: App Tour is **version-free**—eligibility uses `hasSeenAppTour` (migrated from legacy `hasSeenPostSeedJourney` once), Today completion **≥ Sprout**, and `completedGuidedJournal` (skip congratulations only). Removed `OrientationReleaseGate` and launch-time cohort flags; `JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded` normalizes legacy `pending051UpgradeOrientation` into guided/branch state, clears the upgrade key, and keeps `legacy051GuidedBranchResolution` until Today runs `resolvePending051GuidedJournalBranch`. Settings **App Tour** sets `hasSeenAppTour` on finish without completing guided journal and skips the congratulations page when guided journal is already complete. `AppLaunchVersionTracker` still records last marketing/bundle only.
+- Journal (Abundance removal): `JournalEntry` drops `hasAbundanceRhythm` / `criteriaMet`; `StreakCalculator` “perfect” uses `hasHarvestChips`; `JournalOnboardingFlowEvaluator` drops the post-harvest notes gate; `JournalOnboardingContext` no longer carries reading-notes fields for onboarding. Unit tests updated (`StreakCalculatorTests`, `JournalOnboardingFlowEvaluatorTests`, `JournalCompletionLevelTests`, `JournalViewModelCompletionAndLimitsTests`).
 - Versioning: Grace Notes app **marketing version** stays **0.5.0** for this lane; **bundle** (`CURRENT_PROJECT_VERSION`) **8** (increment build under the minor for faster TestFlight review; build **7** was the previous ship).
-- Contributor workflow: removed `GraceNotes/docs/agent-log/`, `Scripts/validate-agent-log.sh`, and `make verify-agent-log*`; use GitHub issues/PRs and `AGENTS.md` for coordination.
-- Journal architecture: `JournalExportPayload` / `JournalExportSnapshotSource`, `JournalStreakSummaryRefresher`, and `JournalChipLabelSummarizationCoordinator` split from `JournalViewModel` responsibilities; behavior unchanged (#90).
+- Contributor workflow: removed the in-repo **agent-log** docs tree (under the former GraceNotes docs folder), `Scripts/validate-agent-log.sh`, and `make verify-agent-log*`; use GitHub issues/PRs and `AGENTS.md` for coordination.
+- Journal architecture: `JournalExportPayload` / `JournalExportSnapshotSource`, `JournalStreakSummaryRefresher`, and (formerly) chip-label summarization coordination split from `JournalViewModel` responsibilities (#90); label pipeline removed in **#177** (strips use full text only).
 - UI tests: Today journal inputs use `UITextView` (`InlineSentenceEditorField`); `JournalUITests` query **TextView** for composer and strip editor identifiers. `test_todayScreen_submitKeepsKeyboardAvailableForNextEntry` expects the keyboard after the strip appears and the user opens the composer for the next line (#102).
+- Review: `ReviewDayActivity.hasPersistedEntry` gates rhythm-column drill-in so empty history days do not create journal rows; `JournalUITests.test_reviewScreen_rhythmDrillInOpensJournalWithShare` covers Past tab → rhythm column → journal (#115).
 - Xcode: shared **GraceNotes** scheme **Run** (**LaunchAction**) uses **Debug** so ⌘R matches typical local debugging; bundle **7** notes still describe **Run** on **Release** at that ship cut (#102 review).
-
-### Fixed
-- Review: weekly **cloud** insights could fall back to on-device digest with the unreadable-response explanation when the model reply was cut off mid-JSON; raised completion **max_tokens** so the full structured payload can finish (#99).
-
-### Changed
-- Journal: **Today** sequential sections (**Gratitudes**, **Needs**, **People in mind**) show submitted lines as **sentence strips** with inline edit (full sentence first; chip labels stay secondary for aggregation). Inline empty-space dismiss uses a clearer scroll backdrop; navigation-bar taps use bar-frame hit testing. Chip add/tap orchestration goes through `JournalChipInteractionCoordinator` (#102).
-- Review > Insights: single read-only **Source** badge (replacing twin pills that read like a control); when Cloud AI is on but the digest is still on-device, an info button explains why (weekly evidence threshold, missing cloud setup, or a failed cloud attempt) (#83).
-- Review > Insights: on-device cloud skip explanations are **more specific** (connection, timeout, service or access limits, unreadable response, quality gate, or generic fallback), mapped from `CloudReviewInsightsError`, HTTP status, and `URLError`, with matching **en** / **zh-Hans** catalog strings.
-- Settings: section headers use authored title case instead of all-caps list header styling (#84).
-- Review > Insights: thin-week **Write today's reflection** control switches to **Today**; flatter insights column (inset panels only, no outer summary shell); **This week** title row shows the week date range; read-only **On your device** / **AI** source pills; unified semibold panel titles; system **Insights** / **Timeline** segmented control (Liquid Glass on iOS 26+) with `ReviewModePicker` id preserved (#85).
-- Review insights engine: weekly **reflection day count** and **narrative summary** now treat non-empty reading notes or reflections as signal (even when the entry is still at **Soil** chip-wise), so sparse-week and narrative behavior match long-form journaling (#85).
-- Review insights: continue #40 / #80 follow-through in the **0.5.2** milestone lane on GitHub (**#80** may remain open for engine depth).
 
 ### Build 7 — 2026-03-24
 
@@ -53,7 +114,7 @@ Packaging, upgrade orientation, localization, and stability under marketing **0.
 
 ### Developer
 
-- Product docs: Review insight work is split on GitHub — **#40** (insight-first presentation redo) and **#80** (deeper engine iteration); see `GraceNotes/docs/07-release-roadmap.md` and `03-review-insight-quality-contract.md`.
+- Product docs: Review insight work is split on GitHub — **#40** (insight-first presentation redo) and **#80** (deeper engine iteration); track progress via GitHub milestones and issues.
 - UI tests: launch flag **`-grace-notes-reset-uitest-store`** clears the shared UI-test SwiftData store on bootstrap (default in `JournalUITests`); the journal persistence UI test omits it after `terminate()` so relaunch still reads the same file.
 - Unit tests: **`ApiSecrets.cloudApiKeyOverrideForTesting`** keeps hosted `SummarizerProvider` expectations stable when `Info.plist` carries a non-placeholder developer key.
 - UI tests: section **(+)** controls expose stable **`accessibilityIdentifier`** values (`JournalSectionAdd.*`) under `-ui-testing`; `addGratitude` waits for the first gratitude chip after submit.
@@ -65,24 +126,24 @@ Packaging, upgrade orientation, localization, and stability under marketing **0.
 - Shared `GraceNotes.xcscheme`: **Run** used **Release** build configuration at this ship cut (later **main** defaults **Run** to **Debug**; see Build 8 Developer).
 - App target **Swift strict concurrency** set to **minimal**; removed `SWIFT_APPROACHABLE_CONCURRENCY`, `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, and `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY` from Grace Notes app build settings.
 - `StartupCoordinator.PersistenceFactory` drops the `@Sendable` requirement (aligned with relaxed concurrency checking).
-- **Accessibility QA (manual):** Settings → Display & Text Size → Text Size (largest) and Accessibility → Display & Text Size → Larger Accessibility Sizes — confirm tab bar (Today / Review / Settings) and sample navigation/toolbar titles remain usable without icon overlap or severe clipping. No snapshot suite covers UIKit chrome; regressions are caught by this pass.
+- **Accessibility QA (manual):** Settings → Display & Text Size → Text Size (largest) and Accessibility → Display & Text Size → Larger Accessibility Sizes — confirm tab bar (Today / Past / Settings) and sample navigation/toolbar titles remain usable without icon overlap or severe clipping. No snapshot suite covers UIKit chrome; regressions are caught by this pass.
 - Journal: milestone suggestion cards and Settings deep-links share `JournalOnboardingSuggestionEvaluator`; eligibility is recomputed at tap time before changing tabs (PR #79 review). Onboarding and iCloud continuity scans use shared UserDefaults key constants (`FirstRunOnboardingStorageKeys`, `JournalTutorialStorageKeys`, `JournalOnboardingStorageKeys`, `ReminderSettings.timeIntervalKey`, summarizer/review-insight keys) to avoid migration drift.
 - UI tests: `ProcessInfo.graceNotesIsRunningUITests` centralizes UI-test detection (UITest bundle path or `-ui-testing`); SwiftData UI-test stores persist across `terminate()` + `launch()` by reusing the last XCTest session key (`active-uitest-session-key.txt`). During UI tests, gratitude chips expose stable accessibility identifiers (`JournalGratitudeChip.<index>`); the post-Seed full-screen journey is skipped; Review keeps timeline/insights chrome under the same detection so an empty journal can still reach the mode picker. `JournalUITests` forces English locale and reapplies `-ui-testing` launch arguments after every relaunch.
 
 ### 2026-03-21 — Foundation
 
-Insight quality: Review that feels specific and grounded, better chip source material, calmer completion feedback. Release scope context: `GraceNotes/docs/07-release-roadmap.md` §0.5.0. Shipped as marketing **0.5.0** (initial line ship; bundle per Xcode at time of release).
+Insight quality: Review that feels specific and grounded, better chip source material, calmer completion feedback. Release scope context: **0.5.0** lane (GitHub milestones). Shipped as marketing **0.5.0** (initial line ship; bundle per Xcode at time of release).
 
 ### Added
 - Journal: first-run guided tutorial on Today—dismissible hints toward Seed (at least one gratitude, need, and person) and Harvest (15 chips), plus one-time congratulations when each milestone is first reached; progress is per install with an optional UI-test reset launch argument (`#60`).
-- Journal: behavior-first onboarding now starts with a minimal welcome and guides the first journal on Today one step at a time (Gratitude → Need → People → Ripening → Harvest → Abundance), replacing the earlier copy-led pager with inline section emphasis and locking (`#71`, `#73`, `#74`).
+- Journal: behavior-first onboarding now starts with a minimal welcome and guides the first journal on Today one step at a time (Gratitude → Need → People → Ripening → Harvest → Abundance), replacing the earlier copy-led pager with inline section emphasis and locking (`#71`, `#73`, `#74`). *(The **Abundance** onboarding step and tier were removed in **0.5.0** build **8**; see Build 8 **Changed**.)*
 - Journal / Settings: milestone-based suggestion cards can route to Settings and highlight the relevant AI, Reminders, or Data & Privacy section so optional setup stays calm and contextual (`#75`).
 - Journal: one-time, skippable post-Seed full-screen journey the first time you reach Seed on Today’s guided entry (`#71`).
 - Journal: brief unlock toast when completion moves up (Seed, Harvest, or full rhythm).
 - (Planned, `#11`) Checkmark or equivalent when all five slots in a section are complete
 
 ### Changed
-- Journal: completion semantics aligned with GitHub #67 — **Harvest** is chips-only; **Abundance** is chips plus reading notes and reflections. `completedAt` records harvest; “perfect” streak uses Abundance only (not `completedAt`). Named predicates on `JournalEntry`: `hasHarvestChips`, `hasAbundanceRhythm`. Meaning-card copy, unlock toasts, and related **zh-Hans** strings updated (short labels: **成长** / **满溢** for Ripening / Abundance).
+- Journal: completion semantics aligned with GitHub #67 — **Harvest** is chips-only; **Abundance** is chips plus reading notes and reflections. `completedAt` records harvest; “perfect” streak uses Abundance only (not `completedAt`). Named predicates on `JournalEntry`: `hasHarvestChips`, `hasAbundanceRhythm`. Meaning-card copy, unlock toasts, and related **zh-Hans** strings updated (short labels: **成长** / **满溢** for Ripening / Abundance). *(Superseded in **0.5.0** build **8**: Abundance tier and `hasAbundanceRhythm` removed; see Build 8 **Changed**.)*
 - Settings / persistence: fresh installs now default **iCloud sync** to off, while upgrades with existing onboarding or preference signals preserve the prior implicit iCloud-on posture through a one-time preference resolution pass (`#72`).
 - System sans typography uses **Outfit** app-wide: UIKit navigation bar, tab bar, and bar-button titles via appearance; SwiftUI root `font` environment; journal inputs keep explicit **Source Serif** / **Playfair** where set (including gratitude/need/person field placeholders).
 - Review (#40): cloud weekly insights run only when the current week has **three or more** meaningful journal rows; sanitized AI output must reference recurring themes in narrative, resurfacing, and continuity (and avoid generic continuity phrasing) or the app falls back to on-device insights. Cloud prompt nudges one concrete link between recurring signals when the week supports it.
@@ -93,7 +154,7 @@ Insight quality: Review that feels specific and grounded, better chip source mat
 
 ## [0.4.0] - 2026-03-20
 
-iCloud / SwiftData trust in Settings (storage and attention copy aligned with real persistence), optional JSON **import** to restore or merge backups by calendar day, and AI connection status polish. Release scope context: `GraceNotes/docs/07-release-roadmap.md`.
+iCloud / SwiftData trust in Settings (storage and attention copy aligned with real persistence), optional JSON **import** to restore or merge backups by calendar day, and AI connection status polish. Release scope context: trust / iCloud lane on GitHub milestones.
 
 ### Added
 - Settings → Data & Privacy → **Restore from a backup**: pick an export file, confirm replace-by-day behavior, then merge in a background `ModelContext` (security-scoped file access). Invalid files and unsupported export schema versions surface clear errors; success summarizes inserted vs replaced days.
@@ -125,7 +186,7 @@ iCloud / SwiftData trust in Settings (storage and attention copy aligned with re
 ### Developer
 - Bumped app `MARKETING_VERSION` to `0.3.5` for Grace Notes app configurations.
 - Updated `README.md` "What's new" content to align with this release scope.
-- Aligned `GraceNotes/docs/07-release-roadmap.md` with shipped `0.3.5`, reframed `0.4.0` as iCloud/SwiftData sync reliability, and renumbered later milestones.
+- Aligned the in-repo release roadmap with shipped `0.3.5`, reframed `0.4.0` as iCloud/SwiftData sync reliability, and renumbered later milestones.
 
 ## [0.3.4] - 2026-03-19
 
@@ -217,9 +278,9 @@ iCloud / SwiftData trust in Settings (storage and attention copy aligned with re
 - Corrected deterministic summarizer test expectations to match the current 20-character chip-label budget behavior.
 
 ### Developer
-- Reorganized GraceNotes docs into numbered structure (01–07), archived legacy plans to docs/archive.
-- Added release roadmap (07-release-roadmap.md) mapping strategy to version sequence.
-- Consolidated review insight examples into 04-review-insight-examples.md; removed obsolete doc/review-insight-examples-and-spec.md.
+- Reorganized Grace Notes product docs into a numbered structure (01–07) with an archive (that tree was later removed in favor of README and GitHub).
+- Added a release roadmap document mapping strategy to version sequence (superseded; see README Roadmap and GitHub milestones).
+- Consolidated review insight examples into a single doc; removed obsolete `doc/review-insight-examples-and-spec.md`.
 - Added agent-log initiative structure and validate-agent-log script for issue #41.
 - Added role governance section to AGENTS.md; Makefile verify-agent-log targets.
 - Consolidated test-suite updates across Journal and repository coverage after the naming migration cleanup.

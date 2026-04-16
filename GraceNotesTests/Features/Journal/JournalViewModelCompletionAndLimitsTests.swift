@@ -45,7 +45,7 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
         XCTAssertFalse(viewModel.completedToday)
     }
 
-    func test_completionLevel_withSingleSectionEntry_returnsNone() async throws {
+    func test_completionLevel_withSingleSectionEntry_returnsStarted() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = makeViewModel(now: now)
@@ -53,11 +53,11 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
         viewModel.loadEntry(for: now, using: context)
         _ = await viewModel.addGratitude("One")
 
-        XCTAssertEqual(viewModel.completionLevel, .soil)
+        XCTAssertEqual(viewModel.completionLevel, .sprout)
         XCTAssertFalse(viewModel.completedToday)
     }
 
-    func test_completionLevel_withThreeByThreeByThree_returnsRipening() async throws {
+    func test_completionLevel_withThreeByThreeByThree_returnsBalanced() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = makeViewModel(now: now)
@@ -69,11 +69,11 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
             _ = await viewModel.addPerson("Person \(index)")
         }
 
-        XCTAssertEqual(viewModel.completionLevel, .ripening)
+        XCTAssertEqual(viewModel.completionLevel, .leaf)
         XCTAssertFalse(viewModel.completedToday)
     }
 
-    func test_isChipsFiveCubedComplete_withFiveByFiveByFive_returnsTrue() async throws {
+    func test_hasReachedBloom_withFiveByFiveByFive_returnsTrue() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = makeViewModel(now: now)
@@ -85,14 +85,22 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
             _ = await viewModel.addPerson("Person \(index)")
         }
 
-        XCTAssertTrue(viewModel.isChipsFiveCubedComplete)
-        XCTAssertEqual(viewModel.chipsFilledCount, 15)
-        XCTAssertEqual(viewModel.chipsProgressText, "15 of 15")
-        XCTAssertEqual(viewModel.completionLevel, .harvest)
-        XCTAssertFalse(viewModel.completedToday)
+        XCTAssertTrue(viewModel.hasReachedBloom)
+        XCTAssertEqual(viewModel.filledEntryCount, 15)
+        XCTAssertEqual(
+            viewModel.entryCapacityProgressText,
+            String(
+                format: String(localized: "journal.completion.countOfTotal"),
+                locale: Locale.current,
+                15,
+                15
+            )
+        )
+        XCTAssertEqual(viewModel.completionLevel, .bloom)
+        XCTAssertTrue(viewModel.completedToday)
     }
 
-    func test_isChipsFiveCubedComplete_withMissingChip_returnsFalse() async throws {
+    func test_hasReachedBloom_withMissingEntry_returnsFalse() async throws {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = makeViewModel(now: now)
@@ -106,9 +114,17 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
             _ = await viewModel.addPerson("Person \(index)")
         }
 
-        XCTAssertFalse(viewModel.isChipsFiveCubedComplete)
-        XCTAssertEqual(viewModel.chipsFilledCount, 14)
-        XCTAssertEqual(viewModel.chipsProgressText, "14 of 15")
+        XCTAssertFalse(viewModel.hasReachedBloom)
+        XCTAssertEqual(viewModel.filledEntryCount, 14)
+        XCTAssertEqual(
+            viewModel.entryCapacityProgressText,
+            String(
+                format: String(localized: "journal.completion.countOfTotal"),
+                locale: Locale.current,
+                14,
+                15
+            )
+        )
     }
 
     func test_addGratitude_atSlotLimit_returnsFalseAndDoesNotAdd() async throws {
@@ -159,8 +175,7 @@ final class JournalViewModelCompletionAndLimitsTests: XCTestCase {
     private func makeViewModel(now: Date) -> JournalViewModel {
         JournalViewModel(
             calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            nowProvider: { now }
         )
     }
 

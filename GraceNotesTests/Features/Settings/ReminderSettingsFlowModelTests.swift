@@ -8,6 +8,7 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         scheduler.enableResult = .permissionDenied
         let userDefaults = makeUserDefaults()
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: userDefaults)
+        model.reminderNotificationBody = { _ in "body" }
 
         await model.enableReminders()
 
@@ -23,12 +24,28 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: userDefaults)
         let selectedTime = Date(timeIntervalSinceReferenceDate: 321_123)
         model.selectedTime = selectedTime
+        model.reminderNotificationBody = { _ in "body" }
 
         await model.enableReminders()
 
         XCTAssertEqual(model.liveStatus, .enabled)
         let storedTime = userDefaults.object(forKey: ReminderSettings.timeIntervalKey) as? TimeInterval
         XCTAssertEqual(storedTime, selectedTime.timeIntervalSinceReferenceDate)
+    }
+
+    func test_init_nonFiniteStoredTime_coercesToDefaultAndRepairsStorage() {
+        let scheduler = MockReminderScheduling()
+        let userDefaults = makeUserDefaults()
+        userDefaults.set(Double.nan, forKey: ReminderSettings.timeIntervalKey)
+
+        let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: userDefaults)
+
+        let expectedInterval = ReminderSettings.defaultTimeInterval
+        XCTAssertEqual(model.selectedTime.timeIntervalSinceReferenceDate, expectedInterval, accuracy: 0.001)
+        XCTAssertEqual(
+            userDefaults.object(forKey: ReminderSettings.timeIntervalKey) as? TimeInterval,
+            expectedInterval
+        )
     }
 
     func test_refreshStatus_reflectsSystemChangeFromDeniedToEnabled() async {
@@ -49,6 +66,7 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         scheduler.currentStatus = .enabled
         scheduler.rescheduleResult = .permissionDenied
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
         await model.refreshStatus()
 
         await model.saveEnabledReminderTime()
@@ -73,6 +91,7 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         scheduler.currentStatus = .enabled
         scheduler.rescheduleResult = .scheduled
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
         await model.refreshStatus()
 
         model.selectedTime = Date(timeIntervalSinceReferenceDate: 911_000)
@@ -87,6 +106,7 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         scheduler.currentStatus = .enabled
         scheduler.rescheduleResult = .scheduled
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
         await model.refreshStatus()
 
         model.selectedTime = Date(timeIntervalSinceReferenceDate: 100_000)
@@ -104,6 +124,7 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         let scheduler = MockReminderScheduling()
         scheduler.currentStatus = .off
         let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
         await model.refreshStatus()
 
         model.selectedTime = Date(timeIntervalSinceReferenceDate: 456_000)
@@ -123,6 +144,158 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
         XCTAssertEqual(scheduler.rescheduleCallCount, 0)
     }
 
+    /// When another save is requested while a reschedule is awaiting the system, the in-flight save must run again
+    /// after the first completion (and end-of-save drain must not drop a flag set during the final await).
+    func test_saveEnabledReminderTime_concurrentSaveDuringRescheduleAwait_performsSecondReschedule() async {
+        let scheduler = MockReminderScheduling()
+        scheduler.currentStatus = .enabled
+        scheduler.rescheduleResult = .scheduled
+        let gate = RescheduleTestGate()
+        scheduler.rescheduleAwaitHook = { await gate.waitUntilOpened() }
+
+        let userDefaults = makeUserDefaults()
+        let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: userDefaults)
+        model.reminderNotificationBody = { _ in "body" }
+        await model.refreshStatus()
+
+        async let firstSave: Void = model.saveEnabledReminderTime()
+
+        let deadline = Date().addingTimeInterval(2)
+        while scheduler.rescheduleCallCount < 1 {
+            if Date() > deadline {
+                XCTFail("Timed out waiting for the first reschedule call")
+                await gate.open()
+                await firstSave
+                return
+            }
+            await Task.yield()
+        }
+
+        await model.saveEnabledReminderTime()
+        await gate.open()
+
+        await firstSave
+
+        XCTAssertEqual(scheduler.rescheduleCallCount, 2)
+    }
+
+    /// Disable while reschedule awaits the system defers until the busy window ends, then turns reminders off.
+    func test_disableDuringInFlightReschedule_defersDisableUntilRescheduleCompletes() async {
+        let scheduler = MockReminderScheduling()
+        scheduler.currentStatus = .enabled
+        scheduler.rescheduleResult = .scheduled
+        scheduler.disableResult = .disabled
+        let gate = RescheduleTestGate()
+        scheduler.rescheduleAwaitHook = { await gate.waitUntilOpened() }
+
+        let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
+        await model.refreshStatus()
+
+        async let saveTask: Void = model.saveEnabledReminderTime()
+
+        let deadline = Date().addingTimeInterval(2)
+        while scheduler.rescheduleCallCount < 1 {
+            if Date() > deadline {
+                XCTFail("Timed out waiting for the first reschedule call")
+                await gate.open()
+                await saveTask
+                return
+            }
+            await Task.yield()
+        }
+
+        XCTAssertEqual(scheduler.disableCallCount, 0)
+        await model.disableReminders()
+        XCTAssertEqual(scheduler.disableCallCount, 0)
+
+        await gate.open()
+        await saveTask
+
+        XCTAssertEqual(scheduler.disableCallCount, 1)
+        XCTAssertEqual(model.liveStatus, .off)
+        XCTAssertFalse(model.isWorking)
+    }
+
+    /// Toggle off during reschedule, then on before work finishes: no stale deferred disable after re-enable.
+    func test_disableThenEnableDuringInFlightReschedule_doesNotApplyDeferredDisableAfterReEnable() async {
+        let scheduler = MockReminderScheduling()
+        scheduler.currentStatus = .enabled
+        scheduler.rescheduleResult = .scheduled
+        scheduler.disableResult = .disabled
+        scheduler.enableResult = .scheduled
+        let gate = RescheduleTestGate()
+        scheduler.rescheduleAwaitHook = { await gate.waitUntilOpened() }
+
+        let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
+        await model.refreshStatus()
+
+        async let saveTask: Void = model.saveEnabledReminderTime()
+
+        let deadline = Date().addingTimeInterval(2)
+        while scheduler.rescheduleCallCount < 1 {
+            if Date() > deadline {
+                XCTFail("Timed out waiting for the first reschedule call")
+                await gate.open()
+                await saveTask
+                return
+            }
+            await Task.yield()
+        }
+
+        await model.disableReminders()
+        await model.enableReminders()
+
+        XCTAssertEqual(scheduler.disableCallCount, 0)
+
+        await gate.open()
+        await saveTask
+
+        XCTAssertEqual(scheduler.disableCallCount, 0)
+        XCTAssertEqual(scheduler.enableCallCount, 0)
+        XCTAssertEqual(model.liveStatus, .enabled)
+        XCTAssertFalse(model.isWorking)
+    }
+
+    /// A second disable while the first awaits must not leave coalesced pending disable stuck for a later drain.
+    func test_redundantDisableDuringInFlightDisable_clearsCoalescedPending() async {
+        let scheduler = MockReminderScheduling()
+        scheduler.currentStatus = .enabled
+        scheduler.disableResult = .disabled
+        scheduler.enableResult = .scheduled
+        let gate = RescheduleTestGate()
+        scheduler.disableAwaitHook = { await gate.waitUntilOpened() }
+
+        let model = ReminderSettingsFlowModel(reminderScheduler: scheduler, userDefaults: makeUserDefaults())
+        model.reminderNotificationBody = { _ in "body" }
+        await model.refreshStatus()
+
+        async let firstDisable: Void = model.disableReminders()
+
+        let deadline = Date().addingTimeInterval(2)
+        while scheduler.disableCallCount < 1 {
+            if Date() > deadline {
+                XCTFail("Timed out waiting for the first disable call")
+                await gate.open()
+                await firstDisable
+                return
+            }
+            await Task.yield()
+        }
+
+        await model.disableReminders()
+        await gate.open()
+        await firstDisable
+
+        XCTAssertEqual(scheduler.disableCallCount, 1)
+
+        await model.enableReminders()
+
+        XCTAssertEqual(scheduler.disableCallCount, 1)
+        XCTAssertEqual(scheduler.enableCallCount, 1)
+    }
+
     private func makeUserDefaults() -> UserDefaults {
         let suiteName = "ReminderSettingsFlowModelTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -131,30 +304,67 @@ final class ReminderSettingsFlowModelTests: XCTestCase {
     }
 }
 
+@MainActor
 private final class MockReminderScheduling: ReminderScheduling {
     var currentStatus: ReminderLiveStatus = .off
     var enableResult: ReminderSyncResult = .scheduled
     var disableResult: ReminderSyncResult = .disabled
     var rescheduleResult: ReminderSyncResult = .scheduled
+    /// Optional hook after `rescheduleCallCount` increments, before the result is returned.
+    var rescheduleAwaitHook: (() async -> Void)?
+    /// Optional hook after `disableCallCount` increments, before the result is returned.
+    var disableAwaitHook: (() async -> Void)?
 
     private(set) var enableCallCount = 0
     private(set) var rescheduleCallCount = 0
+    private(set) var disableCallCount = 0
 
     func currentReminderStatus() async -> ReminderLiveStatus {
         currentStatus
     }
 
-    func enableDailyReminder(at time: Date) async -> ReminderSyncResult {
+    func enableDailyReminder(at time: Date, body: String) async -> ReminderSyncResult {
         enableCallCount += 1
+        _ = body
         return enableResult
     }
 
     func disableDailyReminder() async -> ReminderSyncResult {
-        disableResult
+        disableCallCount += 1
+        if let disableAwaitHook {
+            await disableAwaitHook()
+        }
+        currentStatus = .off
+        return disableResult
     }
 
-    func rescheduleEnabledReminder(at time: Date) async -> ReminderSyncResult {
+    func rescheduleEnabledReminder(at time: Date, body: String) async -> ReminderSyncResult {
         rescheduleCallCount += 1
+        if let rescheduleAwaitHook {
+            await rescheduleAwaitHook()
+        }
+        _ = body
         return rescheduleResult
+    }
+}
+
+/// Unblocks waiters when `open()` is called (interleaves concurrent reminder save paths).
+private actor RescheduleTestGate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func waitUntilOpened() async {
+        if isOpen { return }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    func open() {
+        isOpen = true
+        for continuation in waiters {
+            continuation.resume()
+        }
+        waiters.removeAll()
     }
 }

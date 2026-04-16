@@ -1,5 +1,11 @@
 import Combine
 import Foundation
+import os
+
+private let startupCoordinatorLogger = Logger(
+    subsystem: "com.gracenotes.GraceNotes",
+    category: "StartupCoordinator"
+)
 
 @MainActor
 final class StartupCoordinator: ObservableObject {
@@ -57,7 +63,7 @@ final class StartupCoordinator: ObservableObject {
         self.reassuranceCopy = reassuranceCopy
         self.persistenceFactory = persistenceFactory
         self.startupMessage = loadingCopy.first
-            ?? String(localized: "We are setting up your private Grace Notes space...")
+            ?? String(localized: "startup.status.settingUp")
     }
 
     deinit {
@@ -82,52 +88,68 @@ final class StartupCoordinator: ObservableObject {
 
         currentAttemptID += 1
         let attemptID = currentAttemptID
+        let runPersistence = persistenceFactory
+        let copyRotationInterval = timing.copyRotationInterval
+        let reassuranceDelay = timing.reassuranceDelay
         isStartingUp = true
         loadingCopyIndex = 0
         reassuranceCopyIndex = 0
         phase = .loading
         startupMessage = loadingMessage(for: loadingCopyIndex)
-        startCopyRotation(for: attemptID)
-        scheduleReassuranceTransition(for: attemptID)
+        startCopyRotation(for: attemptID, interval: copyRotationInterval)
+        scheduleReassuranceTransition(for: attemptID, delay: reassuranceDelay)
 
         startupTask?.cancel()
-        startupTask = Task { [weak self] in
-            guard let self else { return }
+        startupTask = Task {
             let trace = PerformanceTrace.begin("StartupCoordinator.startupAttempt")
             do {
-                let controller = try await persistenceFactory()
-                await handleStartupSuccess(controller, attemptID: attemptID, traceStart: trace)
+                let controller = try await runPersistence()
+                await MainActor.run { [weak self] in
+                    guard let self else {
+                        PerformanceTrace.end("StartupCoordinator.startupAttempt.teardown", startedAt: trace)
+                        return
+                    }
+                    self.handleStartupSuccess(controller, attemptID: attemptID, traceStart: trace)
+                }
             } catch {
-                await handleStartupFailure(error, attemptID: attemptID, traceStart: trace)
+                await MainActor.run { [weak self] in
+                    guard let self else {
+                        PerformanceTrace.end("StartupCoordinator.startupAttempt.teardown", startedAt: trace)
+                        return
+                    }
+                    self.handleStartupFailure(error, attemptID: attemptID, traceStart: trace)
+                }
             }
         }
     }
 
-    private func startCopyRotation(for attemptID: UInt64) {
+    private func startCopyRotation(for attemptID: UInt64, interval: Duration) {
         copyRotationTask?.cancel()
-        copyRotationTask = Task { [weak self] in
-            guard let self else { return }
+        copyRotationTask = Task {
             while !Task.isCancelled {
                 do {
-                    try await Task.sleep(for: timing.copyRotationInterval)
+                    try await Task.sleep(for: interval)
                 } catch {
                     break
                 }
-                await advanceCopyIfNeeded(for: attemptID)
+                await MainActor.run { [weak self] in
+                    self?.advanceCopyIfNeeded(for: attemptID)
+                }
             }
         }
     }
 
-    private func scheduleReassuranceTransition(for attemptID: UInt64) {
+    private func scheduleReassuranceTransition(for attemptID: UInt64, delay: Duration) {
         reassuranceTask?.cancel()
-        reassuranceTask = Task { [weak self] in
-            guard let self else { return }
+        reassuranceTask = Task {
             do {
-                try await Task.sleep(for: timing.reassuranceDelay)
+                try await Task.sleep(for: delay)
             } catch {
                 return
             }
-            await enterReassuranceIfNeeded(for: attemptID)
+            await MainActor.run { [weak self] in
+                self?.enterReassuranceIfNeeded(for: attemptID)
+            }
         }
     }
 
@@ -158,7 +180,10 @@ final class StartupCoordinator: ObservableObject {
         attemptID: UInt64,
         traceStart: TimeInterval
     ) {
-        guard attemptID == currentAttemptID else { return }
+        guard attemptID == currentAttemptID else {
+            PerformanceTrace.end("StartupCoordinator.startupAttempt.superseded", startedAt: traceStart)
+            return
+        }
         finishAttempt()
         phase = .ready(controller)
         PerformanceTrace.end("StartupCoordinator.startupAttempt.success", startedAt: traceStart)
@@ -169,7 +194,10 @@ final class StartupCoordinator: ObservableObject {
         attemptID: UInt64,
         traceStart: TimeInterval
     ) {
-        guard attemptID == currentAttemptID else { return }
+        guard attemptID == currentAttemptID else {
+            PerformanceTrace.end("StartupCoordinator.startupAttempt.superseded", startedAt: traceStart)
+            return
+        }
         finishAttempt()
         let message = startupErrorMessage(from: error)
         startupMessage = message
@@ -188,14 +216,14 @@ final class StartupCoordinator: ObservableObject {
 
     private func loadingMessage(for index: Int) -> String {
         guard !loadingCopy.isEmpty else {
-            return String(localized: "We are setting up your private Grace Notes space...")
+            return String(localized: "startup.status.settingUp")
         }
         return loadingCopy[safe: index] ?? loadingCopy[0]
     }
 
     private func reassuranceMessage(for index: Int) -> String {
         guard !reassuranceCopy.isEmpty else {
-            return String(localized: "Still getting things ready...")
+            return String(localized: "startup.status.stillWorking")
         }
         return reassuranceCopy[safe: index] ?? reassuranceCopy[0]
     }
@@ -206,25 +234,23 @@ final class StartupCoordinator: ObservableObject {
     }
 
     private func startupErrorMessage(from error: Error) -> String {
-        if let localizedError = error as? LocalizedError,
-           let message = localizedError.errorDescription,
-           !message.isEmpty {
-            return message
-        }
-        return String(localized: "We couldn't finish setting up your Grace Notes space. Please try again.")
+        startupCoordinatorLogger.error(
+            "Persistence startup failed: \(String(reflecting: error), privacy: .public)"
+        )
+        return String(localized: "startup.error.setupFailed")
     }
 }
 
 private extension StartupCoordinator {
     static let defaultLoadingCopy: [String] = [
-        String(localized: "We are setting up your private Grace Notes space..."),
-        String(localized: "Preparing a calm place for your first reflection..."),
-        String(localized: "Almost ready. Bringing your Grace Notes space online...")
+        String(localized: "startup.status.settingUp"),
+        String(localized: "startup.status.preparingCalm"),
+        String(localized: "startup.status.almostReady")
     ]
 
     static let defaultReassuranceCopy: [String] = [
-        String(localized: "Still getting things ready..."),
-        String(localized: "Thanks for your patience. We are almost there.")
+        String(localized: "startup.status.stillWorking"),
+        String(localized: "startup.status.thanksPatience")
     ]
 }
 

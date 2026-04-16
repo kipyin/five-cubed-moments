@@ -8,10 +8,15 @@ final class ReminderSettingsFlowModel: ObservableObject {
     @Published private(set) var isWorking = false
     @Published var transientErrorMessage: String?
 
+    /// Set from a view with SwiftData access. Maps scheduled reminder clock time to the localized notification body.
+    var reminderNotificationBody: ((Date) -> String)?
+
     private let reminderScheduler: any ReminderScheduling
     private let userDefaults: UserDefaults
     private var pendingRescheduleTask: Task<Void, Never>?
     private var pendingRescheduleAfterCurrentSave = false
+    /// User turned reminders off while another reminder operation held `isWorking`.
+    private var pendingDisableAfterCurrentWork = false
     private var hasLoadedLiveStatus = false
 
     init(
@@ -20,9 +25,8 @@ final class ReminderSettingsFlowModel: ObservableObject {
     ) {
         self.reminderScheduler = reminderScheduler
         self.userDefaults = userDefaults
-        let storedTimeInterval = userDefaults.object(forKey: ReminderSettings.timeIntervalKey) as? TimeInterval
-            ?? ReminderSettings.defaultTimeInterval
-        selectedTime = ReminderSettings.date(from: storedTimeInterval)
+        let interval = ReminderSettings.coercedTimeInterval(fromUserDefaults: userDefaults)
+        selectedTime = ReminderSettings.date(from: interval)
     }
 
     deinit {
@@ -34,9 +38,9 @@ final class ReminderSettingsFlowModel: ObservableObject {
         case .enabled:
             return selectedTime.formatted(date: .omitted, time: .shortened)
         case .denied:
-            return String(localized: "Off (Denied)")
+            return String(localized: "notifications.reminder.offDenied")
         case .off, .notDetermined, .unavailable:
-            return String(localized: "Off")
+            return String(localized: "common.off")
         }
     }
 
@@ -54,37 +58,45 @@ final class ReminderSettingsFlowModel: ObservableObject {
     }
 
     func enableReminders() async {
-        guard !isWorking else { return }
-        isWorking = true
-        defer { isWorking = false }
-
-        transientErrorMessage = nil
-        let result = await reminderScheduler.enableDailyReminder(at: selectedTime)
-        switch result {
-        case .scheduled:
-            persistSelectedTime()
-            await refreshStatus()
-        case .permissionDenied:
-            liveStatus = .denied
-        case .failed:
-            liveStatus = .unavailable
-            transientErrorMessage = String(
-                localized: "Reminder couldn't be scheduled. Check notification permissions and try again."
-            )
-        case .disabled:
-            await refreshStatus()
+        // User intent to turn reminders on cancels any deferred "disable after current work" and must not
+        // be overridden by a later drain from an earlier busy window.
+        pendingDisableAfterCurrentWork = false
+        await runWithWorking {
+            transientErrorMessage = nil
+            let result = await reminderScheduler.enableDailyReminder(at: selectedTime, body: resolvedReminderBody())
+            switch result {
+            case .scheduled:
+                persistSelectedTime()
+                await refreshStatus()
+            case .permissionDenied:
+                liveStatus = .denied
+            case .failed:
+                liveStatus = .unavailable
+                transientErrorMessage = String(
+                    localized: "notifications.reminder.scheduleFailed"
+                )
+            case .disabled:
+                await refreshStatus()
+            }
         }
     }
 
     func disableReminders() async {
-        guard !isWorking else { return }
+        pendingRescheduleTask?.cancel()
+        pendingRescheduleAfterCurrentSave = false
+
+        if isWorking {
+            pendingDisableAfterCurrentWork = true
+            return
+        }
+
         isWorking = true
         defer { isWorking = false }
-        pendingRescheduleTask?.cancel()
-
         transientErrorMessage = nil
         _ = await reminderScheduler.disableDailyReminder()
         await refreshStatus()
+        // Coalesced disable requests that arrived during `await` are redundant once this attempt finishes.
+        pendingDisableAfterCurrentWork = false
     }
 
     func saveEnabledReminderTime() async {
@@ -95,13 +107,20 @@ final class ReminderSettingsFlowModel: ObservableObject {
         }
 
         isWorking = true
-        defer { isWorking = false }
+        await runRescheduleLoopWhileEnabled()
+        isWorking = false
+        await drainPendingDisableIfNeeded()
+        await drainPendingRescheduleIfNeeded()
+    }
 
+    /// One “session” of reschedule attempts: repeats while another save is coalesced during an in-flight `await`.
+    private func runRescheduleLoopWhileEnabled() async {
         while true {
             pendingRescheduleAfterCurrentSave = false
             transientErrorMessage = nil
 
-            let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime)
+            let body = resolvedReminderBody()
+            let result = await reminderScheduler.rescheduleEnabledReminder(at: selectedTime, body: body)
             switch result {
             case .scheduled:
                 persistSelectedTime()
@@ -109,12 +128,12 @@ final class ReminderSettingsFlowModel: ObservableObject {
             case .permissionDenied:
                 liveStatus = .denied
                 transientErrorMessage = String(
-                    localized: "Allow notifications in Settings to confirm a reminder time."
+                    localized: "notifications.reminder.confirmTimeInSettings"
                 )
             case .failed:
                 liveStatus = .unavailable
                 transientErrorMessage = String(
-                    localized: "Reminder time couldn't be saved. Try again in a moment."
+                    localized: "notifications.reminder.saveFailed"
                 )
             case .disabled:
                 liveStatus = .off
@@ -141,7 +160,7 @@ final class ReminderSettingsFlowModel: ObservableObject {
     func handleSelectedTimeChanged() {
         guard hasLoadedLiveStatus, liveStatus == .enabled else { return }
         pendingRescheduleTask?.cancel()
-        pendingRescheduleTask = Task { [weak self] in
+        pendingRescheduleTask = Task { @MainActor [weak self] in
             do {
                 try await Task.sleep(nanoseconds: 400_000_000)
                 guard !Task.isCancelled else { return }
@@ -150,6 +169,49 @@ final class ReminderSettingsFlowModel: ObservableObject {
                 // Ignore cancellation from rapid picker updates.
             }
         }
+    }
+
+    private func runWithWorking(_ work: () async -> Void) async {
+        guard !isWorking else { return }
+        isWorking = true
+        await work()
+        isWorking = false
+        await drainPendingDisableIfNeeded()
+        await drainPendingRescheduleIfNeeded()
+    }
+
+    /// Runs a deferred disable after `isWorking` drops (e.g. user turned reminders off during reschedule).
+    private func drainPendingDisableIfNeeded() async {
+        guard pendingDisableAfterCurrentWork else { return }
+        pendingDisableAfterCurrentWork = false
+        pendingRescheduleAfterCurrentSave = false
+
+        isWorking = true
+        defer { isWorking = false }
+        pendingRescheduleTask?.cancel()
+        transientErrorMessage = nil
+        _ = await reminderScheduler.disableDailyReminder()
+        await refreshStatus()
+        pendingDisableAfterCurrentWork = false
+    }
+
+    /// Runs a deferred time save after `isWorking` drops (picker updates coalesced during enable or overlapping saves).
+    private func drainPendingRescheduleIfNeeded() async {
+        while pendingRescheduleAfterCurrentSave {
+            pendingRescheduleAfterCurrentSave = false
+            guard liveStatus == .enabled else { return }
+            isWorking = true
+            await runRescheduleLoopWhileEnabled()
+            isWorking = false
+            await drainPendingDisableIfNeeded()
+        }
+    }
+
+    private func resolvedReminderBody() -> String {
+        if let reminderNotificationBody {
+            return reminderNotificationBody(selectedTime)
+        }
+        return String(localized: String.LocalizationValue("notifications.reminder.body.fallback"))
     }
 
     private func persistSelectedTime() {

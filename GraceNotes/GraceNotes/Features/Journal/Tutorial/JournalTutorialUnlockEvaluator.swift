@@ -1,54 +1,56 @@
 import Foundation
 
 enum JournalTutorialUnlockEvaluator {
-    struct Outcome: Equatable {
-        let recordFirstSeedCelebrated: Bool
-        let recordFirstHarvestCelebrated: Bool
+    /// Recording flags and toast highlight when a first-time milestone is crossed.
+    struct MilestoneOutcome: Equatable {
+        let recordFirstTripleOneCelebrated: Bool
+        let recordFirstLeafCelebrated: Bool
+        let recordFirstBloomCelebrated: Bool
         let milestoneHighlight: JournalUnlockMilestoneHighlight
-
-        static let neutral = Outcome(
-            recordFirstSeedCelebrated: false,
-            recordFirstHarvestCelebrated: false,
-            milestoneHighlight: .none
-        )
     }
 
-    /// Computes milestone recording and toast highlight when completion rank increases.
-    static func outcome(
-        previousRank: Int,
-        newRank: Int,
-        newLevel: JournalCompletionLevel,
-        hasCelebratedFirstSeed: Bool,
-        hasCelebratedFirstHarvest: Bool
-    ) -> Outcome {
-        guard newRank > previousRank, newLevel != .soil else {
-            return .neutral
-        }
+    struct MilestoneEvaluationInput: Equatable {
+        let previousLevel: JournalCompletionLevel
+        let newLevel: JournalCompletionLevel
+        let previousGratitudes: Int
+        let previousNeeds: Int
+        let previousPeople: Int
+        let newGratitudes: Int
+        let newNeeds: Int
+        let newPeople: Int
+        let hasCelebratedFirstTripleOne: Bool
+        let hasCelebratedFirstLeaf: Bool
+        let hasCelebratedFirstBloom: Bool
+    }
 
-        let seedRank = JournalCompletionLevel.seed.tutorialCompletionRank
-        let harvestRank = JournalCompletionLevel.harvest.tutorialCompletionRank
+    /// First-time milestones: 1/1/1, first Leaf, first Bloom.
+    static func milestoneOutcome(_ input: MilestoneEvaluationInput) -> MilestoneOutcome? {
+        let prevTripleOne = input.previousGratitudes >= 1 && input.previousNeeds >= 1 && input.previousPeople >= 1
+        let newTripleOne = input.newGratitudes >= 1 && input.newNeeds >= 1 && input.newPeople >= 1
+        let crossedTripleOne = !prevTripleOne && newTripleOne
 
-        let crossedSeedTier = previousRank < seedRank && newRank >= seedRank
-        let crossedHarvestTier = previousRank < harvestRank && newRank >= harvestRank
+        let crossedBalanced = input.previousLevel != .leaf && input.newLevel == .leaf
+        let crossedFull = input.previousLevel != .bloom && input.newLevel == .bloom
 
-        let recordSeed = crossedSeedTier && !hasCelebratedFirstSeed
-        let recordHarvest = crossedHarvestTier && !hasCelebratedFirstHarvest
+        let shouldRecordTripleOne = crossedTripleOne && !input.hasCelebratedFirstTripleOne
+        let shouldRecordLeaf = crossedBalanced && !input.hasCelebratedFirstLeaf
+        let shouldRecordBloom = crossedFull && !input.hasCelebratedFirstBloom
 
         let highlight: JournalUnlockMilestoneHighlight
-        switch newLevel {
-        case .seed where recordSeed:
-            highlight = .firstSeed
-        case .harvest where recordHarvest:
-            highlight = .firstFifteenChipHarvest
-        case .abundance where recordHarvest:
-            highlight = .firstFifteenChipHarvestWithFullRhythm
-        default:
-            highlight = .none
+        if shouldRecordTripleOne {
+            highlight = .firstOneOneOne
+        } else if shouldRecordLeaf {
+            highlight = .firstBalanced
+        } else if shouldRecordBloom {
+            highlight = .firstFull
+        } else {
+            return nil
         }
 
-        return Outcome(
-            recordFirstSeedCelebrated: recordSeed,
-            recordFirstHarvestCelebrated: recordHarvest,
+        return MilestoneOutcome(
+            recordFirstTripleOneCelebrated: shouldRecordTripleOne,
+            recordFirstLeafCelebrated: shouldRecordLeaf,
+            recordFirstBloomCelebrated: shouldRecordBloom,
             milestoneHighlight: highlight
         )
     }

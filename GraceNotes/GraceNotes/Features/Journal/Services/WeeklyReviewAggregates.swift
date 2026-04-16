@@ -1,5 +1,13 @@
 import Foundation
 
+/// Caps how far back ``WeeklyReviewAggregatesBuilder/buildRhythmHistory`` materializes
+/// calendar-day rows so multi-year journals cannot allocate unbounded ``ReviewDayActivity`` arrays.
+/// Custom Past statistics windows already clip via ``PastStatisticsIntervalSelection/resolvedHistoryRange``.
+private enum RhythmHistoryLimits {
+    /// Maximum inclusive number of local calendar days in the rhythm strip (about two years).
+    static let maxInclusiveCalendarDays = 731
+}
+
 struct ThemeSummary {
     let normalizedLabel: String
     let displayLabel: String
@@ -10,7 +18,7 @@ struct ThemeSummary {
 }
 
 struct CandidateInputs {
-    let entries: [JournalEntry]
+    let entries: [Journal]
     let currentDayCount: Int
     let needs: [ThemeSummary]
     let gratitudes: [ThemeSummary]
@@ -58,16 +66,22 @@ struct WeeklyReviewAggregates {
 }
 
 struct WeeklyReviewAggregatesBuilder {
-    private let maxThemesPerSection = 3
-    private let chipWeight = 3
-    private let textWeight = 1
-    private let textNormalizer = WeeklyInsightTextNormalizer()
+    let maxThemesPerSection = 3
+    let chipWeight = 3
+    let textWeight = 1
+    let minimumMostRecurringSignalCount = 2
+    let textNormalizer = WeeklyInsightTextNormalizer()
+    var themeJournalLanguageResolver: any ReviewJournalThemeLanguageResolving = ReviewJournalThemeLanguageResolver()
 
+    // swiftlint:disable:next function_parameter_count
     func build(
         currentPeriod: Range<Date>,
-        currentWeekEntries: [JournalEntry],
-        previousWeekEntries: [JournalEntry],
-        calendar: Calendar
+        currentWeekEntries: [Journal],
+        previousWeekEntries: [Journal],
+        allEntries: [Journal],
+        calendar: Calendar,
+        referenceDate: Date,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) -> WeeklyReviewAggregates {
         let sortedCurrentEntries = sortedEntries(currentWeekEntries)
         let sortedPreviousEntries = sortedEntries(previousWeekEntries)
@@ -108,24 +122,22 @@ struct WeeklyReviewAggregatesBuilder {
             stats: buildWeekStats(
                 currentPeriod: currentPeriod,
                 entries: sortedCurrentEntries,
+                allEntries: allEntries,
                 reflectionDays: reflectionDays,
-                calendar: calendar
+                calendar: calendar,
+                referenceDate: referenceDate,
+                pastStatisticsInterval: pastStatisticsInterval
             )
         )
     }
 }
 
 private extension WeeklyReviewAggregatesBuilder {
-    private func sortedEntries(_ entries: [JournalEntry]) -> [JournalEntry] {
-        entries.sorted {
-            if $0.entryDate != $1.entryDate {
-                return $0.entryDate < $1.entryDate
-            }
-            return $0.id.uuidString < $1.id.uuidString
-        }
+    func sortedEntries(_ entries: [Journal]) -> [Journal] {
+        ReviewHistoryWindowing.sortedEntries(entries)
     }
 
-    private func reflectionDayCount(from entries: [JournalEntry], calendar: Calendar) -> Int {
+    func reflectionDayCount(from entries: [Journal], calendar: Calendar) -> Int {
         Set(
             entries
                 .filter { $0.hasMeaningfulContent || hasReflectionSurfaceText($0) }
@@ -133,18 +145,26 @@ private extension WeeklyReviewAggregatesBuilder {
         ).count
     }
 
-    private func meaningfulEntryCount(from entries: [JournalEntry]) -> Int {
+    func meaningfulEntryCount(from entries: [Journal]) -> Int {
         entries.filter(\.hasMeaningfulContent).count
     }
 
-    private func hasReflectionSurfaceText(_ entry: JournalEntry) -> Bool {
+    func hasReflectionSurfaceText(_ entry: Journal) -> Bool {
         !textNormalizer.trimmed(entry.readingNotes).isEmpty
             || !textNormalizer.trimmed(entry.reflections).isEmpty
     }
 
-    private func buildChipStats(
-        from entries: [JournalEntry],
-        itemsExtractor: (JournalEntry) -> [JournalItem],
+    /// Joins non-empty trimmed notes and reflections without a stray lone space when both are empty.
+    func reflectionCorpusForContinuity(_ entry: Journal) -> String {
+        [entry.readingNotes, entry.reflections]
+            .map { textNormalizer.trimmed($0) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
+    func buildChipStats(
+        from entries: [Journal],
+        itemsExtractor: (Journal) -> [Entry],
         calendar: Calendar
     ) -> [ThemeSummary] {
         var themeMap: [String: ThemeAccumulator] = [:]
@@ -168,8 +188,8 @@ private extension WeeklyReviewAggregatesBuilder {
         return sortedThemeSummaries(from: themeMap)
     }
 
-    private func buildContinuityStats(
-        from entries: [JournalEntry],
+    func buildContinuityStats(
+        from entries: [Journal],
         calendar: Calendar
     ) -> [ThemeSummary] {
         var themeMap: [String: ThemeAccumulator] = [:]
@@ -188,7 +208,7 @@ private extension WeeklyReviewAggregatesBuilder {
                 sequence += 1
             }
 
-            for textTheme in textNormalizer.extractThemesFromText(entry.readingNotes + " " + entry.reflections) {
+            for textTheme in textNormalizer.extractThemesFromText(reflectionCorpusForContinuity(entry)) {
                 accumulateTheme(
                     label: textTheme,
                     day: day,
@@ -203,7 +223,10 @@ private extension WeeklyReviewAggregatesBuilder {
         return sortedThemeSummaries(from: themeMap)
     }
 
-    private func topThemes(from summaries: [ThemeSummary]) -> [ReviewInsightTheme] {
+    /// Recurring chips sort by mention/day; further ties use scan order (`firstSeenOrder`) before label,
+    /// matching ``sortedThemeSummaries`` for chip-only aggregates (narrative paths can still differ when text
+    /// themes mix in).
+    func topThemes(from summaries: [ThemeSummary]) -> [ReviewInsightTheme] {
         summaries
             .sorted {
                 if $0.mentionCount != $1.mentionCount {
@@ -212,21 +235,20 @@ private extension WeeklyReviewAggregatesBuilder {
                 if $0.dayCount != $1.dayCount {
                     return $0.dayCount > $1.dayCount
                 }
+                if $0.firstSeenOrder != $1.firstSeenOrder {
+                    return $0.firstSeenOrder < $1.firstSeenOrder
+                }
                 return $0.displayLabel.localizedCaseInsensitiveCompare($1.displayLabel) == .orderedAscending
             }
             .prefix(maxThemesPerSection)
             .map { ReviewInsightTheme(label: $0.displayLabel, count: $0.mentionCount) }
     }
 
-    private func preferredItemLabel(_ item: JournalItem) -> String {
-        let label = textNormalizer.trimmed(item.displayLabel)
-        if !label.isEmpty {
-            return label
-        }
-        return textNormalizer.trimmed(item.fullText)
+    func preferredItemLabel(_ item: Entry) -> String {
+        textNormalizer.trimmed(item.fullText)
     }
 
-    private func accumulateTheme(
+    func accumulateTheme(
         label: String,
         day: Date,
         weight: Int,
@@ -239,24 +261,28 @@ private extension WeeklyReviewAggregatesBuilder {
         let normalized = textNormalizer.normalizeThemeLabel(trimmedLabel)
         guard !normalized.isEmpty else { return }
 
-        if map[normalized] == nil {
-            map[normalized] = ThemeAccumulator(
-                normalizedLabel: normalized,
-                displayLabel: trimmedLabel,
-                mentionCount: 1,
-                weightedScore: weight,
-                days: [day],
-                firstSeenOrder: sequence
-            )
-            return
+        let isNew = map[normalized] == nil
+        var accumulator = map[normalized] ?? ThemeAccumulator(
+            normalizedLabel: normalized,
+            displayLabel: trimmedLabel,
+            mentionCount: 0,
+            weightedScore: 0,
+            days: [],
+            firstSeenOrder: sequence
+        )
+        if isNew {
+            accumulator.mentionCount = 1
+            accumulator.weightedScore = weight
+            accumulator.days = [day]
+        } else {
+            accumulator.mentionCount += 1
+            accumulator.weightedScore += weight
+            accumulator.days.insert(day)
         }
-
-        map[normalized]?.mentionCount += 1
-        map[normalized]?.weightedScore += weight
-        map[normalized]?.days.insert(day)
+        map[normalized] = accumulator
     }
 
-    private func sortedThemeSummaries(from map: [String: ThemeAccumulator]) -> [ThemeSummary] {
+    func sortedThemeSummaries(from map: [String: ThemeAccumulator]) -> [ThemeSummary] {
         map.values
             .map {
                 ThemeSummary(
@@ -285,83 +311,168 @@ private extension WeeklyReviewAggregatesBuilder {
             }
     }
 
-    private func buildWeekStats(
+    // swiftlint:disable:next function_body_length function_parameter_count
+    func buildWeekStats(
         currentPeriod: Range<Date>,
-        entries: [JournalEntry],
+        entries: [Journal],
+        allEntries: [Journal],
         reflectionDays: Int,
-        calendar: Calendar
+        calendar: Calendar,
+        referenceDate: Date,
+        pastStatisticsInterval: PastStatisticsIntervalSelection
     ) -> ReviewWeekStats {
         let meaningfulEntryCount = meaningfulEntryCount(from: entries)
-        let strongestCompletionByDay = strongestCompletionByDay(from: entries, calendar: calendar)
-        let completionMix = buildCompletionMix(from: strongestCompletionByDay)
+        let weekStrongestByDay = ReviewHistoryWindowing.strongestCompletionByDay(from: entries, calendar: calendar)
+        let completionMix = buildCompletionMix(from: weekStrongestByDay)
         let activity = buildDayActivity(
             currentPeriod: currentPeriod,
             entries: entries,
-            strongestCompletionByDay: strongestCompletionByDay,
+            strongestCompletionByDay: weekStrongestByDay,
             calendar: calendar
+        )
+        let historyRange = pastStatisticsInterval.validated.resolvedHistoryRange(
+            referenceDate: referenceDate,
+            calendar: calendar,
+            allEntries: allEntries
+        )
+        let rhythmHistory = buildRhythmHistory(
+            allEntries: allEntries,
+            currentPeriod: currentPeriod,
+            calendar: calendar,
+            referenceDate: referenceDate,
+            pastStatisticsHistoryLowerBound: historyRange.lowerBound
         )
         let sectionTotals = ReviewWeekSectionTotals(
             gratitudeMentions: entries.reduce(0) { $0 + ($1.gratitudes ?? []).count },
             needMentions: entries.reduce(0) { $0 + ($1.needs ?? []).count },
             peopleMentions: entries.reduce(0) { $0 + ($1.people ?? []).count }
         )
+        let entriesInHistoryRange = ReviewHistoryWindowing.entriesInValidatedHistoryWindow(
+            allEntries: allEntries,
+            referenceDate: referenceDate,
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
+        )
+        let historyStrongestByDay = ReviewHistoryWindowing.strongestCompletionByDay(
+            from: entriesInHistoryRange,
+            calendar: calendar
+        )
+        // Same invariant as week ``completionMix``: bucket totals sum to calendar days with ≥1 persisted
+        // entry in the entry set used for the per-day strongest level (here, entries in the past-stats window).
+        let historyCompletionMix = buildCompletionMix(from: historyStrongestByDay)
+        let historySectionTotals = ReviewWeekSectionTotals(
+            gratitudeMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.gratitudes ?? []).count },
+            needMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.needs ?? []).count },
+            peopleMentions: entriesInHistoryRange.reduce(0) { $0 + ($1.people ?? []).count }
+        )
+        let sections = buildThemeSections(
+            from: sortedEntries(allEntries),
+            currentPeriod: currentPeriod,
+            calendar: calendar,
+            referenceDate: referenceDate,
+            mostRecurringWindow: historyRange
+        )
         return ReviewWeekStats(
             reflectionDays: reflectionDays,
             meaningfulEntryCount: meaningfulEntryCount,
             completionMix: completionMix,
             activity: activity,
-            sectionTotals: sectionTotals
+            rhythmHistory: rhythmHistory,
+            sectionTotals: sectionTotals,
+            historySectionTotals: historySectionTotals,
+            historyCompletionMix: historyCompletionMix,
+            mostRecurringThemes: sections.mostRecurring,
+            trendingBuckets: sections.trending
         )
     }
 
-    private func strongestCompletionByDay(
-        from entries: [JournalEntry],
-        calendar: Calendar
-    ) -> [Date: JournalCompletionLevel] {
-        var strongestByDay: [Date: JournalCompletionLevel] = [:]
-        for entry in entries {
-            let day = calendar.startOfDay(for: entry.entryDate)
-            let current = strongestByDay[day]
-            if let current, completionRank(current) >= completionRank(entry.completionLevel) {
-                continue
-            }
-            strongestByDay[day] = entry.completionLevel
+    /// Builds a dense oldest-to-newest activity sequence through ``min(lastDayOfReviewWeek, startOfReferenceDay)``
+    /// (one row per calendar day, including hollow days). Starts no earlier than the Past statistics window
+    /// (``pastStatisticsHistoryLowerBound``) and applies ``RhythmHistoryLimits`` so multi-year journals cannot
+    /// allocate an unbounded number of rows.
+    func buildRhythmHistory(
+        allEntries: [Journal],
+        currentPeriod: Range<Date>,
+        calendar: Calendar,
+        referenceDate: Date,
+        pastStatisticsHistoryLowerBound: Date
+    ) -> [ReviewDayActivity]? {
+        guard !allEntries.isEmpty else { return nil }
+
+        let strongestCompletionByDay = ReviewHistoryWindowing.strongestCompletionByDay(
+            from: allEntries,
+            calendar: calendar
+        )
+        guard let weekLastInclusive = calendar.date(byAdding: .day, value: -1, to: currentPeriod.upperBound) else {
+            return nil
         }
-        return strongestByDay
+        let weekLastStart = calendar.startOfDay(for: weekLastInclusive)
+        let referenceDayStart = calendar.startOfDay(for: referenceDate)
+        let endDayInclusive = min(weekLastStart, referenceDayStart)
+        guard let entryMinRaw = allEntries.map({ calendar.startOfDay(for: $0.entryDate) }).min() else {
+            return nil
+        }
+        let pastWindowStart = calendar.startOfDay(for: pastStatisticsHistoryLowerBound)
+        let windowClampedStart = max(entryMinRaw, pastWindowStart)
+        let horizonCappedStart: Date = {
+            guard
+                let capped = calendar.date(
+                    byAdding: .day,
+                    value: -(RhythmHistoryLimits.maxInclusiveCalendarDays - 1),
+                    to: endDayInclusive
+                )
+            else {
+                return windowClampedStart
+            }
+            return max(windowClampedStart, calendar.startOfDay(for: capped))
+        }()
+        let startDay = horizonCappedStart
+        guard startDay <= endDayInclusive else { return nil }
+
+        guard let rangeEndExclusive = calendar.date(byAdding: .day, value: 1, to: endDayInclusive) else {
+            return nil
+        }
+        let history = buildDayActivity(
+            currentPeriod: startDay..<rangeEndExclusive,
+            entries: allEntries,
+            strongestCompletionByDay: strongestCompletionByDay,
+            calendar: calendar
+        )
+        return history.isEmpty ? nil : history
     }
 
-    private func buildCompletionMix(from strongestByDay: [Date: JournalCompletionLevel]) -> ReviewWeekCompletionMix {
-        var soilDays = 0
-        var seedDays = 0
-        var ripeningDays = 0
-        var harvestDays = 0
-        var abundanceDays = 0
+    func buildCompletionMix(from strongestByDay: [Date: JournalCompletionLevel]) -> ReviewWeekCompletionMix {
+        var soilDayCount = 0
+        var sproutDayCount = 0
+        var twigDayCount = 0
+        var leafDayCount = 0
+        var bloomDayCount = 0
         for completion in strongestByDay.values {
             switch completion {
             case .soil:
-                soilDays += 1
-            case .seed:
-                seedDays += 1
-            case .ripening:
-                ripeningDays += 1
-            case .harvest:
-                harvestDays += 1
-            case .abundance:
-                abundanceDays += 1
+                soilDayCount += 1
+            case .sprout:
+                sproutDayCount += 1
+            case .twig:
+                twigDayCount += 1
+            case .leaf:
+                leafDayCount += 1
+            case .bloom:
+                bloomDayCount += 1
             }
         }
         return ReviewWeekCompletionMix(
-            soilDays: soilDays,
-            seedDays: seedDays,
-            ripeningDays: ripeningDays,
-            harvestDays: harvestDays,
-            abundanceDays: abundanceDays
+            soilDayCount: soilDayCount,
+            sproutDayCount: sproutDayCount,
+            twigDayCount: twigDayCount,
+            leafDayCount: leafDayCount,
+            bloomDayCount: bloomDayCount
         )
     }
 
-    private func buildDayActivity(
+    func buildDayActivity(
         currentPeriod: Range<Date>,
-        entries: [JournalEntry],
+        entries: [Journal],
         strongestCompletionByDay: [Date: JournalCompletionLevel],
         calendar: Calendar
     ) -> [ReviewDayActivity] {
@@ -371,43 +482,59 @@ private extension WeeklyReviewAggregatesBuilder {
                 .map { calendar.startOfDay(for: $0.entryDate) }
         )
         var activity: [ReviewDayActivity] = []
-        var day = currentPeriod.lowerBound
-        while day < currentPeriod.upperBound {
+        var dayStart = calendar.startOfDay(for: currentPeriod.lowerBound)
+        while dayStart < currentPeriod.upperBound {
+            let hasPersistedEntry = strongestCompletionByDay[dayStart] != nil
             activity.append(
                 ReviewDayActivity(
-                    date: day,
-                    hasReflectiveActivity: activeDays.contains(calendar.startOfDay(for: day)),
-                    strongestCompletionLevel: activeDays.contains(calendar.startOfDay(for: day))
-                        ? strongestCompletionByDay[calendar.startOfDay(for: day)]
-                        : nil
+                    date: dayStart,
+                    hasReflectiveActivity: activeDays.contains(dayStart),
+                    strongestCompletionLevel: activeDays.contains(dayStart)
+                        ? strongestCompletionByDay[dayStart]
+                        : nil,
+                    hasPersistedEntry: hasPersistedEntry
                 )
             )
-            day = calendar.date(byAdding: .day, value: 1, to: day) ?? currentPeriod.upperBound
+            guard let nextDayStart = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
+                break
+            }
+            dayStart = calendar.startOfDay(for: nextDayStart)
         }
         return activity
     }
-
-    private func completionRank(_ level: JournalCompletionLevel) -> Int {
-        switch level {
-        case .soil:
-            0
-        case .seed:
-            1
-        case .ripening:
-            2
-        case .harvest:
-            3
-        case .abundance:
-            4
-        }
-    }
 }
 
-private struct ThemeAccumulator {
+struct ThemeAccumulator {
     let normalizedLabel: String
     let displayLabel: String
     var mentionCount: Int
     var weightedScore: Int
     var days: Set<Date>
     let firstSeenOrder: Int
+}
+
+struct ThemeSurface {
+    let source: ReviewThemeSourceCategory
+    let content: String
+}
+
+struct DistilledThemeAccumulator {
+    let canonicalConcept: String
+    var displayLabel: String
+    var totalCount: Int
+    var days: Set<Date>
+    var evidence: [ReviewThemeSurfaceEvidence]
+    var evidenceIds: Set<String>
+    var currentWeekCount: Int
+    var previousWeekCount: Int
+    let firstSeenOrder: Int
+
+    mutating func addEvidence(_ row: ReviewThemeSurfaceEvidence) {
+        guard !row.content.isEmpty else { return }
+        if evidenceIds.contains(row.id) {
+            return
+        }
+        evidence.append(row)
+        evidenceIds.insert(row.id)
+    }
 }

@@ -4,9 +4,10 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
     private let ruleEngine = WeeklyInsightRuleEngine()
 
     func generateInsights(
-        from entries: [JournalEntry],
+        from entries: [Journal],
         referenceDate: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        pastStatisticsInterval: PastStatisticsIntervalSelection = .default
     ) async throws -> ReviewInsights {
         let currentPeriod = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
         let previousPeriod = ReviewInsightsPeriod.previousPeriod(before: currentPeriod, calendar: calendar)
@@ -16,7 +17,10 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
             currentPeriod: currentPeriod,
             currentWeekEntries: currentWeekEntries,
             previousWeekEntries: previousWeekEntries,
-            calendar: calendar
+            allEntries: entries,
+            calendar: calendar,
+            referenceDate: referenceDate,
+            pastStatisticsInterval: pastStatisticsInterval
         )
 
         return ReviewInsights(
@@ -32,8 +36,7 @@ struct DeterministicReviewInsightsGenerator: ReviewInsightsGenerating {
             resurfacingMessage: analysis.resurfacingMessage,
             continuityPrompt: analysis.continuityPrompt,
             narrativeSummary: analysis.narrativeSummary,
-            weekStats: analysis.weekStats,
-            cloudSkippedReason: nil
+            weekStats: analysis.weekStats
         )
     }
 

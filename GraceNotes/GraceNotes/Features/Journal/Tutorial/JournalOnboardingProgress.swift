@@ -2,7 +2,6 @@ import Foundation
 
 enum JournalOnboardingSuggestion: CaseIterable {
     case reminders
-    case aiFeatures
     case iCloudSync
 }
 
@@ -10,12 +9,12 @@ enum JournalOnboardingStorageKeys {
     static let completedGuidedJournal = "journalOnboarding.completedGuidedJournal"
     /// Legacy upgrade cohort: Today clears this after one branch resolution. Listed for iCloud continuity.
     static let legacy051GuidedBranchResolution = "journalOnboarding.pending051GuidedJournalBranchResolution"
-    static let hasSeenPostSeedJourney = "journalOnboarding.hasSeenPostSeedJourney"
+    static let hasSeenAppTour = "journalOnboarding.hasSeenAppTour"
+    /// Legacy key; value is copied once into ``hasSeenAppTour`` by ``migrateLegacyAppTourSeenFlagIfNeeded``, then removed.
+    static let legacyHasSeenPostSeedJourney = "journalOnboarding.hasSeenPostSeedJourney"
     static let dismissedRemindersSuggestion = "journalOnboarding.dismissedRemindersSuggestion"
-    static let dismissedAISuggestion = "journalOnboarding.dismissedAISuggestion"
     static let dismissedICloudSuggestion = "journalOnboarding.dismissedICloudSuggestion"
     static let openedRemindersSuggestion = "journalOnboarding.openedRemindersSuggestion"
-    static let openedAISuggestion = "journalOnboarding.openedAISuggestion"
     static let openedICloudSuggestion = "journalOnboarding.openedICloudSuggestion"
 }
 
@@ -27,11 +26,12 @@ private enum LegacyJournalOnboardingStorageKeys {
 final class JournalOnboardingProgress {
     private let defaults: UserDefaults
 
-    private static let legacyTutorialKeys = [
-        JournalTutorialStorageKeys.dismissedSeedGuidance,
-        JournalTutorialStorageKeys.dismissedHarvestGuidance,
-        JournalTutorialStorageKeys.celebratedFirstSeed,
-        JournalTutorialStorageKeys.celebratedFirstHarvest
+    private static let tutorialPresenceKeys = [
+        JournalTutorialStorageKeys.dismissedSproutGuidance,
+        JournalTutorialStorageKeys.dismissedBloomGuidance,
+        JournalTutorialStorageKeys.celebratedFirstSprout,
+        JournalTutorialStorageKeys.celebratedFirstLeaf,
+        JournalTutorialStorageKeys.celebratedFirstBloom
     ]
 
     init(defaults: UserDefaults = .standard) {
@@ -39,7 +39,7 @@ final class JournalOnboardingProgress {
     }
 
     var hasCompletedGuidedJournal: Bool {
-        get { defaults.bool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) }
+        get { Self.resolvedHasCompletedGuidedJournal(using: defaults) }
         set { defaults.set(newValue, forKey: JournalOnboardingStorageKeys.completedGuidedJournal) }
     }
 
@@ -60,13 +60,22 @@ final class JournalOnboardingProgress {
     }
 
     static func resolvedHasCompletedGuidedJournal(using defaults: UserDefaults = .standard) -> Bool {
-        if let storedValue = defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) as? Bool {
+        if let storedValue = optionalBool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal, in: defaults) {
             return storedValue
         }
 
         let migratedValue = shouldTreatInstallAsPreviouslyOnboarded(using: defaults)
         defaults.set(migratedValue, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
         return migratedValue
+    }
+
+    /// Finishing the App Tour from Today or Settings: journey seen, guided journal complete, and milestone
+    /// Settings cards (Reminders / iCloud) dismissed so they do not duplicate Tour content.
+    static func applyAppTourCompletion(using defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.hasSeenAppTour)
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.dismissedRemindersSuggestion)
+        defaults.set(true, forKey: JournalOnboardingStorageKeys.dismissedICloudSuggestion)
     }
 
     /// Normalizes legacy `pending051*` state from older builds. Drops the upgrade flag; keeps branch
@@ -81,11 +90,25 @@ final class JournalOnboardingProgress {
         }
 
         if defaults.bool(forKey: branchKey),
-           defaults.object(forKey: JournalOnboardingStorageKeys.completedGuidedJournal) as? Bool == nil {
+           optionalBool(forKey: JournalOnboardingStorageKeys.completedGuidedJournal, in: defaults) == nil {
             defaults.set(false, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
         }
 
         defaults.removeObject(forKey: upgradeKey)
+    }
+
+    /// Copies ``legacyHasSeenPostSeedJourney`` into ``hasSeenAppTour`` once so existing installs keep tour state,
+    /// then removes the legacy entry (same shape as ``JournalTutorialStorageKeys`` boolean migrations).
+    static func migrateLegacyAppTourSeenFlagIfNeeded(using defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: JournalOnboardingStorageKeys.hasSeenAppTour) == nil else { return }
+        guard defaults.object(forKey: JournalOnboardingStorageKeys.legacyHasSeenPostSeedJourney) != nil else {
+            return
+        }
+        defaults.set(
+            defaults.bool(forKey: JournalOnboardingStorageKeys.legacyHasSeenPostSeedJourney),
+            forKey: JournalOnboardingStorageKeys.hasSeenAppTour
+        )
+        defaults.removeObject(forKey: JournalOnboardingStorageKeys.legacyHasSeenPostSeedJourney)
     }
 
     /// After Today’s entry loads, finalize legacy upgrade cohort branch for `completedGuidedJournal`.
@@ -97,8 +120,8 @@ final class JournalOnboardingProgress {
             return
         }
 
-        let seedRank = JournalCompletionLevel.seed.tutorialCompletionRank
-        if todayCompletionLevel.tutorialCompletionRank >= seedRank {
+        let startedRank = JournalCompletionLevel.sprout.tutorialCompletionRank
+        if todayCompletionLevel.tutorialCompletionRank >= startedRank {
             defaults.set(true, forKey: JournalOnboardingStorageKeys.completedGuidedJournal)
         }
 
@@ -110,12 +133,11 @@ final class JournalOnboardingProgress {
             JournalOnboardingStorageKeys.completedGuidedJournal,
             LegacyJournalOnboardingStorageKeys.pending051UpgradeOrientation,
             JournalOnboardingStorageKeys.legacy051GuidedBranchResolution,
-            JournalOnboardingStorageKeys.hasSeenPostSeedJourney,
+            JournalOnboardingStorageKeys.hasSeenAppTour,
+            JournalOnboardingStorageKeys.legacyHasSeenPostSeedJourney,
             JournalOnboardingStorageKeys.dismissedRemindersSuggestion,
-            JournalOnboardingStorageKeys.dismissedAISuggestion,
             JournalOnboardingStorageKeys.dismissedICloudSuggestion,
             JournalOnboardingStorageKeys.openedRemindersSuggestion,
-            JournalOnboardingStorageKeys.openedAISuggestion,
             JournalOnboardingStorageKeys.openedICloudSuggestion
         ]
         for key in keys {
@@ -124,8 +146,21 @@ final class JournalOnboardingProgress {
         AppLaunchVersionTracker.resetLaunchTracking(in: defaults)
     }
 
+    /// Interprets stored booleans whether `UserDefaults` returns `Bool` or `NSNumber` (plist / sync).
+    private static func optionalBool(forKey key: String, in defaults: UserDefaults) -> Bool? {
+        guard let object = defaults.object(forKey: key) else { return nil }
+        switch object {
+        case let value as Bool:
+            return value
+        case let number as NSNumber:
+            return number.boolValue
+        default:
+            return nil
+        }
+    }
+
     private static func shouldTreatInstallAsPreviouslyOnboarded(using defaults: UserDefaults) -> Bool {
-        if defaults.object(forKey: FirstRunOnboardingStorageKeys.completed) as? Bool == true {
+        if optionalBool(forKey: FirstRunOnboardingStorageKeys.completed, in: defaults) == true {
             return true
         }
 
@@ -133,23 +168,17 @@ final class JournalOnboardingProgress {
             return true
         }
 
-        if defaults.object(forKey: SummarizerProvider.useCloudUserDefaultsKey) != nil {
-            return true
-        }
-
         if defaults.object(forKey: ReviewInsightsProvider.legacyAIFeaturesUserDefaultsKey) != nil {
             return true
         }
 
-        return legacyTutorialKeys.contains { defaults.object(forKey: $0) != nil }
+        return tutorialPresenceKeys.contains { defaults.object(forKey: $0) != nil }
     }
 
     private func dismissedKey(for suggestion: JournalOnboardingSuggestion) -> String {
         switch suggestion {
         case .reminders:
             return JournalOnboardingStorageKeys.dismissedRemindersSuggestion
-        case .aiFeatures:
-            return JournalOnboardingStorageKeys.dismissedAISuggestion
         case .iCloudSync:
             return JournalOnboardingStorageKeys.dismissedICloudSuggestion
         }
@@ -159,8 +188,6 @@ final class JournalOnboardingProgress {
         switch suggestion {
         case .reminders:
             return JournalOnboardingStorageKeys.openedRemindersSuggestion
-        case .aiFeatures:
-            return JournalOnboardingStorageKeys.openedAISuggestion
         case .iCloudSync:
             return JournalOnboardingStorageKeys.openedICloudSuggestion
         }

@@ -1,46 +1,60 @@
 import Foundation
 
-/// Read-only policy for **Today-only** orientation: when to present the post-Seed journey and when to
-/// suppress the Seed unlock toast so it does not stack with that full-screen flow.
+/// Read-only policy for **Today-only** orientation: when to present the App Tour and when to
+/// suppress Sprout-stage unlock feedback (toast + celebration in ``JournalScreen``) so it does not
+/// stack with that full-screen flow at **1/1/1**, including the first-triple-one milestone toast.
 ///
 /// **Product matrix (summary):**
-/// - **Today, not yet seen C:** At or above **Seed**, show the post-Seed journey once. Skip the
-///   congratulations page when `completedGuidedJournal` is already true (user already knows the sections).
-/// - **Dated entry** (`entryDate != nil`), **UI tests:** No post-Seed presentation from this policy.
+/// - **Today, not yet seen tour:** After **1/1/1** (at least one line in gratitudes, needs, and people), show the
+///   App Tour once. Skip the congratulations page when `completedGuidedJournal` is already true.
+/// - **Dated entry** (`entryDate != nil`), **UI tests:** No App Tour presentation from this policy.
 ///
-/// **Dual completion:** Guided first entry can end by reaching **Abundance** on Today
-/// (`JournalScreen.syncGuidedJournalCompletionIfNeeded`) or by finishing the post-Seed journey
-/// (`JournalScreen.completePostSeedJourney`). Both set `completedGuidedJournal`.
+/// **Dual completion:** Guided first entry can end by filling all fifteen entry rows on Today
+/// (`JournalScreen.syncGuidedJournalCompletionIfNeeded`) or by finishing the App Tour
+/// (`JournalScreen.completeAppTour`). Both set `completedGuidedJournal`.
 enum JournalTodayOrientationPolicy {
 
     struct Inputs: Equatable {
-        /// `true` when `JournalScreen` shows Today's entry (`entryDate == nil`).
+        /// `true` when `JournalScreen` shows Today (`entryDate == nil`).
         var isTodayEntry: Bool
         var isRunningUITests: Bool
-        var hasSeenPostSeedJourney: Bool
+        var hasSeenAppTour: Bool
         var hasCompletedGuidedJournal: Bool
-        var completionLevel: JournalCompletionLevel
+        var hasAtLeastOneEntryInEachSection: Bool
     }
 
-    /// - Returns: Outcome when the full-screen post-Seed journey should be presented; `nil` otherwise.
-    static func postSeedJourneyOutcome(for inputs: Inputs) -> PostSeedJourneyTrigger.Outcome? {
+    /// - Returns: Outcome when the full-screen App Tour should be presented; `nil` otherwise.
+    static func appTourOutcome(for inputs: Inputs) -> AppTourTrigger.Outcome? {
         guard inputs.isTodayEntry else { return nil }
         guard !inputs.isRunningUITests else { return nil }
-        return PostSeedJourneyTrigger.evaluate(
-            hasSeenPostSeedJourney: inputs.hasSeenPostSeedJourney,
+        return AppTourTrigger.evaluate(
+            hasSeenAppTour: inputs.hasSeenAppTour,
             hasCompletedGuidedJournal: inputs.hasCompletedGuidedJournal,
-            todayCompletionLevel: inputs.completionLevel
+            hasAtLeastOneEntryInEachSection: inputs.hasAtLeastOneEntryInEachSection
         )
     }
 
-    /// Suppress the Seed unlock toast on rank-up into **Seed** when the post-Seed journey has not been
-    /// seen yet (avoids stacking with the full-screen flow).
-    static func shouldSuppressSeedUnlockToast(
+    /// Suppress Sprout-stage unlock toast (and matching header celebration) when the App Tour is about to
+    /// present at **1/1/1**—for both the generic rank-up case and the first 1/1/1 milestone highlight.
+    /// The first line alone in a section still shows feedback (`hasAtLeastOneEntryInEachSection` is false).
+    ///
+    /// **Keep in sync** with `AppTourTrigger.evaluate`: tour eligibility uses the same entry counts as
+    /// `hasAtLeastOneEntryInEachSection`.
+    static func shouldSuppressSproutUnlockToast(
         isTodayEntry: Bool,
         newLevel: JournalCompletionLevel,
-        hasSeenPostSeedJourney: Bool
+        hasSeenAppTour: Bool,
+        milestoneHighlight: JournalUnlockMilestoneHighlight,
+        hasAtLeastOneEntryInEachSection: Bool
     ) -> Bool {
-        guard isTodayEntry, newLevel == .seed, !hasSeenPostSeedJourney else { return false }
+        switch milestoneHighlight {
+        case .none, .firstOneOneOne:
+            break
+        case .firstBalanced, .firstFull:
+            return false
+        }
+        guard isTodayEntry, newLevel == .sprout, !hasSeenAppTour else { return false }
+        guard hasAtLeastOneEntryInEachSection else { return false }
         return true
     }
 }

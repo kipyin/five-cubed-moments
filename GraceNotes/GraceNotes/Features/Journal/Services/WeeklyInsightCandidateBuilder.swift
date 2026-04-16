@@ -2,7 +2,7 @@ import Foundation
 
 struct WeeklyInsightCandidateBuilder {
     let defaultContinuityPrompt = String(
-        localized: "What feels most important to carry into next week?"
+        localized: "review.prompts.carryIntoNextWeek"
     )
 
     private let maxInsights = 2
@@ -13,6 +13,10 @@ struct WeeklyInsightCandidateBuilder {
     }
 
     func buildCandidates(inputs: CandidateInputs) -> [InsightCandidate] {
+        if isSparseWeek(entries: inputs.entries, reflectionDayCount: inputs.currentDayCount) {
+            return []
+        }
+
         var candidates: [InsightCandidate] = []
 
         if let fullCompletion = fullCompletionCandidate(
@@ -37,9 +41,6 @@ struct WeeklyInsightCandidateBuilder {
             candidates.append(shift)
         }
 
-        if isSparseWeek(entries: inputs.entries, reflectionDayCount: inputs.currentDayCount) {
-            return []
-        }
         return candidates
     }
 
@@ -72,7 +73,7 @@ struct WeeklyInsightCandidateBuilder {
             return ReviewWeeklyInsight(
                 pattern: .sparseFallback,
                 observation: String(
-                    localized: "Start with one reflection today to build your weekly review."
+                    localized: "review.insights.starterReflection"
                 ),
                 action: defaultContinuityPrompt,
                 primaryTheme: nil,
@@ -84,10 +85,10 @@ struct WeeklyInsightCandidateBuilder {
         return ReviewWeeklyInsight(
             pattern: .sparseFallback,
             observation: renderLocalizedDayCountTemplate(
-                "You showed up for reflection on %lld day(s) this week.",
+                "review.insights.reflectionDays.observation",
                 dayCount: reflectionDayCount
             ),
-            action: String(localized: "What would make tomorrow's check-in easy to start?"),
+            action: String(localized: "review.prompts.easyCheckInTomorrow"),
             primaryTheme: nil,
             mentionCount: nil,
             dayCount: reflectionDayCount
@@ -100,7 +101,7 @@ struct WeeklyInsightCandidateBuilder {
             let first = insights[0].observation
             let second = insights[1].observation
             if !observationsAreEffectivelyDuplicate(first, second) {
-                return second
+                return nonEmptyTrimmed(second) ?? nonEmptyTrimmed(first)
             }
             let themeA = insights[0].primaryTheme
             let themeB = insights[1].primaryTheme
@@ -110,17 +111,20 @@ struct WeeklyInsightCandidateBuilder {
                    textNormalizer.normalizeThemeLabel(firstTheme),
                    against: [textNormalizer.normalizeThemeLabel(secondTheme)]
                ) {
-                return String(
-                    format: String(localized: "Both %1$@ and %2$@ showed up more than once in your week."),
+                let combined = String(
+                    format: String(localized: "review.insights.bothThemesMultiple"),
                     firstTheme,
                     secondTheme
                 )
+                return nonEmptyTrimmed(combined)
+                    ?? nonEmptyTrimmed(insights[0].observation)
+                    ?? nonEmptyTrimmed(insights[1].observation)
             }
-            return second
+            return nonEmptyTrimmed(second) ?? nonEmptyTrimmed(first)
         }
         if let theme = insights[0].primaryTheme, !theme.isEmpty {
             return String(
-                format: String(localized: "That thread around %@ showed up across more than one day this week."),
+                format: String(localized: "review.insights.threadAcrossDays"),
                 theme
             )
         }
@@ -128,8 +132,7 @@ struct WeeklyInsightCandidateBuilder {
         if first.pattern == .sparseFallback, first.dayCount == 0 {
             return nil
         }
-        let observation = first.observation.trimmingCharacters(in: .whitespacesAndNewlines)
-        return observation.isEmpty ? nil : observation
+        return nonEmptyTrimmed(first.observation)
     }
 
     private func observationsAreEffectivelyDuplicate(_ lhs: String, _ rhs: String) -> Bool {
@@ -141,6 +144,11 @@ struct WeeklyInsightCandidateBuilder {
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func nonEmptyTrimmed(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

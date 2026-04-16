@@ -3,8 +3,7 @@ import UIKit
 
 private enum InlineSentenceEditorFieldCopy {
     static let editingAccessibilityHint = String(
-        localized:
-            "Editing this sentence. Press Done to save, or tap outside the text field."
+        localized: "accessibility.editingSentence"
     )
 }
 
@@ -29,6 +28,7 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     let accessibilityHint: String
     let accessibilityIdentifier: String?
     let isInteractionEnabled: Bool
+    let primaryTextUIColor: UIColor
     let onSubmit: () -> Void
 
     static let minimumHeight = ceil(InlineSentenceEditorFieldLayout.bodyUIFont().lineHeight)
@@ -53,8 +53,17 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
             uiView.text = text
         }
 
+        // UIKit can end editing (scroll-dismiss, keyboard hide) before SwiftUI flips @FocusState.
+        // Without this guard, updateUIView keeps re-calling becomeFirstResponder while isFocused is
+        // still true, causing begin/end churn and repeated keyboard notifications.
+        if !isFocused {
+            context.coordinator.suppressBecomeUntilSwiftUIDropsFocus = false
+        }
+
         if isFocused, uiView.isFirstResponder == false {
-            uiView.becomeFirstResponder()
+            if !context.coordinator.suppressBecomeUntilSwiftUIDropsFocus {
+                uiView.becomeFirstResponder()
+            }
         } else if !isFocused || isInteractionEnabled == false, uiView.isFirstResponder {
             uiView.resignFirstResponder()
         }
@@ -75,7 +84,7 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     private func configure(_ textView: UITextView) {
         textView.backgroundColor = .clear
         textView.font = InlineSentenceEditorFieldLayout.bodyUIFont()
-        textView.textColor = UIColor(AppTheme.journalTextPrimary)
+        textView.textColor = primaryTextUIColor
         textView.tintColor = .systemBlue
         textView.isEditable = isInteractionEnabled
         textView.isSelectable = isInteractionEnabled
@@ -93,15 +102,20 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate {
         var parent: InlineSentenceEditorTextView
 
+        /// Set when UIKit reports editing ended; cleared when SwiftUI reports `isFocused == false` or on begin.
+        var suppressBecomeUntilSwiftUIDropsFocus = false
+
         init(parent: InlineSentenceEditorTextView) {
             self.parent = parent
         }
 
         func textViewDidBeginEditing(_: UITextView) {
+            suppressBecomeUntilSwiftUIDropsFocus = false
             parent.setFocused?(true)
         }
 
         func textViewDidEndEditing(_: UITextView) {
+            suppressBecomeUntilSwiftUIDropsFocus = true
             parent.setFocused?(false)
         }
 
@@ -112,9 +126,9 @@ private struct InlineSentenceEditorTextView: UIViewRepresentable {
         func textView(
             _ textView: UITextView,
             shouldChangeTextIn _: NSRange,
-            replacementText replacementText: String
+            replacementText text: String
         ) -> Bool {
-            guard replacementText == "\n" else { return true }
+            guard text == "\n" else { return true }
             parent.onSubmit()
             return false
         }
@@ -133,8 +147,9 @@ private struct FocusedWhenLet: ViewModifier {
     }
 }
 
-/// Multiline inline editor for strip editing and the add morph composer (shared field behavior).
+/// Multiline inline editor for entry-row editing and the add morph composer (shared field behavior).
 struct InlineSentenceEditorField: View {
+    @Environment(\.todayJournalPalette) private var palette
     let sectionTitle: String
     let placeholder: String
     @Binding var text: String
@@ -145,7 +160,7 @@ struct InlineSentenceEditorField: View {
 
     private var inputAccessibilityLabel: String {
         String(
-            format: String(localized: "%@ editor"),
+            format: String(localized: "accessibility.multilineEditorLabel"),
             locale: Locale.current,
             sectionTitle
         )
@@ -161,7 +176,7 @@ struct InlineSentenceEditorField: View {
     var body: some View {
         let prompt = Text(placeholder)
             .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.journalInputPlaceholder)
+            .foregroundStyle(palette.inputPlaceholder)
             .allowsHitTesting(false)
 
         ZStack(alignment: .topLeading) {
@@ -177,12 +192,13 @@ struct InlineSentenceEditorField: View {
                 accessibilityHint: InlineSentenceEditorFieldCopy.editingAccessibilityHint,
                 accessibilityIdentifier: editorIdentifier,
                 isInteractionEnabled: isInteractionEnabled,
+                primaryTextUIColor: UIColor(palette.textPrimary),
                 onSubmit: onSubmit
             )
             .frame(minHeight: InlineSentenceEditorTextView.minimumHeight, alignment: .leading)
         }
         .warmPaperInputStyle()
-        .modifier(SequentialSectionChipRow.ConditionalAccessibilityIdentifier(identifier: editorIdentifier))
+        .modifier(SequentialSectionEntryRow.ConditionalAccessibilityIdentifier(identifier: editorIdentifier))
         .accessibilityLabel(inputAccessibilityLabel)
         .accessibilityHint(InlineSentenceEditorFieldCopy.editingAccessibilityHint)
         .disabled(!isInteractionEnabled)

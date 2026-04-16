@@ -2,11 +2,12 @@ import Foundation
 
 struct JournalExportSnapshotSource {
     let entryDate: Date
-    let gratitudes: [JournalItem]
-    let needs: [JournalItem]
-    let people: [JournalItem]
+    let gratitudes: [Entry]
+    let needs: [Entry]
+    let people: [Entry]
     let readingNotes: String
     let reflections: String
+    let completionLevel: JournalCompletionLevel
 }
 
 struct JournalExportPayload {
@@ -16,15 +17,21 @@ struct JournalExportPayload {
     let people: [String]
     let readingNotes: String
     let reflections: String
+    let completionLevel: JournalCompletionLevel
 
     static func make(from source: JournalExportSnapshotSource) -> JournalExportPayload {
         JournalExportPayload(
             dateFormatted: source.entryDate.formatted(date: .long, time: .omitted),
-            gratitudes: source.gratitudes.map(\.fullText),
-            needs: source.needs.map(\.fullText),
-            people: source.people.map(\.fullText),
-            readingNotes: source.readingNotes.trimmingCharacters(in: .whitespacesAndNewlines),
-            reflections: source.reflections.trimmingCharacters(in: .whitespacesAndNewlines)
+            gratitudes: source.gratitudes.map { trimmed($0.fullText) },
+            needs: source.needs.map { trimmed($0.fullText) },
+            people: source.people.map { trimmed($0.fullText) },
+            readingNotes: trimmed(source.readingNotes),
+            reflections: trimmed(source.reflections),
+            completionLevel: source.completionLevel
         )
+    }
+
+    private static func trimmed(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

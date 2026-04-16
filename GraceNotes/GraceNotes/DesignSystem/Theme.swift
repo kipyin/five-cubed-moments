@@ -58,8 +58,14 @@ enum AppTheme {
     static let reviewQuickStartBackground = Color.adaptive(lightHex: 0xF5EDE4, darkHex: 0x2A241F)
     static let reviewQuickStartBorder = Color.adaptive(lightHex: 0xD9C7B5, darkHex: 0x8D7A69)
     static let reviewQuickStartText = Color.adaptive(lightHex: 0x6A5646, darkHex: 0xCDB9A6)
-    static let reviewRhythmActive = Color.adaptive(lightHex: 0xAA8E79, darkHex: 0xB69E8E)
-    static let reviewRhythmInactive = Color.adaptive(lightHex: 0xE7DED6, darkHex: 0x413731)
+    /// Day column fill — intentionally offset from ``reviewPaper`` to preserve rhythm structure.
+    static let reviewRhythmColumnFill = reviewStandardBackground
+    /// Day column / pill outline follows the matching standard border token.
+    static let reviewRhythmColumnStroke = reviewStandardBorder
+    /// Rhythm icon tint; dark mode uses near-white so SVG strokes stay visible.
+    static let reviewRhythmIconTint = Color.adaptive(lightHex: 0x5C5346, darkHex: 0xF2E8DE)
+    /// Stroke for unselected share-composer style chips; readable on dark paper.
+    static let shareComposerChipBorder = Color.adaptive(lightHex: 0xD2C4B5, darkHex: 0x5C5346)
 
     // MARK: - Journal Semantic Colors
 
@@ -92,6 +98,45 @@ enum AppTheme {
     static let journalFullGlow = Color("JournalFullGlow")
     static let journalError = Color.adaptive(lightHex: 0xA3564A, darkHex: 0xD48C80)
 
+    static func reviewRhythmPillBackground(for level: JournalCompletionLevel) -> Color {
+        switch level {
+        case .soil:
+            return reviewPaper
+        case .sprout:
+            return reviewQuickStartBackground
+        case .twig, .leaf:
+            return reviewStandardBackground
+        case .bloom:
+            return reviewCompleteBackground
+        }
+    }
+
+    static func reviewRhythmPillBorder(for level: JournalCompletionLevel) -> Color {
+        switch level {
+        case .soil:
+            return reviewRhythmColumnStroke.opacity(0.9)
+        case .sprout:
+            return reviewQuickStartBorder
+        case .twig, .leaf:
+            return reviewStandardBorder
+        case .bloom:
+            return reviewCompleteBorder
+        }
+    }
+
+    static func reviewRhythmPillShadow(for level: JournalCompletionLevel) -> Color {
+        switch level {
+        case .soil:
+            return reviewRhythmColumnStroke.opacity(0.12)
+        case .sprout:
+            return reviewQuickStartBorder.opacity(0.24)
+        case .twig, .leaf:
+            return reviewStandardBorder.opacity(0.24)
+        case .bloom:
+            return reviewCompleteBorder.opacity(0.28)
+        }
+    }
+
     /// Alias for accent; kept for backward compatibility.
     static let primaryColor = accent
 
@@ -103,8 +148,17 @@ enum AppTheme {
     static let warmPaperMeta = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
     static let warmPaperMetaEmphasis = Font.custom("SourceSerif4Roman-Regular", size: 15, relativeTo: .footnote)
         .weight(.semibold)
+    /// Sticky journal toolbar chip title (compact; between meta and body scale).
+    static let warmPaperToolbarChipTitle = Font.custom("SourceSerif4Roman-Regular", size: 16, relativeTo: .body)
+        .weight(.semibold)
     /// Supporting copy under meta titles (e.g. path criteria); scales with Dynamic Type caption.
     static let warmPaperCaption = Font.custom("SourceSerif4Roman-Regular", size: 13, relativeTo: .caption)
+
+    /// Machine-oriented strings in Settings (file names, path segments). Scales with Dynamic Type like body.
+    static let settingsTechnicalBody = Font.system(.body, design: .monospaced)
+
+    /// Secondary technical lines (e.g. export history detail); aligns with footnote scale alongside ``warmPaperMeta``.
+    static let settingsTechnicalMeta = Font.system(.footnote, design: .monospaced)
 
     // MARK: - Interface sans (Outfit)
 
@@ -117,6 +171,9 @@ enum AppTheme {
 
     /// Disclosure chevrons and other compact chrome.
     static let outfitSemiboldCaption = Font.custom("Outfit-SemiBold", size: 12, relativeTo: .caption2)
+
+    /// Lighter disclosure chevrons (e.g. settings rows that are plain buttons, not `NavigationLink`).
+    static let outfitRegularCaption2 = Font.custom("Outfit-Regular", size: 12, relativeTo: .caption2)
 
     // MARK: - Spacing & Radius
 
@@ -140,13 +197,13 @@ enum AppTheme {
         switch level {
         case .soil:
             return 0
-        case .seed:
+        case .sprout:
             return 0.65
-        case .ripening:
+        case .twig:
             return 0.78
-        case .harvest:
+        case .leaf:
             return 0.95
-        case .abundance:
+        case .bloom:
             return 1.2
         }
     }
@@ -155,13 +212,13 @@ enum AppTheme {
         switch level {
         case .soil:
             return .easeOut(duration: 0.12)
-        case .seed:
+        case .sprout:
             return .easeOut(duration: 0.16)
-        case .ripening:
+        case .twig:
             return .spring(response: 0.3, dampingFraction: 0.78)
-        case .harvest:
+        case .leaf:
             return .spring(response: 0.34, dampingFraction: 0.76)
-        case .abundance:
+        case .bloom:
             return .spring(response: 0.42, dampingFraction: 0.68)
         }
     }
@@ -170,13 +227,13 @@ enum AppTheme {
         switch level {
         case .soil:
             return .easeOut(duration: 0.12)
-        case .seed:
+        case .sprout:
             return .easeOut(duration: 0.14)
-        case .ripening:
+        case .twig:
             return .easeOut(duration: 0.17)
-        case .harvest:
+        case .leaf:
             return .easeOut(duration: 0.2)
-        case .abundance:
+        case .bloom:
             return .easeOut(duration: 0.24)
         }
     }
@@ -185,13 +242,13 @@ enum AppTheme {
         switch level {
         case .soil:
             return .easeOut(duration: 0.12)
-        case .seed:
+        case .sprout:
             return .easeOut(duration: 0.14)
-        case .ripening:
+        case .twig:
             return .easeOut(duration: 0.17)
-        case .harvest:
+        case .leaf:
             return .easeOut(duration: 0.2)
-        case .abundance:
+        case .bloom:
             return .easeOut(duration: 0.24)
         }
     }
@@ -200,14 +257,14 @@ enum AppTheme {
         switch level {
         case .soil:
             return .easeOut(duration: 0.12)
-        case .seed:
+        case .sprout:
             return .easeOut(duration: 0.22)
-        case .ripening:
-            return celebrationEntranceAnimation(for: .ripening)
-        case .harvest:
-            return celebrationEntranceAnimation(for: .harvest)
-        case .abundance:
-            return celebrationEntranceAnimation(for: .abundance)
+        case .twig:
+            return celebrationEntranceAnimation(for: .twig)
+        case .leaf:
+            return celebrationEntranceAnimation(for: .leaf)
+        case .bloom:
+            return celebrationEntranceAnimation(for: .bloom)
         }
     }
 
@@ -215,14 +272,14 @@ enum AppTheme {
         switch level {
         case .soil:
             return .easeOut(duration: 0.12)
-        case .seed:
+        case .sprout:
             return .easeOut(duration: 0.2)
-        case .ripening:
-            return celebrationExitAnimation(for: .ripening)
-        case .harvest:
-            return celebrationExitAnimation(for: .harvest)
-        case .abundance:
-            return celebrationExitAnimation(for: .abundance)
+        case .twig:
+            return celebrationExitAnimation(for: .twig)
+        case .leaf:
+            return celebrationExitAnimation(for: .leaf)
+        case .bloom:
+            return celebrationExitAnimation(for: .bloom)
         }
     }
 }
@@ -232,14 +289,16 @@ enum AppTheme {
 /// Applies Warm Paper styling: rounded corners, light border, paper-tinted background.
 /// System applies default focus styling when the input is focused.
 struct WarmPaperInputStyle: ViewModifier {
+    @Environment(\.todayJournalPalette) private var palette
+
     func body(content: Content) -> some View {
         content
             .padding(AppTheme.spacingRegular)
-            .background(AppTheme.journalPaper.opacity(0.6))
+            .background(palette.paper.opacity(palette.inputPaperOpacity))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                    .stroke(AppTheme.journalInputBorder, lineWidth: 1)
+                    .stroke(palette.inputBorder, lineWidth: 1)
             )
     }
 }
@@ -279,7 +338,7 @@ struct WarmPaperPressStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1.0)
             .opacity(configuration.isPressed ? 0.86 : 1.0)
             .animation(
                 reduceMotion ? nil : .easeOut(duration: 0.12),
@@ -288,31 +347,15 @@ struct WarmPaperPressStyle: ButtonStyle {
     }
 }
 
-// MARK: - Color Hex Extension
+// MARK: - Adaptive color (24-bit hex: `Color+Hex.swift`)
 
-private extension Color {
-    init(hex: UInt) {
-        let red = Double((hex >> 16) & 0xFF) / 255
-        let green = Double((hex >> 8) & 0xFF) / 255
-        let blue = Double(hex & 0xFF) / 255
-        self.init(red: red, green: green, blue: blue)
-    }
-
+extension Color {
     static func adaptive(lightHex: UInt, darkHex: UInt) -> Color {
         Color(
             UIColor { traitCollection in
                 let colorHex = traitCollection.userInterfaceStyle == .dark ? darkHex : lightHex
-                return UIColor(hex: colorHex)
+                return UIColor(Color(hex: colorHex))
             }
         )
-    }
-}
-
-private extension UIColor {
-    convenience init(hex: UInt) {
-        let red = CGFloat((hex >> 16) & 0xFF) / 255
-        let green = CGFloat((hex >> 8) & 0xFF) / 255
-        let blue = CGFloat(hex & 0xFF) / 255
-        self.init(red: red, green: green, blue: blue, alpha: 1)
     }
 }

@@ -24,10 +24,10 @@ struct StartupLoadingView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            ProgressView()
-                .progressViewStyle(.circular)
-                .opacity(isFailure ? 0 : 1)
-                .accessibilityHidden(isFailure)
+            if !isFailure {
+                ProgressView()
+                    .progressViewStyle(.circular)
+            }
 
             Text(primaryMessage)
                 .font(AppTheme.warmPaperBody)
@@ -35,6 +35,7 @@ struct StartupLoadingView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
                 .accessibilityIdentifier("StartupMessage")
+                .accessibilityAddTraits(isReassuranceMessage ? .updatesFrequently : [])
 
             if case .retryableFailure = state {
                 Button {
@@ -43,8 +44,9 @@ struct StartupLoadingView: View {
                     if isRetrying {
                         ProgressView()
                             .frame(maxWidth: .infinity)
+                            .accessibilityHidden(true)
                     } else {
-                        Text(String(localized: "Retry"))
+                        Text(String(localized: "common.retry"))
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -57,6 +59,7 @@ struct StartupLoadingView: View {
                 .padding(.horizontal, 24)
                 .disabled(isRetrying)
                 .accessibilityIdentifier("StartupRetryButton")
+                .accessibilityLabel(String(localized: "common.retry"))
             }
 
             Spacer()
@@ -72,6 +75,13 @@ struct StartupLoadingView: View {
         case .retryableFailure(let message):
             return message
         }
+    }
+
+    private var isReassuranceMessage: Bool {
+        if case .loading(_, let isReassurance) = state {
+            return isReassurance
+        }
+        return false
     }
 
     private var isFailure: Bool {

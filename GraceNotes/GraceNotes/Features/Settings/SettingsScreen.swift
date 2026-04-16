@@ -2,10 +2,9 @@ import SwiftUI
 import UIKit
 
 struct SettingsScreen: View {
-    /// Default false keeps AI features on-device until explicitly enabled.
-    @AppStorage(AIFeaturesSettings.enabledUserDefaultsKey) private var useAIFeatures = false
     @AppStorage(PersistenceController.iCloudSyncEnabledKey) private var isICloudSyncEnabled = false
     @EnvironmentObject private var appNavigation: AppNavigationModel
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -14,34 +13,19 @@ struct SettingsScreen: View {
 
     @StateObject private var reminderState = ReminderSettingsFlowModel()
     @StateObject private var iCloudAccountState = ICloudAccountStatusModel()
-    @StateObject private var aiCloudStatus = AISettingsCloudStatusModel()
+    @StateObject private var iCloudSyncActivity = ICloudSyncActivityModel()
     @State private var isReminderPickerExpanded = false
     @State private var isReminderToggleOn = false
     @State private var highlightedTarget: SettingsScrollTarget?
     @State private var settingsHighlightDismissTask: Task<Void, Never>?
     @State private var showAppTourFromSettings = false
-    @AppStorage(JournalOnboardingStorageKeys.hasSeenPostSeedJourney) private var hasSeenPostSeedJourney = false
     @AppStorage(JournalOnboardingStorageKeys.completedGuidedJournal) private var hasCompletedGuidedJournal = false
+    /// Same storage as first Full/Harvest celebration; unlocks Bloom in Advanced settings.
+    @AppStorage(JournalTutorialStorageKeys.celebratedFirstBloom) private var hasCelebratedFirstBloom = false
 
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if AppFeatureFlags.cloudAIUserFacingEnabled {
-                    Section {
-                        VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-                            aiConnectionControlRow
-                        }
-                        .padding(.vertical, AppTheme.spacingTight / 2)
-                        .id(SettingsScrollTarget.aiFeatures)
-                        .settingsTargetHighlight(highlightedTarget == .aiFeatures)
-                    } header: {
-                        Text(String(localized: "Settings.ai.sectionTitle"))
-                            .font(AppTheme.warmPaperHeader)
-                            .foregroundStyle(AppTheme.settingsTextPrimary)
-                            .textCase(nil)
-                    }
-                }
-
                 Section {
                     VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
                         reminderTimeControlRow
@@ -58,17 +42,17 @@ struct SettingsScreen: View {
                     .id(SettingsScrollTarget.reminders)
                     .settingsTargetHighlight(highlightedTarget == .reminders)
                     .alert(
-                        String(localized: "Unable to update reminder"),
+                        String(localized: "notifications.reminder.updateFailedTitle"),
                         isPresented: reminderErrorIsPresented
                     ) {
-                        Button(String(localized: "OK"), role: .cancel) {
+                        Button(String(localized: "common.ok"), role: .cancel) {
                             reminderState.clearTransientError()
                         }
                     } message: {
-                        Text(reminderState.transientErrorMessage ?? String(localized: "Please try again."))
+                        Text(reminderState.transientErrorMessage ?? String(localized: "common.tryAgainGeneric"))
                     }
                 } header: {
-                    Text(String(localized: "Reminders"))
+                    Text(String(localized: "settings.reminders.sectionTitle"))
                         .font(AppTheme.warmPaperHeader)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .textCase(nil)
@@ -78,6 +62,7 @@ struct SettingsScreen: View {
                     isICloudSyncEnabled: $isICloudSyncEnabled,
                     iCloudAccountState: iCloudAccountState,
                     persistenceRuntimeSnapshot: persistenceRuntimeSnapshot,
+                    lastICloudSyncSubtitle: iCloudSyncSubtitle,
                     highlightedTarget: highlightedTarget,
                     openSystemSettings: { openSystemSettings() }
                 )
@@ -87,24 +72,39 @@ struct SettingsScreen: View {
                         showAppTourFromSettings = true
                     } label: {
                         HStack(spacing: AppTheme.spacingRegular) {
-                            Text(String(localized: "Settings.showAppTour"))
+                            Text(String(localized: "settings.showAppTour"))
                                 .font(AppTheme.warmPaperBody)
                                 .foregroundStyle(AppTheme.settingsTextPrimary)
                             Spacer(minLength: AppTheme.spacingRegular)
                             Image(systemName: "chevron.right")
-                                .font(AppTheme.outfitSemiboldCaption)
+                                .font(AppTheme.outfitRegularCaption2)
                                 .foregroundStyle(AppTheme.settingsTextMuted)
                         }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .frame(minHeight: 44)
-                    .accessibilityHint(String(localized: "Settings.showAppTour.a11yHint"))
+                    .accessibilityHint(String(localized: "settings.showAppTour.a11yHint"))
                 } header: {
-                    Text(String(localized: "Settings.help.sectionTitle"))
+                    Text(String(localized: "settings.help.sectionTitle"))
                         .font(AppTheme.warmPaperHeader)
                         .foregroundStyle(AppTheme.settingsTextPrimary)
                         .textCase(nil)
+                }
+
+                Section {
+                    NavigationLink {
+                        AdvancedSettingsScreen()
+                    } label: {
+                        HStack(spacing: AppTheme.spacingRegular) {
+                            Text(String(localized: "settings.advanced.navTitle"))
+                                .font(AppTheme.warmPaperBody)
+                                .foregroundStyle(AppTheme.settingsTextPrimary)
+                            Spacer(minLength: AppTheme.spacingRegular)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .frame(minHeight: 44)
                 }
             }
             .listRowBackground(AppTheme.settingsPaper.opacity(0.9))
@@ -113,33 +113,29 @@ struct SettingsScreen: View {
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
             }
-            .navigationTitle(String(localized: "Settings"))
-            .onAppear {
-                guard AppFeatureFlags.cloudAIUserFacingEnabled else { return }
-                clampCloudAIFeaturesIfApiKeyMissing()
-            }
+            .navigationTitle(String(localized: "shell.tab.settings"))
             .task {
-                ReviewInsightsProvider.migrateLegacyAIFeaturesToggleIfNeeded()
-                useAIFeatures = AIFeaturesSettings.isEnabled()
-                if AppFeatureFlags.cloudAIUserFacingEnabled {
-                    clampCloudAIFeaturesIfApiKeyMissing()
+                backfillBloomUnlockIfNeeded()
+                reminderState.reminderNotificationBody = { reminderTime in
+                    (try? ReminderNotificationBodyBuilder.localizedBody(
+                        modelContext: modelContext,
+                        reminderTime: reminderTime
+                    )) ?? String(localized: String.LocalizationValue("notifications.reminder.body.fallback"))
                 }
                 await reminderState.refreshStatus()
                 syncReminderControlState(with: reminderState.liveStatus)
                 iCloudAccountState.refresh()
-                if AppFeatureFlags.cloudAIUserFacingEnabled {
-                    syncAICloudStatusModel()
-                    aiCloudStatus.scheduleThrottledAutoCheckIfNeeded()
-                }
                 if let target = appNavigation.settingsScrollTarget {
                     focusSettingsTarget(target, proxy: proxy)
                 }
             }
+            .onAppear {
+                iCloudSyncActivity.startMonitoring()
+            }
             .onDisappear {
-                if AppFeatureFlags.cloudAIUserFacingEnabled {
-                    aiCloudStatus.onSettingsDisappear()
-                }
                 settingsHighlightDismissTask?.cancel()
+                settingsHighlightDismissTask = nil
+                highlightedTarget = nil
             }
             .onChange(of: scenePhase) { _, newValue in
                 guard newValue == .active else { return }
@@ -147,14 +143,6 @@ struct SettingsScreen: View {
                     await reminderState.refreshStatus()
                 }
                 iCloudAccountState.refresh()
-                if AppFeatureFlags.cloudAIUserFacingEnabled {
-                    aiCloudStatus.sceneDidBecomeActive()
-                    syncAICloudStatusModel()
-                }
-            }
-            .onChange(of: useAIFeatures) { _, _ in
-                guard AppFeatureFlags.cloudAIUserFacingEnabled else { return }
-                syncAICloudStatusModel()
             }
             .onChange(of: reminderState.selectedTime) { _, _ in
                 reminderState.handleSelectedTimeChanged()
@@ -167,9 +155,9 @@ struct SettingsScreen: View {
                 focusSettingsTarget(target, proxy: proxy)
             }
             .fullScreenCover(isPresented: $showAppTourFromSettings) {
-                PostSeedJourneyView(
+                AppTourView(
                     onFinish: {
-                        hasSeenPostSeedJourney = true
+                        JournalOnboardingProgress.applyAppTourCompletion(using: .standard)
                         showAppTourFromSettings = false
                     },
                     skipsCongratulationsPage: hasCompletedGuidedJournal
@@ -190,122 +178,18 @@ struct SettingsScreen: View {
 }
 
 private extension SettingsScreen {
-    var aiFeaturesOn: Bool {
-        AIFeaturesSettings.isEnabled()
-    }
-
-    var canRunAIConnectivityCheck: Bool {
-        aiFeaturesOn && ApiSecrets.isCloudApiKeyConfigured
-    }
-
-    func syncAICloudStatusModel() {
-        aiCloudStatus.refresh(aiFeaturesEnabled: aiFeaturesOn)
-    }
-
-    /// Cloud AI toggles require a non-placeholder API key; keep AppStorage consistent with that constraint.
-    func clampCloudAIFeaturesIfApiKeyMissing() {
-        guard !ApiSecrets.isCloudApiKeyConfigured, aiFeaturesOn else { return }
-        AIFeaturesSettings.setEnabled(false)
-        syncAICloudStatusModel()
-    }
-
-    /// Inline status under the toggle label (visible in every state: misconfigured, off, or on + connectivity).
-    var aiRowStatusText: String {
-        if !ApiSecrets.isCloudApiKeyConfigured {
-            return String(localized: "Cloud AI isn’t set up on this build.")
+    var iCloudSyncSubtitle: String? {
+        let snapshot = persistenceRuntimeSnapshot
+        guard snapshot.storeUsesCloudKit, !snapshot.startupUsedCloudKitFallback else {
+            return nil
         }
-        if !aiFeaturesOn {
-            return String(localized: "Off")
+        if let date = iCloudSyncActivity.lastRemoteChangeAt {
+            return ICloudSyncLastActivityFormatting.lastActivitySubtitle(
+                lastActivity: date,
+                referenceNow: Date()
+            )
         }
-        if let row = aiCloudStatus.statusRow {
-            return aiCloudStatusMessage(row)
-        }
-        return String(localized: "Tap for connection status")
-    }
-
-    var aiConnectionControlRow: some View {
-        HStack(spacing: AppTheme.spacingRegular) {
-            Button {
-                guard canRunAIConnectivityCheck else { return }
-                aiCloudStatus.requestManualConnectivityCheck()
-            } label: {
-                HStack(spacing: AppTheme.spacingRegular) {
-                    VStack(alignment: .leading, spacing: AppTheme.spacingTight / 2) {
-                        Text(String(localized: "Settings.ai.toggleLabel"))
-                            .font(AppTheme.warmPaperBody)
-                            .foregroundStyle(AppTheme.settingsTextPrimary)
-                        Text(aiRowStatusText)
-                            .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.settingsTextMuted)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: AppTheme.spacingRegular)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(!canRunAIConnectivityCheck)
-            .accessibilityLabel(String(localized: "AI connection status"))
-            .accessibilityValue(aiConnectionAccessibilityValue)
-            .accessibilityHint(aiConnectionAccessibilityHint)
-
-            Toggle("", isOn: aiFeaturesToggleBinding)
-                .labelsHidden()
-                .tint(AppTheme.accent)
-                .disabled(!ApiSecrets.isCloudApiKeyConfigured)
-                .accessibilityLabel(String(localized: "Settings.ai.toggleLabel"))
-                .accessibilityHint(aiToggleAccessibilityHint)
-        }
-        .frame(minHeight: 44)
-    }
-
-    var aiFeaturesToggleBinding: Binding<Bool> {
-        Binding(
-            get: { aiFeaturesOn },
-            set: { enabled in
-                AIFeaturesSettings.setEnabled(enabled)
-                syncAICloudStatusModel()
-            }
-        )
-    }
-
-    var aiConnectionAccessibilityValue: String {
-        aiRowStatusText
-    }
-
-    /// Empty when the default toggle behavior needs no extra VoiceOver context.
-    var aiToggleAccessibilityHint: String {
-        guard !ApiSecrets.isCloudApiKeyConfigured else { return "" }
-        return String(localized: "Cloud AI isn’t set up on this build.")
-    }
-
-    var aiConnectionAccessibilityHint: String {
-        if !ApiSecrets.isCloudApiKeyConfigured {
-            return String(localized: "Cloud AI isn’t set up on this build.")
-        }
-        if canRunAIConnectivityCheck {
-            return String(localized: "Runs a cloud AI reachability check when activated.")
-        }
-        if !aiFeaturesOn {
-            return String(localized: "Settings.ai.a11y.enableForConnectionCheck")
-        }
-        return String(localized: "Cloud AI isn’t set up on this build.")
-    }
-
-    func aiCloudStatusMessage(_ row: AISettingsCloudStatusRow) -> String {
-        switch row {
-        case .misconfigured:
-            return String(localized: "Cloud AI isn’t set up on this build.")
-        case .checking:
-            return String(localized: "Checking…")
-        case .offline:
-            return String(localized: "No internet connection")
-        case .checkFailed:
-            return String(localized: "Couldn’t verify—try again")
-        case .connectionVerified:
-            return String(localized: "Connection looks good.")
-        }
+        return String(localized: "DataPrivacy.iCloudSync.lastActivity.pending")
     }
 
     var shouldUseCompactReminderPicker: Bool {
@@ -334,7 +218,7 @@ private extension SettingsScreen {
             } label: {
                 HStack(spacing: AppTheme.spacingRegular) {
                     VStack(alignment: .leading, spacing: AppTheme.spacingTight / 2) {
-                        Text(String(localized: "Daily reminder"))
+                        Text(String(localized: "notifications.reminder.dailyLabel"))
                             .font(AppTheme.warmPaperBody)
                             .foregroundStyle(AppTheme.settingsTextPrimary)
                         Text(reminderState.summaryText)
@@ -355,38 +239,38 @@ private extension SettingsScreen {
             }
             .buttonStyle(.plain)
             .disabled(!reminderState.isReminderEnabled || reminderState.isWorking)
-            .accessibilityLabel(String(localized: "Reminder time"))
+            .accessibilityLabel(String(localized: "notifications.reminder.timeLabel"))
             .accessibilityValue(
                 reminderState.isReminderEnabled
                     ? reminderState.selectedTime.formatted(date: .omitted, time: .shortened)
-                    : String(localized: "Off")
+                    : String(localized: "common.off")
             )
 
             Toggle("", isOn: reminderToggleBinding)
                 .labelsHidden()
                 .tint(AppTheme.accent)
                 .disabled(reminderState.isPermissionDenied || reminderState.isWorking)
-                .accessibilityLabel(String(localized: "Daily reminder"))
+                .accessibilityLabel(String(localized: "notifications.reminder.dailyLabel"))
         }
         .frame(minHeight: 44)
     }
 
     var reminderPermissionDeniedGuidance: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-            Text(String(localized: "Allow notifications in Settings to enable daily reminders."))
+            Text(String(localized: "notifications.reminder.enableInSettings"))
                 .font(AppTheme.warmPaperMeta)
                 .foregroundStyle(AppTheme.settingsTextMuted)
 
             SettingsOpenSystemSettingsButton(
                 action: openSystemSettings,
-                accessibilityHint: String(localized: "Open iOS Settings for notification permissions.")
+                accessibilityHint: String(localized: "notifications.reminder.openIOSSettingsHint")
             )
         }
     }
 
     var reminderUnavailableGuidance: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacingRegular) {
-            Text(String(localized: "Unavailable. Check notification permissions and try again."))
+            Text(String(localized: "notifications.reminder.unavailablePermissions"))
                 .font(AppTheme.warmPaperMeta)
                 .foregroundStyle(AppTheme.settingsTextMuted)
 
@@ -396,7 +280,7 @@ private extension SettingsScreen {
                         await reminderState.enableReminders()
                     }
                 } label: {
-                    Text(String(localized: "Try again"))
+                    Text(String(localized: "common.tryAgain"))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
@@ -404,14 +288,14 @@ private extension SettingsScreen {
                 .foregroundStyle(AppTheme.reminderPrimaryActionForeground)
                 .font(AppTheme.warmPaperBody)
                 .disabled(reminderState.isWorking)
-                .accessibilityHint(String(localized: "Retry scheduling your daily reminder."))
+                .accessibilityHint(String(localized: "notifications.reminder.retrySchedulingHint"))
 
                 Button {
                     Task {
                         await reminderState.refreshStatus()
                     }
                 } label: {
-                    Text(String(localized: "Refresh"))
+                    Text(String(localized: "common.refresh"))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.bordered)
@@ -419,7 +303,7 @@ private extension SettingsScreen {
                 .foregroundStyle(AppTheme.reminderSecondaryActionTint)
                 .font(AppTheme.warmPaperBody)
                 .disabled(reminderState.isWorking)
-                .accessibilityHint(String(localized: "Check if notification permissions have changed."))
+                .accessibilityHint(String(localized: "notifications.reminder.checkPermissionsHint"))
             }
         }
     }
@@ -437,8 +321,8 @@ private extension SettingsScreen {
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(AppTheme.settingsTextPrimary)
             .tint(AppTheme.reminderSecondaryActionTint)
-            .accessibilityLabel(String(localized: "Reminder time"))
-            .accessibilityHint(String(localized: "Choose a reminder time."))
+            .accessibilityLabel(String(localized: "notifications.reminder.timeLabel"))
+            .accessibilityHint(String(localized: "notifications.reminder.chooseTimeHint"))
         } else {
             DatePicker(
                 "",
@@ -449,8 +333,8 @@ private extension SettingsScreen {
             .datePickerStyle(.wheel)
             .font(AppTheme.warmPaperBody)
             .foregroundStyle(AppTheme.settingsTextPrimary)
-            .accessibilityLabel(String(localized: "Reminder time"))
-            .accessibilityHint(String(localized: "Choose a reminder time."))
+            .accessibilityLabel(String(localized: "notifications.reminder.timeLabel"))
+            .accessibilityHint(String(localized: "notifications.reminder.chooseTimeHint"))
         }
     }
 
@@ -496,5 +380,12 @@ private extension SettingsScreen {
             return
         }
         openURL(url)
+    }
+
+    func backfillBloomUnlockIfNeeded() {
+        guard !hasCelebratedFirstBloom else { return }
+        let repository = JournalRepository()
+        guard (try? repository.hasUserEverReachedBloom(context: modelContext)) == true else { return }
+        hasCelebratedFirstBloom = true
     }
 }

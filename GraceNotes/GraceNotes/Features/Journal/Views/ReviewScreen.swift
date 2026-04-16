@@ -1,213 +1,427 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
-// swiftlint:disable type_body_length
-struct ReviewScreen: View {
-    private struct TimelineRefreshKey: Hashable {
-        let entryCount: Int
-        let newestEntryUpdateAt: Date
-    }
+/// Single active “browse all” presentation. Two separate `sheet(item:)` branches can race on some
+/// runtimes (e.g. iOS 18 + small devices), showing the recurring sheet when opening Trending browse.
+private enum ReviewBrowseSheet: Identifiable {
+    case mostRecurring(MostRecurringBrowsePayload)
+    case trending(TrendingBrowsePayload)
 
-    private enum ReviewMode: CaseIterable, Hashable, Identifiable {
-        case insights
-        case timeline
-
-        var id: Self { self }
-
-        var localizedTitle: String {
-            switch self {
-            case .insights:
-                return String(localized: "Insights")
-            case .timeline:
-                return String(localized: "Timeline")
-            }
+    var id: UUID {
+        switch self {
+        case .mostRecurring(let payload):
+            return payload.id
+        case .trending(let payload):
+            return payload.id
         }
     }
+}
 
-    @Query(sort: \JournalEntry.entryDate, order: .reverse) private var entries: [JournalEntry]
+private struct ReviewJournalDaySheetItem: Identifiable, Equatable {
+    let id: String
+    let entryDate: Date
+
+    init(dayStart: Date, calendar: Calendar) {
+        let normalized = calendar.startOfDay(for: dayStart)
+        entryDate = normalized
+        let parts = calendar.dateComponents([.year, .month, .day], from: normalized)
+        let year = parts.year ?? 0
+        let month = parts.month ?? 0
+        let day = parts.day ?? 0
+        id = "\(year)-\(month)-\(day)"
+    }
+}
+
+struct ReviewScreen: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Journal.entryDate, order: .reverse) private var entries: [Journal]
+    @AppStorage(ReviewWeekBoundaryPreference.userDefaultsKey)
+    private var reviewWeekBoundaryRawValue = ReviewWeekBoundaryPreference.defaultValue.rawValue
+    @AppStorage(PastStatisticsIntervalPreference.appStorageKey)
+    private var pastStatisticsIntervalEncoded = ""
     @State private var reviewInsights: ReviewInsights?
     @State private var isLoadingInsights = false
-    @State private var selectedMode: ReviewMode
     @State private var lastInsightsRefreshKey: ReviewInsightsRefreshKey?
-    @State private var timelineGroups: [(key: Date, entries: [JournalEntry])] = []
-    @AppStorage(ReviewInsightsProvider.aiFeaturesEnabledKey) private var aiFeaturesEnabled = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @EnvironmentObject private var appNavigation: AppNavigationModel
+    @State private var mostRecurringThemeDrilldown: ReviewThemeDrilldownPayload?
+    @State private var browseSheet: ReviewBrowseSheet?
+    @State private var trendingThemeDrilldown: ReviewThemeDrilldownPayload?
+    @State private var historyDrilldown: ReviewHistoryDrilldownPayload?
+    @State private var journalDaySheetItem: ReviewJournalDaySheetItem?
+    @State private var journalSearchText = ""
+    @State private var journalSearchMatches: [JournalSearchMatch] = []
+    @FocusState private var isPastSearchFieldFocused: Bool
 
-    private let calendar = Calendar.current
     private let reviewInsightsProvider = ReviewInsightsProvider.shared
     private let reviewInsightsCache = ReviewInsightsCache.shared
-    /// When true, keep Review list chrome (mode picker + identifiers) even with zero entries so UI tests can navigate.
+    /// When true, keep Review list chrome even with zero entries so UI tests can navigate.
     private let isUiTestingExperience: Bool
 
     init() {
         let isUiTesting = ProcessInfo.graceNotesIsRunningUITests
         isUiTestingExperience = isUiTesting
-        _selectedMode = State(initialValue: isUiTesting ? .timeline : .insights)
+    }
+}
+
+extension ReviewScreen {
+    private enum PastTabListLayout {
+        static var cardRowInsets: EdgeInsets {
+            let inset = AppTheme.spacingWide
+            return EdgeInsets(top: 2, leading: inset, bottom: 6, trailing: inset)
+        }
+
+        static var searchBarRowInsets: EdgeInsets {
+            let inset = AppTheme.spacingWide
+            return EdgeInsets(top: 6, leading: inset, bottom: 8, trailing: inset)
+        }
     }
 
-    private var timelineRefreshKey: TimelineRefreshKey {
-        TimelineRefreshKey(
-            entryCount: entries.count,
-            newestEntryUpdateAt: entries.map(\.updatedAt).max() ?? .distantPast
-        )
+    private var pastStatisticsInterval: PastStatisticsIntervalSelection {
+        PastStatisticsIntervalPreference.selection(fromAppStorage: pastStatisticsIntervalEncoded).validated
     }
 
     private var currentInsightsRefreshKey: ReviewInsightsRefreshKey {
-        ReviewInsightsRefreshKey(
-            weekStart: currentReviewPeriod.lowerBound,
-            aiFeaturesEnabled: aiFeaturesEnabled,
-            entrySnapshots: weeklyEntriesForRefresh.map {
-                ReviewEntrySnapshot(id: $0.id, updatedAt: $0.updatedAt)
+        makeInsightsRefreshKey(referenceDate: Date())
+    }
+
+    /// Single `Date()` for both the refresh key and `generateInsights` keeps past-window math aligned
+    /// with the staleness token (important when `referenceDate` affects resolved history ranges).
+    private func makeInsightsRefreshKey(referenceDate: Date) -> ReviewInsightsRefreshKey {
+        let period = ReviewInsightsPeriod.currentPeriod(containing: referenceDate, calendar: calendar)
+        return ReviewInsightsRefreshKey(
+            weekStart: period.lowerBound,
+            entrySnapshots: ReviewInsightsRefreshKey.entrySnapshotsAffectingInsights(
+                entries: entries,
+                referenceDate: referenceDate,
+                calendar: calendar,
+                pastStatisticsInterval: pastStatisticsInterval,
+                currentReviewPeriod: period
+            ),
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
+        )
+    }
+
+    private var calendar: Calendar {
+        ReviewWeekBoundaryPreference.resolve(from: reviewWeekBoundaryRawValue)
+            .configuredCalendar()
+    }
+
+    /// Week start for the current review period (`makeInsightsRefreshKey(referenceDate: Date()).weekStart`),
+    /// without iterating entries for `entrySnapshotsAffectingInsights` (cache hydration only needs the week key).
+    private var currentReviewWeekStart: Date {
+        ReviewInsightsPeriod.currentPeriod(containing: Date(), calendar: calendar).lowerBound
+    }
+
+    /// Same instant used when the visible `reviewInsights` were built (Copilot PR #176 follow-up).
+    private var insightsReferenceDate: Date {
+        reviewInsights?.generatedAt ?? Date()
+    }
+
+    private var trimmedJournalSearchQuery: String {
+        journalSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isPastSearchMode: Bool {
+        isPastSearchFieldFocused || !trimmedJournalSearchQuery.isEmpty
+    }
+
+    private var mostRecurringBrowseBinding: Binding<MostRecurringBrowsePayload?> {
+        Binding(
+            get: {
+                guard case .mostRecurring(let payload) = browseSheet else { return nil }
+                return payload
+            },
+            set: { newValue in
+                if let newValue {
+                    browseSheet = .mostRecurring(newValue)
+                } else if case .mostRecurring = browseSheet {
+                    browseSheet = nil
+                }
             }
         )
     }
 
-    private var currentReviewPeriod: Range<Date> {
-        ReviewInsightsPeriod.currentPeriod(containing: Date(), calendar: calendar)
-    }
-
-    private var weeklyEntriesForRefresh: [JournalEntry] {
-        entries.filter { currentReviewPeriod.contains($0.entryDate) }
+    private var trendingBrowseBinding: Binding<TrendingBrowsePayload?> {
+        Binding(
+            get: {
+                guard case .trending(let payload) = browseSheet else { return nil }
+                return payload
+            },
+            set: { newValue in
+                if let newValue {
+                    browseSheet = .trending(newValue)
+                } else if case .trending = browseSheet {
+                    browseSheet = nil
+                }
+            }
+        )
     }
 
     var body: some View {
         Group {
             if entries.isEmpty && !isUiTestingExperience {
-                emptyState
+                emptyStateWithSearch
             } else {
                 historyList
             }
         }
-        .navigationTitle(String(localized: "Review"))
+        .navigationTitle(String(localized: "shell.tab.past"))
         .background(AppTheme.reviewBackground)
         .onAppear {
             PerformanceTrace.instant("ReviewScreen.onAppear")
         }
         .task(id: currentInsightsRefreshKey) {
-            guard selectedMode == .insights else { return }
             await hydrateReviewInsightsFromCacheIfNeeded()
             await refreshReviewInsights()
         }
-        .onChange(of: selectedMode) { _, newMode in
-            guard newMode == .insights else { return }
-            Task {
-                await hydrateReviewInsightsFromCacheIfNeeded()
-                await refreshReviewInsights()
+        .task(id: journalSearchText) {
+            await PastJournalSearchDebouncer.runDebouncedSearch(
+                query: journalSearchText,
+                calendar: calendar,
+                modelContext: modelContext,
+                isTrimmedQueryStillCurrent: { expectedTrimmed in
+                    journalSearchText.trimmingCharacters(in: .whitespacesAndNewlines) == expectedTrimmed
+                },
+                updateMatches: { journalSearchMatches = $0 }
+            )
+        }
+        .sheet(item: $mostRecurringThemeDrilldown) { payload in
+            ThemeDrilldownSheet(payload: payload, onOpenJournalDay: presentJournalDismissingThemeDrilldownSheets)
+        }
+        .sheet(item: $trendingThemeDrilldown) { payload in
+            ThemeDrilldownSheet(payload: payload, onOpenJournalDay: presentJournalDismissingThemeDrilldownSheets)
+        }
+        .sheet(item: $browseSheet, onDismiss: {
+            browseSheet = nil
+        }, content: { sheet in
+            Group {
+                switch sheet {
+                case .mostRecurring(let payload):
+                    MostRecurringBrowseSheetContainer(
+                        themes: payload.themes,
+                        referenceDate: payload.referenceDate,
+                        calendar: payload.calendar,
+                        onOpenJournalDay: presentJournalDismissingBrowseSheet
+                    )
+                case .trending(let payload):
+                    TrendingBrowseSheetContainer(
+                        buckets: payload.buckets,
+                        onOpenJournalDay: presentJournalDismissingBrowseSheet
+                    )
+                }
             }
+            .id(sheet.id)
+        })
+        .sheet(item: $historyDrilldown) { payload in
+            ReviewHistoryDrilldownSheetContainer(
+                payload: payload,
+                entries: entries,
+                calendar: calendar,
+                referenceDate: insightsReferenceDate,
+                pastStatisticsInterval: pastStatisticsInterval,
+                onOpenJournalDay: presentJournalDismissingHistoryDrilldown
+            )
         }
-        .task(id: timelineRefreshKey) {
-            refreshTimelineGroups()
+        .sheet(item: $journalDaySheetItem) { item in
+            ReviewJournalDaySheetHost(entryDate: item.entryDate)
         }
     }
 
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label(String(localized: "No entries yet"), systemImage: "doc.text")
-        } description: {
-            Text(String(localized: "Start with today."))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private func presentJournalDaySheet(for day: Date) {
+        journalDaySheetItem = ReviewJournalDaySheetItem(dayStart: day, calendar: calendar)
     }
 
-    private var historyList: some View {
+    private func presentJournalDismissingHistoryDrilldown(for day: Date) {
+        historyDrilldown = nil
+        Task { @MainActor in
+            await Task.yield()
+            presentJournalDaySheet(for: day)
+        }
+    }
+
+    private func presentJournalDismissingThemeDrilldownSheets(for day: Date) {
+        mostRecurringThemeDrilldown = nil
+        trendingThemeDrilldown = nil
+        Task { @MainActor in
+            await Task.yield()
+            presentJournalDaySheet(for: day)
+        }
+    }
+
+    private func presentJournalDismissingBrowseSheet(for day: Date) {
+        browseSheet = nil
+        Task { @MainActor in
+            await Task.yield()
+            presentJournalDaySheet(for: day)
+        }
+    }
+
+    private var emptyStateWithSearch: some View {
         List {
-            reviewModeSection
-
-            switch selectedMode {
-            case .insights:
-                insightsSection
-                insightsPullToRefreshScrollAssist
-            case .timeline:
-                timelineSections
+            pastSearchBarSection
+            if !isPastSearchMode {
+                Section {
+                    ContentUnavailableView {
+                        Label(String(localized: "past.empty.noEntries"), systemImage: "doc.text")
+                    } description: {
+                        Text(String(localized: "review.insights.startWithToday"))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                }
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+            } else {
+                PastJournalSearchResultsList(
+                    isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
+                    matches: journalSearchMatches,
+                    calendar: calendar,
+                    highlightQuery: trimmedJournalSearchQuery,
+                    onDismissSearchFocus: dismissPastSearchFocus,
+                    onOpenJournalDay: presentJournalDaySheet
+                )
             }
         }
-        .listStyle(.insetGrouped)
+        .pastTabListStyle()
+        .listRowSeparator(.hidden)
+        .listSectionSeparator(.hidden, edges: .all)
         .listRowSpacing(10)
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(isPastSearchFieldFocused ? .never : .immediately)
         .background(AppTheme.reviewBackground)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: selectedMode)
-        .refreshable {
-            switch selectedMode {
-            case .insights:
-                await refreshReviewInsights(force: true)
-            case .timeline:
-                refreshTimelineGroups()
-            }
-        }
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
         }
     }
 
-    private var reviewModeSection: some View {
-        Section {
-            Picker(String(localized: "Review mode"), selection: $selectedMode) {
-                ForEach(ReviewMode.allCases) { mode in
-                    Text(mode.localizedTitle).tag(mode)
-                }
+    private var historyList: some View {
+        List {
+            pastSearchBarSection
+            if !isPastSearchMode {
+                insightsSection
+            } else {
+                PastJournalSearchResultsList(
+                    isAwaitingInput: isPastSearchFieldFocused && trimmedJournalSearchQuery.isEmpty,
+                    matches: journalSearchMatches,
+                    calendar: calendar,
+                    highlightQuery: trimmedJournalSearchQuery,
+                    onDismissSearchFocus: dismissPastSearchFocus,
+                    onOpenJournalDay: presentJournalDaySheet
+                )
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .tint(AppTheme.reviewAccent)
-            .accessibilityHint(String(localized: "Switch between Insights and Timeline."))
-            .accessibilityIdentifier("ReviewModePicker")
-            .listRowBackground(AppTheme.reviewBackground)
+        }
+        .pastTabListStyle()
+        .listRowSeparator(.hidden)
+        .listSectionSeparator(.hidden, edges: .all)
+        .listRowSpacing(10)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(isPastSearchFieldFocused ? .never : .immediately)
+        .background(AppTheme.reviewBackground)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppTheme.spacingSection + AppTheme.floatingTabBarClearance)
+        }
+    }
+
+    private var pastSearchBarSection: some View {
+        Section {
+            PastJournalSearchFieldRow(text: $journalSearchText, searchFocus: $isPastSearchFieldFocused)
+                .listRowInsets(PastTabListLayout.searchBarRowInsets)
+                .listRowBackground(isPastSearchMode ? Color.clear : AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
         }
     }
 
     private var insightsSection: some View {
         Section {
-            ReviewSummaryCard(
-                insights: reviewInsights,
-                aiFeaturesEnabled: aiFeaturesEnabled,
-                isLoading: isLoadingInsights,
-                weekJournalEntryCount: weeklyEntriesForRefresh.count,
-                onContinueToToday: { appNavigation.selectedTab = .today }
-            )
-            .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 6, trailing: 0))
-            .listRowBackground(AppTheme.reviewBackground)
-        }
-    }
-
-    /// `List.refreshable` only engages when the scroll view can overscroll; a short insights stack often cannot.
-    private var insightsPullToRefreshScrollAssist: some View {
-        Section {
-            Color.clear
-                .frame(height: 280)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .accessibilityHidden(true)
-        }
-    }
-
-    @ViewBuilder
-    private var timelineSections: some View {
-        ForEach(timelineGroups, id: \.key) { group in
-            Section {
-                ForEach(group.entries, id: \.id) { entry in
-                    NavigationLink {
-                        JournalScreen(entryDate: entry.entryDate)
-                    } label: {
-                        HistoryRow(entry: entry)
+            if reviewInsights != nil || isLoadingInsights {
+                ReviewDaysYouWrotePanel(
+                    insights: reviewInsights,
+                    isLoading: isLoadingInsights,
+                    onRhythmDaySelected: presentJournalDaySheet,
+                    onRhythmChromeTap: {
+                        historyDrilldown = .journalingDays
                     }
-                    .accessibilityLabel(accessibilityTimelineRowLabel(for: entry))
-                    .accessibilityIdentifier("ReviewTimelineEntry.\(entry.id.uuidString)")
-                    .accessibilityHint(String(localized: "Opens that day's entry."))
-                    .listRowBackground(AppTheme.reviewPaper)
-                }
-            } header: {
-                Text(monthYearString(from: group.key))
-                    .font(AppTheme.warmPaperHeader)
-                    .foregroundStyle(AppTheme.reviewTextPrimary)
-                    .accessibilityAddTraits(.isHeader)
+                )
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+
+                ReviewHistoryGrowthStagesPanel(
+                    historyDrilldown: $historyDrilldown,
+                    entries: entries,
+                    calendar: calendar,
+                    referenceDate: insightsReferenceDate,
+                    pastStatisticsInterval: pastStatisticsInterval,
+                    insights: reviewInsights,
+                    isLoading: isLoadingInsights
+                )
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+
+                ReviewHistorySectionDistributionPanel(
+                    historyDrilldown: $historyDrilldown,
+                    entries: entries,
+                    calendar: calendar,
+                    referenceDate: insightsReferenceDate,
+                    pastStatisticsInterval: pastStatisticsInterval,
+                    insights: reviewInsights,
+                    isLoading: isLoadingInsights
+                )
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
+            }
+
+            ReviewMostRecurringCard(
+                themeDrilldown: $mostRecurringThemeDrilldown,
+                browseAllPayload: mostRecurringBrowseBinding,
+                insights: reviewInsights,
+                isLoading: isLoadingInsights
+            )
+            .listRowInsets(PastTabListLayout.cardRowInsets)
+            .listRowBackground(AppTheme.reviewBackground)
+            .listRowSeparator(.hidden)
+
+            ReviewTrendingCard(
+                themeDrilldown: $trendingThemeDrilldown,
+                browseAllPayload: trendingBrowseBinding,
+                insights: reviewInsights,
+                isLoading: isLoadingInsights
+            )
+            .listRowInsets(PastTabListLayout.cardRowInsets)
+            .listRowBackground(AppTheme.reviewBackground)
+            .listRowSeparator(.hidden)
+
+            if ReviewNextStepRowRefiner.shouldShowNarrativeRow(
+                insights: reviewInsights,
+                isLoading: isLoadingInsights
+            ) {
+                ReviewNarrativeSummaryCard(
+                    insights: reviewInsights,
+                    isLoading: isLoadingInsights
+                )
+                .listRowInsets(PastTabListLayout.cardRowInsets)
+                .listRowBackground(AppTheme.reviewBackground)
+                .listRowSeparator(.hidden)
             }
         }
     }
 
+    func dismissPastSearchFocus() {
+        isPastSearchFieldFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
     @MainActor
-    private func refreshReviewInsights(force: Bool = false) async {
-        guard selectedMode == .insights else { return }
+    func refreshReviewInsights() async {
         guard !entries.isEmpty else {
             reviewInsights = nil
             isLoadingInsights = false
@@ -215,212 +429,75 @@ struct ReviewScreen: View {
             return
         }
 
-        let refreshKey = currentInsightsRefreshKey
+        let referenceDate = Date()
+        let refreshKey = makeInsightsRefreshKey(referenceDate: referenceDate)
         let shouldRefresh = ReviewInsightsRefreshPolicy.shouldRefresh(
-            force: force,
             hasInsights: reviewInsights != nil,
             previousKey: lastInsightsRefreshKey,
             currentKey: refreshKey
         )
         guard shouldRefresh else { return }
 
-        let previousForForcedRefresh = force ? reviewInsights : nil
-
         isLoadingInsights = true
         let generatedInsights = await reviewInsightsProvider.generateInsights(
             from: entries,
-            referenceDate: Date(),
-            calendar: calendar
+            referenceDate: referenceDate,
+            calendar: calendar,
+            pastStatisticsInterval: pastStatisticsInterval
         )
         guard !Task.isCancelled else {
             isLoadingInsights = false
             return
         }
-        if !force, refreshKey != currentInsightsRefreshKey {
+        if refreshKey != makeInsightsRefreshKey(referenceDate: Date()) {
             isLoadingInsights = false
             return
         }
 
-        let outcome = reviewInsightsRefreshOutcome(
-            force: force,
-            previous: previousForForcedRefresh,
-            generated: generatedInsights
+        reviewInsights = generatedInsights
+        await reviewInsightsCache.storeIfEligible(
+            generatedInsights,
+            calendar: calendar,
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
-
-        reviewInsights = outcome.insights
-        await reviewInsightsCache.storeIfEligible(outcome.insights, calendar: calendar)
-        if outcome.shouldUpdateCachedRefreshKey {
-            lastInsightsRefreshKey = shouldCacheRefreshKey(for: generatedInsights) ? refreshKey : nil
-        }
+        lastInsightsRefreshKey = refreshKey
         isLoadingInsights = false
     }
 
-    private func hydrateReviewInsightsFromCacheIfNeeded() async {
-        guard selectedMode == .insights else { return }
+    func hydrateReviewInsightsFromCacheIfNeeded() async {
         guard !entries.isEmpty else { return }
         guard reviewInsights == nil else { return }
         reviewInsights = await reviewInsightsCache.insights(
-            forWeekStart: currentReviewPeriod.lowerBound,
-            calendar: calendar
+            forWeekStart: currentReviewWeekStart,
+            calendar: calendar,
+            weekBoundaryPreferenceRawValue: reviewWeekBoundaryRawValue,
+            pastStatisticsIntervalToken: pastStatisticsInterval.cacheKeyToken
         )
     }
-
-    private func reviewInsightsRefreshOutcome(
-        force: Bool,
-        previous: ReviewInsights?,
-        generated: ReviewInsights
-    ) -> ReviewInsightsRefreshPolicy.ForcedRefreshOutcome {
-        if force {
-            return ReviewInsightsRefreshPolicy.forcedRefreshOutcome(previous: previous, generated: generated)
-        }
-        return ReviewInsightsRefreshPolicy.ForcedRefreshOutcome(
-            insights: generated,
-            shouldUpdateCachedRefreshKey: true
-        )
-    }
-
-    private func monthYearString(from date: Date) -> String {
-        date.formatted(.dateTime.month(.wide).year())
-    }
-
-    private func shouldCacheRefreshKey(for insights: ReviewInsights) -> Bool {
-        guard aiFeaturesEnabled else { return true }
-        return insights.source == .cloudAI
-    }
-
-    private func refreshTimelineGroups() {
-        timelineGroups = HistoryEntryGrouping.groupedByMonth(entries: entries, calendar: calendar)
-    }
-
-    private func accessibilityTimelineRowLabel(for entry: JournalEntry) -> String {
-        let dateText = entry.entryDate.formatted(date: .complete, time: .omitted)
-        return String(
-            format: String(localized: "%1$@, %2$@"),
-            dateText,
-            completionText(for: entry.completionLevel)
-        )
-    }
-
-    private func completionText(for completionLevel: JournalCompletionLevel) -> String {
-        switch completionLevel {
-        case .abundance:
-            return String(localized: "Abundance")
-        case .harvest:
-            return String(localized: "Harvest")
-        case .ripening:
-            return String(localized: "Ripening")
-        case .seed:
-            return String(localized: "Seed")
-        case .soil:
-            return String(localized: "Soil")
-        }
-    }
-
 }
-// swiftlint:enable type_body_length
-private struct HistoryRow: View {
-    let entry: JournalEntry
+
+private struct ReviewJournalDaySheetHost: View {
+    let entryDate: Date
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            compactLayout
-            stackedLayout
-        }
-        .padding(.vertical, 2)
-    }
-
-    private var compactLayout: some View {
-        HStack(alignment: .center, spacing: 10) {
-            dateText
-            if hasCompletionBadge {
-                Spacer(minLength: 8)
-                completionBadge(lineLimit: 1)
-            }
+        NavigationStack {
+            JournalScreen(entryDate: entryDate)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        PastToolbarDoneButton(
+                            action: { dismiss() },
+                            appearance: .journal
+                        )
+                    }
+                }
         }
     }
+}
 
-    private var stackedLayout: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            dateText
-            if hasCompletionBadge {
-                completionBadge(lineLimit: 2)
-            }
-        }
-    }
-
-    private var dateText: some View {
-        Text(entry.entryDate.formatted(date: .abbreviated, time: .omitted))
-            .font(AppTheme.warmPaperBody)
-            .foregroundStyle(AppTheme.reviewTextPrimary)
-    }
-
-    private var hasCompletionBadge: Bool { true }
-
-    @ViewBuilder
-    private func completionBadge(lineLimit: Int) -> some View {
-        switch entry.completionLevel {
-        case .abundance:
-            statusChip(
-                text: String(localized: "Abundance"),
-                textColor: AppTheme.reviewCompleteText,
-                backgroundColor: AppTheme.reviewCompleteBackground,
-                borderColor: AppTheme.reviewCompleteBorder
-            )
-            .lineLimit(lineLimit)
-        case .harvest:
-            statusChip(
-                text: String(localized: "Harvest"),
-                textColor: AppTheme.reviewStandardText,
-                backgroundColor: AppTheme.reviewStandardBackground,
-                borderColor: AppTheme.reviewStandardBorder
-            )
-            .lineLimit(lineLimit)
-        case .ripening:
-            statusChip(
-                text: String(localized: "Ripening"),
-                textColor: AppTheme.reviewStandardText,
-                backgroundColor: AppTheme.reviewStandardBackground,
-                borderColor: AppTheme.reviewStandardBorder
-            )
-            .lineLimit(lineLimit)
-        case .seed:
-            statusChip(
-                text: String(localized: "Seed"),
-                textColor: AppTheme.reviewQuickStartText,
-                backgroundColor: AppTheme.reviewQuickStartBackground,
-                borderColor: AppTheme.reviewQuickStartBorder
-            )
-            .lineLimit(lineLimit)
-        case .soil:
-            statusChip(
-                text: String(localized: "Soil"),
-                textColor: AppTheme.reviewTextMuted,
-                backgroundColor: AppTheme.reviewBackground,
-                borderColor: AppTheme.border
-            )
-            .lineLimit(lineLimit)
-        }
-    }
-
-    private func statusChip(
-        text: String,
-        textColor: Color,
-        backgroundColor: Color,
-        borderColor: Color
-    ) -> some View {
-        Text(text)
-            .font(AppTheme.warmPaperMetaEmphasis.weight(.semibold))
-            .lineLimit(1)
-            .foregroundStyle(textColor)
-            .multilineTextAlignment(.leading)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(backgroundColor)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(borderColor.opacity(0.8), lineWidth: 1)
-            )
-            .accessibilityLabel(text)
+private extension View {
+    func pastTabListStyle() -> some View {
+        listStyle(.plain)
     }
 }

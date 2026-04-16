@@ -5,6 +5,8 @@ struct JournalCompletionPill: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.todayJournalPalette) private var palette
+    @ScaledMetric(relativeTo: .body) private var completionTierIconLength: CGFloat = 17
 
     let completionLevel: JournalCompletionLevel
     let celebratingLevel: JournalCompletionLevel?
@@ -13,12 +15,14 @@ struct JournalCompletionPill: View {
     var morphAccentColor: Color = .clear
     var morphBloomProgress: CGFloat = 0
 
+    /// Defensive clamp so morph bloom visuals stay stable if progress is driven past 0…1.
+    private var clampedMorphBloomProgress: CGFloat {
+        min(max(morphBloomProgress, 0), 1)
+    }
+
     var body: some View {
         pillLabel
-            .font(AppTheme.warmPaperMetaEmphasis)
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
             .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.leading)
             .padding(.horizontal, AppTheme.spacingRegular)
             .padding(.vertical, AppTheme.spacingTight)
             .frame(minHeight: 44)
@@ -26,6 +30,7 @@ struct JournalCompletionPill: View {
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                     .stroke(borderColor(for: completionLevel), lineWidth: 1)
+                    .allowsHitTesting(false)
             )
             .scaleEffect(scaleFactor(for: completionLevel, isCelebrating: isCelebrating))
             .shadow(
@@ -42,10 +47,11 @@ struct JournalCompletionPill: View {
                 if morphSource {
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
                         .stroke(
-                            morphAccentColor.opacity(0.32 * morphBloomProgress),
+                            morphAccentColor.opacity(0.32 * clampedMorphBloomProgress),
                             lineWidth: 1.6
                         )
-                        .scaleEffect(1.02 + (0.08 * (1 - morphBloomProgress)))
+                        .scaleEffect(morphBloomScale)
+                        .allowsHitTesting(false)
                 }
             }
             .opacity(morphSource && !reduceMotion ? 0.92 : 1)
@@ -56,46 +62,62 @@ struct JournalCompletionPill: View {
         celebratingLevel == completionLevel && completionLevel != .soil
     }
 
-    @ViewBuilder
+    /// Matches background morph: skip frame-driven scale when Reduce Motion is on (settled outline only).
+    private var morphBloomScale: CGFloat {
+        if reduceMotion {
+            return 1.02
+        }
+        return 1.02 + (0.08 * (1 - clampedMorphBloomProgress))
+    }
+
     private var pillLabel: some View {
+        HStack(alignment: .center, spacing: AppTheme.spacingTight) {
+            Image(ReviewRhythmFormatting.assetName(for: completionLevel))
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: completionTierIconLength, height: completionTierIconLength)
+                .accessibilityHidden(true)
+            Text(localizedCompletionTitle)
+                .font(AppTheme.warmPaperMetaEmphasis)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+                .multilineTextAlignment(.leading)
+        }
+        .foregroundStyle(completionLabelForeground)
+    }
+
+    private var localizedCompletionTitle: String {
         switch completionLevel {
         case .soil:
-            Label(
-                String(localized: "Soil"),
-                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
-            )
-            .foregroundStyle(AppTheme.journalTextMuted)
-        case .seed:
-            Label(
-                String(localized: "Seed"),
-                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
-            )
-            .foregroundStyle(AppTheme.journalQuickCheckInText)
-        case .ripening:
-            Label(
-                String(localized: "Ripening"),
-                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
-            )
-            .foregroundStyle(AppTheme.journalStandardText)
-        case .harvest:
-            Label(
-                String(localized: "Harvest"),
-                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
-            )
-            .foregroundStyle(AppTheme.journalStandardText)
-        case .abundance:
-            Label(
-                String(localized: "Abundance"),
-                systemImage: completionLevel.completionStatusSystemImage(isEmphasized: isCelebrating)
-            )
-            .foregroundStyle(AppTheme.journalFullText)
+            String(localized: "journal.growthStage.empty")
+        case .sprout:
+            String(localized: "journal.growthStage.started")
+        case .twig:
+            String(localized: "journal.growthStage.growing")
+        case .leaf:
+            String(localized: "journal.growthStage.balanced")
+        case .bloom:
+            String(localized: "journal.growthStage.full")
+        }
+    }
+
+    private var completionLabelForeground: AnyShapeStyle {
+        switch completionLevel {
+        case .soil:
+            AnyShapeStyle(palette.textMuted)
+        case .sprout:
+            AnyShapeStyle(palette.quickCheckInText)
+        case .twig, .leaf:
+            AnyShapeStyle(palette.standardText)
+        case .bloom:
+            AnyShapeStyle(palette.fullText)
         }
     }
 
     @ViewBuilder
     private var pillBackground: some View {
         let base = RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-            .fill(backgroundFill(for: completionLevel))
+            .fill(JournalCompletionTierSurface.backgroundFill(for: completionLevel, palette: palette))
 
         if let morphNamespace, morphSource, !reduceMotion {
             base.matchedGeometryEffect(
@@ -110,41 +132,16 @@ struct JournalCompletionPill: View {
         }
     }
 
-    private func backgroundFill(for level: JournalCompletionLevel) -> AnyShapeStyle {
-        switch level {
-        case .soil:
-            return AnyShapeStyle(AppTheme.journalBackground)
-        case .seed:
-            return AnyShapeStyle(AppTheme.journalQuickCheckInBackground)
-        case .ripening, .harvest:
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppTheme.journalStandardBackgroundStart, AppTheme.journalStandardBackgroundEnd],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        case .abundance:
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppTheme.journalFullBackgroundStart, AppTheme.journalFullBackgroundEnd],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        }
-    }
-
     private func borderColor(for level: JournalCompletionLevel) -> Color {
         switch level {
         case .soil:
-            return AppTheme.journalBorder
-        case .seed:
-            return AppTheme.journalQuickCheckInBorder
-        case .ripening, .harvest:
-            return AppTheme.journalStandardBorder
-        case .abundance:
-            return AppTheme.journalFullBorder
+            return palette.border
+        case .sprout:
+            return palette.quickCheckInBorder
+        case .twig, .leaf:
+            return palette.standardBorder
+        case .bloom:
+            return palette.fullBorder
         }
     }
 
@@ -153,13 +150,13 @@ struct JournalCompletionPill: View {
         switch level {
         case .soil:
             return 1.0
-        case .seed:
+        case .sprout:
             return 1.008
-        case .ripening:
+        case .twig:
             return 1.01
-        case .harvest:
+        case .leaf:
             return 1.015
-        case .abundance:
+        case .bloom:
             return 1.02
         }
     }
@@ -169,12 +166,12 @@ struct JournalCompletionPill: View {
         switch level {
         case .soil:
             return .clear
-        case .seed:
-            return AppTheme.journalQuickCheckInGlow.opacity(0.25)
-        case .ripening, .harvest:
-            return AppTheme.journalStandardGlow.opacity(0.4)
-        case .abundance:
-            return AppTheme.journalFullGlow.opacity(0.48)
+        case .sprout:
+            return palette.quickCheckInGlow.opacity(0.25)
+        case .twig, .leaf:
+            return palette.standardGlow.opacity(0.4)
+        case .bloom:
+            return palette.fullGlow.opacity(0.48)
         }
     }
 
@@ -183,13 +180,13 @@ struct JournalCompletionPill: View {
         switch level {
         case .soil:
             return 0
-        case .seed:
+        case .sprout:
             return 4
-        case .ripening:
+        case .twig:
             return 6
-        case .harvest:
+        case .leaf:
             return 8
-        case .abundance:
+        case .bloom:
             return 11
         }
     }

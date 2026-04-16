@@ -13,6 +13,8 @@ xcuserdata/
 *.moved-aside
 DerivedData/
 .derivedData/
+.grace-derived-data/
+.grace/
 *.hmap
 *.ipa
 *.dSYM.zip
@@ -25,8 +27,23 @@ DerivedData/
 .build/
 .swiftpm/
 
+# Python (dev tooling under Scripts/)
+l10n-review-notes-*.md
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
 # Cursor
 .cursor/
+.xcodebuildmcp/
+
+# Agent-local plans/specs (superpowers, design docs committed elsewhere if needed)
+.superpowers/
+
+# Git worktrees (local parallel checkouts)
+.worktrees/
+.worktree/
 
 # Local secrets (do not commit real keys)
 GraceNotes/Secrets.plist

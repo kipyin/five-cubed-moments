@@ -21,15 +21,16 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
         XCTAssertEqual(presentation.step, .gratitude)
         let gratitudeGuidance = presentation.sectionGuidance(for: .gratitude)
         XCTAssertEqual(gratitudeGuidance?.title, "")
-        XCTAssertEqual(gratitudeGuidance?.message, String(localized: "Start with one gratitude."))
+        XCTAssertEqual(gratitudeGuidance?.message, String(localized: "journal.onboarding.startWithGratitude"))
+        let keyboardHint = String(localized: "journal.onboarding.keyboardFinishHint")
         XCTAssertEqual(
             gratitudeGuidance?.messageSecondary,
-            String(localized: "When you're finished, press Return or Enter on your keyboard.")
+            JournalOnboardingPresentation.trimmedKeyboardFinishHintLine(keyboardHint)
         )
         XCTAssertEqual(presentation.state(for: .gratitude), .active)
         XCTAssertEqual(
             presentation.state(for: .need),
-            .locked(reason: String(localized: "Needs will open after your first gratitude."))
+            .locked(reason: String(localized: "journal.onboarding.needsLockedReason"))
         )
     }
 
@@ -48,42 +49,20 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
         XCTAssertEqual(presentation.state(for: .person), .active)
     }
 
-    func test_presentation_afterSeed_targetsRipening() {
+    func test_presentation_afterTripleOne_isInactiveAndSectionsStandard() {
         let presentation = makePresentation(gratitudes: 1, needs: 1, people: 1)
 
-        XCTAssertEqual(presentation.step, .ripening)
-        XCTAssertEqual(presentation.state(for: .gratitude), .active)
-        XCTAssertEqual(presentation.state(for: .readingNotes), .active)
-        XCTAssertEqual(presentation.state(for: .reflections), .active)
+        XCTAssertFalse(presentation.isGuidanceActive)
+        XCTAssertNil(presentation.sectionGuidance(for: .gratitude))
+        XCTAssertEqual(presentation.state(for: .gratitude), .standard)
+        XCTAssertEqual(presentation.state(for: .need), .standard)
+        XCTAssertEqual(presentation.state(for: .person), .standard)
+        XCTAssertEqual(presentation.state(for: .readingNotes), .standard)
+        XCTAssertEqual(presentation.state(for: .reflections), .standard)
     }
 
-    func test_presentation_afterThreeByThreeByThree_targetsHarvest() {
-        let presentation = makePresentation(gratitudes: 3, needs: 3, people: 3)
-
-        XCTAssertEqual(presentation.step, .harvest)
-        XCTAssertEqual(presentation.state(for: .gratitude), .active)
-        XCTAssertEqual(presentation.state(for: .person), .active)
-        XCTAssertEqual(presentation.state(for: .readingNotes), .active)
-        XCTAssertEqual(presentation.state(for: .reflections), .active)
-    }
-
-    func test_presentation_afterHarvest_targetsAbundance() {
+    func test_presentation_fullGrid_isInactive() {
         let presentation = makePresentation(gratitudes: 5, needs: 5, people: 5)
-
-        XCTAssertEqual(presentation.step, .abundance)
-        XCTAssertEqual(presentation.state(for: .gratitude), .available)
-        XCTAssertEqual(presentation.state(for: .readingNotes), .active)
-        XCTAssertEqual(presentation.state(for: .reflections), .active)
-    }
-
-    func test_presentation_afterAbundance_isInactive() {
-        let presentation = makePresentation(
-            gratitudes: 5,
-            needs: 5,
-            people: 5,
-            readingNotes: "Psalm 23",
-            reflections: "A steady day"
-        )
 
         XCTAssertFalse(presentation.isGuidanceActive)
     }
@@ -102,19 +81,27 @@ final class JournalOnboardingFlowEvaluatorTests: XCTestCase {
         XCTAssertFalse(presentation.isGuidanceActive)
     }
 
-    func test_sectionGuidance_ripening_onlyOnGratitude() {
-        let presentation = makePresentation(gratitudes: 1, needs: 1, people: 1)
-        XCTAssertEqual(presentation.step, .ripening)
-        XCTAssertNotNil(presentation.sectionGuidance(for: .gratitude))
-        XCTAssertNil(presentation.sectionGuidance(for: .need))
-        XCTAssertNil(presentation.sectionGuidance(for: .person))
+    func test_presentation_whitespaceOnlyMessage_isNotGuidanceActiveAndSectionGuidanceNil() {
+        let presentation = JournalOnboardingPresentation(
+            step: .gratitude,
+            title: nil,
+            message: "  \n\t ",
+            sectionStates: [.gratitude: .active]
+        )
+
+        XCTAssertFalse(presentation.isGuidanceActive)
+        XCTAssertNil(presentation.sectionGuidance(for: .gratitude))
     }
 
-    func test_sectionGuidance_abundance_onlyOnReadingNotes() {
-        let presentation = makePresentation(gratitudes: 5, needs: 5, people: 5)
-        XCTAssertEqual(presentation.step, .abundance)
-        XCTAssertNotNil(presentation.sectionGuidance(for: .readingNotes))
-        XCTAssertNil(presentation.sectionGuidance(for: .reflections))
+    func test_trimmedKeyboardFinishHintLine_whitespaceOnly_returnsNil() {
+        XCTAssertNil(JournalOnboardingPresentation.trimmedKeyboardFinishHintLine("  \n  "))
+    }
+
+    func test_trimmedKeyboardFinishHintLine_surroundingWhitespace_returnsTrimmed() {
+        XCTAssertEqual(
+            JournalOnboardingPresentation.trimmedKeyboardFinishHintLine("  \n hint \t "),
+            "hint"
+        )
     }
 }
 
@@ -122,18 +109,14 @@ private extension JournalOnboardingFlowEvaluatorTests {
     func makePresentation(
         gratitudes: Int,
         needs: Int,
-        people: Int,
-        readingNotes: String = "",
-        reflections: String = ""
+        people: Int
     ) -> JournalOnboardingPresentation {
         JournalOnboardingFlowEvaluator.presentation(
             for: makeContext(
                 entryDate: nil,
                 gratitudes: gratitudes,
                 needs: needs,
-                people: people,
-                readingNotes: readingNotes,
-                reflections: reflections
+                people: people
             )
         )
     }
@@ -143,8 +126,6 @@ private extension JournalOnboardingFlowEvaluatorTests {
         gratitudes: Int,
         needs: Int,
         people: Int,
-        readingNotes: String = "",
-        reflections: String = "",
         hasCompletedGuidedJournal: Bool = false
     ) -> JournalOnboardingContext {
         JournalOnboardingContext(
@@ -152,8 +133,6 @@ private extension JournalOnboardingFlowEvaluatorTests {
             gratitudesCount: gratitudes,
             needsCount: needs,
             peopleCount: people,
-            readingNotes: readingNotes,
-            reflections: reflections,
             hasCompletedGuidedJournal: hasCompletedGuidedJournal
         )
     }

@@ -1,7 +1,7 @@
 name: CI
 
 # Triggers (avoid duplicate runs):
-# - pull_request → PRs targeting main (lint + build always; full suite when label `full-ci`).
+# - pull_request → PRs targeting main (default `grace ci`: lint + simulator build; full suite when label `full-ci`).
 # - push → main only: full suite (lint, test, UI smoke) unless the merged PR is labeled `no-ci`.
 on:
   pull_request:
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CI_SIMULATOR_PRO: platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2
+  CI_SIMULATOR_PRO: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
   CI_SIMULATOR_XR: platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.5
 
 jobs:
@@ -59,6 +59,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gracenotes-dev (editable + dev)
+        run: uv sync --project Scripts/gracenotes-dev --extra dev
+
+      - name: Ruff (check)
+        run: uv run --project Scripts/gracenotes-dev ruff check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
+      - name: Ruff (format)
+        run: uv run --project Scripts/gracenotes-dev ruff format --check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.3'
@@ -70,11 +83,8 @@ jobs:
           fi
           swiftlint version
 
-      - name: Lint
-        run: make lint
-
-      - name: Build
-        run: make ci-build
+      - name: Lint & build (default CI profile)
+        run: uv run --project Scripts/gracenotes-dev grace ci
 
   main-push-full-ci:
     name: Main push — lint, test, UI smoke
@@ -87,6 +97,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gracenotes-dev (editable + dev)
+        run: uv sync --project Scripts/gracenotes-dev --extra dev
+
+      - name: Ruff (check)
+        run: uv run --project Scripts/gracenotes-dev ruff check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
+      - name: Ruff (format)
+        run: uv run --project Scripts/gracenotes-dev ruff format --check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.3'
@@ -98,8 +121,8 @@ jobs:
           fi
           swiftlint version
 
-      - name: Full CI (make)
-        run: make ci-full
+      - name: Full CI
+        run: uv run --project Scripts/gracenotes-dev grace ci --profile full
 
   pr-full-ci:
     name: PR full-ci — lint, test, UI smoke
@@ -110,6 +133,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gracenotes-dev (editable + dev)
+        run: uv sync --project Scripts/gracenotes-dev --extra dev
+
+      - name: Ruff (check)
+        run: uv run --project Scripts/gracenotes-dev ruff check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
+      - name: Ruff (format)
+        run: uv run --project Scripts/gracenotes-dev ruff format --check --config Scripts/gracenotes-dev/pyproject.toml Scripts/gracenotes-dev
+
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.3'
@@ -121,5 +157,5 @@ jobs:
           fi
           swiftlint version
 
-      - name: Full CI (make)
-        run: make ci-pr-full-ci
+      - name: Full CI
+        run: uv run --project Scripts/gracenotes-dev grace ci --profile full

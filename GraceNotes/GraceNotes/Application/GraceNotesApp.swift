@@ -19,18 +19,23 @@ struct GraceNotesApp: App {
     @State private var uiTestPersistenceController: PersistenceController?
     @State private var hasRunDeferredStartupTasks = false
     @AppStorage(FirstRunOnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
+    @AppStorage(JournalAppearanceStorageKeys.todayMode)
+    private var journalTodayAppearanceRaw = JournalAppearanceMode.standard.rawValue
 
     init() {
         let startupTrace = PerformanceTrace.begin("App.init")
-        ReviewInsightsProvider.migrateLegacyAIFeaturesToggleIfNeeded()
         let processInfo = ProcessInfo.processInfo
         let isXCTestSession = processInfo.environment["XCTestConfigurationFilePath"] != nil
         isRunningUITests = ProcessInfo.graceNotesIsRunningUITests
         isRunningUnitTests = isXCTestSession && !isRunningUITests
 
         if !isRunningUnitTests {
+            JournalTutorialStorageKeys.migrateLegacyKeysIfNeeded(using: .standard)
+            JournalAppearanceMode.migrateLegacyJournalAppearanceRawValueIfNeeded(defaults: .standard)
             _ = ICloudSyncPreferenceResolver.resolvedCloudSyncEnabled(using: .standard)
             JournalOnboardingProgress.migrateLegacyPostSeedOrientationFlagsIfNeeded(using: .standard)
+            JournalOnboardingProgress.migrateLegacyAppTourSeenFlagIfNeeded(using: .standard)
+            PastStatisticsIntervalPreference.bootstrapUserDefaultsIfNeeded(defaults: .standard)
             AppLaunchVersionTracker.applyLaunch()
             _ = JournalOnboardingProgress.resolvedHasCompletedGuidedJournal(using: .standard)
         }
@@ -109,6 +114,12 @@ struct GraceNotesApp: App {
                 }
                 .modelContainer(controller.container)
                 .environment(\.persistenceRuntimeSnapshot, controller.runtimeSnapshot)
+                .modifier(
+                    ScheduledBackupSceneModifier(
+                        modelContainer: controller.container,
+                        enabled: hasCompletedOnboarding && !isRunningUITests
+                    )
+                )
         }
     }
 
@@ -128,7 +139,7 @@ struct GraceNotesApp: App {
             return .retryableFailure(message: message)
         case .ready:
             return .loading(
-                message: String(localized: "We are setting up your private Grace Notes space..."),
+                message: String(localized: "startup.status.settingUp"),
                 isReassurance: false
             )
         }
@@ -149,29 +160,45 @@ struct GraceNotesApp: App {
     }
 
     private var mainTabView: some View {
-        TabView(selection: $appNavigation.selectedTab) {
-            NavigationStack {
-                JournalScreen()
+        let isBloomAtmosphereGlobal =
+            JournalAppearanceMode.resolveStored(rawValue: journalTodayAppearanceRaw) == .bloom
+
+        // App-wide Bloom paper, leaves, and forced light scheme are intentional (#125):
+        // Past/Settings stay visually cohesive with Today.
+        return ZStack {
+            if isBloomAtmosphereGlobal {
+                BloomPaperBackgroundView()
             }
-            .tabItem {
-                Label(String(localized: "Today"), systemImage: "doc.text")
+
+            TabView(selection: $appNavigation.selectedTab) {
+                TodayTabRoot()
+                    .tabItem {
+                        Label(String(localized: "shell.tab.today"), image: "pen-scribble")
+                    }
+                    .tag(AppTab.today)
+                NavigationStack {
+                    DeferredReviewRoot(isSelected: appNavigation.selectedTab == .history)
+                }
+                .tabItem {
+                    Label(String(localized: "shell.tab.past"), image: "calendar")
+                }
+                .tag(AppTab.history)
+                NavigationStack {
+                    SettingsScreen()
+                }
+                .tabItem {
+                    Label(String(localized: "shell.tab.settings"), image: "nodes-2")
+                }
+                .tag(AppTab.settings)
             }
-            .tag(AppTab.today)
-            NavigationStack {
-                DeferredReviewRoot(isSelected: appNavigation.selectedTab == .history)
+
+            if isBloomAtmosphereGlobal {
+                GlobalBloomLeavesOverlayLayer()
             }
-            .tabItem {
-                Label(String(localized: "Review"), systemImage: "clock.arrow.circlepath")
-            }
-            .tag(AppTab.history)
-            NavigationStack {
-                SettingsScreen()
-            }
-            .tabItem {
-                Label(String(localized: "Settings"), systemImage: "gearshape")
-            }
-            .tag(AppTab.settings)
         }
+        .environment(\.journalBloomAtmosphereHosted, isBloomAtmosphereGlobal)
+        .preferredColorScheme(isBloomAtmosphereGlobal ? .light : nil)
+        .modifier(DailyReminderRefreshOnActiveModifier())
     }
 
     @MainActor
@@ -198,7 +225,7 @@ private struct DeferredReviewRoot: View {
                 ReviewScreen()
             } else {
                 Color.clear
-                    .navigationTitle(String(localized: "Review"))
+                    .navigationTitle(String(localized: "shell.tab.past"))
             }
         }
         .onChange(of: isSelected) { _, selected in
@@ -211,5 +238,41 @@ private struct DeferredReviewRoot: View {
             hasOpenedReviewTab = true
             PerformanceTrace.instant("ReviewScreen.deferredUntilSelected")
         }
+    }
+}
+
+private struct DailyReminderRefreshOnActiveModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content.onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { @MainActor in
+                await DailyReminderNotificationSync.rescheduleEnabledReminderIfNeeded(modelContext: modelContext)
+            }
+        }
+    }
+}
+
+private struct ScheduledBackupSceneModifier: ViewModifier {
+    let modelContainer: ModelContainer
+    let enabled: Bool
+
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content.onChange(of: scenePhase) { _, phase in
+            guard enabled, phase == .active else { return }
+            Task { await ScheduledBackupRunner.runIfDue(modelContainer: modelContainer) }
+        }
+    }
+}
+
+private struct GlobalBloomLeavesOverlayLayer: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        BloomLeavesOverlaySeam(reduceMotion: reduceMotion)
     }
 }

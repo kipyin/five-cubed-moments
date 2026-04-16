@@ -1,0 +1,186 @@
+import SwiftUI
+
+/// Named presets for the exported share card bitmap (Figma Make: grace-notes / editorial / embellished).
+enum ShareCardStyle: String, CaseIterable, Identifiable, Sendable {
+    case paperWarm
+    case editorialMist
+    case sunriseGradient
+
+    var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .paperWarm:
+            String(localized: "sharing.style.paperWarm")
+        case .editorialMist:
+            String(localized: "sharing.style.editorialMist")
+        case .sunriseGradient:
+            String(localized: "sharing.style.sunriseGradient")
+        }
+    }
+
+    // MARK: - Background
+
+    @ViewBuilder
+    func cardBackgroundLayer() -> some View {
+        switch self {
+        case .paperWarm:
+            Color(hexSRGB: 0xF5EDE4)
+        case .editorialMist:
+            Color(hexSRGB: 0xFAFAF9)
+        case .sunriseGradient:
+            LinearGradient(
+                colors: [
+                    Color(hexSRGB: 0xF8F4F0),
+                    Color(hexSRGB: 0xFBF7F3),
+                    Color(hexSRGB: 0xF5EEE8)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    /// Primary ink for body copy (list items and prose).
+    var bodyInk: Color {
+        switch self {
+        case .paperWarm:
+            Color(hexSRGB: 0x2B2520)
+        case .editorialMist:
+            Color(hexSRGB: 0x1A1A1A)
+        case .sunriseGradient:
+            Color(hexSRGB: 0x1F1B18)
+        }
+    }
+
+    /// Section titles (below the date row).
+    var sectionTitleInk: Color {
+        bodyInk
+    }
+
+    var footerInk: Color {
+        switch self {
+        case .paperWarm:
+            Color(hexSRGB: 0x7A6F68)
+        case .editorialMist:
+            Color(hexSRGB: 0x737373)
+        case .sunriseGradient:
+            Color(hexSRGB: 0x9B8A7E)
+        }
+    }
+
+    var stubInk: Color {
+        footerInk
+    }
+
+    /// Muted ink for section include/exclude control (× / +).
+    var sectionControlInk: Color {
+        footerInk
+    }
+
+    var completionChipLabelFont: Font {
+        Font.system(size: 11, weight: .medium, design: .default)
+    }
+
+    var completionChipTextColor: Color {
+        footerInk
+    }
+
+    @ViewBuilder
+    func completionChipBackgroundView() -> some View {
+        switch self {
+        case .paperWarm:
+            Color(hexSRGB: 0xE8DED2)
+        case .editorialMist:
+            Color(hexSRGB: 0xE5E5E5)
+        case .sunriseGradient:
+            LinearGradient(
+                colors: [Color(hexSRGB: 0xE8DDD4), Color(hexSRGB: 0xEDE3DA)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+    }
+
+    var sectionDividerColor: Color {
+        Color(hexSRGB: 0xE5E5E5)
+    }
+
+    var redactionBarColor: Color {
+        Color(hexSRGB: 0xD4CEC7)
+    }
+
+    // MARK: - Chrome
+
+    var showsTopAccentRule: Bool {
+        true
+    }
+
+    var showsSectionDividers: Bool {
+        self == .editorialMist
+    }
+
+    func topAccentHeight() -> CGFloat {
+        3
+    }
+
+    func topAccentGradient() -> LinearGradient {
+        switch self {
+        case .paperWarm:
+            LinearGradient(
+                colors: [Color(hexSRGB: 0xD97757), Color(hexSRGB: 0xE88B6F)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        case .editorialMist:
+            LinearGradient(
+                colors: [Color(hexSRGB: 0xB8968E), Color(hexSRGB: 0xC4A59E)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        case .sunriseGradient:
+            LinearGradient(
+                colors: [
+                    Color(hexSRGB: 0xC17B5B),
+                    Color(hexSRGB: 0xD4916F),
+                    Color(hexSRGB: 0xC17B5B)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+    }
+
+    var cardShadowColor: Color {
+        switch self {
+        case .paperWarm:
+            Color.black.opacity(0.12)
+        case .editorialMist:
+            Color.black.opacity(0.08)
+        case .sunriseGradient:
+            Color.black.opacity(0.14)
+        }
+    }
+
+    var cardShadowRadius: CGFloat {
+        switch self {
+        case .paperWarm:
+            10
+        case .editorialMist:
+            6
+        case .sunriseGradient:
+            14
+        }
+    }
+
+    var cardShadowOffsetY: CGFloat {
+        switch self {
+        case .paperWarm:
+            4
+        case .editorialMist:
+            2
+        case .sunriseGradient:
+            6
+        }
+    }
+}

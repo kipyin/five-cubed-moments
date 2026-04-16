@@ -23,7 +23,7 @@ final class JournalViewModelTests: XCTestCase {
 
         let startOfDay = calendar.startOfDay(for: now)
         let nextDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        let descriptor = FetchDescriptor<JournalEntry>(
+        let descriptor = FetchDescriptor<Journal>(
             predicate: #Predicate { entry in
                 entry.entryDate >= startOfDay && entry.entryDate < nextDay
             }
@@ -38,11 +38,11 @@ final class JournalViewModelTests: XCTestCase {
         let context = try makeInMemoryContext()
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let startOfDay = calendar.startOfDay(for: now)
-        let existingEntry = JournalEntry(
+        let existingEntry = Journal(
             entryDate: startOfDay,
-            gratitudes: [JournalItem(fullText: "Family", chipLabel: nil)],
-            needs: [JournalItem(fullText: "Wisdom", chipLabel: nil)],
-            people: [JournalItem(fullText: "Friend", chipLabel: nil)],
+            gratitudes: [Entry(fullText: "Family")],
+            needs: [Entry(fullText: "Wisdom")],
+            people: [Entry(fullText: "Friend")],
             readingNotes: "Psalm 23",
             reflections: "Trusting God",
             createdAt: now,
@@ -66,11 +66,11 @@ final class JournalViewModelTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_742_147_200) // 2025-03-15
         let pastDate = Date(timeIntervalSince1970: 1_742_056_800) // 2025-03-04
         let startOfPastDay = calendar.startOfDay(for: pastDate)
-        let pastEntry = JournalEntry(
+        let pastEntry = Journal(
             entryDate: startOfPastDay,
-            gratitudes: [JournalItem(fullText: "Past gratitude", chipLabel: nil)],
-            needs: [JournalItem(fullText: "Past need", chipLabel: nil)],
-            people: [JournalItem(fullText: "Past person", chipLabel: nil)],
+            gratitudes: [Entry(fullText: "Past gratitude")],
+            needs: [Entry(fullText: "Past need")],
+            people: [Entry(fullText: "Past person")],
             readingNotes: "Past notes",
             reflections: "Past reflection",
             createdAt: pastDate,
@@ -96,9 +96,9 @@ final class JournalViewModelTests: XCTestCase {
         let startOfToday = calendar.startOfDay(for: now)
         let startOfPastDay = calendar.startOfDay(for: pastDate)
 
-        let todayEntry = JournalEntry(
+        let todayEntry = Journal(
             entryDate: startOfToday,
-            gratitudes: [JournalItem(fullText: "Today", chipLabel: nil)],
+            gratitudes: [Entry(fullText: "Today")],
             needs: [],
             people: [],
             readingNotes: "",
@@ -106,9 +106,9 @@ final class JournalViewModelTests: XCTestCase {
             createdAt: now,
             updatedAt: now
         )
-        let pastEntry = JournalEntry(
+        let pastEntry = Journal(
             entryDate: startOfPastDay,
-            gratitudes: [JournalItem(fullText: "Past", chipLabel: nil)],
+            gratitudes: [Entry(fullText: "Past")],
             needs: [],
             people: [],
             readingNotes: "",
@@ -133,8 +133,7 @@ final class JournalViewModelTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(
             calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            nowProvider: { now }
         )
 
         viewModel.loadEntry(for: now, using: context)
@@ -153,6 +152,7 @@ final class JournalViewModelTests: XCTestCase {
         XCTAssertEqual(payload.people, ["Alice"])
         XCTAssertEqual(payload.readingNotes, "Matthew 5")
         XCTAssertEqual(payload.reflections, "Be patient today")
+        XCTAssertEqual(payload.completionLevel, .sprout)
     }
 
     func test_exportSnapshot_partialEntry_producesValidPayload() async throws {
@@ -160,8 +160,7 @@ final class JournalViewModelTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_742_147_200)
         let viewModel = JournalViewModel(
             calendar: calendar,
-            nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer())
+            nowProvider: { now }
         )
 
         viewModel.loadEntry(for: now, using: context)
@@ -175,6 +174,7 @@ final class JournalViewModelTests: XCTestCase {
         XCTAssertTrue(payload.readingNotes.isEmpty)
         XCTAssertTrue(payload.reflections.isEmpty)
         XCTAssertFalse(payload.dateFormatted.isEmpty)
+        XCTAssertEqual(payload.completionLevel, .sprout)
     }
 
     func test_updatesPersistAfterDebouncedAutosave() async throws {
@@ -183,7 +183,6 @@ final class JournalViewModelTests: XCTestCase {
         let viewModel = JournalViewModel(
             calendar: calendar,
             nowProvider: { now },
-            summarizerProvider: SummarizerProvider(fixedSummarizer: MockSummarizer()),
             autosaveDebounceMilliseconds: 50
         )
 
@@ -196,7 +195,7 @@ final class JournalViewModelTests: XCTestCase {
 
         try await Task.sleep(nanoseconds: 120_000_000)
 
-        let descriptor = FetchDescriptor<JournalEntry>()
+        let descriptor = FetchDescriptor<Journal>()
         let entries = try context.fetch(descriptor)
         XCTAssertEqual(entries.count, 1)
         XCTAssertEqual((entries[0].gratitudes ?? []).map(\.fullText), ["Family"])
@@ -204,6 +203,89 @@ final class JournalViewModelTests: XCTestCase {
         XCTAssertEqual((entries[0].people ?? []).map(\.fullText), ["Alice"])
         XCTAssertEqual(entries[0].readingNotes, "Matthew 5")
         XCTAssertEqual(entries[0].reflections, "Be patient today")
+    }
+
+    func test_refreshTodayIfStale_advancesToCurrentCalendarDay() throws {
+        let context = try makeInMemoryContext()
+        let day1 = Date(timeIntervalSince1970: 1_742_147_200)
+        let startD1 = calendar.startOfDay(for: day1)
+        let startD2 = calendar.date(byAdding: .day, value: 1, to: startD1)!
+        var simulatedNow = day1
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { simulatedNow })
+
+        viewModel.loadTodayIfNeeded(using: context)
+        XCTAssertEqual(viewModel.entryDate, startD1)
+
+        simulatedNow = calendar.date(byAdding: .hour, value: 10, to: startD2)!
+        viewModel.refreshTodayIfStale(using: context)
+
+        XCTAssertEqual(viewModel.entryDate, startD2)
+        let descriptor = FetchDescriptor<Journal>(
+            sortBy: [SortDescriptor(\.entryDate, order: .forward)]
+        )
+        let entries = try context.fetch(descriptor)
+        XCTAssertEqual(entries.count, 2)
+        XCTAssertEqual(entries.map(\.entryDate), [startD1, startD2])
+    }
+
+    func test_refreshTodayIfStale_persistsStaleDayBeforeAdvancing() throws {
+        let context = try makeInMemoryContext()
+        let day1 = Date(timeIntervalSince1970: 1_742_147_200)
+        let startD1 = calendar.startOfDay(for: day1)
+        let startD2 = calendar.date(byAdding: .day, value: 1, to: startD1)!
+        var simulatedNow = day1
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { simulatedNow })
+
+        viewModel.loadTodayIfNeeded(using: context)
+        viewModel.updateReadingNotes("Saved across midnight")
+
+        simulatedNow = calendar.date(byAdding: .hour, value: 10, to: startD2)!
+        viewModel.refreshTodayIfStale(using: context)
+
+        let day1Descriptor = FetchDescriptor<Journal>(
+            predicate: #Predicate { entry in
+                entry.entryDate >= startD1 && entry.entryDate < startD2
+            }
+        )
+        let day1Rows = try context.fetch(day1Descriptor)
+        XCTAssertEqual(day1Rows.count, 1)
+        XCTAssertEqual(day1Rows[0].readingNotes, "Saved across midnight")
+        XCTAssertEqual(viewModel.entryDate, startD2)
+    }
+
+    func test_refreshTodayIfStale_sameCalendarDay_isNoOp() throws {
+        let context = try makeInMemoryContext()
+        let now = Date(timeIntervalSince1970: 1_742_147_200)
+        let startOfDay = calendar.startOfDay(for: now)
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { now })
+
+        viewModel.loadTodayIfNeeded(using: context)
+        viewModel.refreshTodayIfStale(using: context)
+
+        XCTAssertEqual(viewModel.entryDate, startOfDay)
+        let descriptor = FetchDescriptor<Journal>()
+        let entries = try context.fetch(descriptor)
+        XCTAssertEqual(entries.count, 1)
+    }
+
+    func test_refreshTodayIfStale_whenClockMovesBackward_doesNotReplaceEntry() throws {
+        let context = try makeInMemoryContext()
+        let day1 = Date(timeIntervalSince1970: 1_742_147_200)
+        let startD1 = calendar.startOfDay(for: day1)
+        let startD2 = calendar.date(byAdding: .day, value: 1, to: startD1)!
+        var simulatedNow = calendar.date(byAdding: .hour, value: 10, to: startD2)!
+        let viewModel = JournalViewModel(calendar: calendar, nowProvider: { simulatedNow })
+
+        viewModel.loadTodayIfNeeded(using: context)
+        XCTAssertEqual(viewModel.entryDate, startD2)
+
+        simulatedNow = day1
+        viewModel.refreshTodayIfStale(using: context)
+
+        XCTAssertEqual(viewModel.entryDate, startD2)
+        let descriptor = FetchDescriptor<Journal>()
+        let entries = try context.fetch(descriptor)
+        XCTAssertEqual(entries.count, 1)
     }
 
     private func makeInMemoryContext() throws -> ModelContext {

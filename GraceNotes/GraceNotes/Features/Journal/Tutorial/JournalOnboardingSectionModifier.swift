@@ -19,40 +19,40 @@ extension JournalOnboardingSectionState {
         return nil
     }
 
-    var titleColor: Color {
+    func titleColor(palette: TodayJournalPalette) -> Color {
         switch self {
         case .standard, .available:
-            return AppTheme.journalTextPrimary
+            return palette.textPrimary
         case .active:
             return AppTheme.accentText
         case .locked:
-            return AppTheme.journalTextMuted
+            return palette.textMuted
         }
     }
 
-    var containerBackground: Color {
+    func containerBackground(palette: TodayJournalPalette) -> Color {
         switch self {
         case .standard:
             return .clear
         case .active:
-            return AppTheme.journalPaper.opacity(0.9)
+            return palette.paper.opacity(0.9 * palette.sectionPaperOpacity)
         case .available:
-            return AppTheme.journalPaper.opacity(0.58)
+            return palette.paper.opacity(0.58 * palette.sectionPaperOpacity)
         case .locked:
-            return AppTheme.journalPaper.opacity(0.42)
+            return palette.paper.opacity(0.42 * palette.sectionPaperOpacity)
         }
     }
 
-    var containerBorder: Color {
+    func containerBorder(palette: TodayJournalPalette) -> Color {
         switch self {
         case .standard:
             return .clear
         case .active:
-            return AppTheme.journalInputBorder
+            return palette.inputBorder
         case .available:
-            return AppTheme.journalBorder
+            return palette.border
         case .locked:
-            return AppTheme.journalBorder.opacity(0.72)
+            return palette.border.opacity(0.72)
         }
     }
 
@@ -71,6 +71,7 @@ extension JournalOnboardingSectionState {
 }
 
 struct JournalOnboardingSectionModifier: ViewModifier {
+    @Environment(\.todayJournalPalette) private var palette
     let state: JournalOnboardingSectionState
     let isTransitioning: Bool
 
@@ -80,13 +81,13 @@ struct JournalOnboardingSectionModifier: ViewModifier {
             .background {
                 if state.showsGuidedChrome {
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .fill(state.containerBackground)
+                        .fill(state.containerBackground(palette: palette))
                 }
             }
             .overlay {
                 if state.showsGuidedChrome {
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .stroke(state.containerBorder, lineWidth: 1)
+                        .stroke(state.containerBorder(palette: palette), lineWidth: 1)
                 }
             }
             .opacity(state.contentOpacity(isTransitioning: isTransitioning))

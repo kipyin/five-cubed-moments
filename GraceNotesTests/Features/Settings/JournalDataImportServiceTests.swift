@@ -26,12 +26,29 @@ final class JournalDataImportServiceTests: XCTestCase {
 
     func test_decode_unsupportedSchema_throws() throws {
         let data = try encodeArchive(
-            JournalDataExportArchive(schemaVersion: 2, exportedAt: Date(), entries: [])
+            JournalDataExportArchive(schemaVersion: 3, exportedAt: Date(), entries: [])
         )
 
         XCTAssertThrowsError(try importService.decodeArchive(data)) { error in
-            XCTAssertEqual(error as? JournalDataImportError, .unsupportedSchemaVersion(2))
+            XCTAssertEqual(error as? JournalDataImportError, .unsupportedSchemaVersion(3))
         }
+    }
+
+    func test_decode_acceptsSchema2() throws {
+        let data = try encodeArchive(
+            JournalDataExportArchive(schemaVersion: 2, exportedAt: Date(), entries: [])
+        )
+
+        let archive = try importService.decodeArchive(data)
+        XCTAssertEqual(archive.schemaVersion, 2)
+        XCTAssertTrue(archive.entries.isEmpty)
+    }
+
+    func test_export_makeArchive_usesCurrentSchemaVersion() {
+        let exportService = JournalDataExportService()
+        let archive = exportService.makeArchive(from: [], exportedAt: Date())
+        XCTAssertEqual(archive.schemaVersion, JournalDataExportArchive.currentSchemaVersion)
+        XCTAssertEqual(archive.schemaVersion, 2)
     }
 
     func test_checkImportPayloadByteCount_rejectsOverLimit() {
@@ -95,9 +112,80 @@ final class JournalDataImportServiceTests: XCTestCase {
 
         let lengths = importService.sanitizedSectionLengths(for: export)
 
-        XCTAssertEqual(lengths.gratitudes, JournalEntry.slotCount)
+        XCTAssertEqual(lengths.gratitudes, Journal.slotCount)
         XCTAssertEqual(lengths.needs, 0)
         XCTAssertEqual(lengths.people, 0)
+    }
+
+    func test_sanitize_dropsWhitespaceOnlyStripItems() {
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let export = makeExportEntry(
+            id: UUID(),
+            entryDate: day,
+            gratitudes: [
+                exportItem(fullText: "  "),
+                exportItem(fullText: "\t"),
+                exportItem(fullText: "Real")
+            ]
+        )
+
+        let lengths = importService.sanitizedSectionLengths(for: export)
+
+        XCTAssertEqual(lengths.gratitudes, 1)
+    }
+
+    func test_sanitize_legacyEntryLabelFieldsIgnored_usesFullTextOnly() throws {
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let export = makeExportEntry(
+            id: UUID(),
+            entryDate: day,
+            gratitudes: [
+                JournalDataExportItem(
+                    id: UUID(),
+                    fullText: "Kept",
+                    entryLabel: "Legacy label",
+                    isTruncated: true
+                )
+            ]
+        )
+
+        let lengths = importService.sanitizedSectionLengths(for: export)
+        XCTAssertEqual(lengths.gratitudes, 1)
+
+        let data = try encodeArchive(
+            JournalDataExportArchive(schemaVersion: 1, exportedAt: day, entries: [export])
+        )
+        let roundTrip = try importService.decodeArchive(data)
+        XCTAssertEqual(roundTrip.entries.first?.gratitudes.first?.fullText, "Kept")
+        XCTAssertEqual(roundTrip.entries.first?.gratitudes.first?.entryLabel, "Legacy label")
+    }
+
+    func test_decode_readsChipLabelKeyIntoEntryLabel() throws {
+        let json = """
+        {
+          "schemaVersion": 2,
+          "exportedAt": "1970-01-01T00:00:00Z",
+          "entries": [{
+            "id": "00000000-0000-0000-0000-000000000001",
+            "entryDate": "1970-01-01T00:00:00Z",
+            "gratitudes": [{
+              "id": "00000000-0000-0000-0000-000000000002",
+              "fullText": "Hi",
+              "chipLabel": "From chip key"
+            }],
+            "needs": [],
+            "people": [],
+            "readingNotes": "",
+            "reflections": "",
+            "createdAt": "1970-01-01T00:00:00Z",
+            "updatedAt": "1970-01-01T00:00:00Z",
+            "completedAt": null
+          }]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+        let archive = try importService.decodeArchive(data)
+        XCTAssertEqual(archive.entries.first?.gratitudes.first?.entryLabel, "From chip key")
     }
 
     // MARK: - SwiftData integration
@@ -132,17 +220,19 @@ final class JournalDataImportServiceTests: XCTestCase {
         XCTAssertEqual(entry.id, exportId)
         XCTAssertEqual((entry.gratitudes ?? []).map(\.fullText), ["One"])
     }
+}
 
+extension JournalDataImportServiceTests {
     func test_import_updatesExisting_keepsExistingId() throws {
         let controller = try PersistenceController.makeInMemoryForTesting()
         let context = ModelContext(controller.container)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
         let existingId = UUID()
         context.insert(
-            JournalEntry(
+            Journal(
                 id: existingId,
                 entryDate: day,
-                gratitudes: [JournalItem(fullText: "Old")],
+                gratitudes: [Entry(fullText: "Old")],
                 needs: [],
                 people: [],
                 readingNotes: "",
@@ -168,7 +258,13 @@ final class JournalDataImportServiceTests: XCTestCase {
             )
         )
 
-        let summary = try importService.importData(data, context: context, calendar: calendar)
+        let summary = try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .merge,
+            mergeConflictResolution: .preferImported
+        )
 
         XCTAssertEqual(summary.insertedCount, 0)
         XCTAssertEqual(summary.updatedCount, 1)
@@ -177,6 +273,82 @@ final class JournalDataImportServiceTests: XCTestCase {
         let entry = try XCTUnwrap(try repo.fetchEntry(for: day, context: context))
         XCTAssertEqual(entry.id, existingId)
         XCTAssertEqual((entry.gratitudes ?? []).map(\.fullText), ["New"])
+    }
+
+    func test_import_mergeThrowsWhenDeviceAndFileDifferWithoutResolution() throws {
+        let controller = try PersistenceController.makeInMemoryForTesting()
+        let context = ModelContext(controller.container)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        context.insert(
+            Journal(
+                entryDate: day,
+                gratitudes: [Entry(fullText: "Old")],
+                needs: [],
+                people: [],
+                readingNotes: "",
+                reflections: "",
+                createdAt: day,
+                updatedAt: day
+            )
+        )
+        try context.save()
+
+        let data = try encodeArchive(
+            JournalDataExportArchive(
+                schemaVersion: 1,
+                exportedAt: day,
+                entries: [
+                    makeExportEntry(
+                        id: UUID(),
+                        entryDate: day,
+                        gratitudes: [exportItem(fullText: "New")]
+                    )
+                ]
+            )
+        )
+
+        XCTAssertThrowsError(
+            try importService.importData(data, context: context, calendar: calendar)
+        ) { error in
+            XCTAssertEqual(error as? JournalDataImportError, .mergeConflicts(unresolvedDays: [day]))
+        }
+    }
+
+    func test_import_replace_removesDaysNotPresentInFile() throws {
+        let controller = try PersistenceController.makeInMemoryForTesting()
+        let context = ModelContext(controller.container)
+        let dayKeep = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_742_147_200))
+        let dayDrop = calendar.date(byAdding: .day, value: -3, to: dayKeep) ?? dayKeep
+        insertJournalForImportTest(context: context, day: dayKeep, gratitudeText: "LocalKeep")
+        insertJournalForImportTest(context: context, day: dayDrop, gratitudeText: "Orphan")
+        try context.save()
+
+        let data = try encodeArchive(
+            JournalDataExportArchive(
+                schemaVersion: 1,
+                exportedAt: dayKeep,
+                entries: [
+                    makeExportEntry(
+                        id: UUID(),
+                        entryDate: dayKeep,
+                        gratitudes: [exportItem(fullText: "FromFile")]
+                    )
+                ]
+            )
+        )
+
+        _ = try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .replace,
+            mergeConflictResolution: nil
+        )
+
+        let repo = JournalRepository(calendar: calendar)
+        let kept = try XCTUnwrap(try repo.fetchEntry(for: dayKeep, context: context))
+        XCTAssertEqual((kept.gratitudes ?? []).map(\.fullText), ["FromFile"])
+        XCTAssertNil(try repo.fetchEntry(for: dayDrop, context: context))
     }
 
     func test_import_persistsClampedItems() throws {
@@ -192,13 +364,40 @@ final class JournalDataImportServiceTests: XCTestCase {
             )
         )
 
-        try importService.importData(data, context: context, calendar: calendar)
+        try importService.importData(
+            data,
+            context: context,
+            calendar: calendar,
+            mode: .merge,
+            mergeConflictResolution: .preferImported
+        )
 
         let repo = JournalRepository(calendar: calendar)
         let entry = try XCTUnwrap(try repo.fetchEntry(for: day, context: context))
-        XCTAssertEqual((entry.gratitudes ?? []).count, JournalEntry.slotCount)
+        XCTAssertEqual((entry.gratitudes ?? []).count, Journal.slotCount)
         XCTAssertEqual((entry.gratitudes ?? []).first?.fullText, "G1")
         XCTAssertEqual((entry.gratitudes ?? []).last?.fullText, "G5")
+    }
+}
+
+extension JournalDataImportServiceTests {
+    private func insertJournalForImportTest(
+        context: ModelContext,
+        day: Date,
+        gratitudeText: String
+    ) {
+        context.insert(
+            Journal(
+                entryDate: day,
+                gratitudes: [Entry(fullText: gratitudeText)],
+                needs: [],
+                people: [],
+                readingNotes: "",
+                reflections: "",
+                createdAt: day,
+                updatedAt: day
+            )
+        )
     }
 
     private func encodeArchive(_ archive: JournalDataExportArchive) throws -> Data {
@@ -229,7 +428,7 @@ final class JournalDataImportServiceTests: XCTestCase {
     }
 
     private func exportItem(fullText: String) -> JournalDataExportItem {
-        JournalDataExportItem(id: UUID(), fullText: fullText, chipLabel: nil, isTruncated: false)
+        JournalDataExportItem(id: UUID(), fullText: fullText)
     }
 
 }

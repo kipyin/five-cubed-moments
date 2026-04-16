@@ -7,41 +7,41 @@ import SwiftData
 @Observable
 final class JournalViewModel {
     var entryDate: Date = .now
-    var gratitudes: [JournalItem] = []
-    var needs: [JournalItem] = []
-    var people: [JournalItem] = []
+    var gratitudes: [Entry] = []
+    var needs: [Entry] = []
+    var people: [Entry] = []
     var readingNotes: String = ""
     var reflections: String = ""
     private(set) var saveErrorMessage: String?
     private(set) var streakSummary: StreakSummary = .empty
 
-    static let slotCount = JournalEntry.slotCount
+    static let slotCount = Journal.slotCount
     @ObservationIgnored private let calendar: Calendar
     @ObservationIgnored private let nowProvider: () -> Date
     @ObservationIgnored private let repository: JournalRepository
-    @ObservationIgnored let summarizerProvider: SummarizerProvider
     @ObservationIgnored private let streakCalculator: StreakCalculator
     @ObservationIgnored private let autosaveTrigger = PassthroughSubject<Void, Never>()
     @ObservationIgnored private var cancellables: Set<AnyCancellable> = []
 
     @ObservationIgnored private var modelContext: ModelContext?
-    @ObservationIgnored private var journalEntry: JournalEntry?
+    @ObservationIgnored private var journalEntry: Journal?
     @ObservationIgnored private var hasLoadedToday = false
     @ObservationIgnored private var isHydrating = false
     @ObservationIgnored private var hasRecordedFirstSave = false
+    @ObservationIgnored private var pendingDailyReminderRescheduleTask: Task<Void, Never>?
+    /// When set, reschedules the daily reminder after today’s journal persists (debounced).
+    @ObservationIgnored var dailyReminderRescheduleAction: (@MainActor () async -> Void)?
 
     init(
         calendar: Calendar = .current,
         nowProvider: @escaping () -> Date = Date.init,
         repository: JournalRepository? = nil,
-        summarizerProvider: SummarizerProvider = .shared,
         streakCalculator: StreakCalculator? = nil,
         autosaveDebounceMilliseconds: Int? = nil
     ) {
         self.calendar = calendar
         self.nowProvider = nowProvider
         self.repository = repository ?? JournalRepository(calendar: calendar)
-        self.summarizerProvider = summarizerProvider
         self.streakCalculator = streakCalculator ?? StreakCalculator(calendar: calendar)
 
         let debounceMs: Int
@@ -63,11 +63,13 @@ final class JournalViewModel {
 
     func loadTodayIfNeeded(using context: ModelContext) {
         guard !hasLoadedToday else { return }
-        hasLoadedToday = true
-        loadEntry(for: nowProvider(), using: context)
+        if loadEntry(for: nowProvider(), using: context) {
+            hasLoadedToday = true
+        }
     }
 
-    func loadEntry(for date: Date, using context: ModelContext) {
+    @discardableResult
+    func loadEntry(for date: Date, using context: ModelContext) -> Bool {
         let loadTrace = PerformanceTrace.begin("JournalViewModel.loadEntry")
         modelContext = context
         let dayStart = calendar.startOfDay(for: date)
@@ -83,18 +85,18 @@ final class JournalViewModel {
                 refreshStreakSummary()
                 PerformanceTrace.end("JournalViewModel.loadEntry.streakRefresh", startedAt: streakTrace)
                 PerformanceTrace.end("JournalViewModel.loadEntry.existing", startedAt: loadTrace)
-                return
+                return true
             }
             PerformanceTrace.end("JournalViewModel.loadEntry.fetchEntry.miss", startedAt: fetchTrace)
         } catch {
             PerformanceTrace.end("JournalViewModel.loadEntry.fetchEntry.failed", startedAt: fetchTrace)
-            saveErrorMessage = String(localized: "Unable to load today's entry.")
+            saveErrorMessage = String(localized: "journal.error.loadToday")
             PerformanceTrace.end("JournalViewModel.loadEntry.failed", startedAt: loadTrace)
-            return
+            return false
         }
 
         let now = nowProvider()
-        let newEntry = JournalEntry(
+        let newEntry = Journal(
             entryDate: dayStart,
             createdAt: now,
             updatedAt: now
@@ -107,9 +109,10 @@ final class JournalViewModel {
         refreshStreakSummary()
         PerformanceTrace.end("JournalViewModel.loadEntry.streakRefresh", startedAt: streakTrace)
         PerformanceTrace.end("JournalViewModel.loadEntry.newUnsaved", startedAt: loadTrace)
+        return true
     }
 
-    private func hydrate(from entry: JournalEntry) {
+    private func hydrate(from entry: Journal) {
         journalEntry = entry
         isHydrating = true
         defer { isHydrating = false }
@@ -123,6 +126,15 @@ final class JournalViewModel {
     }
 
     private func persistChanges() {
+        saveCurrentJournalStateIfPossible()
+    }
+
+    /// Writes in-memory fields to the loaded journal immediately (e.g. before switching calendar day).
+    func persistImmediately() {
+        saveCurrentJournalStateIfPossible()
+    }
+
+    private func saveCurrentJournalStateIfPossible() {
         guard !isHydrating, let context = modelContext, let entry = journalEntry else { return }
         let saveTrace = PerformanceTrace.begin("JournalViewModel.persistChanges")
 
@@ -133,12 +145,13 @@ final class JournalViewModel {
         entry.reflections = reflections.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.updatedAt = nowProvider()
         // First time the user reaches harvest (all chip slots); cleared if chips drop below 5/5/5.
-        entry.completedAt = entry.hasHarvestChips ? (entry.completedAt ?? nowProvider()) : nil
+        entry.completedAt = entry.hasReachedBloom ? (entry.completedAt ?? nowProvider()) : nil
 
         do {
             try context.save()
             saveErrorMessage = nil
             refreshStreakSummary()
+            scheduleDailyReminderRescheduleIfNeeded(for: entry)
             if !hasRecordedFirstSave {
                 hasRecordedFirstSave = true
                 PerformanceTrace.end("JournalViewModel.firstSave", startedAt: saveTrace)
@@ -146,9 +159,19 @@ final class JournalViewModel {
                 PerformanceTrace.end("JournalViewModel.persistChanges", startedAt: saveTrace)
             }
         } catch {
-            saveErrorMessage = String(localized: "Unable to save your entry.")
+            saveErrorMessage = String(localized: "journal.error.saveEntry")
             PerformanceTrace.end("JournalViewModel.persistChanges.failed", startedAt: saveTrace)
         }
+    }
+
+    /// Today mode only: if the calendar day is past the loaded journal, persist then load the current day.
+    func refreshTodayIfStale(using context: ModelContext) {
+        let now = nowProvider()
+        let shownStart = calendar.startOfDay(for: entryDate)
+        let todayStart = calendar.startOfDay(for: now)
+        guard todayStart > shownStart else { return }
+        persistImmediately()
+        loadEntry(for: now, using: context)
     }
 
     private func refreshStreakSummary() {
@@ -177,54 +200,72 @@ final class JournalViewModel {
         autosaveTrigger.send(())
     }
 
-    /// True when today's entry meets **Abundance** (full rhythm), not harvest-only.
+    private func scheduleDailyReminderRescheduleIfNeeded(for entry: Journal) {
+        guard let action = dailyReminderRescheduleAction else { return }
+        let todayStart = calendar.startOfDay(for: nowProvider())
+        guard calendar.startOfDay(for: entry.entryDate) == todayStart else { return }
+
+        pendingDailyReminderRescheduleTask?.cancel()
+        pendingDailyReminderRescheduleTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                await action()
+            } catch {
+                // Cancellation from rapid saves leaves the last scheduled reschedule in flight.
+            }
+        }
+    }
+
+    /// True when today's entry has all fifteen chips filled (Harvest / full grid).
     var completedToday: Bool {
         guard journalEntry != nil else { return false }
-        return JournalEntry.criteriaMet(
-            gratitudesCount: gratitudes.count,
-            needsCount: needs.count,
-            peopleCount: people.count,
-            readingNotes: readingNotes,
-            reflections: reflections
-        )
+        return hasReachedBloom
     }
 
     /// Total chip slots across gratitudes, needs, and people (5 x 3 = 15).
-    var chipsFiveCubedSlotCount: Int {
+    var sectionEntryCapacity: Int {
         JournalViewModel.slotCount * 3
     }
 
     /// Number of chips currently filled across gratitudes, needs, and people.
-    var chipsFilledCount: Int {
+    var filledEntryCount: Int {
         gratitudes.count + needs.count + people.count
     }
 
     /// Whether all chip slots are filled, regardless of notes/reflections completion.
-    var isChipsFiveCubedComplete: Bool {
+    var hasReachedBloom: Bool {
         gratitudes.count >= JournalViewModel.slotCount &&
             needs.count >= JournalViewModel.slotCount &&
             people.count >= JournalViewModel.slotCount
     }
 
     /// Localized progress text for the chips-only milestone.
-    var chipsProgressText: String {
-        let formatKey = String(localized: "%d of %d")
+    var entryCapacityProgressText: String {
+        let formatKey = String(localized: "journal.completion.countOfTotal")
         return String(
             format: formatKey,
             locale: Locale.current,
-            chipsFilledCount,
-            chipsFiveCubedSlotCount
+            filledEntryCount,
+            sectionEntryCapacity
         )
     }
 
     var completionLevel: JournalCompletionLevel {
-        JournalEntry.completionLevel(
+        Journal.completionLevel(
             gratitudesCount: gratitudes.count,
             needsCount: needs.count,
-            peopleCount: people.count,
-            readingNotes: readingNotes,
-            reflections: reflections
+            peopleCount: people.count
         )
+    }
+
+    /// True when gratitudes, needs, and people each have at least one chip (milestone 1/1/1 minimum).
+    var hasAtLeastOneEntryInEachSection: Bool {
+        Journal.minimumEntryCountAcrossSections(
+            gratitudesCount: gratitudes.count,
+            needsCount: needs.count,
+            peopleCount: people.count
+        ) >= 1
     }
 }
 
@@ -237,7 +278,8 @@ extension JournalViewModel {
                 needs: needs,
                 people: people,
                 readingNotes: readingNotes,
-                reflections: reflections
+                reflections: reflections,
+                completionLevel: completionLevel
             )
         )
     }

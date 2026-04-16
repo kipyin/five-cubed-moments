@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CloudSummarizationAPIKey</key>
-	<string>$(GRACE_NOTES_CLOUD_API_KEY)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -14,10 +12,20 @@
 	</array>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fonts/PlayfairDisplay-Variable.ttf</string>
-		<string>Fonts/SourceSerif4-Variable.ttf</string>
+		<string>Fonts/BebasNeue-Regular.ttf</string>
+		<string>Fonts/BodoniModa-Variable.ttf</string>
+		<string>Fonts/CormorantGaramond-Variable.ttf</string>
+		<string>Fonts/CrimsonText-Regular.ttf</string>
+		<string>Fonts/CrimsonText-SemiBold.ttf</string>
+		<string>Fonts/IBMPlexSerif-Regular.ttf</string>
+		<string>Fonts/IBMPlexSerif-SemiBold.ttf</string>
+		<string>Fonts/Inter-Variable.ttf</string>
 		<string>Fonts/Outfit-Regular.ttf</string>
 		<string>Fonts/Outfit-SemiBold.ttf</string>
+		<string>Fonts/PlayfairDisplay-Variable.ttf</string>
+		<string>Fonts/SourceSerif4-Variable.ttf</string>
+		<string>Fonts/Spectral-Regular.ttf</string>
+		<string>Fonts/Spectral-SemiBold.ttf</string>
 	</array>
 </dict>
 </plist>

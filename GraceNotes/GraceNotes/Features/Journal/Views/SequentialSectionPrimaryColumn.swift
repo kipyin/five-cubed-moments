@@ -1,35 +1,47 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Editing index clamped to item count; `nil` when stale or out-of-range (shared by dots and rows).
+func sequentialSectionActiveEditingIndex(editingIndex: Int?, itemCount: Int) -> Int? {
+    guard let editingIndex, editingIndex >= 0, editingIndex < itemCount else { return nil }
+    return editingIndex
+}
+
 private enum SequentialSectionPrimaryColumnLayout {
     static let sectionProgressDotsTrailingInset: CGFloat = 8
 }
 
-/// Main column of `SequentialSectionView` (guidance, sentence strips, text field) split out for type-size limits.
+/// Main column of `SequentialSectionView` (guidance, entry rows, text field) split out for type-size limits.
 struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
+    @Environment(\.todayJournalPalette) private var palette
     let reduceMotion: Bool
     let title: String
     let addButtonTitle: String
     let addButtonAccessibilityHint: String
+    /// When false, the add-row chip omits the trailing chevron (default; matches journal sentence sections).
+    let showsTrailingChevronOnAddRow: Bool
     let guidanceTitle: String?
     let guidanceMessage: String?
     let guidanceMessageSecondary: String?
-    let items: [JournalItem]
+    let items: [Entry]
     let placeholder: String
     let slotCount: Int
     let inputAccessibilityIdentifier: String?
-    let stripAccessibilityIdentifierPrefix: String?
+    let entryAccessibilityIdentifierPrefix: String?
     let addItemAccessibilityIdentifier: String?
     let onboardingState: JournalOnboardingSectionState
     let isTransitioning: Bool
     let editingIndex: Int?
+    /// In-bounds inline editor index; matches progress dots (ignores stale `editingIndex`).
+    let activeEditingIndex: Int?
     let inputFocus: FocusState<Bool>.Binding?
     let onInputFocusLost: (() -> Void)?
     let onSubmit: () -> Void
     let onItemTap: (Int) -> Void
     let onMoveItem: ((Int, Int) -> Void)?
     let onDeleteItem: ((Int) -> Void)?
-    let onAddNew: (() -> Void)?
+    let onAddNew: (() -> Bool)?
+    let onAfterAddMorphRevealed: (() -> Void)?
     let ambientInlineEditingActive: Bool
     let sectionHostsInlineFocus: Bool
     let onRequestDismissInlineEditing: (() -> Void)?
@@ -40,14 +52,15 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
     @Binding var isAddMorphComposerVisible: Bool
     @State private var expandedItemIDs: Set<UUID> = []
     @State private var morphingItemID: UUID?
+    @State private var lastAcceptedEntryRowTapItemID: UUID?
+    @State private var lastAcceptedEntryRowTapDate: Date?
 
     let progressDots: ProgressDots
+    /// When set, `ScrollViewReader` targets chip list + input only (not the section header).
+    let keyboardScrollAnchorID: JournalScrollTarget?
+}
 
-    private var activeEditingIndex: Int? {
-        guard let editingIndex, items.indices.contains(editingIndex) else { return nil }
-        return editingIndex
-    }
-
+extension SequentialSectionPrimaryColumn {
     private var isInlineEditingActive: Bool {
         activeEditingIndex != nil
     }
@@ -69,19 +82,11 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
         !isTransitioning && !isLockedByGuidance
     }
 
-    private var inputAccessibilityLabel: String {
-        String(
-            format: String(localized: "%@ input"),
-            locale: Locale.current,
-            title
-        )
-    }
-
     private var ambientGuidanceOpacity: CGFloat {
         ambientInlineEditingActive ? SequentialSectionInlineLayout.ambientUnfocusedOpacity : 1
     }
 
-    private func stripOpacityWhenStripEditing(at index: Int) -> CGFloat {
+    private func entryRowOpacityWhenPeerEditing(at index: Int) -> CGFloat {
         guard ambientInlineEditingActive, sectionHostsInlineFocus else { return 1 }
         guard activeEditingIndex != index else { return 1 }
         return SequentialSectionInlineLayout.ambientUnfocusedOpacity
@@ -108,11 +113,12 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 )
             }
             if showMorphAddSlot, let addNew = onAddNew {
-                SequentialSectionChipRow.AddSentenceMorphSlot(
+                SequentialSectionEntryRow.AddSentenceMorphSlot(
                     sectionTitle: title,
                     addButtonTitle: addButtonTitle,
                     addButtonAccessibilityHint: addButtonAccessibilityHint,
                     accessibilityIdentifier: addItemAccessibilityIdentifier,
+                    showsTrailingChevron: showsTrailingChevronOnAddRow,
                     isComposing: isAddMorphComposerVisible,
                     placeholder: placeholder,
                     text: $inputText,
@@ -124,6 +130,8 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                     isInteractionEnabled: isInteractionEnabled
                 )
                 .opacity(morphSlotAmbientOpacity)
+                // Scroll target is the composer, not the whole chip column (see `JournalScreen` keyboard scroll).
+                .optionalJournalScrollAnchor(isInlineEditingActive ? nil : keyboardScrollAnchorID)
             }
         }
         .allowsHitTesting(isInteractionEnabled)
@@ -143,12 +151,12 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                             }
                             Text(guidanceMessage)
                                 .font(AppTheme.warmPaperBody)
-                                .foregroundStyle(AppTheme.journalTextPrimary)
+                                .foregroundStyle(palette.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                             if let guidanceMessageSecondary {
                                 Text(guidanceMessageSecondary)
                                     .font(AppTheme.warmPaperBody)
-                                    .foregroundStyle(AppTheme.journalTextPrimary)
+                                    .foregroundStyle(palette.textPrimary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -157,7 +165,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                     if let guidanceNote = onboardingState.guidanceNote {
                         Text(guidanceNote)
                             .font(AppTheme.warmPaperMeta)
-                            .foregroundStyle(AppTheme.journalTextMuted)
+                            .foregroundStyle(palette.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -166,7 +174,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 HStack {
                     Text(title)
                         .font(AppTheme.warmPaperHeader)
-                        .foregroundStyle(onboardingState.titleColor)
+                        .foregroundStyle(onboardingState.titleColor(palette: palette))
                     Spacer(minLength: AppTheme.spacingTight)
                     progressDots
                         .padding(.trailing, SequentialSectionPrimaryColumnLayout.sectionProgressDotsTrailingInset)
@@ -175,7 +183,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 .onTapGesture {
                     if isInlineEditingActive {
                         commitInlineEditIfNeeded()
-                    } else if isAddMorphComposerVisible {
+                    } else if isAddMorphComposerVisible, showMorphAddSlot {
                         commitAddMorphFromHeaderTap()
                     }
                 }
@@ -212,22 +220,22 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(String(localized: "Updating…"))
+                    Text(String(localized: "common.updating"))
                         .font(AppTheme.warmPaperMeta)
-                        .foregroundStyle(AppTheme.journalTextMuted)
+                        .foregroundStyle(palette.textMuted)
                 }
                 .padding(.horizontal, AppTheme.spacingTight)
                 .padding(.vertical, 6)
-                .background(AppTheme.journalPaper.opacity(0.92))
+                .background(palette.paper.opacity(0.92 * palette.sectionPaperOpacity))
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.cornerRadiusMedium)
-                        .stroke(AppTheme.journalInputBorder.opacity(0.7), lineWidth: 1)
+                        .stroke(palette.inputBorder.opacity(0.7), lineWidth: 1)
                 )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(
                     String(
-                        format: String(localized: "%@ section is updating."),
+                        format: String(localized: "accessibility.sectionUpdating"),
                         locale: Locale.current,
                         title
                     )
@@ -256,60 +264,64 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
             }
             if itemIDs.isEmpty {
                 isAddMorphComposerVisible = false
+            } else if itemIDs.count >= slotCount {
+                // Filling the last slot can leave `isAddMorphComposerVisible` true while the morph is not shown;
+                // keep header tap / parent state (e.g. `JournalScreen`) consistent with the hidden composer.
+                isAddMorphComposerVisible = false
             }
         }
     }
 
     @ViewBuilder
-    private func itemRow(for item: JournalItem, at index: Int) -> some View {
+    private func itemRow(for item: Entry, at index: Int) -> some View {
         if activeEditingIndex == index {
             inlineEditorRow(for: item, at: index)
                 .zIndex(2)
                 .transition(.identity)
         } else {
-            stripView(for: item, at: index)
-                .opacity(stripOpacityWhenStripEditing(at: index))
+            entryRowView(for: item, at: index)
+                .opacity(entryRowOpacityWhenPeerEditing(at: index))
                 .zIndex(1)
                 .transition(.identity)
         }
     }
 
     @ViewBuilder
-    private func stripView(for item: JournalItem, at index: Int) -> some View {
-        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
-        let strip = makeSentenceStrip(for: item, index: index, stripIdentifierPrefix: stripIdentifierPrefix)
+    private func entryRowView(for item: Entry, at index: Int) -> some View {
+        let rowAccessibilityPrefix = entryAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let row = makeSequentialEntryRow(for: item, index: index, rowAccessibilityPrefix: rowAccessibilityPrefix)
 
         if let onMoveItem, !isInlineEditingActive {
-            strip
+            row
                 .onDrag {
                     itemReorderHoverTargetItemID = nil
                     draggingItemID = item.id
                     return NSItemProvider(object: item.id.uuidString as NSString)
                 } preview: {
-                    strip
+                    row
                         .scaleEffect(reduceMotion ? 1 : 1.07)
                         .shadow(color: .black.opacity(0.14), radius: 8, x: 0, y: 4)
                 }
                 .onDrop(
                     of: [UTType.text],
-                    delegate: SequentialSectionChipRow.ChipReorderDropDelegate(
+                    delegate: SequentialSectionEntryRow.EntryReorderDropDelegate(
                         targetIndex: index,
                         items: items,
                         draggingItemID: $draggingItemID,
                         hoverTargetItemID: $itemReorderHoverTargetItemID,
                         reduceMotion: reduceMotion,
-                        onMoveChip: onMoveItem
+                        onMoveEntry: onMoveItem
                     )
                 )
         } else {
-            strip
+            row
         }
     }
 
     @ViewBuilder
-    private func inlineEditorRow(for item: JournalItem, at index: Int) -> some View {
-        let stripIdentifierPrefix = stripAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
-        let editorIdentifier = stripIdentifierPrefix.map { "\($0).editor" }
+    private func inlineEditorRow(for item: Entry, at index: Int) -> some View {
+        let rowAccessibilityPrefix = entryAccessibilityIdentifierPrefix.map { "\($0).\(index)" }
+        let editorIdentifier = rowAccessibilityPrefix.map { "\($0).editor" }
         let isMorphing = morphingItemID == item.id
 
         VStack(alignment: .leading, spacing: AppTheme.spacingTight) {
@@ -340,6 +352,7 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
         )
         .padding(.bottom, SequentialSectionInlineLayout.editorBottomSpacing)
         .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 4)
+        .optionalJournalScrollAnchor(keyboardScrollAnchorID)
     }
 
     private func commitInlineEditIfNeeded() {
@@ -349,11 +362,19 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
         }
     }
 
-    private func handleAddTap(_ addNew: () -> Void) {
+    /// Issue #275: Commit prior editor state (`onAddNew` / `handleAddEntryTap`) before revealing the morph so we
+    /// never show the composer when the handler fails or `isTransitioning` blocks interaction.
+    private func handleAddTap(_ addNew: () -> Bool) {
+        guard addNew() else { return }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
             isAddMorphComposerVisible = true
         }
-        addNew()
+        if let onAfterAddMorphRevealed {
+            Task { @MainActor in
+                await Task.yield()
+                onAfterAddMorphRevealed()
+            }
+        }
     }
 
     private func commitAddMorphFromHeaderTap() {
@@ -369,26 +390,36 @@ struct SequentialSectionPrimaryColumn<ProgressDots: View>: View {
             }
         }
     }
+}
 
+private extension View {
+    @ViewBuilder
+    func optionalJournalScrollAnchor(_ id: JournalScrollTarget?) -> some View {
+        if let id {
+            self.id(id)
+        } else {
+            self
+        }
+    }
 }
 
 private extension SequentialSectionPrimaryColumn {
-    func makeSentenceStrip(
-        for item: JournalItem,
+    func makeSequentialEntryRow(
+        for item: Entry,
         index: Int,
-        stripIdentifierPrefix: String?
-    ) -> SentenceStripView {
-        let isExpandable = SentenceStripView.requiresExpandedPreview(item.fullText)
-        return SentenceStripView(
+        rowAccessibilityPrefix: String?
+    ) -> SequentialEntryRowView {
+        let isExpandable = SequentialEntryRowView.requiresExpandedPreview(item.fullText)
+        return SequentialEntryRowView(
             sectionTitle: title,
             itemPosition: index + 1,
             itemCount: items.count,
             sentence: item.fullText,
-            accessibilityIdentifier: stripIdentifierPrefix,
-            isSelected: editingIndex == index,
+            accessibilityIdentifier: rowAccessibilityPrefix,
+            isSelected: activeEditingIndex == index,
             isExpanded: expandedItemIDs.contains(item.id),
             isExpandable: isExpandable,
-            expansionAccessibilityIdentifier: stripIdentifierPrefix.map { "\($0).more" },
+            expansionAccessibilityIdentifier: rowAccessibilityPrefix.map { "\($0).more" },
             onTap: { handleItemTap(index: index, itemID: item.id) },
             onToggleExpanded: isExpandable ? {
                 if expandedItemIDs.contains(item.id) {
@@ -402,6 +433,15 @@ private extension SequentialSectionPrimaryColumn {
     }
 
     func handleItemTap(index: Int, itemID: UUID) {
+        let now = Date()
+        guard EntryRowTapDebounce.shouldProcessTap(
+            itemID: itemID,
+            at: now,
+            lastAcceptedItemID: &lastAcceptedEntryRowTapItemID,
+            lastAcceptedDate: &lastAcceptedEntryRowTapDate,
+            interval: EntryRowTapDebounce.sameRowTapDebounceInterval
+        ) else { return }
+
         morphingItemID = itemID
         if isAddMorphComposerVisible {
             withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {

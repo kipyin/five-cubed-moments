@@ -6,13 +6,13 @@ extension JournalCompletionLevel {
         switch self {
         case .soil:
             return 0
-        case .seed:
+        case .sprout:
             return 1
-        case .ripening:
+        case .twig:
             return 2
-        case .harvest:
+        case .leaf:
             return 3
-        case .abundance:
+        case .bloom:
             return 4
         }
     }

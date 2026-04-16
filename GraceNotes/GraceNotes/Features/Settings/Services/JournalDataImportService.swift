@@ -136,6 +136,14 @@ struct JournalDataImportService {
             let sanitized = sanitize(export)
 
             if let existing = try repository.fetchEntry(dayStart: dayStart, context: context) {
+                // `fetchEntry` picks one canonical row per day; drop any extra rows so import does not
+                // leave stale duplicates (see ``JournalRepository/fetchEntry(dayStart:context:)``).
+                try deleteDuplicateJournalRows(
+                    except: existing,
+                    dayStart: dayStart,
+                    calendar: calendar,
+                    context: context
+                )
                 existing.entryDate = dayStart
                 existing.gratitudes = sanitized.gratitudes
                 existing.needs = sanitized.needs
@@ -207,20 +215,6 @@ struct JournalDataImportService {
             throw JournalDataImportError.tooManyEntries
         }
         return archive
-    }
-
-    /// Deduplicate by calendar day: sorted by `entryDate`, last row wins for that day.
-    internal func dedupeByCalendarDayLastWins(
-        _ entries: [JournalDataExportEntry],
-        calendar: Calendar
-    ) -> [JournalDataExportEntry] {
-        let sorted = entries.sorted { $0.entryDate < $1.entryDate }
-        var byDayStart: [Date: JournalDataExportEntry] = [:]
-        for entry in sorted {
-            let day = calendar.startOfDay(for: entry.entryDate)
-            byDayStart[day] = entry
-        }
-        return byDayStart.keys.sorted().compactMap { byDayStart[$0] }
     }
 
     /// For unit tests without a live SwiftData stack.
@@ -299,7 +293,8 @@ struct JournalDataImportService {
         }
     }
 
-    /// ISO8601 decode vs persisted `Date` can differ slightly in sub-second precision; treat as same for merge detection.
+    /// ISO8601 decode vs persisted `Date` can differ slightly in sub-second precision; treat as same for merge
+    /// detection.
     private static func completedAtEqualForMerge(_ a: Date?, _ b: Date?) -> Bool {
         switch (a, b) {
         case (nil, nil): return true
@@ -319,5 +314,43 @@ struct JournalDataImportService {
         let createdAt: Date
         let updatedAt: Date
         let completedAt: Date?
+    }
+}
+
+extension JournalDataImportService {
+    /// Deduplicate by calendar day: sorted by `entryDate`, last row wins for that day.
+    internal func dedupeByCalendarDayLastWins(
+        _ entries: [JournalDataExportEntry],
+        calendar: Calendar
+    ) -> [JournalDataExportEntry] {
+        let sorted = entries.sorted { $0.entryDate < $1.entryDate }
+        var byDayStart: [Date: JournalDataExportEntry] = [:]
+        for entry in sorted {
+            let day = calendar.startOfDay(for: entry.entryDate)
+            byDayStart[day] = entry
+        }
+        return byDayStart.keys.sorted().compactMap { byDayStart[$0] }
+    }
+}
+
+private extension JournalDataImportService {
+    /// Deletes every persisted journal in `[dayStart, nextDay)` except `kept`, so a day has at most one row after
+    /// import.
+    func deleteDuplicateJournalRows(
+        except kept: Journal,
+        dayStart: Date,
+        calendar: Calendar,
+        context: ModelContext
+    ) throws {
+        guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return }
+        let descriptor = FetchDescriptor<Journal>(
+            predicate: #Predicate { entry in
+                entry.entryDate >= dayStart && entry.entryDate < nextDay
+            }
+        )
+        let candidates = try context.fetch(descriptor)
+        for journal in candidates where journal.id != kept.id {
+            context.delete(journal)
+        }
     }
 }

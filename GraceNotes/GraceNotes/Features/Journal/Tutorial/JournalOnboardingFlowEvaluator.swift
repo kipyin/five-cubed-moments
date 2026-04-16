@@ -62,7 +62,8 @@ struct JournalOnboardingPresentation: Equatable {
         sectionStates: [:]
     )
 
-    /// True when guided copy is actually shown (`sectionGuidance` would be non-nil for the active step).
+    /// True when guided copy is actually shown for the active step's banner section
+    /// (that is, when `sectionGuidance(for: step.bannerSection)` would be non-nil).
     var isGuidanceActive: Bool {
         guard step != nil, let message else { return false }
         return !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -80,9 +81,9 @@ struct JournalOnboardingPresentation: Equatable {
         let secondary: String? = {
             switch step {
             case .gratitude:
-                let hint = String(localized: "journal.onboarding.keyboardFinishHint")
-                let trimmed = hint.trimmingCharacters(in: .whitespacesAndNewlines)
-                return trimmed.isEmpty ? nil : trimmed
+                return Self.trimmedKeyboardFinishHintLine(
+                    String(localized: "journal.onboarding.keyboardFinishHint")
+                )
             case .need, .person:
                 return nil
             }
@@ -92,6 +93,13 @@ struct JournalOnboardingPresentation: Equatable {
             message: message,
             messageSecondary: secondary
         )
+    }
+
+    /// Returns `nil` when `raw` is empty or only whitespace and newlines; otherwise returns trimmed text.
+    /// Used for the gratitude keyboard hint line; exposed for unit tests covering trim/empty rules.
+    static func trimmedKeyboardFinishHintLine(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
@@ -137,7 +145,16 @@ private extension JournalOnboardingFlowEvaluator {
         message: String,
         states: [JournalOnboardingSection: JournalOnboardingSectionState]
     ) -> JournalOnboardingPresentation {
-        JournalOnboardingPresentation(
+        if message.isEmpty {
+            #if DEBUG
+            assertionFailure(
+                "Journal onboarding requires non-empty message for step \(step); "
+                    + "treating as inactive to avoid locked sections without copy."
+            )
+            #endif
+            return .inactive
+        }
+        return JournalOnboardingPresentation(
             step: step,
             title: title,
             message: message,

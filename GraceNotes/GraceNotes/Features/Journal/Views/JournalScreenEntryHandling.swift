@@ -163,11 +163,17 @@ enum JournalScreenEntryHandling {
             } else {
                 canSwitch = false
             }
-        } else if !trimmed.isEmpty, operations.count < JournalViewModel.slotCount {
-            if let newIndex = operations.addImmediate(input.wrappedValue) {
-                input.wrappedValue = ""
-                _ = newIndex
+        } else if !trimmed.isEmpty {
+            if operations.count < JournalViewModel.slotCount {
+                if let newIndex = operations.addImmediate(input.wrappedValue) {
+                    input.wrappedValue = ""
+                    _ = newIndex
+                } else {
+                    canSwitch = false
+                }
             } else {
+                // At capacity with no row being edited: the draft cannot be saved, and switching strips would
+                // discard it.
                 canSwitch = false
             }
         }

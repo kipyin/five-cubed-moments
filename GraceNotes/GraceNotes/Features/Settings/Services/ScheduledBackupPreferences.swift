@@ -195,10 +195,14 @@ enum ScheduledBackupPreferences {
     }
 
     /// Whether `fileURL` lies inside the bookmarked backup folder (for security-scoped reads via the folder bookmark).
+    ///
+    /// Resolves symlinks before comparing paths so a file under the chosen folder is still recognized when
+    /// path strings differ (e.g. `/var/...` vs `/private/var/...`); otherwise imports can incorrectly skip the folder access gate.
     static func fileURLIsUnderScheduledBackupFolder(_ fileURL: URL) -> Bool {
+        guard fileURL.isFileURL else { return false }
         guard let folderURL = try? resolveFolderURL() else { return false }
-        let folderPath = folderURL.standardizedFileURL.path
-        let path = fileURL.standardizedFileURL.path
+        let folderPath = folderURL.standardizedFileURL.resolvingSymlinksInPath().path
+        let path = fileURL.standardizedFileURL.resolvingSymlinksInPath().path
         return path != folderPath && path.hasPrefix(folderPath + "/")
     }
 

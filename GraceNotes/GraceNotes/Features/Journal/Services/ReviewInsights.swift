@@ -116,22 +116,38 @@ struct ReviewMostRecurringTheme: Equatable, Hashable, Sendable, Codable, Identif
         dayCount = try container.decode(Int.self, forKey: .dayCount)
         currentWeekCount = try container.decode(Int.self, forKey: .currentWeekCount)
         previousWeekCount = try container.decode(Int.self, forKey: .previousWeekCount)
-        if let structuredEvidence = try container.decodeIfPresent(
-            [ReviewThemeSurfaceEvidence].self,
-            forKey: .evidence
-        ) {
-            evidence = structuredEvidence
-        } else if let legacyEvidence = try container.decodeIfPresent([ReviewThemeEvidence].self, forKey: .evidence) {
-            evidence = legacyEvidence.flatMap { row in
+        evidence = try Self.decodeEvidence(from: container)
+    }
+
+    /// When the `evidence` key is absent, decoding defaults to `[]`. When the key is present,
+    /// `decodeIfPresent` throws on type mismatch, so we try structured `[ReviewThemeSurfaceEvidence]`
+    /// then legacy `[ReviewThemeEvidence]` with `try? decode`; if both fail, decoding throws instead
+    /// of silently producing empty evidence.
+    private static func decodeEvidence(
+        from container: KeyedDecodingContainer<CodingKeys>
+    ) throws -> [ReviewThemeSurfaceEvidence] {
+        guard container.contains(.evidence) else {
+            return []
+        }
+        if let structuredEvidence = try? container.decode([ReviewThemeSurfaceEvidence].self, forKey: .evidence) {
+            return structuredEvidence
+        }
+        if let legacyEvidence = try? container.decode([ReviewThemeEvidence].self, forKey: .evidence) {
+            return legacyEvidence.flatMap { row in
                 var seenInRow = Set<ReviewThemeSourceCategory>()
                 let uniqueSources = row.sources.filter { seenInRow.insert($0).inserted }
                 return uniqueSources.map { source in
                     ReviewThemeSurfaceEvidence(entryDate: row.date, source: source, content: "")
                 }
             }
-        } else {
-            evidence = []
         }
+        throw DecodingError.dataCorrupted(
+            DecodingError.Context(
+                codingPath: container.codingPath + [CodingKeys.evidence],
+                debugDescription: "Invalid evidence: expected [ReviewThemeSurfaceEvidence] "
+                    + "or legacy [ReviewThemeEvidence]."
+            )
+        )
     }
 
     func encode(to encoder: Encoder) throws {

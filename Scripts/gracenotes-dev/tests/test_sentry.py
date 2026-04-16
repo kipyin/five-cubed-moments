@@ -1287,3 +1287,17 @@ class MergePollCommentModeTest(unittest.TestCase):
                 sink=None,
             )
         self.assertEqual(out, MergePollOutcome.WAIT_FOR_GATES)
+
+
+class CiFixPushRefspecTest(unittest.TestCase):
+    """Sentry worktrees use local branch names; push must target PR headRefName."""
+
+    def test_git_push_origin_head_to_branch_uses_refspec(self) -> None:
+        from gracenotes_dev.sentry.ci_fix import _git_push_origin_head_to_branch
+
+        fake = mock.Mock(return_value=mock.Mock(returncode=0))
+        with mock.patch("gracenotes_dev.sentry.ci_fix.subprocess.run", fake):
+            _git_push_origin_head_to_branch(Path("/wt"), "feat/sentry-pr-branch")
+        fake.assert_called_once()
+        argv = fake.call_args[0][0]
+        self.assertEqual(argv, ["git", "push", "origin", "HEAD:refs/heads/feat/sentry-pr-branch"])

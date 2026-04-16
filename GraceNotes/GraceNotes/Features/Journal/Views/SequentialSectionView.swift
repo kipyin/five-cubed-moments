@@ -127,13 +127,17 @@ struct SequentialSectionView: View {
         inputFocus?.wrappedValue ?? false
     }
 
+    private var activeEditingIndex: Int? {
+        sequentialSectionActiveEditingIndex(editingIndex: editingIndex, itemCount: items.count)
+    }
+
     private var shouldAnimateEditingPulse: Bool {
         isInputFocused && !reduceMotion
     }
 
     private var slotStatuses: [SlotStatus] {
         (0..<slotCount).map { index in
-            if editingIndex == index {
+            if activeEditingIndex == index {
                 return .editing
             }
             if index < items.count {
@@ -179,6 +183,7 @@ struct SequentialSectionView: View {
             onboardingState: onboardingState,
             isTransitioning: isTransitioning,
             editingIndex: editingIndex,
+            activeEditingIndex: activeEditingIndex,
             inputFocus: inputFocus,
             onInputFocusLost: onInputFocusLost,
             onSubmit: onSubmit,

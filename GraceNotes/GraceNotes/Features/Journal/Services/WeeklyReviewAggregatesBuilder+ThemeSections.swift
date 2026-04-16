@@ -28,6 +28,8 @@ extension WeeklyReviewAggregatesBuilder {
             forJournalCorpus: journalCorpus
         )
         var map: [String: DistilledThemeAccumulator] = [:]
+        // Strongest section source seen for each canonical (drives `displayLabel`; `.people` enables person labels).
+        var displaySourceByCanonical: [String: ReviewThemeSourceCategory] = [:]
         var sequence = 0
 
         for entry in entries {
@@ -48,10 +50,17 @@ extension WeeklyReviewAggregatesBuilder {
                     highConfidenceOnly: false,
                     journalThemeDisplayLocale: journalThemeDisplayLocale
                 )
-                let uniqueConcepts = Dictionary(grouping: concepts, by: \.canonicalConcept)
-                    .compactMap { _, candidates in candidates.max(by: { $0.score < $1.score }) }
+                let uniqueConcepts = Self.bestUniqueDistilledConceptsPreservingConceptOrder(concepts)
 
                 for concept in uniqueConcepts {
+                    if let existing = displaySourceByCanonical[concept.canonicalConcept] {
+                        displaySourceByCanonical[concept.canonicalConcept] = strongerDisplaySourceForThemeLabel(
+                            existing,
+                            surface.source
+                        )
+                    } else {
+                        displaySourceByCanonical[concept.canonicalConcept] = surface.source
+                    }
                     let isFirstAppearance = map[concept.canonicalConcept] == nil
                     var accumulator = map[concept.canonicalConcept] ?? DistilledThemeAccumulator(
                         canonicalConcept: concept.canonicalConcept,
@@ -98,8 +107,12 @@ extension WeeklyReviewAggregatesBuilder {
 
         for canonical in Array(map.keys) {
             guard var accumulator = map[canonical] else { continue }
-            let source: ReviewThemeSourceCategory =
-                canonical == "mom" || canonical == "dad" ? .people : .gratitudes
+            let source: ReviewThemeSourceCategory
+            if canonical == "mom" || canonical == "dad" {
+                source = .people
+            } else {
+                source = displaySourceByCanonical[canonical] ?? .gratitudes
+            }
             accumulator.displayLabel = textNormalizer.displayLabel(
                 for: accumulator.canonicalConcept,
                 source: source,
@@ -110,6 +123,7 @@ extension WeeklyReviewAggregatesBuilder {
 
         let mostRecurringSorted = map.values
             .filter { $0.totalCount >= minimumMostRecurringSignalCount }
+            .filter { passesPenalizedThemeMostRecurringFloor($0) }
             .sorted {
                 if $0.totalCount != $1.totalCount {
                     return $0.totalCount > $1.totalCount
@@ -158,6 +172,36 @@ extension WeeklyReviewAggregatesBuilder {
         )
 
         return (mostRecurring, trending)
+    }
+
+    /// Penalized generic labels (see ``ReviewCuratedThemeMap/penalizedConcepts``) need more than the
+    /// bare minimum recurrence to appear in Most Recurring; two sparse chips are not enough context.
+    private func passesPenalizedThemeMostRecurringFloor(_ value: DistilledThemeAccumulator) -> Bool {
+        guard ReviewCuratedThemeMap.defaultMap.penalizedConcepts.contains(value.canonicalConcept) else {
+            return true
+        }
+        return value.totalCount >= 3 || value.days.count >= 3
+    }
+
+    /// Picks the highest-scoring `ReviewDistilledConcept` per canonical label while preserving the order of
+    /// first encounter in `concepts` (the extractor’s emitted order), avoiding nondeterministic `Dictionary` key
+    /// iteration when assigning `firstSeenOrder` for themes that debut on the same structured surface.
+    private static func bestUniqueDistilledConceptsPreservingConceptOrder(
+        _ concepts: [ReviewDistilledConcept]
+    ) -> [ReviewDistilledConcept] {
+        var bestByCanonical: [String: ReviewDistilledConcept] = [:]
+        var firstSeenCanonicals: [String] = []
+        for concept in concepts {
+            if let existing = bestByCanonical[concept.canonicalConcept] {
+                if concept.score > existing.score {
+                    bestByCanonical[concept.canonicalConcept] = concept
+                }
+            } else {
+                bestByCanonical[concept.canonicalConcept] = concept
+                firstSeenCanonicals.append(concept.canonicalConcept)
+            }
+        }
+        return firstSeenCanonicals.compactMap { bestByCanonical[$0] }
     }
 
     func appendSupportingEvidence(
@@ -306,12 +350,37 @@ extension WeeklyReviewAggregatesBuilder {
         return !themeTokens.isDisjoint(with: supportTokens)
     }
 
+    /// Picks the section whose `displayLabel` semantics should win when a theme appears in more than one chip type.
+    private func strongerDisplaySourceForThemeLabel(
+        _ lhs: ReviewThemeSourceCategory,
+        _ rhs: ReviewThemeSourceCategory
+    ) -> ReviewThemeSourceCategory {
+        func rank(_ source: ReviewThemeSourceCategory) -> Int {
+            switch source {
+            case .people:
+                return 3
+            case .needs:
+                return 2
+            case .gratitudes:
+                return 1
+            case .readingNotes, .reflections:
+                return 0
+            }
+        }
+        // When ranks tie, keep lhs (the category already stored for this canonical).
+        return rank(lhs) >= rank(rhs) ? lhs : rhs
+    }
+
     /// Whole-phrase / whole-word match for Latin script; avoids substring hits like "rest" inside "forest".
     private func latinPhraseHasWordBoundaryMatch(haystack: String, needle: String) -> Bool {
-        guard needle.count <= haystack.count else { return false }
+        guard !needle.isEmpty, needle.count <= haystack.count else { return false }
         let escaped = NSRegularExpression.escapedPattern(for: needle)
         let pattern = "\\b\(escaped)\\b"
         return haystack.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    private func containsLatinLetters(_ normalized: String) -> Bool {
+        normalized.range(of: "\\p{Latin}", options: .regularExpression) != nil
     }
 
     func containsHanCharacters(_ text: String) -> Bool {

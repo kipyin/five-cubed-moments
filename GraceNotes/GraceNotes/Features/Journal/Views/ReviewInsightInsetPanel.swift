@@ -129,8 +129,13 @@ struct ReviewInsightInsetPanel<Content: View>: View {
 private extension View {
     @ViewBuilder
     func optionalAccessibilityHint(_ hint: String?) -> some View {
-        if let hint, !hint.isEmpty {
-            accessibilityHint(hint)
+        if let hint {
+            let trimmed = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                accessibilityHint(trimmed)
+            } else {
+                self
+            }
         } else {
             self
         }

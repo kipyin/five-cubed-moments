@@ -138,8 +138,8 @@ struct JournalDataImportService {
             if let existing = try repository.fetchEntry(dayStart: dayStart, context: context) {
                 // `fetchEntry` picks one canonical row per day; drop any extra rows so import does not
                 // leave stale duplicates (see ``JournalRepository/fetchEntry(dayStart:context:)``).
-                try deleteDuplicateJournalRows(
-                    except: existing,
+                try coalesceDuplicateJournalRowsForDay(
+                    kept: existing,
                     dayStart: dayStart,
                     calendar: calendar,
                     context: context
@@ -172,29 +172,13 @@ struct JournalDataImportService {
                 inserted += 1
             }
         }
+        try coalesceDuplicateRowsForSkippedDays(
+            skipDays: skipDays,
+            repository: repository,
+            context: context,
+            calendar: calendar
+        )
         return (inserted, updated)
-    }
-
-    /// Unique calendar day starts (start-of-day) where merge mode would need a conflict decision.
-    func mergeConflictDayStarts(
-        entries: [JournalDataExportEntry],
-        context: ModelContext,
-        calendar: Calendar
-    ) throws -> [Date] {
-        let repository = JournalRepository(calendar: calendar)
-        var conflicts: Set<Date> = []
-        for export in entries {
-            let dayStart = calendar.startOfDay(for: export.entryDate)
-            guard let existing = try repository.fetchEntry(dayStart: dayStart, context: context) else {
-                continue
-            }
-            let filePayload = comparisonPayload(for: export)
-            let diskPayload = comparisonPayload(for: exportMapper.makeExportEntry(from: existing))
-            if filePayload != diskPayload {
-                conflicts.insert(dayStart)
-            }
-        }
-        return conflicts.sorted()
     }
 
     /// Exposed for unit tests that avoid creating a `ModelContext`.
@@ -318,6 +302,28 @@ struct JournalDataImportService {
 }
 
 extension JournalDataImportService {
+    /// Unique calendar day starts (start-of-day) where merge mode would need a conflict decision.
+    func mergeConflictDayStarts(
+        entries: [JournalDataExportEntry],
+        context: ModelContext,
+        calendar: Calendar
+    ) throws -> [Date] {
+        let repository = JournalRepository(calendar: calendar)
+        var conflicts: Set<Date> = []
+        for export in entries {
+            let dayStart = calendar.startOfDay(for: export.entryDate)
+            guard let existing = try repository.fetchEntry(dayStart: dayStart, context: context) else {
+                continue
+            }
+            let filePayload = comparisonPayload(for: export)
+            let diskPayload = comparisonPayload(for: exportMapper.makeExportEntry(from: existing))
+            if filePayload != diskPayload {
+                conflicts.insert(dayStart)
+            }
+        }
+        return conflicts.sorted()
+    }
+
     /// Deduplicate by calendar day: sorted by `entryDate`, last row wins for that day.
     internal func dedupeByCalendarDayLastWins(
         _ entries: [JournalDataExportEntry],
@@ -334,10 +340,36 @@ extension JournalDataImportService {
 }
 
 private extension JournalDataImportService {
-    /// Deletes every persisted journal in `[dayStart, nextDay)` except `kept`, so a day has at most one row after
-    /// import.
-    func deleteDuplicateJournalRows(
-        except kept: Journal,
+    func comparisonPayload(for journal: Journal) -> ImportComparisonPayload {
+        comparisonPayload(for: exportMapper.makeExportEntry(from: journal))
+    }
+
+    /// Merge mode + preferLocal skips applying file fields for conflict days, but we still collapse duplicate
+    /// rows so the store stays at most one row per calendar day (canonical row unchanged).
+    func coalesceDuplicateRowsForSkippedDays(
+        skipDays: Set<Date>,
+        repository: JournalRepository,
+        context: ModelContext,
+        calendar: Calendar
+    ) throws {
+        for dayStart in skipDays {
+            let canonicalDay = calendar.startOfDay(for: dayStart)
+            guard let kept = try repository.fetchEntry(dayStart: canonicalDay, context: context) else { continue }
+            try coalesceDuplicateJournalRowsForDay(
+                kept: kept,
+                dayStart: canonicalDay,
+                calendar: calendar,
+                context: context
+            )
+        }
+    }
+
+    /// When the store violates the one-row-per-day invariant, ``JournalRepository/fetchEntry(dayStart:context:)``
+    /// returns the canonical row (`max` by completion rank, chip count, `updatedAt`, then `id`). Before deleting
+    /// non-canonical rows, merge any *divergent* payloads into that canonical row so text that only existed on a
+    /// duplicate row is not lost. Same-day rows whose payloads already match the canonical row are only deleted.
+    func coalesceDuplicateJournalRowsForDay(
+        kept: Journal,
         dayStart: Date,
         calendar: Calendar,
         context: ModelContext
@@ -349,8 +381,85 @@ private extension JournalDataImportService {
             }
         )
         let candidates = try context.fetch(descriptor)
-        for journal in candidates where journal.id != kept.id {
+        guard candidates.count > 1 else { return }
+
+        let others = candidates.filter { $0.id != kept.id }
+        if hasDistinctMergePayloads(canonical: kept, others: others) {
+            mergeDuplicateRowsIntoCanonical(kept: kept, others: others, dayStart: dayStart, calendar: calendar)
+        }
+        for journal in others {
             context.delete(journal)
         }
+    }
+
+    func hasDistinctMergePayloads(canonical: Journal, others: [Journal]) -> Bool {
+        let canonicalPayload = comparisonPayload(for: canonical)
+        return others.contains { comparisonPayload(for: $0) != canonicalPayload }
+    }
+
+    /// Merges `others` into `kept` in `updatedAt` order (oldest first). Slots: append unique non-empty texts not yet
+    /// present, up to ``Journal/slotCount`` per section. Notes: keep canonical text; append the other’s normalized
+    /// text when both differ. Timestamps: earliest `createdAt`, latest `updatedAt`, latest non-nil `completedAt`.
+    func mergeDuplicateRowsIntoCanonical(
+        kept: Journal,
+        others: [Journal],
+        dayStart: Date,
+        calendar: Calendar
+    ) {
+        let sortedOthers = others.sorted { $0.updatedAt < $1.updatedAt }
+        for other in sortedOthers {
+            mergeSlotArrays(into: &kept.gratitudes, from: other.gratitudes)
+            mergeSlotArrays(into: &kept.needs, from: other.needs)
+            mergeSlotArrays(into: &kept.people, from: other.people)
+            mergeNoteField(into: &kept.readingNotes, from: other.readingNotes)
+            mergeNoteField(into: &kept.reflections, from: other.reflections)
+            if let otherCompleted = other.completedAt {
+                if kept.completedAt == nil || otherCompleted > kept.completedAt! {
+                    kept.completedAt = otherCompleted
+                }
+            }
+            if other.createdAt < kept.createdAt {
+                kept.createdAt = other.createdAt
+            }
+            if other.updatedAt > kept.updatedAt {
+                kept.updatedAt = other.updatedAt
+            }
+        }
+        kept.entryDate = dayStart
+    }
+
+    func mergeSlotArrays(into existing: inout [Entry]?, from other: [Entry]?) {
+        var current = existing ?? []
+        var seenTexts = Set(current.map { clampString($0.fullText.trimmingCharacters(in: .whitespacesAndNewlines)) })
+        for item in other ?? [] {
+            guard current.count < Journal.slotCount else { break }
+            let trimmed = item.fullText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let capped = clampString(trimmed)
+            if seenTexts.contains(capped) { continue }
+            seenTexts.insert(capped)
+            current.append(Entry(fullText: capped, id: item.id))
+        }
+        existing = current
+    }
+
+    func mergeNoteField(into dest: inout String, from other: String) {
+        let normalizedDest = normalizeNoteField(dest)
+        let normalizedOther = normalizeNoteField(other)
+        if normalizedOther.isEmpty { return }
+        if normalizedDest.isEmpty {
+            dest = normalizedOther
+            return
+        }
+        if normalizedDest == normalizedOther { return }
+        let existingParas = Set(
+            normalizedDest.split(separator: "\n\n", omittingEmptySubsequences: false).map(String.init)
+        )
+        let newParas = normalizedOther
+            .split(separator: "\n\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { !$0.isEmpty && !existingParas.contains($0) }
+        guard !newParas.isEmpty else { return }
+        dest = clampString(normalizedDest + "\n\n" + newParas.joined(separator: "\n\n"))
     }
 }

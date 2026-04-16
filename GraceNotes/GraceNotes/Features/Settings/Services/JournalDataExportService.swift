@@ -73,7 +73,8 @@ struct JournalDataExportService {
     }
 
     /// UTC `yyyyMMdd-HHmmss` stamp for export filenames; deterministic and locale-insensitive (`en_US_POSIX`).
-    /// Uses `Calendar` + `String(format:)` so concurrent exports (e.g. `Task.detached`) do not share a `DateFormatter`, which is not thread-safe.
+    /// Uses `Calendar` + `String(format:)` so concurrent exports (e.g. `Task.detached`) do not share a `DateFormatter`,
+    /// which is not thread-safe.
     func exportFilenameTimestamp(for date: Date) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = Locale(identifier: "en_US_POSIX")

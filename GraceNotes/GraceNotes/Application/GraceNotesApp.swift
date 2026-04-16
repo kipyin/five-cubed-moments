@@ -227,12 +227,9 @@ private struct DeferredReviewRoot: View {
                     .navigationTitle(String(localized: "shell.tab.past"))
             }
         }
-        .onChange(of: isSelected) { _, selected in
-            guard selected, !hasOpenedReviewTab else { return }
-            hasOpenedReviewTab = true
-            PerformanceTrace.instant("ReviewScreen.deferredUntilSelected")
-        }
-        .task {
+        // `.task` alone does not re-run when `isSelected` flips after first load; drive off `id` so Past
+        // defers `ReviewScreen` until the tab is actually selected (default tab is Today).
+        .task(id: isSelected) {
             guard isSelected, !hasOpenedReviewTab else { return }
             hasOpenedReviewTab = true
             PerformanceTrace.instant("ReviewScreen.deferredUntilSelected")

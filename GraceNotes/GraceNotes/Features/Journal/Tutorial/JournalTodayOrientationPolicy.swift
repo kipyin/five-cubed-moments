@@ -55,4 +55,30 @@ enum JournalTodayOrientationPolicy {
         guard newLevel == .sprout else { return false }
         return appTourOutcome(for: orientationInputs) != nil
     }
+
+    /// Bridge for call sites that pass orientation fields separately (for example ``JournalScreen``), using
+    /// the same app-wide defaults for UITesting and guided-journal completion as a fully specified ``Inputs``.
+    static func shouldSuppressSproutUnlockToast(
+        isTodayEntry: Bool,
+        newLevel: JournalCompletionLevel,
+        hasSeenAppTour: Bool,
+        milestoneHighlight: JournalUnlockMilestoneHighlight,
+        hasAtLeastOneEntryInEachSection: Bool
+    ) -> Bool {
+        let guidedDone = UserDefaults.standard.bool(
+            forKey: JournalOnboardingStorageKeys.completedGuidedJournal
+        )
+        let orientationInputs = Inputs(
+            isTodayEntry: isTodayEntry,
+            isRunningUITests: ProcessInfo.graceNotesIsRunningUITests,
+            hasSeenAppTour: hasSeenAppTour,
+            hasCompletedGuidedJournal: guidedDone,
+            hasAtLeastOneEntryInEachSection: hasAtLeastOneEntryInEachSection
+        )
+        return shouldSuppressSproutUnlockToast(
+            newLevel: newLevel,
+            milestoneHighlight: milestoneHighlight,
+            orientationInputs: orientationInputs
+        )
+    }
 }

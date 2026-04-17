@@ -571,7 +571,7 @@ struct ReviewDaysYouWrotePanel: View {
             columnWidth = (64 * scale).rounded(.toNearestOrAwayFromZero)
             columnGap = max(2, (3 * scale).rounded(.toNearestOrAwayFromZero))
             columnCornerRadius = (10 * scale).rounded(.toNearestOrAwayFromZero)
-            columnEdgeInset = max(2, (3 * scale).rounded(.toNearestOrAwayFromZero))
+            columnEdgeInset = max(2, (3 * scale).rounded(.toNearestOrAwayFromZero)
             rowHeight = (34 * scale).rounded(.toNearestOrAwayFromZero)
             chartMinHeight = (150 * scale).rounded(.toNearestOrAwayFromZero)
             let innerRowSpacing: CGFloat = 3
@@ -579,8 +579,8 @@ struct ReviewDaysYouWrotePanel: View {
             chartRowMinHeight = max(innerStackHeight + (2 * columnEdgeInset), chartMinHeight)
             pillIconSize = (15 * scale).rounded(.toNearestOrAwayFromZero)
             pillChromeSize = (28 * scale).rounded(.toNearestOrAwayFromZero)
-            edgeFeatherWidth = max(10, (14 * scale).rounded(.toNearestOrAwayFromZero))
-            chartHorizontalPadding = max(10, (14 * scale).rounded(.toNearestOrAwayFromZero))
+            edgeFeatherWidth = max(10, (14 * scale).rounded(.toNearestOrAwayFromZero)
+            chartHorizontalPadding = max(10, (14 * scale).rounded(.toNearestOrAwayFromZero)
         }
 
         /// Chart columns + label row + ``ScrollView`` vertical padding.
@@ -859,14 +859,15 @@ private struct ReviewRhythmHorizontalScrollEndPin: UIViewRepresentable {
             }
         }
 
-        /// Walks toward the window; skips scroll views used for list rows / text / collection host so we pin the
-        /// embedded horizontal rhythm strip, not `List` / `UITableView` / `UITextView` (all `UIScrollView` subclasses).
+        /// Walks toward the window; skips scroll views that host list rows or editable text so we pin the rhythm
+        /// strip’s own scroller (`UIScrollView` or horizontal `UICollectionView`), not the outer `List` row host
+        /// (`UITableView`) or `UITextView`. We do not skip `UICollectionView` so a future collection-based rhythm
+        /// strip remains observable here.
         private func findRhythmScrollView(from view: UIView) -> UIScrollView? {
             var currentView: UIView? = view
             while let candidate = currentView?.superview {
                 if let scrollView = candidate as? UIScrollView,
                    !(scrollView is UITableView),
-                   !(scrollView is UICollectionView),
                    !(scrollView is UITextView) {
                     return scrollView
                 }

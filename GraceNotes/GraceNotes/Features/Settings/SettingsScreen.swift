@@ -205,6 +205,7 @@ private extension SettingsScreen {
                 isReminderPickerExpanded = newValue
                 Task {
                     await reminderState.setReminderEnabled(newValue)
+                    syncReminderControlState(with: reminderState.liveStatus)
                 }
             }
         )

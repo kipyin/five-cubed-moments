@@ -19,12 +19,7 @@ enum JournalToolbarChipTitleMeasuring {
 
     static func singleLineTextWidth(_ text: String, font: UIFont) -> CGFloat {
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        let size = (text as NSString).boundingRect(
-            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            attributes: attributes,
-            context: nil
-        ).size
+        let size = (text as NSString).size(withAttributes: attributes)
         return ceil(size.width)
     }
 
